@@ -176,11 +176,11 @@ public sealed class Tooltip : UIPrefabBaseScript {
   /// </remarks>
   public void UpdateLayout() {
     var prefabWidth = UnityPrefabController.GetPrefab<Tooltip>().preferredContentWidth;
-    if (titleText.gameObject.activeInHierarchy
-        && !baseInfo.gameObject.activeInHierarchy
-        && !availableResourcesInfo.gameObject.activeInHierarchy
-        && !requiredResourcesInfo.gameObject.activeInHierarchy
-        && !availableScienceInfo.gameObject.activeInHierarchy) {
+    if (titleText.gameObject.activeSelf
+        && !baseInfo.gameObject.activeSelf
+        && !availableResourcesInfo.gameObject.activeSelf
+        && !requiredResourcesInfo.gameObject.activeSelf
+        && !availableScienceInfo.gameObject.activeSelf) {
       FitSizeToTitle(prefabWidth);
     } else {
       preferredContentWidth = prefabWidth;
