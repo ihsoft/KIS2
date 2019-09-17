@@ -4,6 +4,8 @@
 
 using KIS2.UIKISInventorySlot;
 using KSPDev.Unity;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,11 +32,54 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   UIKISHorizontalSliderControl sizeRowsSlider = null;
   #endregion
 
+  #region Callback handlers
+  /// <summary>Handles mouse button clicks on a slot.</summary>
+  /// <param name="host">The Unity class that sent the event.</param>
+  /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
+  /// <param name="button">The pointer button that was clicked.</param>
+  /// <seealso cref="onSlotClick"/>
+  public delegate void OnSlotClick(
+      UIKISInventoryWindow host, Slot slot, PointerEventData.InputButton button);
+
+  /// <summary>Handles slot's pointer enter/leave events.</summary>
+  /// <param name="host">The Unity class that sent the event.</param>
+  /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
+  /// <param name="isHover">
+  /// <c>true</c> if mouse pointer has entered the control's <c>Rect</c>.
+  /// </param>
+  /// <seealso cref="onSlotHover"/>
+  public delegate void OnSlotHover(UIKISInventoryWindow host, Slot slot, bool isHover);
+
+  /// <summary>Handles actions on a slot.</summary>
+  /// <param name="host">The Unity class that sent the event.</param>
+  /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
+  /// <param name="actionButtonNum">The number of the button on the slot that was clicked.</param>
+  /// <param name="button">The pointer button that was clicked.</param>
+  /// <seealso cref="onSlotAction"/>
+  public delegate void OnSlotAction(
+      UIKISInventoryWindow host, Slot slot, int actionButtonNum,
+      PointerEventData.InputButton button);
+
+  /// <summary>Called when inventory grid size change is requested via GUI.</summary>
+  /// <remarks>
+  /// When the size is changed via API, this callback is not called. In case of there are multiple
+  /// handlers on the callback, the <i>minumum</i> size will be used as final at the end of the
+  /// chain. Each handler will be called with a rect, adjusted by the previous callbacks, so the
+  /// calling order may be important.
+  /// </remarks>
+  /// <param name="host">The Unity class that sent the event.</param>
+  /// <param name="oldSize">The size before the change.</param>
+  /// <param name="newSize">The new size being applied.</param>
+  /// <returns>The size that should actually be applied.</returns>
+  /// <seealso cref="onGridSizeChange"/>
+  public delegate Vector2 OnGridSizeChange(
+      UIKISInventoryWindow host, Vector2 oldSize, Vector2 newSize);
+  #endregion
+
   #region Local fields
   const string ColumnsSliderTextPattern = "Width: {0} columns";
   const string RowsSliderTextPattern = "Height: {0} rows";
   Slot prefabSlot;
-  IKISInventoryWindowController inventoryController;
   #endregion
 
   #region API properties and fields
@@ -113,16 +158,29 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     private set { _slots = value; }
   }
   Slot[] _slots = new Slot[0];
+
+  /// <summary>
+  /// Callback that is called when any of the major pointer buttons is clicked on top of a slot. 
+  /// </summary>
+  public readonly List<OnSlotClick> onSlotClick = new List<OnSlotClick>();
+
+  /// <summary>Callback that is called when pointer enters or leaves a slot.</summary>
+  public readonly List<OnSlotHover> onSlotHover = new List<OnSlotHover>();
+
+  /// <summary>
+  /// Callback that is called when any of the major pointer buttons is clicked over a slot action
+  /// button.
+  /// </summary>
+  public readonly List<OnSlotAction> onSlotAction = new List<OnSlotAction>();
+
+  /// <summary>Callback that is called when UI wants to change the inventory grid size.</summary>
+  public readonly List<OnGridSizeChange> onGridSizeChange = new List<OnGridSizeChange>();
   #endregion
 
   #region UIPrefabBaseScript overrides
   /// <inheritdoc/>
   public override void Start() {
     base.Start();
-    inventoryController = GetComponent<IKISInventoryWindowController>();
-    if (inventoryController == null) {
-      LogError("Inventory controller is not found!");
-    }
     prefabSlot = slotsGrid.transform.GetChild(0).GetComponent<Slot>();
     prefabSlot.transform.SetParent(null, worldPositionStays: true);
   }
@@ -156,21 +214,21 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <inheritdoc/>
   public void OnPointerButtonClick(
       GameObject owner, Slot source, PointerEventData eventData) {
-    inventoryController.OnSlotClick(this, source, eventData.button);
+    onSlotClick.ForEach(notify => notify(this, source, eventData.button));
   }
 
   /// <inheritdoc/>
   public void OnPointerEnter(
       GameObject owner, Slot source, PointerEventData eventData) {
     hoveredSlot = source;
-    inventoryController.OnSlotHover(this, source, true);
+    onSlotHover.ForEach(notify => notify(this, source, true));
   }
 
   /// <inheritdoc/>
   public void OnPointerExit(
       GameObject owner, Slot source, PointerEventData eventData) {
     hoveredSlot = null;
-    inventoryController.OnSlotHover(this, source, false);
+    onSlotHover.ForEach(notify => notify(this, source, false));
   }
   #endregion
 
@@ -178,10 +236,17 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public void OnSizeChanged(UIKISHorizontalSliderControl slider) {
     var oldSize = new Vector2(gridWidth, gridHeight);
     var newSize = new Vector2(sizeColumnsSlider.value, sizeRowsSlider.value);
+    var originalNewSize = newSize;
     // Restore sliders to the original and expect the proper size set from the callbacks.
     sizeColumnsSlider.value = oldSize.x;
     sizeRowsSlider.value = oldSize.y;
-    newSize = inventoryController.OnSizeChanged(this, oldSize, newSize);
+    foreach (var ev in onGridSizeChange) {
+      newSize = Vector2.Min(newSize, ev(this, oldSize, newSize));
+    }
+    if (newSize != originalNewSize) {
+      LogInfo("Resize bounds changed by handlers: original={0}, actual={1}",
+              originalNewSize, newSize);
+    }
     SetGridSize((int) newSize.x, (int) newSize.y);
   }
   #endregion
