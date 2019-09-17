@@ -200,6 +200,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
       return false;
     }
     firstSlot.InitPrefab();
+    firstSlot.gameObject.SetActive(false);
     while (slotsGrid.transform.childCount > 1) {
       DestroyImmediate(slotsGrid.transform.GetChild(1).gameObject);
     }

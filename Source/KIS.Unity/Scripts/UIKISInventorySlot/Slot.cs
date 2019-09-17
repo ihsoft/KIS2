@@ -96,7 +96,6 @@ public sealed class Slot : UIControlBaseScript {
   public void InitPrefab() {
     //FIXME: Capture the first button as prefab.  
     ClearContent();
-    gameObject.SetActive(false);
   }
   #endregion
 }
