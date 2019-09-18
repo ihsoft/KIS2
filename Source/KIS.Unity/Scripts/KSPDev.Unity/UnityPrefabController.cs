@@ -14,8 +14,8 @@ namespace KSPDev.Unity {
 /// <seealso cref="UIPrefabBaseScript"/>
 public static class UnityPrefabController {
   /// <summary>All the registered prefab instances.</summary>
-  static readonly Dictionary<Type, Dictionary<string, IKSPDevUnityPrefab>> registeredPrefabs =
-      new Dictionary<Type, Dictionary<string, IKSPDevUnityPrefab>>();
+  static readonly Dictionary<Type, Dictionary<string, Component>> registeredPrefabs =
+      new Dictionary<Type, Dictionary<string, Component>>();
 
   /// <summary>Creates instance from a registered prefab.</summary>
   /// <param name="newInstanceName">The name to assign to the new object.</param>
@@ -65,7 +65,7 @@ public static class UnityPrefabController {
   /// <seealso cref="IsPrefabRegistered"/>
   /// <seealso cref="CreateInstance(Type,string,Transform,string)"/>
   /// <seealso cref="CreateInstance&lt;T&gt;"/>
-  public static bool RegisterPrefab(IKSPDevUnityPrefab prefab, string prefabName) {
+  public static bool RegisterPrefab(Component prefab, string prefabName) {
     var prefabs = GetPrefabsForType(prefab.GetType(), failIfNotFound: false);
     if (prefabs.ContainsKey(prefabName)) {
       Debug.LogWarningFormat(
@@ -82,7 +82,7 @@ public static class UnityPrefabController {
   /// <param name="prefabName">The name, under which the prefab was registered.</param>
   /// <returns><c>true</c> if there is such prefab in the libarary.</returns>
   /// <seealso cref="RegisterPrefab"/>
-  public static bool IsPrefabRegistered(IKSPDevUnityPrefab prefab, string prefabName) {
+  public static bool IsPrefabRegistered(Component prefab, string prefabName) {
     var prefabs = GetPrefabsForType(prefab.GetType(), failIfNotFound: false, makeIfNotFound: false);
     return prefabs != null && prefabs.ContainsKey(prefabName);
   }
@@ -112,7 +112,7 @@ public static class UnityPrefabController {
   /// <seealso cref="RegisterPrefab"/>
   public static Component GetPrefab(Type type, string prefabName = null) {
     var prefabs = GetPrefabsForType(type, failIfNotFound: true);
-    IKSPDevUnityPrefab prefab;
+    Component prefab;
     if (prefabName == null) {
       if (prefabs.Count > 1) {
         throw new ArgumentException(string.Format(
@@ -129,9 +129,9 @@ public static class UnityPrefabController {
   }
 
   #region Local utility methods
-  static Dictionary<string, IKSPDevUnityPrefab> GetPrefabsForType(
+  static Dictionary<string, Component> GetPrefabsForType(
       Type prefabType, bool failIfNotFound = true, bool makeIfNotFound = true) {
-    Dictionary<string, IKSPDevUnityPrefab> prefabs;
+    Dictionary<string, Component> prefabs;
     if (!registeredPrefabs.TryGetValue(prefabType, out prefabs)) {
       if (failIfNotFound) {
         throw new ArgumentException(
@@ -140,7 +140,7 @@ public static class UnityPrefabController {
       if (!makeIfNotFound) {
         return null;
       }
-      prefabs = new Dictionary<string, IKSPDevUnityPrefab>();
+      prefabs = new Dictionary<string, Component>();
       registeredPrefabs[prefabType] = prefabs;
     }
     return prefabs;

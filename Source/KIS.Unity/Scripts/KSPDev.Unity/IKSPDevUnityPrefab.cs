@@ -4,7 +4,14 @@
 
 namespace KSPDev.Unity {
 
-/// <summary>Interface for the Unity scripts that need a game prefab created.</summary>
+/// <summary>
+/// Interface for the Unity scripts that need pre-processing before a game prefab is created.
+/// </summary>
+/// <remarks>
+/// The code that loads dynamic prefabs is responsible to call these methods. The call may be made
+/// via reflections or Unity messaging, so this interface is a "sugar" interface.
+/// <para>KSPDev calls the init method via reflections.</para>
+/// </remarks>
 /// <seealso cref="UIPrefabBaseScript"/>
 public interface IKSPDevUnityPrefab {
   /// <summary>Called by the game on load or by Unity Edtior on the first object start.</summary>
