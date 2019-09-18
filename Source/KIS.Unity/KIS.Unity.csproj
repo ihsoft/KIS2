@@ -58,8 +58,8 @@
     <Compile Include="Scripts\DemoKISInventoryController.cs" />
     <Compile Include="Scripts\KSPDev.Unity\GenericPointerNotifier.cs" />
     <Compile Include="Scripts\KSPDev.Unity\IKSPDevPointerListener.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\UIControlBaseScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\IKSPDevUnityPrefab.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\UIControlBaseScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\IKSPDevUnityControlMoved.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UIPrefabBaseScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UIWindowDragController.cs" />
