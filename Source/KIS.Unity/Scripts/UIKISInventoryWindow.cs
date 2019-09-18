@@ -260,7 +260,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// An error will be logged if this method is called when no slot is hovered over.
   /// </remarks>
   /// <returns>The tooltip that was created.</returns>
-  /// <seealso cref="IKISInventoryWindowController.OnSlotHover"/>
+  /// <seealso cref="onSlotHover"/>
   /// <seealso cref="currentTooltip"/>
   public UIKISInventoryTooltip.Tooltip StartSlotTooltip() {
     if (hoveredSlot == null) {
@@ -281,7 +281,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// </remarks>
   /// <param name="width">The new width.</param>
   /// <param name="height">The new height.</param>
-  /// <seealso cref="IKISInventoryWindowController.OnSizeChanged"/>
+  /// <seealso cref="onGridSizeChange"/>
   /// <seealso cref="slots"/>
   /// <seealso cref="gridWidth"/>
   /// <seealso cref="gridHeight"/>
