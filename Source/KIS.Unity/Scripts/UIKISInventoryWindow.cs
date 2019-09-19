@@ -302,6 +302,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     slots = slotsGrid.transform.Cast<Transform>()
         .Select(t => t.GetComponent<Slot>())
         .ToArray();
+    SendMessage("ControlUpdated", gameObject, SendMessageOptions.DontRequireReceiver);
   }
   #endregion
 

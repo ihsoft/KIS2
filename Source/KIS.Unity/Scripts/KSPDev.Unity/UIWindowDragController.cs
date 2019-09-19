@@ -3,6 +3,7 @@
 // This software is distributed under Public domain license.
 
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 namespace KSPDev.Unity {
@@ -15,8 +16,9 @@ namespace KSPDev.Unity {
 /// Add this script to the main window object. Optionally, specify the control that will be
 /// "draggable" (it's usually a window header).
 /// </remarks>
-/// <seealso cref="IKSPDevUnityControlMoved"/>
+/// <seealso cref="IKSPDevUnityControlChanged"/>
 public class UIWindowDragControllerScript : UIControlBaseScript,
+    IKSPDevUnityControlChanged,
     IBeginDragHandler, IEndDragHandler, IDragHandler,
     IPointerDownHandler, IEventSystemHandler {
 
@@ -82,7 +84,7 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
       position.x += eventData.delta.x;
       position.y += eventData.delta.y;
       mainRect.position = position;
-      UpdateWindow();
+      SendMessage("ControlUpdated", gameObject, SendMessageOptions.DontRequireReceiver);
     }
   }
   #endregion
@@ -93,31 +95,30 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
   }
   #endregion
 
+  #region IKSPDevUnityControlChanged implementation
+  /// <inheritdoc/>
+  public virtual void ControlUpdated() {
+    ClampToParentRect();
+  }
+  #endregion
+
   #region API methods
   /// <summary>Brings this window over the other children in the window parent.</summary>
   public virtual void BringOnTop() {
     mainRect.transform.SetAsLastSibling();
   }
-
-  /// <summary>Handles post-processing on the window when it was moved.</summary>
-  /// <remarks>
-  /// This method can do any adjustments, but attention must be paid if the window position is
-  /// affected. Controls that capture pointer focus may recognize such change as a pointer movement.
-  /// </remarks>
-  public virtual void UpdateWindow() {
-    if (clampWindowToParent) {
-      ClampToParentRect(windowClampOffset);
-    }
-    SendMessage("ControlMoved", gameObject, SendMessageOptions.DontRequireReceiver);
-  }
   #endregion
 
   #region Local utility methods
-  bool ClampToParentRect(Vector2 offset) {
+  bool ClampToParentRect() {
+    if (!clampWindowToParent) {
+      return false;  // Nothing to do.
+    }
+    LayoutRebuilder.ForceRebuildLayoutImmediate(mainRect);
     var parentDragRect = transform.parent.GetComponent<RectTransform>();
     var newPosition = mainRect.localPosition;
-    var minPos = parentDragRect.rect.min + offset - mainRect.rect.min;
-    var maxPos = parentDragRect.rect.max - offset - mainRect.rect.max;
+    var minPos = parentDragRect.rect.min + windowClampOffset - mainRect.rect.min;
+    var maxPos = parentDragRect.rect.max - windowClampOffset - mainRect.rect.max;
     if (minPos.y > maxPos.y) {
       var y = minPos.y;
       minPos.y = maxPos.y;
