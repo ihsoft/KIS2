@@ -46,22 +46,20 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
   #endregion
 
   #region Local utlity methods
-  void OnSlotHover(UIKISInventoryWindow host, Slot slot, bool isHover) {
+  void OnSlotHover(Slot slot, bool isHover) {
     LogInfo("Pointer hover: slot={0}, isHover={1}", slot.slotIndex, isHover);
     if (isHover) {
-      var tooltip = host.StartSlotTooltip();
+      var tooltip = unityWindow.StartSlotTooltip();
       tooltip.title = "lalala";
       tooltip.UpdateLayout();
     }
   }
 
-  void OnSlotClick(
-      UIKISInventoryWindow host, Slot slot, PointerEventData.InputButton button) {
+  void OnSlotClick(Slot slot, PointerEventData.InputButton button) {
     LogInfo("Clicked: slot={0}, button={1}", slot.slotIndex, button);
   }
 
-  void OnSlotAction(
-      UIKISInventoryWindow host, Slot slot, int actionButtonNum,
+  void OnSlotAction(Slot slot, int actionButtonNum,
       PointerEventData.InputButton button) {
     LogInfo("Clicked: slot={0}, action={1}, button={2}", slot.slotIndex, actionButtonNum, button);
   }

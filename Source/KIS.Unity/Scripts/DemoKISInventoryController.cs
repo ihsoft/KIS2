@@ -25,43 +25,47 @@ public sealed class DemoKISInventoryController : UIControlBaseScript {
   public string hintTitle = "test slot";
   #endregion
 
+  #region Local fields and properties
+  UIKISInventoryWindow unityWindow;
+  #endregion
+
   #region MonoBehaviour overrides
+  void Awake() {
+    unityWindow = GetComponent<UIKISInventoryWindow>();
+  }
+
   void Start() {
     if (!Application.isEditor) {
       enabled = false;
       return;
     }
-    var kisWindow = GetComponent<UIKISInventoryWindow>();
-    if (!kisWindow.isPrefab) {
-      kisWindow.onSlotHover.Add(OnSlotHover);
-      kisWindow.onSlotClick.Add(OnSlotClick);
-      kisWindow.onSlotAction.Add(OnSlotAction);
-      kisWindow.onGridSizeChange.Add(OnSizeChanged);
-      kisWindow.minSize = minSize;
-      kisWindow.maxSize = maxSize;
-      kisWindow.SetGridSize((int) minSize.x, (int) minSize.y);
+    if (!unityWindow.isPrefab) {
+      unityWindow.onSlotHover.Add(OnSlotHover);
+      unityWindow.onSlotClick.Add(OnSlotClick);
+      unityWindow.onSlotAction.Add(OnSlotAction);
+      unityWindow.onGridSizeChange.Add(OnSizeChanged);
+      unityWindow.minSize = minSize;
+      unityWindow.maxSize = maxSize;
+      unityWindow.SetGridSize((int) minSize.x, (int) minSize.y);
     }
   }
   #endregion
 
   #region Local utlity methods
-  void OnSlotHover(UIKISInventoryWindow host, Slot slot, bool isHover) {
+  void OnSlotHover(Slot slot, bool isHover) {
     LogInfo("Pointer hover: slot={0}, isHover={1}", slot.slotIndex, isHover);
     if (isHover) {
-      var tooltip = host.StartSlotTooltip();
+      var tooltip = unityWindow.StartSlotTooltip();
       tooltip.title = hintTitle;
       tooltip.UpdateLayout();
     }
   }
 
-  void OnSlotClick(
-      UIKISInventoryWindow host, Slot slot, PointerEventData.InputButton button) {
+  void OnSlotClick(Slot slot, PointerEventData.InputButton button) {
     LogInfo("Clicked: slot={0}, button={1}", slot.slotIndex, button);
   }
 
-  void OnSlotAction(
-      UIKISInventoryWindow host, Slot slot, int actionButtonNum,
-      PointerEventData.InputButton button) {
+  void OnSlotAction(Slot slot, int actionButtonNum, PointerEventData.InputButton button) {
     LogInfo("Clicked: slot={0}, action={1}, button={2}", slot.slotIndex, actionButtonNum, button);
   }
 

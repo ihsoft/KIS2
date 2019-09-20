@@ -34,31 +34,26 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   #region Callback handlers
   /// <summary>Handles mouse button clicks on a slot.</summary>
-  /// <param name="host">The Unity class that sent the event.</param>
   /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
   /// <param name="button">The pointer button that was clicked.</param>
   /// <seealso cref="onSlotClick"/>
-  public delegate void OnSlotClick(
-      UIKISInventoryWindow host, Slot slot, PointerEventData.InputButton button);
+  public delegate void OnSlotClick(Slot slot, PointerEventData.InputButton button);
 
   /// <summary>Handles slot's pointer enter/leave events.</summary>
-  /// <param name="host">The Unity class that sent the event.</param>
   /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
   /// <param name="isHover">
   /// <c>true</c> if mouse pointer has entered the control's <c>Rect</c>.
   /// </param>
   /// <seealso cref="onSlotHover"/>
-  public delegate void OnSlotHover(UIKISInventoryWindow host, Slot slot, bool isHover);
+  public delegate void OnSlotHover(Slot slot, bool isHover);
 
   /// <summary>Handles actions on a slot.</summary>
-  /// <param name="host">The Unity class that sent the event.</param>
   /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
   /// <param name="actionButtonNum">The number of the button on the slot that was clicked.</param>
   /// <param name="button">The pointer button that was clicked.</param>
   /// <seealso cref="onSlotAction"/>
   public delegate void OnSlotAction(
-      UIKISInventoryWindow host, Slot slot, int actionButtonNum,
-      PointerEventData.InputButton button);
+      Slot slot, int actionButtonNum, PointerEventData.InputButton button);
 
   /// <summary>Called when inventory grid size change is requested via GUI.</summary>
   /// <remarks>
@@ -246,23 +241,20 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public int priority { get { return 0; } }
   
   /// <inheritdoc/>
-  public void OnPointerButtonClick(
-      GameObject owner, Slot source, PointerEventData eventData) {
-    onSlotClick.ForEach(notify => notify(this, source, eventData.button));
+  public void OnPointerButtonClick(GameObject owner, Slot source, PointerEventData eventData) {
+    onSlotClick.ForEach(notify => notify(source, eventData.button));
   }
 
   /// <inheritdoc/>
-  public void OnPointerEnter(
-      GameObject owner, Slot source, PointerEventData eventData) {
+  public void OnPointerEnter(GameObject owner, Slot source, PointerEventData eventData) {
     hoveredSlot = source;
-    onSlotHover.ForEach(notify => notify(this, source, true));
+    onSlotHover.ForEach(notify => notify(source, true));
   }
 
   /// <inheritdoc/>
-  public void OnPointerExit(
-      GameObject owner, Slot source, PointerEventData eventData) {
+  public void OnPointerExit(GameObject owner, Slot source, PointerEventData eventData) {
     hoveredSlot = null;
-    onSlotHover.ForEach(notify => notify(this, source, false));
+    onSlotHover.ForEach(notify => notify(source, false));
   }
   #endregion
 
