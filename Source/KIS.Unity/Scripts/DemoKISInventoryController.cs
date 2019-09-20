@@ -18,21 +18,28 @@ namespace KIS2 {
 public sealed class DemoKISInventoryController : UIControlBaseScript {
 
   #region For Unity customization
-  public int limitGridHeight = 1;
-  public int limitGridWidth = 3;
+  public int limitGridHeight = 3;
+  public int limitGridWidth = 6;
+  public Vector2 minSize = new Vector2(3, 1);
+  public Vector2 maxSize = new Vector2(16, 8);
   public string hintTitle = "test slot";
   #endregion
 
   #region MonoBehaviour overrides
   void Start() {
-    if (Application.isEditor) {
-      var kisWindow = GetComponent<UIKISInventoryWindow>();
+    if (!Application.isEditor) {
+      enabled = false;
+      return;
+    }
+    var kisWindow = GetComponent<UIKISInventoryWindow>();
+    if (!kisWindow.isPrefab) {
       kisWindow.onSlotHover.Add(OnSlotHover);
       kisWindow.onSlotClick.Add(OnSlotClick);
       kisWindow.onSlotAction.Add(OnSlotAction);
       kisWindow.onGridSizeChange.Add(OnSizeChanged);
-    } else {
-      enabled = false;
+      kisWindow.minSize = minSize;
+      kisWindow.maxSize = maxSize;
+      kisWindow.SetGridSize((int) minSize.x, (int) minSize.y);
     }
   }
   #endregion
