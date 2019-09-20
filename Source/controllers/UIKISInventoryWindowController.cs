@@ -64,7 +64,7 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
     LogInfo("Clicked: slot={0}, action={1}, button={2}", slot.slotIndex, actionButtonNum, button);
   }
 
-  Vector2 OnSizeChanged(UIKISInventoryWindow host, Vector2 oldSize, Vector2 newSize) {
+  Vector2 OnSizeChanged(Vector2 newSize) {
     return new Vector2(
         newSize.x <= minGridWidth ? newSize.x : minGridWidth,
         newSize.y <= minGridHeight ? newSize.y : minGridHeight);

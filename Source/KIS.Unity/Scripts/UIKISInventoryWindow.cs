@@ -55,20 +55,17 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public delegate void OnSlotAction(
       Slot slot, int actionButtonNum, PointerEventData.InputButton button);
 
-  /// <summary>Called when inventory grid size change is requested via GUI.</summary>
+  /// <summary>Called when inventory grid size change is requested.</summary>
   /// <remarks>
-  /// When the size is changed via API, this callback is not called. In case of there are multiple
-  /// handlers on the callback, the <i>minumum</i> size will be used as final at the end of the
-  /// chain. Each handler will be called with a rect, adjusted by the previous callbacks, so the
-  /// calling order may be important.
+  /// Every time the grid size is attempted to be changed, this callback is called. In case of there
+  /// are multiple handlers on the callback, the <i>maximum</i> size will be calculated from all the
+  /// calls, and this size will be applied to the grid. I.e. the callbacks can only limit the
+  /// minimum size of the grid, but not the maximum.
   /// </remarks>
-  /// <param name="host">The Unity class that sent the event.</param>
-  /// <param name="oldSize">The size before the change.</param>
   /// <param name="newSize">The new size being applied.</param>
-  /// <returns>The size that should actually be applied.</returns>
-  /// <seealso cref="onGridSizeChange"/>
-  public delegate Vector2 OnGridSizeChange(
-      UIKISInventoryWindow host, Vector2 oldSize, Vector2 newSize);
+  /// <returns>The size that callbacks wants to be applied.</returns>
+  /// <seealso cref="SetGridSize"/>
+  public delegate Vector2 OnGridSizeChange(Vector2 newSize);
   #endregion
 
   #region Local fields
@@ -286,18 +283,14 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <param name="size">The new desired size.</param>
   /// <seealso cref="onGridSizeChange"/>
   /// <seealso cref="slots"/>
-  /// <seealso cref="gridWidth"/>
-  /// <seealso cref="gridHeight"/>
   public void SetGridSize(Vector2 size) {
-    // Negotiate the new size woth the callbacks. 
+    // Negotiate the new size with the callbacks. 
     var newSize = size;
-    var originalNewSize = newSize;
     foreach (var callback in onGridSizeChange) {
-      newSize = Vector2.Min(newSize, callback(this, gridSize, newSize));
+      newSize = Vector2.Max(newSize, callback(size));
     }
-    if (newSize != originalNewSize) {
-      LogInfo("Resize bounds changed by handlers: original={0}, actual={1}",
-              originalNewSize, newSize);
+    if (newSize != size) {
+      LogInfo("Resize bounds changed by handlers: original={0}, actual={1}", size, newSize);
     }
 
     gridSize = newSize;
