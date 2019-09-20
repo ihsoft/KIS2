@@ -17,7 +17,7 @@ public sealed class KISModLoadController : MonoBehaviour {
   void Awake() {
     DebugEx.Info("[KISModLoadController] Start loading configuartion...");
     //FIXME: check critical resources location 
-    InvokeLoader(UIKISInventoryWindowBase.OnGameLoad);
+    InvokeLoader(UIKISInventoryWindowController.OnGameLoad);
     if (modIsInconsistent) {
       DebugEx.Error("[KISModLoadController] Loaded with errors!");
     } else {

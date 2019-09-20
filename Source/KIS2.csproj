@@ -78,7 +78,7 @@
     <Compile Include="api\Utils\PartModelUtilsImpl.cs" />
     <Compile Include="controllers\TestController.cs" />
     <Compile Include="controllers\ModLoadController.cs" />
-    <Compile Include="controllers\UIKISInventoryWindowBase.cs" />
+    <Compile Include="controllers\UIKISInventoryWindowController.cs" />
     <Compile Include="KSPDev_candidates\PrefabController.cs" />
     <Compile Include="KSPDev_candidates\UIScalableWindowController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

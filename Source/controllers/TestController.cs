@@ -25,7 +25,7 @@ public sealed class TestController : MonoBehaviour {
     }
   }
 
-  UIKISInventoryWindowBase inventoryWindow;
+  UIKISInventoryWindowController inventoryWindow;
 
   void DumpDlg(Transform dlg) {
     foreach (var path in Hierarchy.ListHirerahcy(dlg)) {
@@ -45,7 +45,7 @@ public sealed class TestController : MonoBehaviour {
       if (inventoryWindow != null) {
         inventoryWindow.CloseWindow();
       } else {
-        inventoryWindow = UIKISInventoryWindowBase.CreateDialog(
+        inventoryWindow = UIKISInventoryWindowController.CreateDialog(
             "KISInventoryDialog", "Inventory: FOO");
       }
     }

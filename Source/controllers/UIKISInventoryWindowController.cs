@@ -2,19 +2,20 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using KIS2.UIKISInventorySlot;
 using KSP.UI;
 using System;
 using System.Linq;
-using UnityEngine;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using KSPDev.Prefabs;
 using KSPDev.Unity;
-using KIS2.UIKISInventorySlot;
+using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace KIS2 {
   
-public sealed class UIKISInventoryWindowBase : UIScalableWindowController {
+public sealed class UIKISInventoryWindowController : UIScalableWindowController {
 
   public string dlgTitle {
     get { return unityWindow.title; }
@@ -23,6 +24,8 @@ public sealed class UIKISInventoryWindowBase : UIScalableWindowController {
 
   public int minGridWidth = 3;
   public int minGridHeight = 1;
+  public int maxGridWidth = 6;
+  public int maxGridHeight = 7;
 
   UIKISInventoryWindow unityWindow;
 
@@ -31,13 +34,50 @@ public sealed class UIKISInventoryWindowBase : UIScalableWindowController {
     base.Awake();
     unityWindow = GetComponent<UIKISInventoryWindow>();
   }
+
+  /// <inheritdoc/>
+  public override void Start() {
+    //unityWindow = GetComponent<UIKISInventoryWindow>();
+    unityWindow.onSlotHover.Add(OnSlotHover);
+    unityWindow.onSlotClick.Add(OnSlotClick);
+    unityWindow.onSlotAction.Add(OnSlotAction);
+    unityWindow.onGridSizeChange.Add(OnSizeChanged);
+  }
+  #endregion
+
+  #region Local utlity methods
+  void OnSlotHover(UIKISInventoryWindow host, Slot slot, bool isHover) {
+    LogInfo("Pointer hover: slot={0}, isHover={1}", slot.slotIndex, isHover);
+    if (isHover) {
+      var tooltip = host.StartSlotTooltip();
+      tooltip.title = "lalala";
+      tooltip.UpdateLayout();
+    }
+  }
+
+  void OnSlotClick(
+      UIKISInventoryWindow host, Slot slot, PointerEventData.InputButton button) {
+    LogInfo("Clicked: slot={0}, button={1}", slot.slotIndex, button);
+  }
+
+  void OnSlotAction(
+      UIKISInventoryWindow host, Slot slot, int actionButtonNum,
+      PointerEventData.InputButton button) {
+    LogInfo("Clicked: slot={0}, action={1}, button={2}", slot.slotIndex, actionButtonNum, button);
+  }
+
+  Vector2 OnSizeChanged(UIKISInventoryWindow host, Vector2 oldSize, Vector2 newSize) {
+    return new Vector2(
+        newSize.x <= minGridWidth ? newSize.x : minGridWidth,
+        newSize.y <= minGridHeight ? newSize.y : minGridHeight);
+  }
   #endregion
 
   #region Factory methods
   //FIXME: make it protected and expose from the descendatnts
-  public static UIKISInventoryWindowBase CreateDialog(string name, string title) {
+  public static UIKISInventoryWindowController CreateDialog(string name, string title) {
     DebugEx.Fine("Create KIS inventory window: {0}", title);
-    var dlg = UnityPrefabController.CreateInstance<UIKISInventoryWindowBase>(
+    var dlg = UnityPrefabController.CreateInstance<UIKISInventoryWindowController>(
         name, UIMasterController.Instance.actionCanvas.transform);
     dlg.dlgTitle = title;
     return dlg;
@@ -179,7 +219,7 @@ public sealed class UIKISInventoryWindowBase : UIScalableWindowController {
     PrefabLoader.LoadAllAssets(KSPUtil.ApplicationRootPath + "GameData/KIS/Prefabs/ui_prefabs");
     //FIXME register as base class
     var dialog = UnityPrefabController.GetPrefab<UIKISInventoryWindow>();
-    var baseType = dialog.gameObject.AddComponent<UIKISInventoryWindowBase>();
+    var baseType = dialog.gameObject.AddComponent<UIKISInventoryWindowController>();
     UnityPrefabController.RegisterPrefab(baseType, baseType.name);
   }
   #endregion
