@@ -266,7 +266,8 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   }
   #endregion
 
-  #region Grid size change listener
+  #region Unity only listeners
+  /// <summary>Not for external usage!</summary>
   public void OnSizeChanged(UIKISHorizontalSliderControl slider) {
     // Restore sliders to the original and expect the proper positions set in SetGridSize.
     var newWidth = (int) sizeColumnsSlider.value;
