@@ -2,8 +2,9 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using UnityEngine;
 using KSPDev.Unity;
+using System.Collections;
+using UnityEngine;
 
 namespace KSPDev.Unity {
 
@@ -48,8 +49,11 @@ public abstract class UIPrefabBaseScript : UIControlBaseScript, IKSPDevUnityPref
   [SerializeField]
   string prefabName = null;
   #endregion
-  
+
   #region IKSPDevUnityPrefab implemenation
+  /// <inheritdoc/>
+  public bool isPrefab { get; private set; }
+
   /// <inheritdoc/>
   public virtual bool InitPrefab() {
     gameObject.SetActive(false);
@@ -73,9 +77,24 @@ public abstract class UIPrefabBaseScript : UIControlBaseScript, IKSPDevUnityPref
     }
     if (makeCopyInEditorRuntime) {
       makeCopyInEditorRuntime = false;
-      LogInfo("Creating editor demo copy...");
-      UnityPrefabController.CreateInstance(GetType(), "EditorCopy-" + prefabName, transform.parent);
+      // Create editor's copy after all objects are initialized. For this we need an active game
+      // object, but most prefab objects are inactive. So, create a temporary one.
+      var host = new GameObject();
+      host.SetActive(true);
+      host.AddComponent<CoroutineStarter>().StartCoroutine(MakeEditorCopy(host));
     }
+  }
+  #endregion
+
+  #region Local utility methods
+  class CoroutineStarter : MonoBehaviour {
+  }
+
+  IEnumerator MakeEditorCopy(Object host) {
+    yield return null;  // Wait till the next frame.
+    LogInfo("Creating editor demo copy...");
+    UnityPrefabController.CreateInstance(GetType(), "EditorCopy-" + prefabName, transform.parent);
+    Destroy(host);
   }
   #endregion
 }
