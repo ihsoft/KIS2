@@ -78,34 +78,20 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   #endregion
 
   #region API properties and fields
-  /// <summary>Number of slots per a line of inventory grid.</summary>
+  /// <summary>Number of slots in the grid.</summary>
   /// <seealso cref="SetGridSize"/>
-  public int gridWidth {
-    get {
-      return _gridWidth;
-    }
+  public Vector2 gridSize {
+    get { return _gridSize; }
     private set {
-      _gridWidth = value;
-      slotsGrid.constraintCount = value;
-      sizeColumnsSlider.value = value;
-      sizeColumnsSlider.text = string.Format(ColumnsSliderTextPattern, value);
+      _gridSize = value;
+      slotsGrid.constraintCount = (int) value.x;
+      sizeColumnsSlider.value = value.x;
+      sizeColumnsSlider.text = string.Format(ColumnsSliderTextPattern, value.x);
+      sizeRowsSlider.value = value.y;
+      sizeRowsSlider.text = string.Format(RowsSliderTextPattern, value.y);
     }
   }
-  int _gridWidth;
-  
-  /// <summary>Number of the slot rows in the inventory grid.</summary>
-  /// <seealso cref="SetGridSize"/>
-  public int gridHeight {
-    get {
-      return _gridHeight;
-    }
-    private set {
-      _gridHeight = value;
-      sizeRowsSlider.value = value;
-      sizeRowsSlider.text = string.Format(RowsSliderTextPattern, value);
-    }
-  }
-  int _gridHeight;
+  Vector2 _gridSize;
 
   /// <summary>Inventory window title.</summary>
   public string title {
@@ -261,12 +247,11 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   #region Unity only listeners
   /// <summary>Not for external usage!</summary>
   public void OnSizeChanged(UIKISHorizontalSliderControl slider) {
-    // Restore sliders to the original and expect the proper positions set in SetGridSize.
-    var newWidth = (int) sizeColumnsSlider.value;
-    var newHeight = (int) sizeRowsSlider.value;
-    sizeColumnsSlider.value = gridWidth;
-    sizeRowsSlider.value = gridHeight;
-    SetGridSize(newWidth, newHeight);
+    // Restore sliders to the original values and expect the proper positions set in SetGridSize.
+    var newSize = new Vector2(sizeColumnsSlider.value, sizeRowsSlider.value);
+    sizeColumnsSlider.value = gridSize.x;
+    sizeRowsSlider.value = gridSize.y;
+    SetGridSize(newSize);
   }
   #endregion
 
@@ -296,35 +281,30 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// This method ensures that every grid cell has a slot object. If due to resize more cells are
   /// needed, then extra slot objects are added at the end of the <see cref="slots"/>. If cells need
   /// to be removed, then they are removed starting from the very last one in the list.
-  /// <para>The callbacks can affect the actual size that will be set.</para>
+  /// <para>The callbacks can affect the minimum size that will actually be set.</para>
   /// </remarks>
-  /// <param name="width">The new width.</param>
-  /// <param name="height">The new height.</param>
+  /// <param name="size">The new desired size.</param>
   /// <seealso cref="onGridSizeChange"/>
   /// <seealso cref="slots"/>
   /// <seealso cref="gridWidth"/>
   /// <seealso cref="gridHeight"/>
-  public void SetGridSize(int width, int height) {
+  public void SetGridSize(Vector2 size) {
     // Negotiate the new size woth the callbacks. 
-    var oldSize = new Vector2(gridWidth, gridHeight);
-    var newSize = new Vector2(width, height);
+    var newSize = size;
     var originalNewSize = newSize;
     foreach (var callback in onGridSizeChange) {
-      newSize = Vector2.Min(newSize, callback(this, oldSize, newSize));
+      newSize = Vector2.Min(newSize, callback(this, gridSize, newSize));
     }
     if (newSize != originalNewSize) {
       LogInfo("Resize bounds changed by handlers: original={0}, actual={1}",
               originalNewSize, newSize);
     }
-    width = (int) newSize.x;
-    height = (int) newSize.y;
 
-    gridWidth = width;
-    gridHeight = height;
-    var neededSlots = width * height;
+    gridSize = newSize;
+    var neededSlots = (int) (newSize.x * newSize.y);
     slotsGrid.gameObject.SetActive(neededSlots > 0);
     if (slotsGrid.transform.childCount != neededSlots) {
-      LogInfo("Resizing slots grid: width={0}, height={1}", width, height);
+      LogInfo("Resizing slots grid: {0}", newSize);
       while (slotsGrid.transform.childCount > neededSlots) {
         DeleteSlot();
       }

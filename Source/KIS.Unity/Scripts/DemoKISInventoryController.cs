@@ -46,7 +46,7 @@ public sealed class DemoKISInventoryController : UIControlBaseScript {
       unityWindow.onGridSizeChange.Add(OnSizeChanged);
       unityWindow.minSize = minSize;
       unityWindow.maxSize = maxSize;
-      unityWindow.SetGridSize((int) minSize.x, (int) minSize.y);
+      unityWindow.SetGridSize(minSize);
     }
   }
   #endregion
