@@ -93,47 +93,6 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
     return false;
   }
 
-//  public bool SetGridSize(int x, int y) {
-//    //FIXME: for the demo!
-//    for (var i = slots.Count - 1; i >= 0; --i) {
-//      UnityEngine.Object.DestroyImmediate(slots[i].gameObject);
-//    }
-//    slots.Clear();
-//    
-//    if (x < minGridWidth || y < minGridHeight) {
-//      DebugEx.Warning(
-//          "Cannot set size lower than minimum: x={0}, y={1}", minGridWidth, minGridHeight);
-//      return false;
-//    }
-//    var newSize = x * y;
-//    //var usedSize = slots.Count(s => s.hasContent);
-//    var usedSize = 0;
-//    //FIXME
-//    DebugEx.Warning("*** sizes: old={0}, new={1}, used={2}", slots.Count, newSize, usedSize);
-//    if (newSize < usedSize) {
-//      return false;
-//    }
-//    unityWindow.slotsGrid.constraintCount = x;
-//    if (newSize > slots.Count) {
-//      for (var i = newSize - slots.Count; i > 0; --i) {
-//        AddEmptySlot();
-//      }
-//    } else if (newSize < slots.Count) {
-//      //var unusedSlots = slots.Where(s => !s.hasContent).ToArray();
-//      var unusedSlots = slots.ToArray();
-//      //FIXME
-//      DebugEx.Warning("*** found unused slots: {0}", unusedSlots.Length);
-//      var targetSlot = 0;
-//      for (var i = slots.Count - newSize; i > 0 && targetSlot < unusedSlots.Length; --i) {
-//        var slot = unusedSlots[targetSlot++];
-//        slots.Remove(slot);
-//        UnityEngine.Object.DestroyImmediate(slot.gameObject);
-//      }
-//    }
-//    
-//    return false;
-//  }
-  
   //FIXME: make it private
 //  public bool AddEmptySlot() {
 //    var window = GetComponent<UIKISInventoryWindow>();
@@ -215,7 +174,6 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
   /// </summary>
   internal static void OnGameLoad() {
     PrefabLoader.LoadAllAssets(KSPUtil.ApplicationRootPath + "GameData/KIS/Prefabs/ui_prefabs");
-    //FIXME register as base class
     var dialog = UnityPrefabController.GetPrefab<UIKISInventoryWindow>();
     var baseType = dialog.gameObject.AddComponent<UIKISInventoryWindowController>();
     UnityPrefabController.RegisterPrefab(baseType, baseType.name);
