@@ -181,8 +181,10 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <inheritdoc/>
   public override void Start() {
     base.Start();
-    prefabSlot = slotsGrid.transform.GetChild(0).GetComponent<Slot>();
-    prefabSlot.transform.SetParent(null, worldPositionStays: true);
+    if (!isPrefab) {
+      prefabSlot = slotsGrid.transform.GetChild(0).GetComponent<Slot>();
+      prefabSlot.transform.SetParent(null, worldPositionStays: true);
+    }
   }
 
   /// <inheritdoc/>

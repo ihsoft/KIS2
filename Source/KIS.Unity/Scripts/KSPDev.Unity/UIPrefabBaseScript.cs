@@ -62,6 +62,14 @@ public abstract class UIPrefabBaseScript : UIControlBaseScript, IKSPDevUnityPref
   #endregion
 
   #region MonoBehaviour implementations
+  /// <inheritdoc/>
+  public virtual void Awake() {
+    if (!isPrefab && !UnityPrefabController.IsPrefabRegistered(this, prefabName)) {
+      isPrefab = true;
+    }
+  }
+
+  /// <inheritdoc/>
   public virtual void Start() {
     if (Application.isEditor) {
       EditorStart();

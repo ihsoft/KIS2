@@ -14,6 +14,9 @@ namespace KSPDev.Unity {
 /// </remarks>
 /// <seealso cref="UIPrefabBaseScript"/>
 public interface IKSPDevUnityPrefab {
+  /// <summary>Tells if this object is a prefab.</summary>
+  bool isPrefab { get; }
+
   /// <summary>Called by the game on load or by Unity Edtior on the first object start.</summary>
   /// <remarks>
   /// This method should register the instance as a prefab in the
