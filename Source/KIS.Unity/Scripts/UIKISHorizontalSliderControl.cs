@@ -34,6 +34,18 @@ public sealed class UIKISHorizontalSliderControl : UIControlBaseScript {
     get { return sliderControl.value; }
     set { sliderControl.value = value; }
   }
+
+  /// <summary>Minimum value of the slider.</summary>
+  public float minValue {
+    get { return sliderControl.minValue; }
+    set { sliderControl.minValue = value; }
+  }
+
+  /// <summary>Maximum value of the slider.</summary>
+  public float maxValue {
+    get { return sliderControl.maxValue; }
+    set { sliderControl.maxValue = value; }
+  }
   #endregion
 }
 

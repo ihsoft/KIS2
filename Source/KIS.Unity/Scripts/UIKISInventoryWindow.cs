@@ -159,6 +159,36 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   }
   Slot[] _slots = new Slot[0];
 
+  /// <summary>Minmum size of the grid.</summary>
+  /// <remarks>
+  /// Consistency is not checked. The caller is resposible to keep the grid size relevant to the
+  /// window controls.
+  /// </remarks>
+  /// <seealso cref="maxSize"/>
+  /// <seealso cref="SetGridSize"/>
+  public Vector2 minSize {
+    get { return new Vector2(sizeColumnsSlider.minValue, sizeRowsSlider.minValue); }
+    set {
+      sizeColumnsSlider.minValue = value.x;
+      sizeRowsSlider.minValue = value.y;
+    }
+  }
+
+  /// <summary>Maximum size of the grid.</summary>
+  /// <remarks>
+  /// Consistency is not checked. The caller is resposible to keep the grid size relevant to the
+  /// window controls.
+  /// </remarks>
+  /// <seealso cref="minSize"/>
+  /// <seealso cref="SetGridSize"/>
+  public Vector2 maxSize {
+    get { return new Vector2(sizeColumnsSlider.maxValue, sizeRowsSlider.maxValue); }
+    set {
+      sizeColumnsSlider.maxValue = value.x;
+      sizeRowsSlider.maxValue = value.y;
+    }
+  }
+
   /// <summary>
   /// Callback that is called when any of the major pointer buttons is clicked on top of a slot. 
   /// </summary>
@@ -206,6 +236,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     while (slotsGrid.transform.childCount > 1) {
       DestroyImmediate(slotsGrid.transform.GetChild(1).gameObject);
     }
+    slotsGrid.gameObject.SetActive(false);
     return true;
   }
   #endregion
@@ -237,20 +268,12 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   #region Grid size change listener
   public void OnSizeChanged(UIKISHorizontalSliderControl slider) {
-    var oldSize = new Vector2(gridWidth, gridHeight);
-    var newSize = new Vector2(sizeColumnsSlider.value, sizeRowsSlider.value);
-    var originalNewSize = newSize;
-    // Restore sliders to the original and expect the proper size set from the callbacks.
-    sizeColumnsSlider.value = oldSize.x;
-    sizeRowsSlider.value = oldSize.y;
-    foreach (var ev in onGridSizeChange) {
-      newSize = Vector2.Min(newSize, ev(this, oldSize, newSize));
-    }
-    if (newSize != originalNewSize) {
-      LogInfo("Resize bounds changed by handlers: original={0}, actual={1}",
-              originalNewSize, newSize);
-    }
-    SetGridSize((int) newSize.x, (int) newSize.y);
+    // Restore sliders to the original and expect the proper positions set in SetGridSize.
+    var newWidth = (int) sizeColumnsSlider.value;
+    var newHeight = (int) sizeRowsSlider.value;
+    sizeColumnsSlider.value = gridWidth;
+    sizeRowsSlider.value = gridHeight;
+    SetGridSize(newWidth, newHeight);
   }
   #endregion
 
@@ -280,6 +303,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// This method ensures that every grid cell has a slot object. If due to resize more cells are
   /// needed, then extra slot objects are added at the end of the <see cref="slots"/>. If cells need
   /// to be removed, then they are removed starting from the very last one in the list.
+  /// <para>The callbacks can affect the actual size that will be set.</para>
   /// </remarks>
   /// <param name="width">The new width.</param>
   /// <param name="height">The new height.</param>
@@ -288,22 +312,36 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <seealso cref="gridWidth"/>
   /// <seealso cref="gridHeight"/>
   public void SetGridSize(int width, int height) {
+    // Negotiate the new size woth the callbacks. 
+    var oldSize = new Vector2(gridWidth, gridHeight);
+    var newSize = new Vector2(width, height);
+    var originalNewSize = newSize;
+    foreach (var callback in onGridSizeChange) {
+      newSize = Vector2.Min(newSize, callback(this, oldSize, newSize));
+    }
+    if (newSize != originalNewSize) {
+      LogInfo("Resize bounds changed by handlers: original={0}, actual={1}",
+              originalNewSize, newSize);
+    }
+    width = (int) newSize.x;
+    height = (int) newSize.y;
+
     gridWidth = width;
     gridHeight = height;
     var neededSlots = width * height;
-    if (slotsGrid.transform.childCount == neededSlots) {
-      return;  // We're already good.
+    slotsGrid.gameObject.SetActive(neededSlots > 0);
+    if (slotsGrid.transform.childCount != neededSlots) {
+      LogInfo("Resizing slots grid: width={0}, height={1}", width, height);
+      while (slotsGrid.transform.childCount > neededSlots) {
+        DeleteSlot();
+      }
+      while (slotsGrid.transform.childCount < neededSlots) {
+        AddSlot();
+      }
+      slots = slotsGrid.transform.Cast<Transform>()
+          .Select(t => t.GetComponent<Slot>())
+          .ToArray();
     }
-    LogInfo("Resizing slots grid: width={0}, height={1}", width, height);
-    while (slotsGrid.transform.childCount > neededSlots) {
-      DeleteSlot();
-    }
-    while (slotsGrid.transform.childCount < neededSlots) {
-      AddSlot();
-    }
-    slots = slotsGrid.transform.Cast<Transform>()
-        .Select(t => t.GetComponent<Slot>())
-        .ToArray();
     SendMessage("ControlUpdated", gameObject, SendMessageOptions.DontRequireReceiver);
   }
   #endregion
