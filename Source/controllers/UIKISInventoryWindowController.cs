@@ -37,11 +37,12 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
 
   /// <inheritdoc/>
   public override void Start() {
-    //unityWindow = GetComponent<UIKISInventoryWindow>();
-    unityWindow.onSlotHover.Add(OnSlotHover);
-    unityWindow.onSlotClick.Add(OnSlotClick);
-    unityWindow.onSlotAction.Add(OnSlotAction);
-    unityWindow.onGridSizeChange.Add(OnSizeChanged);
+    if (!unityWindow.isPrefab) {
+      unityWindow.onSlotHover.Add(OnSlotHover);
+      unityWindow.onSlotClick.Add(OnSlotClick);
+      unityWindow.onSlotAction.Add(OnSlotAction);
+      unityWindow.onGridSizeChange.Add(OnSizeChanged);
+    }
   }
   #endregion
 
