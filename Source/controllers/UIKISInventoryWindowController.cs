@@ -53,7 +53,7 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
       unityWindow.onSlotHover.Add(OnSlotHover);
       unityWindow.onSlotClick.Add(OnSlotClick);
       unityWindow.onSlotAction.Add(OnSlotAction);
-      unityWindow.onGridSizeChange.Add(OnSizeChanged);
+      unityWindow.onNewGridSize.Add(OnNewGridSize);
     }
   }
   #endregion
@@ -77,7 +77,7 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
     LogInfo("Clicked: slot={0}, action={1}, button={2}", slot.slotIndex, actionButtonNum, button);
   }
 
-  Vector2 OnSizeChanged(Vector2 newSize) {
+  Vector2 OnNewGridSize(Vector2 newSize) {
     return newSize;
   }
   #endregion
@@ -105,7 +105,19 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
 
   public bool SetGridSize(int width, int height) {
     unityWindow.SetGridSize(new Vector2(width, height));
-    return false;//FIXME
+    return unityWindow.gridSize == new Vector2(width, height);
+  }
+  
+  string[] fuleParts = new string[] {
+      "RadialOreTank",
+      "SmallTank",
+      "fuelTankSmallFlat",
+      "Size3MediumTank",
+  };
+
+  //FIXME: test method
+  public void AddFuelParts(int num) {
+    
   }
 
   //FIXME: make it private

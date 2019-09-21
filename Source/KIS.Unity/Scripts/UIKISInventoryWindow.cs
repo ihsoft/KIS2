@@ -65,7 +65,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <param name="newSize">The new size being applied.</param>
   /// <returns>The size that callbacks wants to be applied.</returns>
   /// <seealso cref="SetGridSize"/>
-  public delegate Vector2 OnGridSizeChange(Vector2 newSize);
+  public delegate Vector2 OnNewGridSize(Vector2 newSize);
   #endregion
 
   #region Local fields
@@ -187,7 +187,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public readonly List<OnSlotAction> onSlotAction = new List<OnSlotAction>();
 
   /// <summary>Callback that is called when UI wants to change the inventory grid size.</summary>
-  public readonly List<OnGridSizeChange> onGridSizeChange = new List<OnGridSizeChange>();
+  public readonly List<OnNewGridSize> onNewGridSize = new List<OnNewGridSize>();
   #endregion
 
   #region UIPrefabBaseScript overrides
@@ -287,12 +287,12 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <para>The callbacks can affect the minimum size that will actually be set.</para>
   /// </remarks>
   /// <param name="size">The new desired size.</param>
-  /// <seealso cref="onGridSizeChange"/>
+  /// <seealso cref="onNewGridSize"/>
   /// <seealso cref="slots"/>
   public void SetGridSize(Vector2 size) {
     // Negotiate the new size with the callbacks. 
     var newSize = size;
-    foreach (var callback in onGridSizeChange) {
+    foreach (var callback in onNewGridSize) {
       newSize = Vector2.Max(newSize, callback(size));
     }
     if (newSize != size) {

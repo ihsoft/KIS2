@@ -43,7 +43,7 @@ public sealed class DemoKISInventoryController : UIControlBaseScript {
       unityWindow.onSlotHover.Add(OnSlotHover);
       unityWindow.onSlotClick.Add(OnSlotClick);
       unityWindow.onSlotAction.Add(OnSlotAction);
-      unityWindow.onGridSizeChange.Add(OnSizeChanged);
+      unityWindow.onNewGridSize.Add(OnSizeChanged);
       unityWindow.minSize = minSize;
       unityWindow.maxSize = maxSize;
       unityWindow.SetGridSize(minSize);
