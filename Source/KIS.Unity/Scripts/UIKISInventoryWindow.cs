@@ -269,7 +269,6 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     }
     currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
         "tooltip", transform.parent);
-    currentTooltip.followsPointer = true;
     return currentTooltip;
   }
 

@@ -67,26 +67,6 @@ public sealed class Tooltip : UIPrefabBaseScript {
   /// <remarks>Can be used in any info panel.</remarks>
   public const string InfoHighlightPattern = "<color=yellow>{0}</color>";
 
-  /// <summary>Padding when showing hint on the right side of the mouse cursor.</summary>
-  public int RightSideMousePadding = 24;
-
-  /// <summary>Padding when showing hint on the left side of the mouse cursor.</summary>
-  public int LeftSideMousePadding = 4;
-
-  /// <summary>Tells if tooltip should follow the pointer.</summary>
-  /// <remarks>The tooltip will be ajdusted so that it never goes off the screen.</remarks>
-  public bool followsPointer {
-    get { return _followsPointer; }
-    set {
-      var needCoroutine = value && _followsPointer != value;
-      _followsPointer = value;
-      if (needCoroutine) {
-        StartCoroutine(TooltipPositionCoroutine());
-      }
-    }
-  }
-  bool _followsPointer;
-
   /// <summary>Main highlighted text.</summary>
   /// <remarks>Can be set to empty string to hide the control.</remarks>
   public string title {
@@ -169,11 +149,15 @@ public sealed class Tooltip : UIPrefabBaseScript {
   #endregion
 
   #region API methods
-  /// <summary>Updates tooltip size to the nwe content</summary>
+  /// <summary>
+  /// Updates tooltip's perferred size to make the best fit, given the current content.
+  /// </summary>
   /// <remarks>
-  /// Should be called after a new content was set, including the case when a new tooltip has just
-  /// been created.
+  /// There is a special case when tooltip only has a title. In this case the window is shrinked
+  /// so that it takes minimum possible rect. In the other cases the window is resized to the
+  /// preffered size defined in prefab.
   /// </remarks>
+  /// <seealso cref="preferredContentWidth"/>
   public void UpdateLayout() {
     var prefabWidth = UnityPrefabController.GetPrefab<Tooltip>().preferredContentWidth;
     if (titleText.gameObject.activeSelf
@@ -213,9 +197,12 @@ public sealed class Tooltip : UIPrefabBaseScript {
   #endregion
 
   #region Local utility methods
-  /// <summary>Shrinks winod to the maxcimum title string size.</summary>
+  /// <summary>
+  /// Sets window's preferred size so that the window wraps the title text and takes as small rect
+  /// as possible.
+  /// </summary>
   /// <remarks>If title is wrapped, then this method finds the longest wrapped line.</remarks>
-  /// <param name="maxWidth"></param>
+  /// <param name="maxWidth">The width of the rect to fit title into.</param>
   void FitSizeToTitle(float maxWidth) {
     var textGen = new TextGenerator();
     var generationSettings = titleText.GetGenerationSettings(new Vector2(maxWidth, 10000));
@@ -232,26 +219,6 @@ public sealed class Tooltip : UIPrefabBaseScript {
           Mathf.Max(maxTextWidth, textGen.GetPreferredWidth(lineText, generationSettings));
     }
     preferredContentWidth = maxTextWidth;
-  }
-
-  /// <summary>Tracks mouse position and adjusts the tooltip.</summary>
-  IEnumerator TooltipPositionCoroutine() {
-    UpdateLayout();
-    var canvasRect = GetComponentInParent<Canvas>().transform as RectTransform;
-    while (_followsPointer) {
-      var pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-      var tooltipSize = mainRect.sizeDelta;
-      var xPos = Input.mousePosition.x + RightSideMousePadding;
-      if (xPos + tooltipSize.x > canvasRect.sizeDelta.x) {
-        xPos = Input.mousePosition.x - LeftSideMousePadding - tooltipSize.x;
-      }
-      var yPos = Input.mousePosition.y;
-      if (yPos < tooltipSize.y) {
-        yPos = tooltipSize.y;
-      }
-      mainRect.position = new Vector3(xPos, yPos, 0);
-      yield return null;
-    }
   }
   #endregion
 }
