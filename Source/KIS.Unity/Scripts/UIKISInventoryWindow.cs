@@ -55,17 +55,23 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public delegate void OnSlotAction(
       Slot slot, int actionButtonNum, PointerEventData.InputButton button);
 
-  /// <summary>Called when inventory grid size change is requested.</summary>
+  /// <summary>Called when a new inventory grid size is requested.</summary>
   /// <remarks>
   /// Every time the grid size is attempted to be changed, this callback is called. In case of there
   /// are multiple handlers on the callback, the <i>maximum</i> size will be calculated from all the
-  /// calls, and this size will be applied to the grid. I.e. the callbacks can only limit the
-  /// minimum size of the grid, but not the maximum.
+  /// calls, and this size will be applied to the grid. I.e. the callbacks can only define the lower
+  /// size of the grid, but they cannot affect the maximum size.
   /// </remarks>
   /// <param name="newSize">The new size being applied.</param>
   /// <returns>The size that callbacks wants to be applied.</returns>
   /// <seealso cref="SetGridSize"/>
+  /// <seealso cref="onGridSizeChanged"/>
   public delegate Vector2 OnNewGridSize(Vector2 newSize);
+
+  /// <summary>Called when inventory grid size changed.</summary>
+  /// <seealso cref="SetGridSize"/>
+  /// <seealso cref="onNewGridSize"/>
+  public delegate void OnGridSizeChanged();
   #endregion
 
   #region Local fields
@@ -188,6 +194,9 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   /// <summary>Callback that is called when UI wants to change the inventory grid size.</summary>
   public readonly List<OnNewGridSize> onNewGridSize = new List<OnNewGridSize>();
+
+  /// <summary>Callback that is called when inventory grid size changed.</summary>
+  public readonly List<OnGridSizeChanged> onGridSizeChanged = new List<OnGridSizeChanged>();
   #endregion
 
   #region UIPrefabBaseScript overrides
@@ -312,6 +321,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
       slots = slotsGrid.transform.Cast<Transform>()
           .Select(t => t.GetComponent<Slot>())
           .ToArray();
+      onGridSizeChanged.ForEach(notify => notify());
       SendMessage("ControlUpdated", gameObject, SendMessageOptions.DontRequireReceiver);
       gridSize = newSize;
     }
