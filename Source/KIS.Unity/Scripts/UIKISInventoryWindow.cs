@@ -187,8 +187,8 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   #region UIPrefabBaseScript overrides
   /// <inheritdoc/>
-  public override void Start() {
-    base.Start();
+  public override void Awake() {
+    base.Awake();
     if (!isPrefab) {
       prefabSlot = slotsGrid.transform.GetChild(0).GetComponent<Slot>();
       prefabSlot.transform.SetParent(null, worldPositionStays: true);
@@ -246,8 +246,6 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public void OnSizeChanged(UIKISHorizontalSliderControl slider) {
     // Restore sliders to the original values and expect the proper positions set in SetGridSize.
     var newSize = new Vector2(sizeColumnsSlider.value, sizeRowsSlider.value);
-    sizeColumnsSlider.value = gridSize.x;
-    sizeRowsSlider.value = gridSize.y;
     SetGridSize(newSize);
   }
   #endregion
@@ -292,7 +290,6 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
       LogInfo("Resize bounds changed by handlers: original={0}, actual={1}", size, newSize);
     }
 
-    gridSize = newSize;
     var neededSlots = (int) (newSize.x * newSize.y);
     slotsGrid.gameObject.SetActive(neededSlots > 0);
     if (slotsGrid.transform.childCount != neededSlots) {
@@ -306,8 +303,9 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
       slots = slotsGrid.transform.Cast<Transform>()
           .Select(t => t.GetComponent<Slot>())
           .ToArray();
+      SendMessage("ControlUpdated", gameObject, SendMessageOptions.DontRequireReceiver);
+      gridSize = newSize;
     }
-    SendMessage("ControlUpdated", gameObject, SendMessageOptions.DontRequireReceiver);
   }
   #endregion
 
