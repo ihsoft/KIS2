@@ -34,7 +34,7 @@ public sealed class PartIconUtils {
   /// </param>
   /// <returns>The psrite of the icon.</returns>
   public Texture MakeDefaultIcon(AvailablePart avPart, int resolution, PartVariant variant) {
-    var cacheKey = avPart.name + "-" + (variant == null ? "#" : variant.Name);
+    var cacheKey = avPart.name + "-" + resolution + "-" + (variant == null ? "#" : variant.Name);
     Texture result;
     if (iconsCache.TryGetValue(cacheKey, out result) && result != null) {
       // Note that the cached textures can get destroyed between the scenes.
