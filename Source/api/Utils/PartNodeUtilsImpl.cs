@@ -4,6 +4,7 @@
 
 using KSPDev.ConfigUtils;
 using KSPDev.LogUtils;
+using KSPDev.PartUtils;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -147,6 +148,58 @@ public class PartNodeUtilsImpl {
         .ToArray();
   }
 
+  /// <summary>Calculates part's dry mass given the config and the variant.</summary>
+  /// <param name="avPart">The part's proto.</param>
+  /// <param name="variant">
+  /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
+  /// <paramref name="partNode"/>.
+  /// </param>
+  /// <param name="partNode">
+  /// The part's persistent config. It will be looked up for the variant if it's not specified.
+  /// </param>
+  /// <returns>The dry cost of the part.</returns>
+  public double GetPartDryMass(
+      AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+    var itemMass = avPart.partPrefab.mass;
+    if (variant == null && partNode != null) {
+      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
+    }
+    VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => itemMass += p.GetModuleMass(p.mass));
+    return itemMass;
+  }
+
+  /// <summary>Calculates part's dry cost given the config and the variant.</summary>
+  /// <param name="avPart">The part's proto.</param>
+  /// <param name="variant">
+  /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
+  /// <paramref name="partNode"/>.
+  /// </param>
+  /// <param name="partNode">
+  /// The part's persistent config. It will be looked up for the various cost modifiers.
+  /// </param>
+  /// <returns>The dry cost of the part.</returns>
+  public double GetPartDryCost(
+      AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+    // TweakScale compatibility
+    if (partNode != null) {
+      var tweakScale = KISAPI.PartNodeUtils.GetTweakScaleModule(partNode);
+      if (tweakScale != null) {
+        var tweakedCost = ConfigAccessor.GetValueByPath<double>(tweakScale, "DryCost");
+        if (tweakedCost.HasValue) {
+          // TODO(ihsoft): Get back to this code once TweakScale supports variants.
+          return tweakedCost.Value;
+        }
+        DebugEx.Error("No dry cost specified in a tweaked part {0}:\n{1}", avPart.name, tweakScale);
+      }
+    }
+    var itemCost = avPart.cost;
+    if (variant == null && partNode != null) {
+      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
+    }
+    VariantsUtils.ExecuteAtPartVariant(avPart, variant,
+                                       p => itemCost += p.GetModuleCosts(avPart.cost));
+    return itemCost;
+  }
   #endregion
 
   #region Local utility methods
