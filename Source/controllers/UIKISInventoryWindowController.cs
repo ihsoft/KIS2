@@ -27,6 +27,18 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
   public int maxGridWidth = 6;
   public int maxGridHeight = 7;
 
+  public class KISInventoryBase {
+    public Vector2 minSize;
+    public Vector2 maxSize;
+    public Vector2 persistedSize;
+  }
+  
+  static KISInventoryBase testModule = new KISInventoryBase() {
+    minSize = new Vector2(3, 1),
+    maxSize = new Vector2(8, 5),
+    persistedSize = new Vector2(4, 2),
+  };
+
   UIKISInventoryWindow unityWindow;
 
   #region UIScalableWindowController overrides
@@ -66,9 +78,7 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
   }
 
   Vector2 OnSizeChanged(Vector2 newSize) {
-    return new Vector2(
-        newSize.x <= minGridWidth ? newSize.x : minGridWidth,
-        newSize.y <= minGridHeight ? newSize.y : minGridHeight);
+    return newSize;
   }
   #endregion
 
@@ -79,6 +89,9 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
     var dlg = UnityPrefabController.CreateInstance<UIKISInventoryWindowController>(
         name, UIMasterController.Instance.actionCanvas.transform);
     dlg.dlgTitle = title;
+    dlg.unityWindow.minSize = testModule.minSize;
+    dlg.unityWindow.maxSize = testModule.maxSize;
+    dlg.unityWindow.SetGridSize(testModule.persistedSize);
     return dlg;
   }
   #endregion
