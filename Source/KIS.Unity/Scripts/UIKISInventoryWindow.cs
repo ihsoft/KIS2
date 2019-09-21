@@ -319,8 +319,8 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   /// <summary>Cleans up any pending dialog state before destroying.</summary>
   /// <remarks>
-  /// This call will invoke any callabcks needed to cancel the pending states (like hovering a
-  /// slot). And now callbacks will be invoked after this point. The controllers must call this
+  /// This call will invoke any callbacks needed to cancel the pending state (like hovering a
+  /// slot). No other callbacks will be invoked after this point. The controllers must call this
   /// method before they request window deletion.
   /// </remarks>
   public void OnBeforeDestoy() {
@@ -328,6 +328,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     onSlotClick.Clear();
     onSlotHover.Clear();
     onSlotAction.Clear();
+    onNewGridSize.Clear();
   }
   #endregion
 
