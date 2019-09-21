@@ -61,6 +61,7 @@
     <Compile Include="Scripts\KSPDev.Unity\IKSPDevUnityPrefab.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UIControlBaseScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\IKSPDevUnityControlChanged.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\UIFollowThePointerScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UIPrefabBaseScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UIWindowDragController.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UnityPrefabController.cs" />
