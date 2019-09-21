@@ -99,12 +99,13 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
   #region API methods
   public void CloseWindow() {
     DebugEx.Fine("Destroy KIS inventory window: {0}", dlgTitle);
+    unityWindow.OnBeforeDestoy();
     Hierarchy.SafeDestory(gameObject);
   }
 
   public bool SetGridSize(int width, int height) {
-    //FIXME
-    return false;
+    unityWindow.SetGridSize(new Vector2(width, height));
+    return false;//FIXME
   }
 
   //FIXME: make it private

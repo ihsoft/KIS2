@@ -117,10 +117,15 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public Slot hoveredSlot {
     get { return _hoveredSlot; }
     private set {
-      if (value == null || value != _hoveredSlot) {
+      if (_hoveredSlot != null && _hoveredSlot != value) {
+        onSlotHover.ForEach(notify => notify(_hoveredSlot, false));
         DestroyTooltip();
+        _hoveredSlot = null;
       }
-      _hoveredSlot = value;
+      if (value != null && _hoveredSlot != value) {
+        _hoveredSlot = value;
+        onSlotHover.ForEach(notify => notify(_hoveredSlot, true));
+      }
     }
   }
   Slot _hoveredSlot;
@@ -219,6 +224,12 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   }
   #endregion
 
+  #region MonoBehaviour callbacks
+  void OnDestroy() {
+    DestroyTooltip();
+  }
+  #endregion
+
   #region IKSPDevPointerListener implementation - UIKISInventorySlot
   /// <inheritdoc/>
   public int priority { get { return 0; } }
@@ -231,13 +242,11 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <inheritdoc/>
   public void OnPointerEnter(GameObject owner, Slot source, PointerEventData eventData) {
     hoveredSlot = source;
-    onSlotHover.ForEach(notify => notify(source, true));
   }
 
   /// <inheritdoc/>
   public void OnPointerExit(GameObject owner, Slot source, PointerEventData eventData) {
     hoveredSlot = null;
-    onSlotHover.ForEach(notify => notify(source, false));
   }
   #endregion
 
@@ -295,10 +304,10 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     if (slotsGrid.transform.childCount != neededSlots) {
       LogInfo("Resizing slots grid: {0}", newSize);
       while (slotsGrid.transform.childCount > neededSlots) {
-        DeleteSlot();
+        DeleteLastSlot();
       }
       while (slotsGrid.transform.childCount < neededSlots) {
-        AddSlot();
+        AddSlotAtEnd();
       }
       slots = slotsGrid.transform.Cast<Transform>()
           .Select(t => t.GetComponent<Slot>())
@@ -307,18 +316,31 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
       gridSize = newSize;
     }
   }
+
+  /// <summary>Cleans up any pending dialog state before destroying.</summary>
+  /// <remarks>
+  /// This call will invoke any callabcks needed to cancel the pending states (like hovering a
+  /// slot). And now callbacks will be invoked after this point. The controllers must call this
+  /// method before they request window deletion.
+  /// </remarks>
+  public void OnBeforeDestoy() {
+    hoveredSlot = null;
+    onSlotClick.Clear();
+    onSlotHover.Clear();
+    onSlotAction.Clear();
+  }
   #endregion
 
   #region Local utility methods
-  void DeleteSlot() {
+  void DeleteLastSlot() {
     var slotObj = slotsGrid.transform.GetChild(slotsGrid.transform.childCount - 1).gameObject;
-    slotObj.name = "$disposed";
-    slotObj.transform.SetParent(null, worldPositionStays: true);
-    slotObj.SetActive(false);
-    Destroy(slotObj);
+    if (hoveredSlot != null && slotObj == hoveredSlot.gameObject) {
+      hoveredSlot = null;
+    }
+    DestroyImmediate(slotObj);
   }
 
-  Slot AddSlot() {
+  Slot AddSlotAtEnd() {
     var newSlot = Instantiate<Slot>(prefabSlot, slotsGrid.transform, worldPositionStays: true);
     newSlot.name = "Slot";
     newSlot.gameObject.SetActive(true);
