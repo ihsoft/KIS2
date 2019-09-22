@@ -187,6 +187,9 @@ public class PartModelUtilsImpl {
 //          * KISAPI.PartNodeUtils.GetTweakScaleSizeModifier(partNode);  // But respect TweakScale.
 //    }
     var bounds = default(Bounds);
+    if (variant == null && partNode != null) {
+      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
+    }
     VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => {
       var partModel = GetSceneAssemblyModel(p).transform;
       bounds.Encapsulate(GetMeshBounds(partModel));
