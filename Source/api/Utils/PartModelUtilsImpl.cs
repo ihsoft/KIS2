@@ -170,6 +170,19 @@ public class PartModelUtilsImpl {
   /// The volume is calculated basing on the smallest boundary box that encapsulates all the meshes
   /// in the part. The deployable parts can take much more space in the deployed state.
   /// </remarks>
+  /// <param name="part">The actual part, that exists in the scene.</param>
+  /// <returns>The volume in liters.</returns>
+  /// FIXME: This method should capture real part bounds/volume
+  public double GetPartVolume(Part part) {
+    var partNode = KISAPI.PartNodeUtils.PartSnapshot(part);
+    return GetPartVolume(part.partInfo, partNode: partNode);
+  }
+
+  /// <summary>Returns part's volume basing on its geometrics.</summary>
+  /// <remarks>
+  /// The volume is calculated basing on the smallest boundary box that encapsulates all the meshes
+  /// in the part. The deployable parts can take much more space in the deployed state.
+  /// </remarks>
   /// <param name="avPart">The part proto to get the models from.</param>
   /// <param name="variant">
   /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
@@ -180,6 +193,23 @@ public class PartModelUtilsImpl {
   /// </param>
   /// <returns>The volume in liters.</returns>
   public double GetPartVolume(
+      AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+    var boundsSize = GetPartBounds(avPart, variant: variant, partNode: partNode);
+    return boundsSize.x * boundsSize.y * boundsSize.z * 1000f;
+  }
+
+  /// <summary>Returns part's boundary box basing on its geometrics.</summary>
+  /// <remarks>The size is calculated from the part prefab model.</remarks>
+  /// <param name="avPart">The part proto to get the models from.</param>
+  /// <param name="variant">
+  /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
+  /// <paramref name="partNode"/>.
+  /// </param>
+  /// <param name="partNode">
+  /// The part's persistent config. It will be looked up for the variant if it's not specified.
+  /// </param>
+  /// <returns>The volume in liters.</returns>
+  public Vector3 GetPartBounds(
       AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
 //    var itemModule = avPart.partPrefab.Modules.OfType<KIS.ModuleKISItem>().FirstOrDefault();
 //    if (itemModule != null && itemModule.volumeOverride > 0) {
@@ -195,20 +225,7 @@ public class PartModelUtilsImpl {
       bounds.Encapsulate(GetMeshBounds(partModel));
       UnityEngine.Object.DestroyImmediate(partModel.gameObject);
     });
-    var boundsSize = bounds.size;
-    return boundsSize.x * boundsSize.y * boundsSize.z * 1000f;
-  }
-
-  /// <summary>Returns part's volume basing on its geometrics.</summary>
-  /// <remarks>
-  /// The volume is calculated basing on the smallest boundary box that encapsulates all the meshes
-  /// in the part. The deployable parts can take much more space in the deployed state.
-  /// </remarks>
-  /// <param name="part">The actual part, that exists in the scene.</param>
-  /// <returns>The volume in liters.</returns>
-  public double GetPartVolume(Part part) {
-    var partNode = KISAPI.PartNodeUtils.PartSnapshot(part);
-    return GetPartVolume(part.partInfo, partNode: partNode);
+    return bounds.size;
   }
 
   /// <summary>Traverses thru the hierarchy and gathers all the meshes from it.</summary>
