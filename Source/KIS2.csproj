@@ -83,6 +83,7 @@
     <Compile Include="controllers\TestController.cs" />
     <Compile Include="controllers\ModLoadController.cs" />
     <Compile Include="controllers\UIKISInventoryWindowController.cs" />
+    <Compile Include="impl\VolumeLType.cs" />
     <Compile Include="KSPDev_candidates\AbstractPartModule.cs" />
     <Compile Include="KSPDev_candidates\PrefabController.cs" />
     <Compile Include="KSPDev_candidates\UIScalableWindowController.cs" />
