@@ -78,8 +78,14 @@ public interface InventoryItem {
   bool isLocked { get; }
 
   /// <summary>Updates all cached values from the part's config node.</summary>
-  /// <remarks>This method must always be called when the node is changed.</remarks>
+  /// <remarks>
+  /// This method must always be called when the node is changed. Note, that this method will
+  /// <i>not</i> notify the owner inventory about the updates. The actor that changes the item is
+  /// responsible to do that.
+  /// </remarks>
   /// <seealso cref="itemConfig"/>
+  /// <seealso cref="inventory"/>
+  /// <seealso cref="IKISInventory.UpdateInventoryStats"/>
   void UpdateConfig();
 }
 
