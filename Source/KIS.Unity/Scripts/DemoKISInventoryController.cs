@@ -18,11 +18,20 @@ namespace KIS2 {
 public sealed class DemoKISInventoryController : UIControlBaseScript {
 
   #region For Unity customization
-  public int limitGridHeight = 3;
-  public int limitGridWidth = 6;
-  public Vector2 minSize = new Vector2(3, 1);
-  public Vector2 maxSize = new Vector2(16, 8);
-  public string hintTitle = "test slot";
+  [SerializeField]
+  int limitGridHeight = 3;
+
+  [SerializeField]
+  int limitGridWidth = 6;
+
+  [SerializeField]
+  Vector2 minSize = new Vector2(3, 1);
+
+  [SerializeField]
+  Vector2 maxSize = new Vector2(16, 8);
+
+  [SerializeField]
+  string hintTitle = "test slot";
   #endregion
 
   #region Local fields and properties

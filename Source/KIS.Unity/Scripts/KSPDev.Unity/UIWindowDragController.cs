@@ -59,6 +59,7 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
   #endregion
 
   #region IBeginDragHandler implementation
+  /// <inheritdoc/>
   public void OnBeginDrag(PointerEventData eventData) {
     if (!eventData.used && eventData.hovered.Contains(eventsTarget)) {
       eventData.Use();
@@ -68,6 +69,7 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
   #endregion
 
   #region IEndDragHandler implementation
+  /// <inheritdoc/>
   public void OnEndDrag(PointerEventData eventData) {
     if (isDragged) {
       eventData.Use();
@@ -77,6 +79,7 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
   #endregion
 
   #region IDragHandler implementation
+  /// <inheritdoc/>
   public virtual void OnDrag(PointerEventData eventData) {
     if (isDragged && eventData.button == PointerEventData.InputButton.Left) {
       eventData.Use();
@@ -90,6 +93,7 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
   #endregion
 
   #region IPointerDownHandler implementation
+  /// <inheritdoc/>
   public virtual void OnPointerDown(PointerEventData eventData) {
     BringOnTop();
   }

@@ -18,14 +18,17 @@ public class UIControlBaseScript : MonoBehaviour {
   }
 
   #region Inheritable utility methods
+  /// <summary>Logs an info record with the type information.</summary>
   protected void LogInfo(string msg, params object[] args) {
     Debug.LogFormat("[" + GetType() + "#obj=" + gameObject.name + "] " + msg, args);
   }
 
+  /// <summary>Logs a warning record with the type information.</summary>
   protected void LogWarning(string msg, params object[] args) {
     Debug.LogWarningFormat("[" + GetType() + "#obj=" + gameObject.name + "] " + msg, args);
   }
 
+  /// <summary>Logs an error record with the type information.</summary>
   protected void LogError(string msg, params object[] args) {
     Debug.LogErrorFormat("[" + GetType() + "#obj=" + gameObject.name + "] " + msg, args);
   }

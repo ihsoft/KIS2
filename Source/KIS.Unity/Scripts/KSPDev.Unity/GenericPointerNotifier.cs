@@ -23,16 +23,18 @@ namespace KSPDev.Unity {
 /// Component type of the <c>sink</c>. The game object of this component will be receiving events.
 /// Only the components that implement pointer listener intefarce will receive the events.
 /// </typeparam>
-/// <seealso cref="IKSPDevPointerListener&lt;in TSource&gt;"/>
+/// <seealso cref="IKSPDevPointerListener&lt;TSource&gt;"/>
 public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
     IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     where TSource : Component
     where TTarget : Component {
 
   #region Unity serialized fields
+  /// <summary>Object to send event to.</summary>
   [SerializeField]
   protected TTarget eventTarget;
 
+  /// <summary>Object to provide as a callback argument.</summary>
   [SerializeField]
   protected TSource eventSource;
   #endregion
@@ -51,6 +53,7 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   #endregion
 
   #region MonoBehaviour methods
+  /// <inheritdoc/>
   protected virtual void Start() {
     listeners = eventTarget.GetComponents<IKSPDevPointerListener<TSource>>()
         .OrderBy(l => l.priority)
@@ -62,6 +65,7 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   #endregion
 
   #region IPointerClickHandler implementation
+  /// <inheritdoc/>
   public virtual void OnPointerClick(PointerEventData eventData) {
     lastPointerData = eventData;
     for (var i = 0; i < listeners.Length; ++i) {
@@ -71,6 +75,7 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   #endregion
 
   #region IPointerEnterHandler implementation
+  /// <inheritdoc/>
   public virtual void OnPointerEnter(PointerEventData eventData) {
     isHovered = true;
     lastPointerData = eventData;
@@ -81,6 +86,7 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   #endregion
 
   #region IPointerExitHandler implementation
+  /// <inheritdoc/>
   public virtual void OnPointerExit(PointerEventData eventData) {
     isHovered = false;
     lastPointerData = eventData;

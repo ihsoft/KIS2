@@ -106,7 +106,6 @@ public static class UnityPrefabController {
   /// The prefab name. If omitted, then it's expected there is only one prefab for the type. If it's
   /// not the case, an exception is thrown.
   /// </param>
-  /// <typeparam name="T">The component class to create prefab for.</typeparam>
   /// <returns>The prefab instance.</returns>
   /// <exception cref="ArgumentException">if the prefab cannot be found.</exception>
   /// <seealso cref="RegisterPrefab"/>
