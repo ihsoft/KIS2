@@ -2,26 +2,19 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using KSPDev.LogUtils;
-using UnityEngine;
-using UnityEngine.UI;
-using System.Collections.Generic;
-using KSP.UI;
-using System.Reflection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using KSPDev.GUIUtils;
-using KSPDev.ModelUtils;
-using KSPDev.PartUtils;
-using KSPDev.KSPInterfaces;
-using KSPDev.GUIUtils.TypeFormatters;
 using KISAPIv2;
-using KIS2.UIKISInventorySlot;
-using KIS2.GUIUtils;
+using KSPDev.LogUtils;
+using KSPDev.PartUtils;
+using UnityEngine;
 
 namespace KIS2 {
 
-  //FIXME: separate container and inventory concepts. data vs UI
+/// <summary>
+/// Base module to handle inventory items. It can only hold items, no GUI is offered.
+/// </summary>
 public class KISContainerBase : AbstractPartModule,
     IKISInventory {
 
