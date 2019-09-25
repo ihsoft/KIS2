@@ -54,13 +54,17 @@ public interface IKISInventory {
   /// <summary>Removes the specified item from inventory.</summary>
   /// <remarks>Locked items cannot be removed.</remarks>
   /// <param name="item">The item to remove.</param>
-  /// <returns><c>null</c> if removed successfully, or a list of errors.</returns>
+  /// <returns>
+  /// <c>true</c> if removal was successful or NO-OP. <c>false</c> if the item exists but cannot be
+  /// removed.
+  /// </returns>
   /// <seealso cref="SetItemLock"/>
-  ErrorReason[] DeleteItem(InventoryItem item);
+  bool DeleteItem(InventoryItem item);
 
   /// <summary>
   /// Puts a lock state on the item that prevents any updates to it in this inventory.
   /// </summary>
+  /// <remarks>The locked item cannot be removed from the inventory.</remarks>
   /// <param name="item">The item to put lock on.</param>
   /// <param name="isLocked">The lock state.</param>
   /// <seealso cref="DeleteItem"/>

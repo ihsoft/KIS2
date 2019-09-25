@@ -92,8 +92,22 @@ public class KISContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual ErrorReason[] DeleteItem(InventoryItem item) {
-    throw new NotImplementedException();
+  public virtual bool DeleteItem(InventoryItem item) {
+    if (item.isLocked) {
+      HostedDebugLog.Error(this, "Cannot delete locked item: idx={0}", itemsList.IndexOf(item));
+      return false;
+    }
+    if (!itemsList.Remove(item)) {
+      if (ReferenceEquals(item.inventory, this)) {
+        HostedDebugLog.Warning(this, "Item is already removed: {0}", item.avPart.name);
+      } else {
+        HostedDebugLog.Error(this, "Item was never owned by the inventory: realOwner={0}",
+                             item.inventory as PartModule);
+      }
+    } else {
+      HostedDebugLog.Fine(this, "Remove item: {0}", item.avPart.name);
+    }
+    return true;
   }
 
   /// <inheritdoc/>
