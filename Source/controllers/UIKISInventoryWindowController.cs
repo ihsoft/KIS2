@@ -22,6 +22,11 @@ public sealed class UIKISInventoryWindowController : UIScalableWindowController 
     set { unityWindow.title = value; }
   }
 
+  public string mainStats {
+    get { return unityWindow.mainStats; }
+    set { unityWindow.mainStats = value; }
+  }
+
   public int minGridWidth = 3;
   public int minGridHeight = 1;
   public int maxGridWidth = 6;

@@ -23,6 +23,9 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   Text headerText = null;
 
   [SerializeField]
+  Text mainStatsText = null;
+
+  [SerializeField]
   GridLayoutGroup slotsGrid = null;
 
   [SerializeField]
@@ -100,6 +103,12 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public string title {
     get { return headerText.text; }
     set { headerText.text = value; }
+  }
+
+  /// <summary>Inventory window title.</summary>
+  public string mainStats {
+    get { return mainStatsText.text; }
+    set { mainStatsText.text = value; }
   }
 
   /// <summary>Currently started tooltip.</summary>
