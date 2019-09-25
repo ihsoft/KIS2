@@ -6,6 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using KISAPIv2;
+using KSPDev.GUIUtils;
+using KSPDev.GUIUtils.TypeFormatters;
+using KIS2.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using UnityEngine;
@@ -17,6 +20,35 @@ namespace KIS2 {
 /// </summary>
 public class KISContainerBase : AbstractPartModule,
     IKISInventory {
+  //FIXME: Add descriptions to the strings.
+  #region Localizable GUI strings
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly Message<VolumeLType> NeedMoreVolume = new Message<VolumeLType>(
+      "",
+      defaultTemplate: "Not enough volume, need +<<1>> more",
+      description: "Message to present to the user at the main status area when an item being"
+          + " placed into the inventory cannot fit it due to not enouh free volume.\n"
+          + "The <<1>> parameter is the volume delta that would be needed for the item to fit of"
+          + " type VolumeLType.");
+
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly Message<DistanceType, DistanceType> WidthTooLarge =
+      new Message<DistanceType, DistanceType>(
+          "",
+          defaultTemplate: "Width too large: <<1>> > <<2>>");
+
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly Message<DistanceType, DistanceType> HeightTooLarge =
+      new Message<DistanceType, DistanceType>(
+          "",
+          defaultTemplate: "Height too large: <<1>> > <<2>>");
+
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly Message<DistanceType, DistanceType> LengthTooLarge =
+      new Message<DistanceType, DistanceType>(
+          "",
+          defaultTemplate: "Length too large: <<1>> > <<2>>");
+  #endregion
 
   #region Part's config fields
   /// <summary>Maximum volume that this container can contain.</summary>
@@ -79,8 +111,34 @@ public class KISContainerBase : AbstractPartModule,
   #region IKISInventory implementation
   /// <inheritdoc/>
   public virtual ErrorReason[] CheckCanAdd(AvailablePart avPart, ConfigNode node) {
-    //FIXME: verify part's volume and size
-    return null;
+    var errors = new List<ErrorReason>();
+    var partVolume = KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: node);
+    if (usedVolume + partVolume > maxVolume) {
+      errors.Add(new ErrorReason() {
+                   shortString = "VolumeTooLarge",
+                   guiString = NeedMoreVolume.Format(partVolume - (maxVolume - usedVolume)),
+                 });
+    }
+    var partBox = KISAPI.PartModelUtils.GetPartBounds(avPart, partNode: node);
+    if (partBox.x > maxItemSize.x) {
+      errors.Add(new ErrorReason() {
+                   shortString = "SizeTooLarge",
+                   guiString = WidthTooLarge.Format(partBox.x, maxItemSize.x),
+                 });
+    }
+    if (partBox.y > maxItemSize.y) {
+      errors.Add(new ErrorReason() {
+                   shortString = "SizeTooLarge",
+                   guiString = HeightTooLarge.Format(partBox.y, maxItemSize.y),
+                 });
+    }
+    if (partBox.z > maxItemSize.z) {
+      errors.Add(new ErrorReason() {
+                   shortString = "SizeTooLarge",
+                   guiString = LengthTooLarge.Format(partBox.z, maxItemSize.z),
+                 });
+    }
+    return errors.Count > 0 ? errors.ToArray() : null;
   }
 
   /// <inheritdoc/>
