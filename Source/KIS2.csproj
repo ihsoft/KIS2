@@ -97,6 +97,7 @@
     <Folder Include="modules" />
     <Folder Include="controllers" />
     <Folder Include="KSPDev_candidates" />
+    <Folder Include="impl" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\KSPDev_Utils\Source\KSPDev_Utils.csproj">
