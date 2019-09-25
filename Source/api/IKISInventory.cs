@@ -71,11 +71,17 @@ public interface IKISInventory {
   /// <seealso cref="InventoryItem.isLocked"/>
   void SetItemLock(InventoryItem item, bool isLocked);
 
-  /// <summary>Forces the container to recalculate its mass/cost/volume stats.</summary>
+  /// <summary>
+  /// Forces the container to refresh its state according to the new state of an item.
+  /// </summary>
   /// <remarks>
+  /// Every change to any item in the inventory must result in calling of this method. The items
+  /// will <i>not</i> send updates to the owner inventory (they are forbidden to do this).
+  /// <para>
   /// Before updating own state, the inventory will update every single item in it. An exception
   /// will be made if <paramref name="changedItems"/> are provided. In this case only that items
-  /// will be updated. Callers can use this ability to optimize their calls and save CPU. 
+  /// will be updated. Callers can use this ability to optimize their calls and save CPU.
+  /// </para>
   /// </remarks>
   /// <param name="changedItems">
   /// The items, which changed state was the reason of the inventory update. If empty, then all the

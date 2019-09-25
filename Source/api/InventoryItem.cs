@@ -10,6 +10,11 @@ namespace KISAPIv2 {
 /// <summary>Basic container for a single inventory item.</summary>
 public interface InventoryItem {
   /// <summary>The inventory that owns this item.</summary>
+  /// <remarks>
+  /// This is the inventory at which the item was intially created. If it was deleted form that
+  /// inventory afterwards, the link still can point to the former parent. It's not allowed or
+  /// expected that an item changes inventory parent during its lifetime.
+  /// </remarks>
   IKISInventory inventory { get; }
 
   /// <summary>Part poro.</summary>
@@ -73,14 +78,14 @@ public interface InventoryItem {
   /// <summary>Tells if this item must not by affected externally.</summary>
   /// <remarks>
   /// The locked items are in a process of some complex, possibly multi-frame, operation. Only the
-  /// executor of this process should deal with this item, the other processes should not interfere.
+  /// executor of this process should deal with this item, the other actors should not interfere.
   /// </remarks>
   bool isLocked { get; }
 
   /// <summary>Updates all cached values from the part's config node.</summary>
   /// <remarks>
-  /// This method must always be called when the node is changed. Note, that this method will
-  /// <i>not</i> notify the owner inventory about the updates. The actor that changes the item is
+  /// This method must always be called when the node is changed. Note, that this method must
+  /// <i>not</i> notify the owner inventory about the updates. The actor, that changes the item, is
   /// responsible to do that.
   /// </remarks>
   /// <seealso cref="itemConfig"/>
