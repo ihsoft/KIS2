@@ -87,6 +87,7 @@
     <Compile Include="KSPDev_candidates\AbstractPartModule.cs" />
     <Compile Include="KSPDev_candidates\PrefabController.cs" />
     <Compile Include="KSPDev_candidates\UIScalableWindowController.cs" />
+    <Compile Include="modules\KISContainerBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
