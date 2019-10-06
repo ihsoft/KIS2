@@ -3,6 +3,7 @@
 // License: Public Domain
 
 using KSPDev.LogUtils;
+using KSPDev.ModelUtils;
 using System;
 using UnityEngine;
 
@@ -17,7 +18,7 @@ public sealed class KISModLoadController : MonoBehaviour {
   void Awake() {
     DebugEx.Info("[KISModLoadController] Start loading configuartion...");
     //FIXME: check critical resources location 
-    InvokeLoader(UIKISInventoryWindowController.OnGameLoad);
+    InvokeLoader(() => LoadAsset("ui_prefabs"));
     if (modIsInconsistent) {
       DebugEx.Error("[KISModLoadController] Loaded with errors!");
     } else {
@@ -35,6 +36,11 @@ public sealed class KISModLoadController : MonoBehaviour {
       modIsInconsistent = true;
       DebugEx.Error("[KISModLoadController]: {0}", ex);
     }
+  }
+
+  void LoadAsset(string assetFileName) {
+    PrefabLoader.LoadAllAssets(
+        KSPUtil.ApplicationRootPath + "GameData/KIS/Prefabs/" + assetFileName);
   }
   #endregion
 }

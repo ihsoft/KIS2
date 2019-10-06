@@ -291,9 +291,10 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// Creates a tooltip to be presented as long as pointer is hovering over the current slot. 
   /// </summary>
   /// <remarks>
-  /// An error will be logged if this method is called when no slot is hovered over.
+  /// An error will be logged if this method is called when no slot is hovered over. If there is a
+  /// tooltip already created, then this method is NO-OP.
   /// </remarks>
-  /// <returns>The tooltip that was created.</returns>
+  /// <returns>The tooltip or <c>null</c> if one cannot be created.</returns>
   /// <seealso cref="onSlotHover"/>
   /// <seealso cref="currentTooltip"/>
   public UIKISInventoryTooltip.Tooltip StartSlotTooltip() {
@@ -301,8 +302,10 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
       LogError("Cannot start tooltip when no slot is hovered!");
       return null;
     }
-    currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
-        "tooltip", transform.parent);
+    if (currentTooltip == null) {
+      currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
+          "tooltip", transform.parent);
+    }
     return currentTooltip;
   }
 
