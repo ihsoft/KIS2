@@ -18,7 +18,7 @@ public static class RichTextFormatter {
   /// <param name="isBold">If set, then the text will be wrapped with <c>&lt;b/&gt;</c> tags.</param>
   /// <param name="isItalic">If set, then the text will be wrapped with <c>&lt;i/&gt;</c> tags.</param>
   /// <returns></returns>
-  public static string Style(
+  public static string ApplyStyle(
       string text,
       Color? color = null, string webColor = null, bool isBold = false, bool isItalic = false) {
     if (isBold) {
