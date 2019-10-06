@@ -27,10 +27,6 @@ public class UIScalableWindowController : UIControlBaseScript, IsDestroyable {
 
   #region MonoBehaviour overrides
   /// <inheritdoc/>
-  public virtual void Start() {
-  }
-
-  /// <inheritdoc/>
   public virtual void Awake() {
     previousUiScale = UIMasterController.Instance.uiScale;
     GameEvents.OnGameSettingsApplied.Add(OnGameSettingsApplied);
