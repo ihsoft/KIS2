@@ -15,7 +15,7 @@ public sealed class PartIconUtils {
   const float InflightLightIntensity = 0.4f;
   const float IconCameraZoom = 0.75f;
 
-  readonly Dictionary<string, Texture> iconsCache = new Dictionary<string, Texture>();
+  static readonly Dictionary<string, Texture> iconsCache = new Dictionary<string, Texture>();
 
   /// <summary>
   /// Makes a sprite that represents the part in it's default icon state. This is what is shown in
