@@ -16,27 +16,27 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
 
   #region API fields an properties
   /// <summary>
-  /// Distance between the left-top corner of the control and the current pointer position.
+  /// Offset between the left-top corner of the control and the current pointer position.
   /// </summary>
   /// <seealso cref="clampToScreen"/>
-  public int rightSidePointerOffset;
+  public Vector2 nonClampedPointerOffset;
 
   /// <summary>
-  /// Distance between the right-top corner of the control and the current pointer position.
+  /// Offset between the right-top corner of the control and the current pointer position.
   /// </summary>
   /// <remarks>
   /// This settings is only considered when <see cref="clampToScreen"/> mode is enabled and the
   /// control cannot fit to the right side of the pointer.
   /// </remarks>
   /// <seealso cref="clampToScreen"/>
-  public int leftSidePointerOffset;
+  public Vector2 clampedPointerOffset;
 
   /// <summary>Tells if the control should always be fully visible.</summary>
   /// <remarks>
   /// If the control cannot fit to the right side of the pointer, then it flips on the left side. If
   /// the control height is too large, then it just "sticks" to the screen bottom.    
   /// </remarks>
-  /// <seealso cref="leftSidePointerOffset"/>
+  /// <seealso cref="clampedPointerOffset"/>
   public bool clampToScreen;
   #endregion
 
@@ -68,16 +68,16 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
     var canvasSize = canvasRect.sizeDelta;
     var newPos = Input.mousePosition;
     if (clampToScreen) {
-      if (newPos.x + rightSidePointerOffset + tooltipSize.x < Screen.width) {
-        newPos.x += rightSidePointerOffset;
+      if (newPos.x + nonClampedPointerOffset.x + tooltipSize.x < Screen.width) {
+        newPos.x += nonClampedPointerOffset.x;
       } else {
-        newPos.x -= leftSidePointerOffset + tooltipSize.x;
+        newPos.x -= clampedPointerOffset.x + tooltipSize.x;
       }
-      if (newPos.y < tooltipSize.y) {
+      if (newPos.y + nonClampedPointerOffset.y < tooltipSize.y) {
         newPos.y = tooltipSize.y;
       }
     } else {
-      newPos.x += rightSidePointerOffset;
+      newPos += new Vector3(nonClampedPointerOffset.x, nonClampedPointerOffset.y, 0);
     }
 
     Vector2 pos;
