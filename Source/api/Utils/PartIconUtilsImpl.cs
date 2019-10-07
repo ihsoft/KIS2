@@ -79,7 +79,8 @@ public sealed class PartIconUtils {
     camera.cullingMask = 1 << IconCameraLayer;
     camera.ResetAspect();
 
-    var renderTarget = new RenderTexture(resolution, resolution, 8);
+    var renderTarget = new RenderTexture(resolution, resolution, 16);
+    renderTarget.autoGenerateMips = false;
     camera.targetTexture = renderTarget;
     camera.Render();
 
