@@ -222,7 +222,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       text.Add(InventoryContentMassTxt.Format(contentMass));
       text.Add(InventoryContentCostTxt.Format(contentCost));
       text.Add(MaxVolumeTxt.Format(maxVolume));
-      text.Add(AvailableVolumeTxt.Format(maxVolume - usedVolume));
+      text.Add(AvailableVolumeTxt.Format(Math.Max(maxVolume - usedVolume, 0)));
       unityWindow.mainStats = string.Join("\n", text.ToArray());
     }
   }
