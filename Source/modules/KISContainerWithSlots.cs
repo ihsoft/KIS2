@@ -117,6 +117,9 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     if (Event.current.Equals(Event.KeyboardEvent("4")) && unityWindow != null) {
       AddFuelPart(1, 1);
     }
+    if (Event.current.Equals(Event.KeyboardEvent("5")) && unityWindow != null) {
+      AddPartByName("seatExternalCmd");
+    }
   }
   #endregion
 
@@ -172,6 +175,15 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       KISAPI.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
     }
     AddItem(avPart, node);
+  }
+
+  void AddPartByName(string partName) {
+    var avPart = PartLoader.getPartInfoByName(partName);
+    if (avPart == null) {
+      DebugEx.Error("*** bummer: no part {0}", partName);
+      return;
+    }
+    AddItem(avPart, KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab));
   }
   #endregion
 
