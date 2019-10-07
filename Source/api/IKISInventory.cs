@@ -42,7 +42,7 @@ public interface IKISInventory {
 
   /// <summary>Adds a new item into the inventory.</summary>
   /// <remarks>
-  /// This method does <i>not</i> verifies if the item can fit the inventory. Doing this check is
+  /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
   /// responsibility of the caller.
   /// </remarks>
   /// <param name="avPart">The part proto.</param>
