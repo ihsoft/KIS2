@@ -50,12 +50,12 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> AvailableVolumeTxt = new Message<VolumeLType>(
       "",
-      defaultTemplate: "Available volume: <color=#58F6AE><<1>></color>");
+      defaultTemplate: "Available volume: <color=yellow><<1>></color>");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> MaxVolumeTxt = new Message<VolumeLType>(
       "",
-      defaultTemplate: "Maximum volume: <color=yellow><<1>></color>");
+      defaultTemplate: "Maximum volume: <color=#58F6AE><<1>></color>");
   #endregion
 
   #region Part's config fields
