@@ -89,7 +89,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   #region Local utility fields and properties.
   /// <summary>Inventory window that is opened at the moment.</summary>
-  UIKISInventoryWindow unityWindow;
+  internal UIKISInventoryWindow unityWindow;
 
   /// <summary>Inventory slots. They always exactly match the Unity window slots.</summary>
   readonly List<InventorySlot> inventorySlots = new List<InventorySlot>();
@@ -130,9 +130,6 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     }
     var item = base.AddItem(avPart, node);
     slot.AddItem(item);
-    if (unityWindow.hoveredSlot == slot.unitySlot) {
-      slot.UpdateTooltip(unityWindow.StartSlotTooltip());
-    }
     return item;
   }
 
@@ -275,7 +272,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       HostedDebugLog.Fine(this, "Resizing inventory controller: oldSlots={0}, newSlots={1}",
                           inventorySlots.Count, unityWindow.slots.Length);
       for (var i = inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
-        inventorySlots.Add(new InventorySlot(unityWindow.slots[i]));
+        inventorySlots.Add(new InventorySlot(this, unityWindow.slots[i]));
       }
       while (inventorySlots.Count > unityWindow.slots.Length) {
         var deleteIndex = inventorySlots.Count - 1;

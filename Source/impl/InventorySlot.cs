@@ -15,13 +15,14 @@ using KIS2.GUIUtils;
 
 namespace KIS2 {
 
-/// <summary>Internal class that holds inventory window slot logic.</summary>
+/// <summary>Internal class that holds inventory slot logic.</summary>
 /// <remarks>
 /// Every slot can only hold items that refer the same part proto. The persisted properties on the
 /// items should be "similar". If two parts of the same kind are too different with regard to their
 /// internal state, they cannot stack to the same slot.
 /// </remarks>
-public sealed class InventorySlot {
+/// <seealso cref="KISContainerWithSlots"/>
+sealed class InventorySlot {
   #region Localizable strings
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> MassTootltipText = new Message<MassType>(
@@ -81,6 +82,9 @@ public sealed class InventorySlot {
   /// <summary>Unity object that represents the slot.</summary>
   public readonly UIKISInventorySlot.Slot unitySlot;
 
+  /// <summary>Inventory that owns this slot.</summary>
+  public readonly KISContainerWithSlots inventory;
+
   /// <summary>Part proto of this slot.</summary>
   public AvailablePart avPart {
     get { return !isEmpty ? itemsList[0].avPart : null; }
@@ -108,8 +112,8 @@ public sealed class InventorySlot {
   #endregion
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
-  /// <param name="unitySlot"></param>
-  public InventorySlot(UIKISInventorySlot.Slot unitySlot) {
+  public InventorySlot(KISContainerWithSlots inventory, UIKISInventorySlot.Slot unitySlot) {
+    this.inventory = inventory;
     this.unitySlot = unitySlot;
   }
 
@@ -126,6 +130,9 @@ public sealed class InventorySlot {
     if (CheckCanAdd(item, logErrors: true).Length == 0) {
       itemsList.Add(item);
       UpdateUnitySlot();
+      if (inventory.unityWindow.hoveredSlot == unitySlot) {
+        UpdateTooltip(inventory.unityWindow.StartSlotTooltip());
+      }
       return true;
     }
     return false;
