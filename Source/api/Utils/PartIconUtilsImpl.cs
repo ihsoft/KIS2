@@ -43,18 +43,6 @@ public sealed class PartIconUtils {
     iconPrefab.transform.Rotate(0.0f, -30f, 0.0f);
     SetLayerRecursively(iconPrefab, IconCameraLayer);
 
-    // Command Seat Icon Fix (Temporary workaround until squad fix the broken shader)
-    // FIXME: reconsider
-    var fixShader = Shader.Find("KSP/Alpha/Cutoff Bumped");
-    foreach (Renderer r in iconPrefab.GetComponentsInChildren<Renderer>(true)) {
-      foreach (Material m in r.materials) {
-        if (m.shader.name == "KSP/Alpha/Cutoff") {
-          DebugEx.Warning("*** WORKRAROUND!");
-          m.shader = fixShader;
-        }
-      }
-    }
-
     // Setup lighiting.
     GameObject lightObj = null;
     if (HighLogic.LoadedSceneIsFlight) {  // Editor has the right lights out of the box.
