@@ -29,16 +29,14 @@ public sealed class PartIconUtils {
   /// </param>
   /// <returns>The psrite of the icon.</returns>
   public Texture MakeDefaultIcon(AvailablePart avPart, int resolution, PartVariant variant) {
-    var cacheKey = avPart.name + "-" + resolution + "-" + (variant == null ? "#" : variant.Name);
+    var cacheKey = avPart.name + "-" + resolution + (variant == null ? "" : "-" + variant.Name);
     Texture result;
     if (iconsCache.TryGetValue(cacheKey, out result) && result != null) {
       // Note that the cached textures can get destroyed between the scenes.
       return result;
     }
-    //FIXME
-    DebugEx.Warning("Creating a new icon for: part={0}, variant={1}",
-                    avPart.name, (variant != null ? variant.Name : "N/A"));
-    
+    DebugEx.Fine("Creating a new icon for: part={0}, variant={1}, key={2}",
+                 avPart.name, (variant != null ? variant.Name : "N/A"), cacheKey);
     var iconPrefab = KISAPI.PartModelUtils.GetIconPrefab(avPart, variant);
     iconPrefab.transform.position = new Vector3(0, 0, 2f);
     iconPrefab.transform.rotation = Quaternion.Euler(-15f, 0.0f, 0.0f);
@@ -59,7 +57,7 @@ public sealed class PartIconUtils {
 
     // Setup lighiting.
     GameObject lightObj = null;
-    if (HighLogic.LoadedSceneIsFlight) {  // Editor has the light out of the box.
+    if (HighLogic.LoadedSceneIsFlight) {  // Editor has the right lights out of the box.
       lightObj = new GameObject();
       var light = lightObj.AddComponent<Light>();
       light.cullingMask = 1 << IconCameraLayer;
