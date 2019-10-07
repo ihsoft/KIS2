@@ -3,21 +3,16 @@
 // License: Public Domain
 
 using KSPDev.LogUtils;
-using KSPDev.PartUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace KISAPIv2 {
 
 public sealed class PartIconUtils {
-  //const int CameraLayer = 22;  // KerbalInstructors
   const int IconCameraLayer = 8;
   const float InflightLightIntensity = 0.4f;
-  //FIXME: use level 8 (PartsList_Icons) and setup lights in flight
-  //const int CameraLayer = 8;
   const float IconCameraZoom = 0.75f;
 
   readonly Dictionary<string, Texture> iconsCache = new Dictionary<string, Texture>();
@@ -38,8 +33,6 @@ public sealed class PartIconUtils {
     Texture result;
     if (iconsCache.TryGetValue(cacheKey, out result) && result != null) {
       // Note that the cached textures can get destroyed between the scenes.
-      //FIXME
-      DebugEx.Warning("*** getting icon from cache");
       return result;
     }
     //FIXME
@@ -83,7 +76,6 @@ public sealed class PartIconUtils {
     var camera = cameraObj.AddComponent<Camera>();
     camera.orthographic = true;
     camera.orthographicSize = IconCameraZoom;
-    //camera.clearFlags = CameraClearFlags.Depth;//FIXME: was Color
     camera.clearFlags = CameraClearFlags.Color;
     camera.enabled = false;  // Yes, it must be disabled!
     camera.cullingMask = 1 << IconCameraLayer;
