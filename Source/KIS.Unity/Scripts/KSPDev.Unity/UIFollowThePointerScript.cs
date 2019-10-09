@@ -11,6 +11,7 @@ namespace KSPDev.Unity {
 /// <remarks>
 /// Simply add this script to a control that needs following the pointer (like a hint window) and
 /// set the desired offsets and clamping mode.
+/// <para>The position is aligned with respect to the owners pivot point.</para>
 /// </remarks>
 public sealed class UIFollowThePointerScript : UIControlBaseScript {
 
@@ -79,12 +80,10 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
     } else {
       newPos += new Vector3(nonClampedPointerOffset.x, nonClampedPointerOffset.y, 0);
     }
-
     Vector2 pos;
     RectTransformUtility.ScreenPointToLocalPointInRectangle(
         canvasRect, newPos, canvas.worldCamera, out pos);
-    pos = canvas.transform.TransformPoint(pos);
-    mainRect.position = new Vector3(pos.x, pos.y, 0);
+    mainRect.position = canvas.transform.TransformPoint(pos);
   }
   #endregion
 }
