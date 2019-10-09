@@ -67,6 +67,7 @@
     <Compile Include="Scripts\KSPDev.Unity\UIWindowDragControllerScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UnityPrefabController.cs" />
     <Compile Include="Scripts\UIKISHorizontalSliderControl.cs" />
+    <Compile Include="Scripts\UIKISInventorySlotDragIcon.cs" />
     <Compile Include="Scripts\UIKISInventorySlot\Slot.cs" />
     <Compile Include="Scripts\UIKISInventorySlot\PointerNotifier.cs" />
     <Compile Include="Scripts\UIKISInventoryTooltip\InfoPanel.cs" />
