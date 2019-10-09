@@ -3,7 +3,7 @@
 // License: Public Domain
 
 using KSPDev.Unity;
-using System.Collections;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,7 +20,7 @@ namespace KIS2.UIKISInventoryTooltip {
 /// that tooltip maintains.
 /// </para>
 /// <para>
-/// Prefab for this class must be designed so that it doesn't have any raycast target elements.
+/// All elements in the prefab will become non-raycast targets on init.
 /// </para>
 /// </remarks>
 /// <seealso cref="InfoPanel"/>
@@ -138,6 +138,8 @@ public sealed class Tooltip : UIPrefabBaseScript {
     if (!base.InitPrefab()) {
       return false;
     }
+    gameObject.GetComponentsInChildren<Graphic>().ToList()
+        .ForEach(x => x.raycastTarget = false);
     title = null;
     baseInfo.text = null;
     availableResourcesInfo.text = null;
