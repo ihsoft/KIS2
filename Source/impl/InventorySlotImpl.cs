@@ -22,13 +22,13 @@ namespace KIS2 {
 /// internal state, they cannot stack to the same slot.
 /// </remarks>
 /// <seealso cref="KISContainerWithSlots"/>
-sealed class InventorySlot {
+sealed class InventorySlotImpl {
   #region Localizable strings
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> MassTootltipText = new Message<MassType>(
       "",
       defaultTemplate: "Mass: <b><<1>></b>",
-      description: "Mass of a sinfle item in the slot tooltip when all items have equal mass.\n"
+      description: "Mass of a single item in the slot tooltip when all items have equal mass.\n"
           + " The <<1>> argument is the mass of type MassType.");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -78,7 +78,7 @@ sealed class InventorySlot {
               + " The <<3>> argument is the maximum amount of the resource.");
   #endregion
 
-  #region Public properties and fields
+  #region API properties and fields
   /// <summary>Unity object that represents the slot.</summary>
   public readonly UIKISInventorySlot.Slot unitySlot;
 
@@ -109,10 +109,20 @@ sealed class InventorySlot {
   public bool isEmpty {
     get { return itemsList.Count == 0; }
   }
+
+  public bool isLocked {
+    get { return _isLocked; }
+    set {
+      _isLocked = value;
+      unitySlot.isLocked = value;
+      //itemsList.ForEach(i => i.isLocked = value);
+    }
+  }
+  bool _isLocked;
   #endregion
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
-  public InventorySlot(KISContainerWithSlots inventory, UIKISInventorySlot.Slot unitySlot) {
+  public InventorySlotImpl(KISContainerWithSlots inventory, UIKISInventorySlot.Slot unitySlot) {
     this.inventory = inventory;
     this.unitySlot = unitySlot;
   }
@@ -127,15 +137,30 @@ sealed class InventorySlot {
   /// <returns><c>true</c> if item was added to the slot.</returns>
   /// <seealso cref="UpdateTooltip"/>
   public bool AddItem(InventoryItem item) {
-    if (CheckCanAdd(item, logErrors: true).Length == 0) {
-      itemsList.Add(item);
-      UpdateUnitySlot();
-      if (inventory.unityWindow.hoveredSlot == unitySlot) {
-        UpdateTooltip(inventory.unityWindow.StartSlotTooltip());
-      }
-      return true;
+    if (CheckCanAdd(item, logErrors: true).Length > 0) {
+      return false;
     }
-    return false;
+    itemsList.Add(item);
+    UpdateUnitySlot();
+    //FIXME: move to UpdateUnitySlot  
+    if (inventory.unityWindow.hoveredSlot == unitySlot) {
+      UpdateTooltip(inventory.unityWindow.StartSlotTooltip());
+    }
+    return true;
+  }
+
+  public bool DeleteItem(InventoryItem item) {
+    if (!itemsList.Remove(item)) {
+      //FIXME: deal with slot items so we always know the slot 
+      DebugEx.Error("Cannot remove item from slot");
+      return false;
+    }
+    UpdateUnitySlot();
+    //FIXME: move to UpdateUnitySlot  
+    if (inventory.unityWindow.hoveredSlot == unitySlot) {
+      UpdateTooltip(inventory.unityWindow.StartSlotTooltip());
+    }
+    return true;
   }
 
   /// <summary>Verifies if the item can be added to the slot.</summary>

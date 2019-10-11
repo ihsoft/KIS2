@@ -81,7 +81,7 @@
     <Compile Include="api\Utils\PartModelUtilsImpl.cs" />
     <Compile Include="api_impl\InventoryItemImpl.cs" />
     <Compile Include="controllers\ModLoadController.cs" />
-    <Compile Include="impl\InventorySlot.cs" />
+    <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
     <Compile Include="KSPDev_candidates\AbstractPartModule.cs" />
     <Compile Include="KSPDev_candidates\PrefabController.cs" />

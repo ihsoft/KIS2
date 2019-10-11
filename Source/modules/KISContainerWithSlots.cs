@@ -92,7 +92,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   internal UIKISInventoryWindow unityWindow;
 
   /// <summary>Inventory slots. They always exactly match the Unity window slots.</summary>
-  readonly List<InventorySlot> inventorySlots = new List<InventorySlot>();
+  readonly List<InventorySlotImpl> inventorySlots = new List<InventorySlotImpl>();
   #endregion
 
   #region AbstractPartModule overrides
@@ -238,7 +238,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   /// <summary>Returns first empty slot in the invetory.</summary>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
-  InventorySlot GetFreeSlot() {
+  InventorySlotImpl GetFreeSlot() {
     //FIXME: extend windows size.
     return inventorySlots.FirstOrDefault(s => s.isEmpty);
   }
@@ -246,7 +246,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   /// <summary>Tries to find a slot where this item can stack.</summary>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
   /// <seealso cref="GetFreeSlot"/>
-  InventorySlot FindSlotForPart(AvailablePart avAprt, ConfigNode node) {
+  InventorySlotImpl FindSlotForPart(AvailablePart avAprt, ConfigNode node) {
     //FIXME: look in the existing slots first. 
     return GetFreeSlot();
   }
@@ -284,7 +284,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       HostedDebugLog.Fine(this, "Resizing inventory controller: oldSlots={0}, newSlots={1}",
                           inventorySlots.Count, unityWindow.slots.Length);
       for (var i = inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
-        inventorySlots.Add(new InventorySlot(this, unityWindow.slots[i]));
+        inventorySlots.Add(new InventorySlotImpl(this, unityWindow.slots[i]));
       }
       while (inventorySlots.Count > unityWindow.slots.Length) {
         var deleteIndex = inventorySlots.Count - 1;
