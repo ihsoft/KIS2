@@ -80,7 +80,12 @@ public interface InventoryItem {
   /// The locked items are in a process of some complex, possibly multi-frame, operation. Only the
   /// executor of this process should deal with this item, the other actors should not interfere.
   /// </remarks>
+  /// <seealso cref="SetLocked"/>
   bool isLocked { get; }
+
+  /// <summary>Sets locked state.</summary>
+  /// <seealso cref="isLocked"/>
+  void SetLocked(bool newState);
 
   /// <summary>Updates all cached values from the part's config node.</summary>
   /// <remarks>

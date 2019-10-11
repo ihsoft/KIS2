@@ -121,6 +121,11 @@ sealed class InventoryItemImpl : InventoryItem {
 
   #region InventoryItem implementation
   /// <inheritdoc/>
+  public void SetLocked(bool newState) {
+    isLocked = newState;
+  }
+
+  /// <inheritdoc/>
   public void UpdateConfig() {
     _volume = -1;
     _size = null;
