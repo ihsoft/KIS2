@@ -16,6 +16,9 @@ public sealed class Slot : UIControlBaseScript {
   RawImage partImage = null;
 
   [SerializeField]
+  Button slotButton = null;
+
+  [SerializeField]
   Text stackSizeIndicatorText = null;
 
   [SerializeField]
@@ -47,6 +50,12 @@ public sealed class Slot : UIControlBaseScript {
     }
   }
 
+  /// <summary>Defines if the slot can participate in the actions.</summary>
+  public bool isLocked {
+    get { return !slotButton.interactable; }
+    set { slotButton.interactable = !value; }
+  }
+
   /// <summary>String that identifies the slot's overall resources state</summary>
   /// <remarks>Only shown if not empty.</remarks>
   public string resourceStatus {
@@ -75,13 +84,17 @@ public sealed class Slot : UIControlBaseScript {
   #endregion
 
   #region API methods
-  /// <summary>Clears all UI controls, making the slot to look completely empty.</summary>
+  /// <summary>
+  /// Clears all UI controls, making the slot to look completely empty and unlocked.
+  /// </summary>
+  /// <seealso cref="isLocked"/>
   public void ClearContent() {
     partImage.texture = null;
     resourceStatus = null;
     stackSize = null;
     slotImage = null;
     hasScience = false;
+    isLocked = false;
     while (bottomControlsGrid.transform.childCount > 0) {
       DestroyImmediate(bottomControlsGrid.transform.GetChild(0).gameObject);
     }
