@@ -96,7 +96,7 @@ public sealed class Slot : UIControlBaseScript {
     hasScience = false;
     isLocked = false;
     while (bottomControlsGrid.transform.childCount > 0) {
-      DestroyImmediate(bottomControlsGrid.transform.GetChild(0).gameObject);
+      HierarchyUtils.SafeDestory(bottomControlsGrid.transform.GetChild(0));
     }
   }
 

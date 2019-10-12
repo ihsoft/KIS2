@@ -244,7 +244,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     firstSlot.InitPrefab();
     firstSlot.gameObject.SetActive(false);
     while (slotsGrid.transform.childCount > 1) {
-      DestroyImmediate(slotsGrid.transform.GetChild(1).gameObject);
+      HierarchyUtils.SafeDestory(slotsGrid.transform.GetChild(1));
     }
     slotsGrid.gameObject.SetActive(false);
     return true;
@@ -369,7 +369,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     if (hoveredSlot != null && slotObj == hoveredSlot.gameObject) {
       hoveredSlot = null;
     }
-    DestroyImmediate(slotObj);
+    HierarchyUtils.SafeDestory(slotObj);
   }
 
   Slot AddSlotAtEnd() {
