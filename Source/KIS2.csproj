@@ -73,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="api\ErrorReason.cs" />
+    <Compile Include="api\IKISDragTarget.cs" />
     <Compile Include="api\IKISInventory.cs" />
     <Compile Include="api\InventoryItem.cs" />
     <Compile Include="api\KISAPI.cs" />
