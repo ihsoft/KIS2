@@ -60,10 +60,10 @@ public sealed class UIKISInventorySlotDragIcon : UIPrefabBaseScript {
     get { return _stackSize; }
     set {
       _stackSize = value;
-      if (value > 0) {
+      if (value > 1) {
         stackSizeIndicatorText.text = "x" + value;
       }
-      stackSizeIndicatorText.gameObject.SetActive(value > 0);
+      stackSizeIndicatorText.gameObject.SetActive(value > 1);
     }
   }
   int _stackSize;
