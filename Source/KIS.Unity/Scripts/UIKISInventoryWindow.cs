@@ -124,17 +124,10 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <remarks>
   /// The tooltip is bound to the hovered slot. When pointer goes out, the tooltip gets destroyed.
   /// </remarks>
-  /// <seealso cref="StartSlotTooltip"/>
   /// <value><c>null</c> if not tooltip is currently presented.</value>
   /// <seealso cref="StartSlotTooltip"/>
-  public UIKISInventoryTooltip.Tooltip currentTooltip {
-    get { return _currentTooltip; }
-    private set {
-      DestroyTooltip();
-      _currentTooltip = value;
-    }
-  }
-  UIKISInventoryTooltip.Tooltip _currentTooltip;
+  /// <seealso cref="DestroySlotTooltip"/>
+  public UIKISInventoryTooltip.Tooltip currentTooltip { get; private set; }
 
   /// <summary>Slot that is currently being hovered over.</summary>
   /// <value><c>null</c> pointer doesn't hover over any slot of this inventory.</value>
@@ -143,7 +136,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     private set {
       if (_hoveredSlot != null && _hoveredSlot != value) {
         onSlotHover.ForEach(notify => notify(_hoveredSlot, false));
-        DestroyTooltip();
+        DestroySlotTooltip();
         _hoveredSlot = null;
       }
       if (value != null && _hoveredSlot != value) {
@@ -253,7 +246,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   #region MonoBehaviour callbacks
   void OnDestroy() {
-    DestroyTooltip();
+    DestroySlotTooltip();
   }
   #endregion
 
@@ -307,6 +300,13 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
           "tooltip", transform.parent);
     }
     return currentTooltip;
+  }
+
+  /// <summary>Destroys the tooltip if one exists.</summary>
+  /// <remarks>It's a cleanup method. It never throws errors.</remarks>
+  public void DestroySlotTooltip() {
+    HierarchyUtils.SafeDestory(currentTooltip);
+    currentTooltip = null;
   }
 
   /// <summary>Sets new size of the inventory grid.</summary>
@@ -377,14 +377,6 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     newSlot.name = "Slot";
     newSlot.gameObject.SetActive(true);
     return newSlot;
-  }
-
-  void DestroyTooltip() {
-    if (_currentTooltip != null) {
-      _currentTooltip.gameObject.SetActive(false);
-      Destroy(_currentTooltip.gameObject);
-    }
-    _currentTooltip = null;
   }
   #endregion
 }
