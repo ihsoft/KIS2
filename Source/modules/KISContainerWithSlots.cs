@@ -26,7 +26,7 @@ namespace KIS2 {
 
   //FIXME: separate container and inventory concepts. data vs UI
 public sealed class KISContainerWithSlots : KISContainerBase,
-    IHasGUI {
+    IHasGUI, IKISDragTarget {
 
   #region Localizable GUI strings.
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -123,6 +123,23 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   }
   #endregion
 
+  #region IKISDragTarget implementation
+  /// <inheritdoc/>
+  public void OnKISDragStart() {
+    throw new NotImplementedException();
+  }
+
+  /// <inheritdoc/>
+  public void OnKISDragEnd(bool isCancelled) {
+    throw new NotImplementedException();
+  }
+
+  /// <inheritdoc/>
+  public bool OnKISDrag(bool pointerMoved) {
+    throw new NotImplementedException();
+  }
+  #endregion
+
   #region KISContainerBase overrides
   /// <inheritdoc/>
   public override InventoryItem AddItem(AvailablePart avPart, ConfigNode node) {
@@ -135,6 +152,8 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     slot.AddItem(item);
     return item;
   }
+
+  //public virtual bool DeleteItem(InventoryItem item)
 
   /// <inheritdoc/>
   public override void UpdateInventoryStats(params InventoryItem[] changedItems) {
@@ -255,10 +274,14 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   #region Unity window callbacks
   void OnSlotHover(Slot slot, bool isHover) {
     var inventorySlot = inventorySlots[slot.slotIndex];
-    HostedDebugLog.Fine(this, "Pointer hover: slot={0}, isHover={1}, isEmpty={2}",
-                        slot.slotIndex, isHover, inventorySlot.isEmpty);
-    //FIXME: handle drag cases.
-    if (isHover && !inventorySlot.isEmpty) {
+    if (isHover) {
+      unityWindow.StartSlotTooltip();
+      KISAPI.ItemDragController.RegisterTarget(this);
+    } else {
+      KISAPI.ItemDragController.UnregisterTarget(this);
+      unityWindow.StartSlotTooltip();
+    }
+    if (isHover && !inventorySlot.isEmpty && !KISAPI.ItemDragController.isDragging) {
       inventorySlot.UpdateTooltip(unityWindow.StartSlotTooltip());
     }
   }
@@ -266,6 +289,65 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   void OnSlotClick(Slot slot, PointerEventData.InputButton button) {
     //FIXME
     HostedDebugLog.Fine(this, "Clicked: slot={0}, button={1}", slot.slotIndex, button);
+    var inventorySlot = inventorySlots[slot.slotIndex];
+    //FIXME
+    if (KISAPI.ItemDragController.isDragging) {
+      //FIXME: don't allow for demo!
+      if (!inventorySlot.isEmpty) {
+        //FIXME
+        DebugEx.Warning("*** demo cancel on non-empty slot");
+        KISAPI.ItemDragController.CancelItemsLease();
+        return;
+      } else {
+        //FIXME
+        DebugEx.Warning("*** demo consume on empty slot");
+        var consumeItems = KISAPI.ItemDragController.leasedItems;
+        if (KISAPI.ItemDragController.ConsumeItems()) {
+          //FIXME
+          HostedDebugLog.Warning(this, "Adding {0} items from dragged pack", consumeItems.Length);
+          //FIXME: verify if can add!
+          Array.ForEach(consumeItems, x => inventorySlot.AddItem(x));
+        } else {
+          // FIXME: bip wrong!
+          HostedDebugLog.Error(this, "The items owner has unexpectably refused the transfer deal");
+        }
+      }
+      return;
+    }
+    //FIXME
+    DebugEx.Warning("*** demo lease on non-empty slot");
+    KISAPI.ItemDragController.LeaseItems(
+        slot.slotImage, inventorySlot.items,
+        () => ConsumeSlotItems(inventorySlot),
+        () => CancelSlotLeasedItems(inventorySlot));
+    var dragIconObj = KISAPI.ItemDragController.dragIconObj;
+    dragIconObj.hasScience = slot.hasScience;
+    dragIconObj.stackSize = inventorySlot.items.Length;//FIXME: get it from unity when it's fixed to int
+    dragIconObj.resourceStatus = slot.resourceStatus;
+    inventorySlot.isLocked = true;
+    Array.ForEach(inventorySlot.items, i => i.SetLocked(true));
+    //FIXME: it's demo only case
+    //KISAPI.ItemDragController.SetCanConsumeState(false);
+  }
+
+  bool ConsumeSlotItems(InventorySlotImpl inventorySlot) {
+    //FIXME
+    DebugEx.Warning("*** items consumed!");
+    //FIXME: verify if all items are in the slot!
+    foreach (var consumedItem in KISAPI.ItemDragController.leasedItems) {
+      consumedItem.SetLocked(false);
+      inventorySlot.DeleteItem(consumedItem);
+    }
+    inventorySlot.isLocked = false;
+    //leasedItems.ToList().ForEach(i => i.isLocked = false);
+    return true;
+  }
+
+  void CancelSlotLeasedItems(InventorySlotImpl inventorySlot) {
+    //FIXME
+    DebugEx.Warning("*** lease canceled!");
+    inventorySlot.isLocked = false;
+    KISAPI.ItemDragController.leasedItems.ToList().ForEach(i => i.SetLocked(false));
   }
 
   void OnSlotAction(Slot slot, int actionButtonNum, PointerEventData.InputButton button) {
