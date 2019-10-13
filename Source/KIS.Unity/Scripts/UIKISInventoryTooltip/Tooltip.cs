@@ -138,8 +138,6 @@ public sealed class Tooltip : UIPrefabBaseScript {
     if (!base.InitPrefab()) {
       return false;
     }
-    gameObject.GetComponentsInChildren<Graphic>().ToList()
-        .ForEach(x => x.raycastTarget = false);
     title = null;
     baseInfo.text = null;
     availableResourcesInfo.text = null;

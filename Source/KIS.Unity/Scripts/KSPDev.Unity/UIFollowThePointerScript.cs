@@ -3,7 +3,10 @@
 // This software is distributed under Public domain license.
 
 using KSPDev.Unity;
+using System;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace KSPDev.Unity {
 
@@ -39,6 +42,13 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
   /// </remarks>
   /// <seealso cref="clampedPointerOffset"/>
   public bool clampToScreen;
+
+  /// <summary>Tells if any of the children in this assembly should be a ray cast target.</summary>
+  /// <remarks>
+  /// Normally, the controls that follow pointer should not be raycast targets, since it could
+  /// create an interferrence.
+  /// </remarks>
+  public bool NoRaycastTargets;
   #endregion
 
   #region Local fields
@@ -52,6 +62,12 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
   void Awake() {
     canvas = GetComponentInParent<Canvas>();
     canvasRect = canvas.transform as RectTransform;
+  }
+
+  void Start() {
+    if (NoRaycastTargets) {
+      Array.ForEach(gameObject.GetComponentsInChildren<Graphic>(), x => x.raycastTarget = false);
+    }
   }
 
   void LateUpdate() {
