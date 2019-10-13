@@ -33,15 +33,6 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   [SerializeField]
   UIKISHorizontalSliderControl sizeRowsSlider = null;
-
-  /// <summary>Web color for the window values.</summary>
-  [SerializeField]
-  public string normalValueWebColor = "white";
-
-  /// <summary>Web color for the special window values.</summary>
-  /// <remarks>Special values need extra attention of the player.</remarks>
-  [SerializeField]
-  public string speciallValueWebColor = "yellow";
   #endregion
 
   #region Callback handlers
