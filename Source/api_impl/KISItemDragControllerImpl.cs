@@ -220,22 +220,24 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
   /// <inheritdoc/>
   public void RegisterTarget(IKISDragTarget target) {
     if (!dragTargets.Contains(target)) {
-      //FIXME: treat exvceptions smart
       dragTargets = dragTargets.Concat(new[] { target }).ToArray();
       if (isDragging) {
         SafeCallbacks.Action(target.OnKISDragStart);
       }
+    } else {
+      DebugEx.Warning("Target is already registered: {0}", target);
     }
   }
 
   /// <inheritdoc/>
   public void UnregisterTarget(IKISDragTarget target) {
-    if (!dragTargets.Contains(target)) {
+    if (dragTargets.Contains(target)) {
       if (isDragging) {
-        //FIXME: treat exvceptions smart
         SafeCallbacks.Action(() => target.OnKISDragEnd(isCancelled: true));
       }
-      dragTargets.Where((t, i) => t != target).ToArray();
+      dragTargets = dragTargets.Where((t, i) => t != target).ToArray();
+    } else {
+      DebugEx.Warning("Cannot unregister unknown target: {0}", target);
     }
   }
   #endregion
