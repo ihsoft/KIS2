@@ -9,27 +9,28 @@ namespace KISAPIv2 {
 /// <summary>
 /// Interface for the components that need to be aware of the KIS dragging actions.
 /// </summary>
-/// <seealso cref="KISItemDragController"/>
+/// <seealso cref="IKISItemDragController"/>
 public interface IKISDragTarget {
   /// <summary>Notifies when new items are leased for dragging in the controller.</summary>
   /// <remarks>
   /// This method will be called when registering a target, if the dragging state was already
   /// started at the moment.
   /// </remarks>
-  /// <seealso cref="KISItemDragController.LeaseItems"/>
-  /// <seealso cref="KISItemDragController.RegisterTarget"/>
+  /// <seealso cref="IKISItemDragController.LeaseItems"/>
+  /// <seealso cref="IKISItemDragController.RegisterTarget"/>
   void OnKISDragStart();
 
-  /// <summary>Notifies when the draggin is over due to consume or cancel action.</summary>
+  /// <summary>Notifies when the dragging is over due to consume or cancel action.</summary>
   /// <remarks>
-  /// This method will be called when unregistering a target, if the dragging state was already
-  /// started at the moment. If that's the case, the <paramref name="isCancelled"/> parameter will
-  /// be <c>true</c>.
+  /// When this method is called, the dragging mode is <i>already</i> cancelled. The only exception
+  /// is the case when the target is being unregistered during the active dragging operation. In
+  /// this case this method will be called with the <paramref name="isCancelled"/> parameter set to
+  /// <c>true</c>, and the dragging state will still be in effect.
   /// </remarks>
   /// <param name="isCancelled">Tells if the drag mode ended due to the dragging cancel.</param>
-  /// <seealso cref="KISItemDragController.CancelItemsLease"/>
-  /// <seealso cref="KISItemDragController.ConsumeItems"/>
-  /// <seealso cref="KISItemDragController.UnregisterTarget"/>
+  /// <seealso cref="IKISItemDragController.CancelItemsLease"/>
+  /// <seealso cref="IKISItemDragController.ConsumeItems"/>
+  /// <seealso cref="IKISItemDragController.UnregisterTarget"/>
   void OnKISDragEnd(bool isCancelled);
 
   /// <summary>Asks the target if the items can be consumed by it.</summary>
@@ -41,7 +42,7 @@ public interface IKISDragTarget {
   /// </remarks>
   /// <param name="pointerMoved">Tells if mouse pointer has moved in this frame.</param>
   /// <returns><c>true</c> if the traget can accept the currently dragged items.</returns>
-  /// <seealso cref="KISItemDragController.LeaseItems"/>
+  /// <seealso cref="IKISItemDragController.LeaseItems"/>
   bool OnKISDrag(bool pointerMoved);
 }
 
