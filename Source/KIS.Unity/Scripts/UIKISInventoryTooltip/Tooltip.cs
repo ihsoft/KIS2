@@ -50,23 +50,6 @@ public sealed class Tooltip : UIPrefabBaseScript {
   /// <summary>Tells if hint should be shown.</summary>
   /// <remarks>It's a global settings that affects all the tooltips in the game.</remarks>
   public static bool showHints = true;
-
-  /// <summary>Pattern that applies style to a hotkey name.</summary>
-  /// <remarks>Intended to be used in the hints section.</remarks>
-  public const string HintHotkeyPattern = "<b><color=#5a5>[{0}]</color></b>";
-
-  /// <summary>
-  /// Pattern that applies style to a value that changes depending on the user's choice.
-  /// </summary>
-  /// <remarks>Intended to be used in the hints section.</remarks>
-  public const string HintActiveValuePattern = "<color=#5a5>[{0}]</color>";
-
-  /// <summary>
-  /// Pattern that applies a special style to the values that need extra player's attention.
-  /// </summary>
-  /// <remarks>Can be used in any info panel.</remarks>
-  public const string InfoHighlightPattern = "<color=yellow>{0}</color>";
-
   /// <summary>Main highlighted text.</summary>
   /// <remarks>Can be set to empty string to hide the control.</remarks>
   public string title {
@@ -177,29 +160,6 @@ public sealed class Tooltip : UIPrefabBaseScript {
       preferredContentWidth = prefabWidth;
     }
     LayoutRebuilder.ForceRebuildLayoutImmediate(mainRect);
-  }
-
-  /// <summary>Adds color tags to a text to a hotkey hint text.</summary>
-  /// <param name="text">The text to wrap.</param>
-  /// <returns>The rich text string.</returns>
-  public static string MakeHintHotkey(string text) {
-    return string.Format(HintHotkeyPattern, text);
-  }
-
-  /// <summary>Adds color tags to a text to that represents an interactive hint value.</summary>
-  /// <param name="text">The text to wrap.</param>
-  /// <returns>The rich text string.</returns>
-  public static string MakeHintActiveValue(string text) {
-    return string.Format(HintActiveValuePattern, text);
-  }
-
-  /// <summary>
-  /// Adds color tags to a text to indiacte that it has some special meaning in the contex.
-  /// </summary>
-  /// <param name="text">The text to wrap.</param>
-  /// <returns>The rich text string.</returns>
-  public static string MakeHighlightedValue(string text) {
-    return string.Format(InfoHighlightPattern, text);
   }
   #endregion
 
