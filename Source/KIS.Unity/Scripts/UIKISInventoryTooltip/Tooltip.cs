@@ -138,17 +138,23 @@ public sealed class Tooltip : UIPrefabBaseScript {
     if (!base.InitPrefab()) {
       return false;
     }
-    title = null;
-    baseInfo.text = null;
-    availableResourcesInfo.text = null;
-    requiredResourcesInfo.text = null;
-    availableScienceInfo.text = null;
+    ClearInfoFileds();
     hints = null;
     return true;
   }
   #endregion
 
   #region API methods
+  /// <summary>Clears all fields except the hints one.</summary>
+  /// FIXME: on all fields cleared, hide the tooltip
+  public void ClearInfoFileds() {
+    title = null;
+    baseInfo.text = null;
+    availableResourcesInfo.text = null;
+    requiredResourcesInfo.text = null;
+    availableScienceInfo.text = null;
+  }
+  
   /// <summary>
   /// Updates tooltip's perferred size to make the best fit, given the current content.
   /// </summary>
@@ -164,7 +170,8 @@ public sealed class Tooltip : UIPrefabBaseScript {
         && !baseInfo.gameObject.activeSelf
         && !availableResourcesInfo.gameObject.activeSelf
         && !requiredResourcesInfo.gameObject.activeSelf
-        && !availableScienceInfo.gameObject.activeSelf) {
+        && !availableScienceInfo.gameObject.activeSelf
+        && !hintsText.gameObject.activeSelf) {
       FitSizeToTitle(prefabWidth);
     } else {
       preferredContentWidth = prefabWidth;
