@@ -142,7 +142,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
     }
     var res = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
     //FIXME: display some kinds of errors?
-    return res.Length > 0;
+    return res.Length == 0;
   }
   #endregion
 
