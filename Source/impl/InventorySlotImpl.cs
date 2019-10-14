@@ -124,14 +124,17 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #endregion
 
   #region IKISDragTarget implementation
+  /// <inheritdoc/>
   public void OnKISDragStart() {
     UpdateTooltip();
   }
 
+  /// <inheritdoc/>
   public void OnKISDragEnd(bool isCancelled) {
     UpdateTooltip();
   }
 
+  /// <inheritdoc/>
   public bool OnKISDrag(bool pointerMoved) {
     UpdateTooltip();
     if (isEmpty) {
