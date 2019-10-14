@@ -32,6 +32,12 @@ public static class KISAPI {
 
   /// <summary>Utils to deal with part icons.</summary>
   public static readonly PartIconUtils PartIconUtils = new PartIconUtils();
+
+  /// <summary>
+  /// Controller that handles moving KIS items between the inventories and the scene.
+  /// </summary>
+  public static readonly IKISItemDragController ItemDragController =
+      new KIS2.KISItemDragControllerImpl();
 }
 
 }  // namespace
