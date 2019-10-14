@@ -8,6 +8,7 @@ using System.Linq;
 using KISAPIv2;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
+using KSPDev.ProcessingUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using UnityEngine;
@@ -133,14 +134,14 @@ sealed class InventorySlotImpl {
   /// It's an error for this method if the item cannot be added. The callers must verify if it can
   /// be added via <see cref="CheckCanAdd"/>.
   /// </remarks>
-  /// <param name="item">The item to add.</param>
-  /// <returns><c>true</c> if item was added to the slot.</returns>
+  /// <param name="items">The items to add.</param>
+  /// <returns><c>true</c> if the items were added to the slot.</returns>
   /// <seealso cref="UpdateTooltip"/>
-  public bool AddItem(InventoryItem item) {
-    if (CheckCanAdd(item, logErrors: true).Length > 0) {
+  public bool AddItems(InventoryItem[] items) {
+    if (CheckCanAdd(items, logErrors: true).Length > 0) {
       return false;
     }
-    itemsList.Add(item);
+    itemsList.AddRange(items);
     UpdateUnitySlot();
     //FIXME: move to UpdateUnitySlot  
     if (inventory.unityWindow.hoveredSlot == unitySlot) {
@@ -169,7 +170,7 @@ sealed class InventorySlotImpl {
   /// same part. The part's state similarity is implementation dependent and the callers must not be
   /// guessing about it.
   /// </remarks>
-  /// <param name="item">The item to check.</param>
+  /// <param name="items">The items to check. It must not be empty.</param>
   /// <param name="logErrors">
   /// If <c>true</c>, then all the found errors will be written to the system log. Callers may use
   /// this option when they don't normally expect any errors.
@@ -177,15 +178,23 @@ sealed class InventorySlotImpl {
   /// <returns>
   /// An empty array if the item can be added to the slot, or a list of human readable errors.
   /// </returns>
-  public ErrorReason[] CheckCanAdd(InventoryItem item, bool logErrors = false) {
-    //FIXME: implement similarity check.
-    var res = new List<ErrorReason>();
-    if (!isEmpty && avPart.name != item.avPart.name) {
-      res.Add(new ErrorReason() {
-          shortString = "DifferentPart",
-      });
+  public ErrorReason[] CheckCanAdd(InventoryItem[] items, bool logErrors = false) {
+    Preconditions.MinElements(items, 1);
+    var res = new HashSet<ErrorReason>();
+    var slotPartName = isEmpty ? items[0].avPart.name : avPart.name;
+    foreach (var item in items) {
+      if (item.avPart.name != slotPartName) {
+        if (logErrors) {
+          DebugEx.Error(
+              "Mixed parts in the batch: expected={0}, got={1}", slotPartName, item.avPart.name);
+        }
+        return new[] {
+            new ErrorReason() { shortString = "DifferentPart" },
+        };
+      }
+      //FIXME: implement similarity check.
     }
-    if (res.Count > 0) {
+    if (logErrors && res.Count > 0) {
       DebugEx.Error("Cannot add part to slot:\n{0}", DbgFormatter.C2S(res, separator: "\n"));
     }
     return res.ToArray();

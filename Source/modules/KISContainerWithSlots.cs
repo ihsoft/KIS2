@@ -149,7 +149,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       return null;
     }
     var item = base.AddItem(avPart, node);
-    slot.AddItem(item);
+    slot.AddItems(new[] { item });
     return item;
   }
 
@@ -301,12 +301,12 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       } else {
         //FIXME
         DebugEx.Warning("*** demo consume on empty slot");
-        var consumeItems = KISAPI.ItemDragController.leasedItems;
-        if (KISAPI.ItemDragController.ConsumeItems()) {
+        var consumedItems = KISAPI.ItemDragController.ConsumeItems();
+        if (consumedItems != null) {
           //FIXME
-          HostedDebugLog.Warning(this, "Adding {0} items from dragged pack", consumeItems.Length);
+          HostedDebugLog.Warning(this, "Adding {0} items from dragged pack", consumedItems.Length);
           //FIXME: verify if can add!
-          Array.ForEach(consumeItems, x => inventorySlot.AddItem(x));
+          inventorySlot.AddItems(consumedItems);
         } else {
           // FIXME: bip wrong!
           HostedDebugLog.Error(this, "The items owner has unexpectably refused the transfer deal");
