@@ -23,7 +23,8 @@ namespace KIS2 {
 /// internal state, they cannot stack to the same slot.
 /// </remarks>
 /// <seealso cref="KISContainerWithSlots"/>
-sealed class InventorySlotImpl {
+sealed class InventorySlotImpl : IKISDragTarget {
+
   #region Localizable strings
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> MassTootltipText = new Message<MassType>(
@@ -120,6 +121,26 @@ sealed class InventorySlotImpl {
     }
   }
   bool _isLocked;
+  #endregion
+
+  #region IKISDragTarget implementation
+  public void OnKISDragStart() {
+    UpdateTooltip();
+  }
+
+  public void OnKISDragEnd(bool isCancelled) {
+    UpdateTooltip();
+  }
+
+  public bool OnKISDrag(bool pointerMoved) {
+    UpdateTooltip();
+    if (isEmpty) {
+      return true;
+    }
+    var res = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
+    //FIXME: display some kinds of errors?
+    return res.Length > 0;
+  }
   #endregion
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>

@@ -26,7 +26,7 @@ namespace KIS2 {
 
   //FIXME: separate container and inventory concepts. data vs UI
 public sealed class KISContainerWithSlots : KISContainerBase,
-    IHasGUI, IKISDragTarget {
+    IHasGUI {
 
   #region Localizable GUI strings.
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -120,23 +120,6 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     if (Event.current.Equals(Event.KeyboardEvent("5")) && unityWindow != null) {
       AddPartByName("seatExternalCmd");
     }
-  }
-  #endregion
-
-  #region IKISDragTarget implementation
-  /// <inheritdoc/>
-  public void OnKISDragStart() {
-    throw new NotImplementedException();
-  }
-
-  /// <inheritdoc/>
-  public void OnKISDragEnd(bool isCancelled) {
-    throw new NotImplementedException();
-  }
-
-  /// <inheritdoc/>
-  public bool OnKISDrag(bool pointerMoved) {
-    throw new NotImplementedException();
   }
   #endregion
 
@@ -276,12 +259,11 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     var inventorySlot = inventorySlots[slot.slotIndex];
     if (isHover) {
       unityWindow.StartSlotTooltip();
-      KISAPI.ItemDragController.RegisterTarget(this);
+      inventorySlot.UpdateTooltip();
+      KISAPI.ItemDragController.RegisterTarget(inventorySlot);
     } else {
-      KISAPI.ItemDragController.UnregisterTarget(this);
-      unityWindow.StartSlotTooltip();
-    }
-    if (isHover && !inventorySlot.isEmpty && !KISAPI.ItemDragController.isDragging) {
+      KISAPI.ItemDragController.UnregisterTarget(inventorySlot);
+      unityWindow.DestroySlotTooltip();
     }
   }
 
