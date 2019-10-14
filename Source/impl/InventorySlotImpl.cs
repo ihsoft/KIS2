@@ -78,6 +78,14 @@ sealed class InventorySlotImpl : IKISDragTarget {
               + " The <<1>> argument is a localized name of the resource.\n"
               + " The <<2>> argument is the current amount of the resource.\n"
               + " The <<3>> argument is the maximum amount of the resource.");
+
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly static Message DifferentPartsTooltipText = new Message(
+      "",
+      defaultTemplate: "Different parts",
+      description: "Info text that is shown in the inventory slot tooltip. It tells that the"
+          + " dragged item(s) cannot be added to the stack due to it already contains a different"
+          + " part. All items in the slot are required to be the same part!");
   #endregion
 
   #region API properties and fields
@@ -211,7 +219,10 @@ sealed class InventorySlotImpl : IKISDragTarget {
               "Mixed parts in the batch: expected={0}, got={1}", slotPartName, item.avPart.name);
         }
         return new[] {
-            new ErrorReason() { shortString = "DifferentPart" },
+            new ErrorReason() {
+                shortString = "DifferentPart",
+                guiString = DifferentPartsTooltipText,
+            },
         };
       }
       //FIXME: implement similarity check.
