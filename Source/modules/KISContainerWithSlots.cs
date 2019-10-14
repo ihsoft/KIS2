@@ -282,7 +282,6 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       unityWindow.StartSlotTooltip();
     }
     if (isHover && !inventorySlot.isEmpty && !KISAPI.ItemDragController.isDragging) {
-      inventorySlot.UpdateTooltip(unityWindow.StartSlotTooltip());
     }
   }
 

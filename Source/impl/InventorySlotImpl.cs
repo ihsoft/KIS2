@@ -143,9 +143,8 @@ sealed class InventorySlotImpl {
     }
     itemsList.AddRange(items);
     UpdateUnitySlot();
-    //FIXME: move to UpdateUnitySlot  
     if (inventory.unityWindow.hoveredSlot == unitySlot) {
-      UpdateTooltip(inventory.unityWindow.StartSlotTooltip());
+      UpdateTooltip();
     }
     return true;
   }
@@ -157,9 +156,8 @@ sealed class InventorySlotImpl {
       return false;
     }
     UpdateUnitySlot();
-    //FIXME: move to UpdateUnitySlot  
     if (inventory.unityWindow.hoveredSlot == unitySlot) {
-      UpdateTooltip(inventory.unityWindow.StartSlotTooltip());
+      UpdateTooltip();
     }
     return true;
   }
@@ -204,8 +202,8 @@ sealed class InventorySlotImpl {
   /// <remarks>
   /// If the slot is empty, then no update is made. The tooltip visibility is never affected.
   /// </remarks>
-  /// <param name="tooltip">The Unity class of the tooltip.</param>
-  public void UpdateTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
+  public void UpdateTooltip() {
+    var tooltip = inventory.unityWindow.currentTooltip;
     if (isEmpty) {
       return;  // Nothing to do.
     }
