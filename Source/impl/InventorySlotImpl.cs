@@ -80,12 +80,75 @@ sealed class InventorySlotImpl : IKISDragTarget {
               + " The <<3>> argument is the maximum amount of the resource.");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly static Message<KeyboardEventType2> TakeSlotHintText = new Message<KeyboardEventType2>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab the stack",
+      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
+          + " the user should do to start dragging the whole slot form the inventory.\n"
+          + " The <<1>> argument is a user firendly action name.");
+
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly static Message<KeyboardEventType2> TakeOneItemHintText = new Message<KeyboardEventType2>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>1</color> item",
+      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
+          + " the user should do to start dragging exactly ONE item from the inventory slot.\n"
+          + " The <<1>> argument is a user firendly action name.");
+
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  readonly static Message<KeyboardEventType2> TakeTenItemsHintText = new Message<KeyboardEventType2>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>10</color> items",
+      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
+          + " the user should do to start dragging 10 items from the inventory.\n"
+          + " The <<1>> argument is a user firendly action name.");
+
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
   readonly static Message DifferentPartsTooltipText = new Message(
       "",
       defaultTemplate: "Different parts",
       description: "Info text that is shown in the inventory slot tooltip. It tells that the"
           + " dragged item(s) cannot be added to the stack due to it already contains a different"
           + " part. All items in the slot are required to be the same part!");
+
+  readonly static Message StoreItemsTooltipText = new Message(
+      "",
+      defaultTemplate: "Store items",
+      description: "The text to show in the title of the slot tooltip when the dragged items can be"
+          + " stored into an empty slot.");
+
+  readonly static Message<KeyboardEventType2> StoreItemsHintText = new Message<KeyboardEventType2>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
+      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
+          + " the user should do to STORE the dragged items into the hovered slot.\n"
+          + " The <<1>> argument is a user firendly action name.");
+
+  readonly static Message AddItemsTooltipText = new Message(
+      "",
+      defaultTemplate: "Add items to stack",
+      description: "The text to show in the title of the slot tooltip when the dragged items can be"
+          + " added into an non-empty slot.");
+
+  readonly static Message<KeyboardEventType2> AddItemsHintText = new Message<KeyboardEventType2>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to the stack",
+      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
+          + " the user should do to ADD the dragged items into the hovered slot.\n"
+          + " The <<1>> argument is a user firendly action name.");
+
+  readonly static Message CannotAddItemsTooltipText = new Message(
+      "",
+      defaultTemplate: "Cannot add items to stack",
+      description: "The text to show in the title of the slot tooltip when the dragged items can"
+          + " NOT be added into the slot.");
+
+  readonly static Message<int> AddItemsCountHintText = new Message<int>(
+      "",
+      defaultTemplate: "Add <color=#5a5>{0}</color> items",
+      description: "Hint text that is shown in the inventory slot tooltip. It tells how many items"
+          + " will be added into the stack in case of the action has completed.\n"
+          + " The <<1>> argument is the number of items being added.");
   #endregion
 
   #region API properties and fields
@@ -129,6 +192,13 @@ sealed class InventorySlotImpl : IKISDragTarget {
     }
   }
   bool _isLocked;
+  #endregion
+
+  #region Local fields and constants
+  static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
+  static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
+  static readonly Event StoreIntoStackEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
   #region IKISDragTarget implementation
@@ -239,8 +309,45 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// </remarks>
   public void UpdateTooltip() {
     var tooltip = inventory.unityWindow.currentTooltip;
+    if (KISAPI.ItemDragController.isDragging) {
+      UpdateDraggingStateTooltip(tooltip);
+    } else {
+      UpdateSimpleHoveringTooltip(tooltip);
+    }
+    tooltip.UpdateLayout();
+  }
+  #endregion
+
+  #region Local utility methods
+  void UpdateDraggingStateTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
+    tooltip.ClearInfoFileds();
     if (isEmpty) {
-      return;  // Nothing to do.
+      tooltip.title = StoreItemsTooltipText;
+      tooltip.baseInfo.text = null;
+      tooltip.hints = StoreItemsHintText.Format(StoreIntoStackEvent);
+    } else {
+      var res = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
+      if (res.Length == 0) {
+        tooltip.title = AddItemsTooltipText;
+        tooltip.baseInfo.text = KISAPI.ItemDragController.leasedItems.Length > 1
+            ? AddItemsCountHintText.Format(KISAPI.ItemDragController.leasedItems.Length)
+            : null;
+        tooltip.hints = AddItemsHintText.Format(StoreIntoStackEvent);
+      } else {
+        tooltip.title = CannotAddItemsTooltipText;
+        tooltip.baseInfo.text = string.Join(
+            "\n",
+            res.Where(r => r.guiString != null).Select(r => r.guiString).ToArray());
+        tooltip.hints = null;
+      }
+    }
+  }
+
+  void UpdateSimpleHoveringTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
+    tooltip.ClearInfoFileds();
+    if (isEmpty) {
+      tooltip.hints = null;
+      return;
     }
     if (itemsList.Count == 1) {
       UpdateSingleItemTooltip(tooltip, itemsList[0]);
@@ -248,11 +355,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
       //FIXME: handle multuple item slots
       tooltip.baseInfo.text = "*** multiple items";
     }
-    tooltip.UpdateLayout();
   }
-  #endregion
 
-  #region Local utility methods
   /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
   void UpdateSingleItemTooltip(UIKISInventoryTooltip.Tooltip tooltip, InventoryItem item) {
     tooltip.title = avPart.title;
@@ -289,6 +393,17 @@ sealed class InventorySlotImpl : IKISDragTarget {
     } else {
       tooltip.availableResourcesInfo.text = null;
     }
+
+    // The hints.
+    var hints = new List<string>();
+    hints.Add(TakeSlotHintText.Format(TakeSlotEvent));
+    if (items.Length > 1) {
+      hints.Add(TakeOneItemHintText.Format(TakeOneItemEvent));
+    }
+    if (items.Length > 10) {
+      hints.Add(TakeTenItemsHintText.Format(TakeTenItemsEvent));
+    }
+    tooltip.hints = string.Join("\n", hints.ToArray());
   }
 
   /// <summary>Gives an approximate short string for a percent value.</summary>
