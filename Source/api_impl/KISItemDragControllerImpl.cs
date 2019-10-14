@@ -253,7 +253,6 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   /// <summary>Cleans up any leased state and unlocks game.</summary>
   void ClearLease(bool isCancelled) {
-    Array.ForEach(dragTargets, t => SafeCallbacks.Action(() => t.OnKISDragEnd(isCancelled)));
     consumeItemsFn = null;
     cancelItemsLeaseFn = null;
     leasedItems = null;
@@ -262,6 +261,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
       dragTracker.CancelLock();
       dragTracker = null;
     }
+    Array.ForEach(dragTargets, t => SafeCallbacks.Action(() => t.OnKISDragEnd(isCancelled)));
   }
   #endregion
 }
