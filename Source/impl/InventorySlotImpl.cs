@@ -199,6 +199,10 @@ sealed class InventorySlotImpl : IKISDragTarget {
   static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
   static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
   static readonly Event StoreIntoStackEvent = Event.KeyboardEvent("mouse0");
+
+  UIKISInventoryTooltip.Tooltip currentTooltip {
+    get { return inventory.unityWindow.currentTooltip; }
+  }
   #endregion
 
   #region IKISDragTarget implementation
@@ -308,58 +312,57 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// If the slot is empty, then no update is made. The tooltip visibility is never affected.
   /// </remarks>
   public void UpdateTooltip() {
-    var tooltip = inventory.unityWindow.currentTooltip;
     if (KISAPI.ItemDragController.isDragging) {
-      UpdateDraggingStateTooltip(tooltip);
+      UpdateDraggingStateTooltip();
     } else {
-      UpdateSimpleHoveringTooltip(tooltip);
+      UpdateSimpleHoveringTooltip();
     }
-    tooltip.UpdateLayout();
+    currentTooltip.UpdateLayout();
   }
   #endregion
 
   #region Local utility methods
-  void UpdateDraggingStateTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    tooltip.ClearInfoFileds();
+  void UpdateDraggingStateTooltip() {
+    currentTooltip.ClearInfoFileds();
     if (isEmpty) {
-      tooltip.title = StoreItemsTooltipText;
-      tooltip.baseInfo.text = null;
-      tooltip.hints = StoreItemsHintText.Format(StoreIntoStackEvent);
+      currentTooltip.title = StoreItemsTooltipText;
+      currentTooltip.baseInfo.text = null;
+      currentTooltip.hints = StoreItemsHintText.Format(StoreIntoStackEvent);
     } else {
       var res = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
       if (res.Length == 0) {
-        tooltip.title = AddItemsTooltipText;
-        tooltip.baseInfo.text = KISAPI.ItemDragController.leasedItems.Length > 1
+        currentTooltip.title = AddItemsTooltipText;
+        currentTooltip.baseInfo.text = KISAPI.ItemDragController.leasedItems.Length > 1
             ? AddItemsCountHintText.Format(KISAPI.ItemDragController.leasedItems.Length)
             : null;
-        tooltip.hints = AddItemsHintText.Format(StoreIntoStackEvent);
+        currentTooltip.hints = AddItemsHintText.Format(StoreIntoStackEvent);
       } else {
-        tooltip.title = CannotAddItemsTooltipText;
-        tooltip.baseInfo.text = string.Join(
+        currentTooltip.title = CannotAddItemsTooltipText;
+        currentTooltip.baseInfo.text = string.Join(
             "\n",
             res.Where(r => r.guiString != null).Select(r => r.guiString).ToArray());
-        tooltip.hints = null;
+        currentTooltip.hints = null;
       }
     }
   }
 
-  void UpdateSimpleHoveringTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    tooltip.ClearInfoFileds();
+  void UpdateSimpleHoveringTooltip() {
+    currentTooltip.ClearInfoFileds();
     if (isEmpty) {
       tooltip.hints = null;
       return;
     }
     if (itemsList.Count == 1) {
-      UpdateSingleItemTooltip(tooltip, itemsList[0]);
+      UpdateSingleItemTooltip(itemsList[0]);
     } else {
       //FIXME: handle multuple item slots
-      tooltip.baseInfo.text = "*** multiple items";
+      currentTooltip.baseInfo.text = "*** multiple items";
     }
   }
 
   /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
-  void UpdateSingleItemTooltip(UIKISInventoryTooltip.Tooltip tooltip, InventoryItem item) {
-    tooltip.title = avPart.title;
+  void UpdateSingleItemTooltip(InventoryItem item) {
+    currentTooltip.title = avPart.title;
     var infoLines = new List<string>();
 
     // Basic stats.
@@ -370,7 +373,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
     if (variant != null) {
       infoLines.Add(VariantTootltipText.Format(variant.DisplayName));
     }
-    tooltip.baseInfo.text = string.Join("\n", infoLines.ToArray());
+    currentTooltip.baseInfo.text = string.Join("\n", infoLines.ToArray());
 
     // Available resources stats.
     // Populate the available resources on the part. 
@@ -389,9 +392,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
               resource.maxAmount));
         }
       }
-      tooltip.availableResourcesInfo.text = string.Join("\n", resItems.ToArray());
+      currentTooltip.availableResourcesInfo.text = string.Join("\n", resItems.ToArray());
     } else {
-      tooltip.availableResourcesInfo.text = null;
     }
 
     // The hints.
@@ -402,6 +404,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
     }
     if (items.Length > 10) {
       hints.Add(TakeTenItemsHintText.Format(TakeTenItemsEvent));
+      currentTooltip.availableResourcesInfo.text = null;
     }
     tooltip.hints = string.Join("\n", hints.ToArray());
   }
