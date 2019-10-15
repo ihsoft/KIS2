@@ -145,7 +145,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
 
   readonly static Message<int> AddItemsCountHintText = new Message<int>(
       "",
-      defaultTemplate: "Add <color=#5a5>{0}</color> items",
+      defaultTemplate: "Add <color=#5a5><<1>></color> items",
       description: "Hint text that is shown in the inventory slot tooltip. It tells how many items"
           + " will be added into the stack in case of the action has completed.\n"
           + " The <<1>> argument is the number of items being added.");
