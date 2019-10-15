@@ -268,47 +268,49 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   }
 
   void OnSlotClick(Slot slot, PointerEventData.InputButton button) {
-    //FIXME
-    HostedDebugLog.Fine(this, "Clicked: slot={0}, button={1}", slot.slotIndex, button);
     var inventorySlot = inventorySlots[slot.slotIndex];
-    //FIXME
     if (KISAPI.ItemDragController.isDragging) {
-      //FIXME: don't allow for demo!
-      if (!inventorySlot.isEmpty) {
-        //FIXME
-        DebugEx.Warning("*** demo cancel on non-empty slot");
-        KISAPI.ItemDragController.CancelItemsLease();
-        return;
-      } else {
-        //FIXME
-        DebugEx.Warning("*** demo consume on empty slot");
-        var consumedItems = KISAPI.ItemDragController.ConsumeItems();
-        if (consumedItems != null) {
-          //FIXME
-          HostedDebugLog.Warning(this, "Adding {0} items from dragged pack", consumedItems.Length);
-          //FIXME: verify if can add!
-          inventorySlot.AddItems(consumedItems);
-        } else {
-          // FIXME: bip wrong!
-          HostedDebugLog.Error(this, "The items owner has unexpectably refused the transfer deal");
-        }
-      }
-      return;
+      HandleDragClickAction(inventorySlot);
+    } else if (!inventorySlot.isEmpty) {
+      HandleSlotClickAction(inventorySlot);
     }
+  }
+
+  void HandleDragClickAction(InventorySlotImpl inventorySlot) {
+    if (!inventorySlot.isEmpty) {
+      //FIXME
+      DebugEx.Warning("*** demo cancel on non-empty slot");
+      KISAPI.ItemDragController.CancelItemsLease();
+      return;
+    } else {
+      //FIXME
+      DebugEx.Warning("*** demo consume on empty slot");
+      var consumedItems = KISAPI.ItemDragController.ConsumeItems();
+      if (consumedItems != null) {
+        //FIXME
+        HostedDebugLog.Warning(this, "Adding {0} items from dragged pack", consumedItems.Length);
+        //FIXME: verify if can add!
+        inventorySlot.AddItems(consumedItems);
+      } else {
+        // FIXME: bip wrong!
+        HostedDebugLog.Error(this, "The items owner has unexpectably refused the transfer deal");
+      }
+    }
+  }
+
+  void HandleSlotClickAction(InventorySlotImpl inventorySlot) {
     //FIXME
     DebugEx.Warning("*** demo lease on non-empty slot");
     KISAPI.ItemDragController.LeaseItems(
-        slot.slotImage, inventorySlot.items,
+        inventorySlot.iconImage, inventorySlot.items,
         () => ConsumeSlotItems(inventorySlot),
         () => CancelSlotLeasedItems(inventorySlot));
     var dragIconObj = KISAPI.ItemDragController.dragIconObj;
-    dragIconObj.hasScience = slot.hasScience;
+    dragIconObj.hasScience = inventorySlot.unitySlot.hasScience;
     dragIconObj.stackSize = inventorySlot.items.Length;//FIXME: get it from unity when it's fixed to int
-    dragIconObj.resourceStatus = slot.resourceStatus;
+    dragIconObj.resourceStatus = inventorySlot.unitySlot.resourceStatus;
     inventorySlot.isLocked = true;
     Array.ForEach(inventorySlot.items, i => i.SetLocked(true));
-    //FIXME: it's demo only case
-    //KISAPI.ItemDragController.SetCanConsumeState(false);
   }
 
   bool ConsumeSlotItems(InventorySlotImpl inventorySlot) {
