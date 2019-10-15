@@ -87,6 +87,7 @@
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
     <Compile Include="KSPDev_candidates\AbstractPartModule.cs" />
+    <Compile Include="KSPDev_candidates\EventChecker2.cs" />
     <Compile Include="KSPDev_candidates\SafeCallbacks.cs" />
     <Compile Include="KSPDev_candidates\Hierarchy2.cs" />
     <Compile Include="KSPDev_candidates\KeyboardEventType2.cs" />
