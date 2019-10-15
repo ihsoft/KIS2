@@ -202,6 +202,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #endregion
 
   #region Local fields and properties 
+  bool canAcceptDraggedItems;
+  ErrorReason[] canAcceptDraggedItemsCheckResult;
 
   UIKISInventoryTooltip.Tooltip currentTooltip {
     get { return inventory.unityWindow.currentTooltip; }
@@ -211,23 +213,21 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #region IKISDragTarget implementation
   /// <inheritdoc/>
   public void OnKISDragStart() {
+    canAcceptDraggedItemsCheckResult = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
+    canAcceptDraggedItems = canAcceptDraggedItemsCheckResult.Length == 0;
     UpdateTooltip();
   }
 
   /// <inheritdoc/>
   public void OnKISDragEnd(bool isCancelled) {
+    canAcceptDraggedItemsCheckResult = null;
+    canAcceptDraggedItems = false;
     UpdateTooltip();
   }
 
   /// <inheritdoc/>
   public bool OnKISDrag(bool pointerMoved) {
-    UpdateTooltip();
-    if (isEmpty) {
-      return true;
-    }
-    var res = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
-    //FIXME: display some kinds of errors?
-    return res.Length == 0;
+    return canAcceptDraggedItems;
   }
   #endregion
 
