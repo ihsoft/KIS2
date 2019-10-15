@@ -199,6 +199,9 @@ sealed class InventorySlotImpl : IKISDragTarget {
   static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
   static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
   static readonly Event StoreIntoStackEvent = Event.KeyboardEvent("mouse0");
+  #endregion
+
+  #region Local fields and properties 
 
   UIKISInventoryTooltip.Tooltip currentTooltip {
     get { return inventory.unityWindow.currentTooltip; }
