@@ -81,6 +81,7 @@
     <Compile Include="api\Utils\PartIconUtilsImpl.cs" />
     <Compile Include="api\Utils\PartNodeUtilsImpl.cs" />
     <Compile Include="api\Utils\PartModelUtilsImpl.cs" />
+    <Compile Include="api_impl\CommonConfigImpl.cs" />
     <Compile Include="api_impl\InventoryItemImpl.cs" />
     <Compile Include="api_impl\KISItemDragControllerImpl.cs" />
     <Compile Include="controllers\ModLoadController.cs" />

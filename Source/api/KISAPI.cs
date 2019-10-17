@@ -33,6 +33,9 @@ public static class KISAPI {
   /// <summary>Utils to deal with part icons.</summary>
   public static readonly PartIconUtils PartIconUtils = new PartIconUtils();
 
+  /// <summary>KAS common config settings.</summary>
+  public static readonly CommonConfigImpl CommonConfig = new CommonConfigImpl();
+
   /// <summary>
   /// Controller that handles moving KIS items between the inventories and the scene.
   /// </summary>
