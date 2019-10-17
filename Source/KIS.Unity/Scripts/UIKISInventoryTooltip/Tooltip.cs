@@ -50,6 +50,7 @@ public sealed class Tooltip : UIPrefabBaseScript {
   /// <summary>Tells if hint should be shown.</summary>
   /// <remarks>It's a global settings that affects all the tooltips in the game.</remarks>
   public static bool showHints = true;
+
   /// <summary>Main highlighted text.</summary>
   /// <remarks>Can be set to empty string to hide the control.</remarks>
   public string title {
