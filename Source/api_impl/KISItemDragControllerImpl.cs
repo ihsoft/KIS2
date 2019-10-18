@@ -7,7 +7,7 @@ using KSP.UI;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
-using KSPDev.ModelUtils2;
+using KSPDev.ModelUtils;
 using KSPDev.ProcessingUtils;
 using KSPDev.Unity;
 using System;
@@ -106,7 +106,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
         if (controller.isDragging) {
           controller.CancelItemsLease();
         }
-        Hierarchy2.SafeDestory(gameObject);  // Ensure the tracking is over.
+        Hierarchy.SafeDestory(gameObject);  // Ensure the tracking is over.
         DebugEx.Fine("KIS drag lock released");
       }
     }
@@ -127,7 +127,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
   public UIKISInventorySlotDragIcon dragIconObj {
     get { return _dragIconObj; }
     private set {
-      Hierarchy2.SafeDestory(_dragIconObj);
+      Hierarchy.SafeDestory(_dragIconObj);
       _dragIconObj = value;
     }
   }
