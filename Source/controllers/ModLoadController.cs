@@ -3,7 +3,7 @@
 // License: Public Domain
 
 using KSPDev.LogUtils;
-using KSPDev.ModelUtils;
+using KSPDev.PrefabUtils;
 using System;
 using UnityEngine;
 
