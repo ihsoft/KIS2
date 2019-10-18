@@ -103,7 +103,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " the user should do to start dragging 10 items from the inventory.\n"
           + " The <<1>> argument is a user firendly action name.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
   readonly static Message DifferentPartsTooltipText = new Message(
       "",
       defaultTemplate: "Different parts",
@@ -111,12 +111,14 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " dragged item(s) cannot be added to the stack due to it already contains a different"
           + " part. All items in the slot are required to be the same part!");
 
+  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
   readonly static Message StoreItemsTooltipText = new Message(
       "",
       defaultTemplate: "Store items",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " stored into an empty slot.");
 
+  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
   readonly static Message<KeyboardEventType2> StoreItemsHintText = new Message<KeyboardEventType2>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
@@ -124,12 +126,14 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " the user should do to STORE the dragged items into the hovered slot.\n"
           + " The <<1>> argument is a user firendly action name.");
 
+  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
   readonly static Message AddItemsTooltipText = new Message(
       "",
       defaultTemplate: "Add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " added into an non-empty slot.");
 
+  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
   readonly static Message<KeyboardEventType2> AddItemsHintText = new Message<KeyboardEventType2>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to the stack",
@@ -137,12 +141,14 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " the user should do to ADD the dragged items into the hovered slot.\n"
           + " The <<1>> argument is a user firendly action name.");
 
+  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
   readonly static Message CannotAddItemsTooltipText = new Message(
       "",
       defaultTemplate: "Cannot add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can"
           + " NOT be added into the slot.");
 
+  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
   readonly static Message<int> AddItemsCountHintText = new Message<int>(
       "",
       defaultTemplate: "Add <color=#5a5><<1>></color> items",
