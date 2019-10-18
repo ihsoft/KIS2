@@ -63,35 +63,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Editor\ExportAssetBundles.cs" />
-    <Reference Include="UnityEditor.TestRunner">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/UnityEditor.TestRunner.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.TestRunner">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/UnityEngine.TestRunner.dll</HintPath>
-    </Reference>
     <Reference Include="Unity.Timeline.Editor">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.VSCode.Editor">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Timeline">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.CollabProxy.Editor">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.Rider.Editor">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
@@ -287,9 +266,6 @@
     </Reference>
     <Reference Include="KIS.Unity">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Assets/Plugins/KIS.Unity.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/PackageCache/com.unity.ext.nunit@1.0.0/net35/unity-custom/nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib">
       <HintPath>K:/Program Files/Unity/Editor/Data/MonoBleedingEdge/lib/mono/4.7.1-api/mscorlib.dll</HintPath>
