@@ -58,9 +58,6 @@
     <Reference Include="KIS.Unity">
       <HintPath>KISUnity\Assets\Plugins\KIS.Unity.dll</HintPath>
     </Reference>
-    <Reference Include="KSPAssets">
-      <HintPath>Q:\KSP_x64_Data\Managed\KSPAssets.dll</HintPath>
-    </Reference>
     <Reference Include="System">
       <HintPath>Q:\KSP_x64_Data\Managed\System.dll</HintPath>
     </Reference>
@@ -109,7 +106,6 @@
     <Compile Include="KSPDev_candidates\EventChecker2.cs" />
     <Compile Include="KSPDev_candidates\SafeCallbacks.cs" />
     <Compile Include="KSPDev_candidates\RichTextStyles.cs" />
-    <Compile Include="KSPDev_candidates\UIScalableWindowController.cs" />
     <Compile Include="modules\KISContainerWithSlots.cs" />
     <Compile Include="modules\KISContainerBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
