@@ -21,7 +21,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   #region Localizable strings
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType2> CancelDraggingTxt = new Message<KeyboardEventType2>(
+  static readonly Message<KeyboardEventType> CancelDraggingTxt = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "[<<1>>]: to cancel dragging",
       description: "Help string that explains how to cancel the dragging mode. It is shown at the"

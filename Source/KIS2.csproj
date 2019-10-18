@@ -108,7 +108,6 @@
     <Compile Include="KSPDev_candidates\AbstractPartModule.cs" />
     <Compile Include="KSPDev_candidates\EventChecker2.cs" />
     <Compile Include="KSPDev_candidates\SafeCallbacks.cs" />
-    <Compile Include="KSPDev_candidates\KeyboardEventType2.cs" />
     <Compile Include="KSPDev_candidates\PrefabController.cs" />
     <Compile Include="KSPDev_candidates\RichTextStyles.cs" />
     <Compile Include="KSPDev_candidates\UIScalableWindowController.cs" />

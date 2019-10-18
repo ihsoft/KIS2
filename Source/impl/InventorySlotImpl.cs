@@ -80,7 +80,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
               + " The <<3>> argument is the maximum amount of the resource.");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType2> TakeSlotHintText = new Message<KeyboardEventType2>(
+  readonly static Message<KeyboardEventType> TakeSlotHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab the stack",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
@@ -88,7 +88,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " The <<1>> argument is a user firendly action name.");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType2> TakeOneItemHintText = new Message<KeyboardEventType2>(
+  readonly static Message<KeyboardEventType> TakeOneItemHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>1</color> item",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
@@ -96,7 +96,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " The <<1>> argument is a user firendly action name.");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType2> TakeTenItemsHintText = new Message<KeyboardEventType2>(
+  readonly static Message<KeyboardEventType> TakeTenItemsHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>10</color> items",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
@@ -119,7 +119,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " stored into an empty slot.");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType2> StoreItemsHintText = new Message<KeyboardEventType2>(
+  readonly static Message<KeyboardEventType> StoreItemsHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
@@ -134,7 +134,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
           + " added into an non-empty slot.");
 
   /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
-  readonly static Message<KeyboardEventType2> AddItemsHintText = new Message<KeyboardEventType2>(
+  readonly static Message<KeyboardEventType> AddItemsHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to the stack",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
