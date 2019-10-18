@@ -9,7 +9,7 @@ using UnityEngine.EventSystems;
 namespace KSPDev.Unity {
 
 /// <summary>
-/// Script that allows moving windows by dragging a control. It also makes the dragged widnow the
+/// Script that allows moving windows by dragging a control. It also makes the dragged window the
 /// top most window on left-click.
 /// </summary>
 /// <remarks>
