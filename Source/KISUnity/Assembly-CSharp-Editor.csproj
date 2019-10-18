@@ -72,6 +72,9 @@
     <Reference Include="Unity.Timeline">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
     </Reference>
+    <Reference Include="Unity.2D.Sprite.Editor">
+      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.2D.Sprite.Editor.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
     </Reference>
