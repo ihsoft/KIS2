@@ -111,7 +111,6 @@
     <Compile Include="KSPDev_candidates\KeyboardEventType2.cs" />
     <Compile Include="KSPDev_candidates\PrefabController.cs" />
     <Compile Include="KSPDev_candidates\RichTextStyles.cs" />
-    <Compile Include="KSPDev_candidates\SmallNumberType.cs" />
     <Compile Include="KSPDev_candidates\UIScalableWindowController.cs" />
     <Compile Include="modules\KISContainerWithSlots.cs" />
     <Compile Include="modules\KISContainerBase.cs" />
