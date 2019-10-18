@@ -104,7 +104,6 @@
     <Compile Include="impl\VolumeLType.cs" />
     <Compile Include="KSPDev_candidates\AbstractPartModule.cs" />
     <Compile Include="KSPDev_candidates\EventChecker2.cs" />
-    <Compile Include="KSPDev_candidates\SafeCallbacks.cs" />
     <Compile Include="KSPDev_candidates\RichTextStyles.cs" />
     <Compile Include="modules\KISContainerWithSlots.cs" />
     <Compile Include="modules\KISContainerBase.cs" />
