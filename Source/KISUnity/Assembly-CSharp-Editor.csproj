@@ -63,11 +63,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Editor\ExportAssetBundles.cs" />
-    <Reference Include="Unity.2D.Sprite.Editor">
-      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.2D.Sprite.Editor.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.2D.Sprite.Editor">
+      <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/Unity.2D.Sprite.Editor.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.UI">
       <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
