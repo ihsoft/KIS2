@@ -11,19 +11,28 @@ namespace KSPDev.Unity {
 
 /// <summary>Component that routes pointer events to another component.</summary>
 /// <remarks>
-/// This component can be used to avoid implementing per objet listeners when a container holds
-/// multiple dynamic object. Instead of doing this, this component may be added to every active
-/// element of the container item, and it will deliver events to the container, passing the item as
-/// argument.
+/// This component can be used to avoid implementing per object listeners when container holds
+/// multiple dynamic objects. This component may be added to every active element of the container,
+/// and it will deliver events to the container, passing the element as an argument.
+/// <para>
+/// One example of such setup could be a layout group that contains many dynamic elements (like a
+/// Grid). Instead of implementing event listeners in each element, this component could be added to
+/// the element's prefab and it will be delivering click/hover events right to the specified target.
+/// </para>
 /// </remarks>
 /// <typeparam name="TSource">
-/// Component type of the <c>item</c>. It's a subject or a context of the event.
+/// Component type of the event <c>source</c>. It can be the actual object that received the pointer
+/// event, or it can be any object up or down the hierarchy. E.g. the events can be listened by a
+/// button object, but in the callback the button's image may be passed. This object will be passed
+/// as "context" in the callback.
 /// </typeparam>
 /// <typeparam name="TTarget">
-/// Component type of the <c>sink</c>. The game object of this component will be receiving events.
-/// Only the components that implement pointer listener intefarce will receive the events.
+/// Component type of the <c>sink</c>. The game object of this component will be receiving the
+/// routed events. Only the components that implement
+/// <see cref="IKSPDevPointerListener&lt;TSource&gt;"/> interface will receive the events.
 /// </typeparam>
-/// <seealso cref="IKSPDevPointerListener&lt;TSource&gt;"/>
+/// <seealso cref="eventSource"/>
+/// <seealso cref="eventTarget"/>
 public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
     IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     where TSource : Component
