@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>KIS2</RootNamespace>
     <AssemblyName>KIS2</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <TargetFrameworkProfile />
     <NoWin32Manifest>False</NoWin32Manifest>
@@ -57,6 +57,9 @@
     </Reference>
     <Reference Include="KIS.Unity">
       <HintPath>KISUnity\Assets\Plugins\KIS.Unity.dll</HintPath>
+    </Reference>
+    <Reference Include="KSPDev_Utils.2.0">
+      <HintPath>..\Binaries\KSPDev_Utils.2.0.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <HintPath>Q:\KSP_x64_Data\Managed\System.dll</HintPath>
@@ -114,12 +117,6 @@
     <Folder Include="controllers" />
     <Folder Include="KSPDev_candidates" />
     <Folder Include="impl" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\KSPDev_Utils\Source\KSPDev_Utils.csproj">
-      <Project>{01a7b80c-e283-4651-b879-3cc5efaaa1a4}</Project>
-      <Name>KSPDev_Utils</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
