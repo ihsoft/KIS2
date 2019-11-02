@@ -113,14 +113,24 @@ public class KISContainerBase : AbstractPartModule,
   public virtual ErrorReason[] CheckCanAddParts(
       AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false) {
     var errors = new List<ErrorReason>();
-    var partVolume = KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: node);
-    if (usedVolume + partVolume > maxVolume) {
+    nodes = nodes ?? new ConfigNode[avParts.Length];
+    double partsVolume = 0;
+    for (var i = 0; i < avParts.Length; ++i) {
+      var avPart = avParts[i];
+      var node = nodes[i] ?? KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab);
+      partsVolume += KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: node);
+    }
+    if (usedVolume + partsVolume > maxVolume) {
       errors.Add(new ErrorReason() {
                    shortString = "VolumeTooLarge",
-                   guiString = NeedMoreVolume.Format(partVolume - (maxVolume - usedVolume)),
+                   guiString = NeedMoreVolume.Format(partsVolume - (maxVolume - usedVolume)),
                  });
     }
-    return errors.Count > 0 ? errors.ToArray() : null;
+    if (logErrors && errors.Count > 0) {
+      HostedDebugLog.Error(this, "Cannot add {0} part(s):\n{1}",
+                           avParts.Length, DbgFormatter.C2S(errors, separator: "\n"));
+    }
+    return errors.ToArray();
   }
 
   /// <inheritdoc/>
