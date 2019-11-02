@@ -296,7 +296,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// this option when they don't normally expect any errors.
   /// </param>
   /// <returns>
-  /// An empty array if the item can be added to the slot, or a list of human readable errors.
+  /// <c>null</c> if the item can be added to the slot, or a list of human readable errors.
   /// </returns>
   public ErrorReason[] CheckCanAdd(InventoryItem[] items, bool logErrors = false) {
     Preconditions.MinElements(items, 1);
@@ -318,9 +318,9 @@ sealed class InventorySlotImpl : IKISDragTarget {
       //FIXME: implement similarity check.
     }
     if (logErrors && res.Count > 0) {
-      DebugEx.Error("Cannot add part to slot:\n{0}", DbgFormatter.C2S(res, separator: "\n"));
+      DebugEx.Error("Cannot add items to slot:\n{0}", DbgFormatter.C2S(res, separator: "\n"));
     }
-    return res.ToArray();
+    return res.Count > 0 ? res.ToArray() : null;
   }
 
   /// <summary>Fills tooltip with the slot info.</summary>
