@@ -166,15 +166,12 @@ sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Part proto of this slot.</summary>
   public AvailablePart avPart {
-    get { return !isEmpty ? itemsList[0].avPart : null; }
+    get { return !isEmpty ? items[0].avPart : null; }
   }
 
   /// <summary>Inventory items in the slot.</summary>
   /// TODO(ihsoft): May be cache it if used extensively.
-  public InventoryItem[] items {
-    get { return itemsList.ToArray(); }
-  }
-  readonly List<InventoryItem> itemsList = new List<InventoryItem>();
+  public InventoryItem[] items { get; private set; }
 
   /// <summary>Generalized icon of the slot.</summary>
   public Texture iconImage {
@@ -186,7 +183,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Tells if this slot has any part item.</summary>
   public bool isEmpty {
-    get { return itemsList.Count == 0; }
+    get { return items.Length == 0; }
   }
 
   public bool isLocked {
@@ -260,10 +257,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// <seealso cref="UpdateTooltip"/>
   /// <seealso cref="CheckCanAddItems"/>
   public bool AddItems(InventoryItem[] items) {
-    if (CheckCanAdd(items, logErrors: true).Length > 0) {
-      return false;
-    }
-    itemsList.AddRange(items);
+    UpdateSlotItems(addItems: addItems);
     UpdateUnitySlot();
     if (inventory.unityWindow.hoveredSlot == unitySlot) {
       UpdateTooltip();
@@ -272,11 +266,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
   }
 
   public bool DeleteItem(InventoryItem item) {
-    if (!itemsList.Remove(item)) {
-      //FIXME: deal with slot items so we always know the slot 
-      DebugEx.Error("Cannot remove item from slot");
-      return false;
-    }
+    UpdateSlotItems(deleteItems: new[] { item });
     UpdateUnitySlot();
     if (inventory.unityWindow.hoveredSlot == unitySlot) {
       UpdateTooltip();
@@ -376,8 +366,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
       tooltip.hints = null;
       return;
     }
-    if (itemsList.Count == 1) {
-      UpdateSingleItemTooltip(itemsList[0]);
+    if (items.Length == 1) {
+      UpdateSingleItemTooltip(items[0]);
     } else {
       //FIXME: handle multuple item slots
       currentTooltip.baseInfo.text = "*** multiple items";
@@ -473,18 +463,18 @@ sealed class InventorySlotImpl : IKISDragTarget {
       return;
     }
     unitySlot.slotImage = iconImage;
-    unitySlot.stackSize = "x" + itemsList.Count();
+    unitySlot.stackSize = "x" + items.Length;
     //FIXME: show hotkey if enabled.
 
     // Slot resources info.
-    if (itemsList[0].resources.Length > 0) {
+    if (items[0].resources.Length > 0) {
       var cumAvgPct = 0.0;
-      foreach (var item in itemsList) {
+      foreach (var item in items) {
         if (item.resources.Length > 0) {
           cumAvgPct += item.resources.Sum(r => r.amount / r.maxAmount) / item.resources.Length;
         }
       }
-      unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / itemsList.Count);
+      unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / items.Length);
     } else {
       unitySlot.resourceStatus = null;
     }
