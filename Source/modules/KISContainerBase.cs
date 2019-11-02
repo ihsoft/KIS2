@@ -62,12 +62,13 @@ public class KISContainerBase : AbstractPartModule,
   public Vector3 maxItemSize;
   #endregion
 
+  #region Local fields and properties
+  readonly SortedSet<InventoryItem> itemsSet = new SortedSet<InventoryItem>();
+  #endregion
+
   #region IKISInventory properties
   /// <inheritdoc/>
-  public InventoryItem[] items {
-    get { return itemsList.ToArray(); }
-  }
-  readonly List<InventoryItem> itemsList = new List<InventoryItem>();
+  public InventoryItem[] items { get; private set; }
 
   /// <inheritdoc/>
   public Vector3 maxInnerSize { get { return maxItemSize; } }
@@ -79,7 +80,7 @@ public class KISContainerBase : AbstractPartModule,
   public double usedVolume {
     get {
       if (_usedVolume < 0) {
-        _usedVolume = itemsList.Sum(i => i.volume);
+        _usedVolume = itemsSet.Sum(i => i.volume);
       }
       return _usedVolume;
     }
@@ -90,7 +91,7 @@ public class KISContainerBase : AbstractPartModule,
   public double contentMass {
     get {
       if (_contentMass < 0) {
-        _contentMass = itemsList.Sum(i => i.fullMass);
+        _contentMass = itemsSet.Sum(i => i.fullMass);
       }
       return _contentMass;
     }
@@ -100,7 +101,7 @@ public class KISContainerBase : AbstractPartModule,
   public double contentCost {
     get {
       if (_contentCost < 0) {
-        _contentCost = itemsList.Sum(i => i.fullCost);
+        _contentCost = itemsSet.Sum(i => i.fullCost);
       }
       return _contentCost;
     }
@@ -119,6 +120,7 @@ public class KISContainerBase : AbstractPartModule,
       var avPart = avParts[i];
       var node = nodes[i] ?? KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab);
       partsVolume += KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: node);
+      //FIXME: Check part size.
     }
     if (usedVolume + partsVolume > maxVolume) {
       errors.Add(new ErrorReason() {
@@ -146,11 +148,11 @@ public class KISContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot delete locked item(s)");
       return false;
     }
-    if (deleteItems.Any(x => !ReferenceEquals(x.inventory, this) || !itemsList.Contains(x))) {
+    if (deleteItems.Any(x => !ReferenceEquals(x.inventory, this) || !itemsSet.Contains(x))) {
       HostedDebugLog.Error(this, "Cannot delete item(s) that are not owned by the inventory");
       return false;
     }
-    Array.ForEach(deleteItems, x => itemsList.Remove(x));
+    UpdateItems(deleteItems: deleteItems);
     HostedDebugLog.Fine(
         this, "Removed items: {0}", DbgFormatter.C2S(deleteItems, predicate: x => x.avPart.name));
     return true;
@@ -162,7 +164,7 @@ public class KISContainerBase : AbstractPartModule,
       changedItems.ToList().ForEach(i => i.UpdateConfig());
     } else {
       HostedDebugLog.Fine(this, "Updating all items in the inventory...");
-      itemsList.ForEach(i => i.UpdateConfig());
+      itemsSet.ToList().ForEach(i => i.UpdateConfig());
     }
     _usedVolume = -1;
     _contentMass = -1;
@@ -177,8 +179,19 @@ public class KISContainerBase : AbstractPartModule,
   /// </remarks>
   /// <param name="addItems">The items to add.</param>
   protected virtual void AddItems(InventoryItem[] addItems) {
-    itemsList.AddRange(addItems);
+    UpdateItems(addItems: addItems);
     UpdateInventoryStats(addItems);
+  }
+
+  /// <summary>Adds or deletes the inventory items.</summary>
+  protected void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
+    if (addItems != null) {
+      Array.ForEach(addItems, x => itemsSet.Add(x));
+    }
+    if (deleteItems != null) {
+      Array.ForEach(deleteItems, x => itemsSet.Remove(x));
+    }
+    items = itemsSet.ToArray();
   }
   #endregion
 }
