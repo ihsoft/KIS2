@@ -110,7 +110,8 @@ public class KISContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public virtual ErrorReason[] CheckCanAdd(AvailablePart avPart, ConfigNode node) {
+  public virtual ErrorReason[] CheckCanAddParts(
+      AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false) {
     var errors = new List<ErrorReason>();
     var partVolume = KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: node);
     if (usedVolume + partVolume > maxVolume) {
@@ -123,7 +124,7 @@ public class KISContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem AddItem(AvailablePart avPart, ConfigNode node) {
+  public virtual InventoryItem AddPart(AvailablePart avPart, ConfigNode node) {
     var item = new InventoryItemImpl(this, avPart, node);
     itemsList.Add(item);
     UpdateInventoryStats(item);
@@ -131,9 +132,9 @@ public class KISContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual bool DeleteItem(InventoryItem item) {
-    if (item.isLocked) {
-      HostedDebugLog.Error(this, "Cannot delete locked item: idx={0}", itemsList.IndexOf(item));
+  public virtual bool DeleteItems(InventoryItem[] deleteItems) {
+    if (deleteItems.Any(x => x.isLocked)) {
+      HostedDebugLog.Error(this, "Cannot delete locked item(s)");
       return false;
     }
     if (!itemsList.Remove(item)) {
@@ -150,13 +151,7 @@ public class KISContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual void SetItemLock(InventoryItem item, bool isLocked) {
-    throw new NotImplementedException();
-  }
-
-  /// <inheritdoc/>
-  public virtual void UpdateInventoryStats(params InventoryItem[] changedItems) {
-    if (changedItems.Length > 0) {
+  public virtual void UpdateInventoryStats(InventoryItem[] changedItems) {
       changedItems.ToList().ForEach(i => i.UpdateConfig());
     } else {
       DebugEx.Fine("Updating all items in the inventory...");

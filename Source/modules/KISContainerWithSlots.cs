@@ -125,7 +125,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override InventoryItem AddItem(AvailablePart avPart, ConfigNode node) {
+  public override InventoryItem AddPart(AvailablePart avPart, ConfigNode node) {
     var slot = FindSlotForPart(avPart, node);
     if (slot == null) {
       HostedDebugLog.Warning(this, "No slots available for part: {0}", avPart.name);
@@ -136,10 +136,9 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     return item;
   }
 
-  //public virtual bool DeleteItem(InventoryItem item)
 
   /// <inheritdoc/>
-  public override void UpdateInventoryStats(params InventoryItem[] changedItems) {
+  public override void UpdateInventoryStats(InventoryItem[] changedItems) {
     base.UpdateInventoryStats(changedItems);
     UpdateInventoryWindow();
   }
@@ -176,7 +175,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       var amount = UnityEngine.Random.Range(minPct, maxPct) * res.maxAmount;
       KISAPI.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
     }
-    AddItem(avPart, node);
+    AddPart(avPart, node);
   }
 
   void AddPartByName(string partName) {
@@ -185,7 +184,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       DebugEx.Error("*** bummer: no part {0}", partName);
       return;
     }
-    AddItem(avPart, KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab));
+    AddPart(avPart, KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab));
   }
   #endregion
 
@@ -358,7 +357,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
           HostedDebugLog.Error(
               this, "Dropping item from a non-empty slot: slotIdx={0}, item={1}",
               deleteIndex, item.avPart.name);
-          DeleteItem(item);
+          DeleteItems(new[] { item });
         }
         inventorySlots.RemoveAt(deleteIndex);
       }

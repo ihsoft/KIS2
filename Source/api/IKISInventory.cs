@@ -33,14 +33,24 @@ public interface IKISInventory {
   /// <seealso cref="UpdateInventoryStats"/>
   double contentCost { get; }
 
-  /// <summary>Verifies if the item can be added into the inventory.</summary>
-  /// <param name="avPart">The part proto.</param>
-  /// <param name="node">The part's persisted state.</param>
-  /// <returns><c>null</c> if item can be added, or a list of reasons why not.</returns>
-  /// <seealso cref="AddItem"/>
-  ErrorReason[] CheckCanAdd(AvailablePart avPart, ConfigNode node);
+  /// <summary>Verifies if the part can be added into the inventory.</summary>
+  /// <remarks>This method verifies if <i>all</i> the parts can fit the inventory.</remarks>
+  /// <param name="avParts">The part protos.</param>
+  /// <param name="nodes">
+  /// The part's persisted state. If <c>null</c>, then a default state will be created from the
+  /// prefab. If an array is provided, then it can have <c>null</c> elements for the parts that have
+  /// a default config.
+  /// </param>
+  /// <param name="logErrors">
+  /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a
+  /// precondition.
+  /// </param>
+  /// <returns>Empty array if the part can be added, or a list of reasons why not.</returns>
+  /// <seealso cref="AddPart"/>
+  ErrorReason[] CheckCanAddParts(
+      AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false);
 
-  /// <summary>Adds a new item into the inventory.</summary>
+  /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
   /// responsibility of the caller.
@@ -48,28 +58,21 @@ public interface IKISInventory {
   /// <param name="avPart">The part proto.</param>
   /// <param name="node">The part's persisted state.</param>
   /// <returns>The newly created item or <c>null</c> if add failed.</returns>
-  /// <seealso cref="CheckCanAdd"/>
-  InventoryItem AddItem(AvailablePart avPart, ConfigNode node);
+  /// <seealso cref="CheckCanAddParts"/>
+  InventoryItem AddPart(AvailablePart avPart, ConfigNode node);
 
-  /// <summary>Removes the specified item from inventory.</summary>
-  /// <remarks>Locked items cannot be removed.</remarks>
-  /// <param name="item">The item to remove.</param>
+  /// <summary>Removes the specified items from inventory.</summary>
+  /// <remarks>
+  /// The delete action is atomic: it either succeeds in full or fails without changing the
+  /// inventory state.
+  /// </remarks>
+  /// <param name="deleteItems">The items to remove.</param>
   /// <returns>
-  /// <c>true</c> if removal was successful or NO-OP. <c>false</c> if the item exists but cannot be
+  /// <c>true</c> if removal was successful or NO-OP. <c>false</c> if any of the items cannot be
   /// removed.
   /// </returns>
-  /// <seealso cref="SetItemLock"/>
-  bool DeleteItem(InventoryItem item);
-
-  /// <summary>
-  /// Puts a lock state on the item that prevents any updates to it in this inventory.
-  /// </summary>
-  /// <remarks>The locked item cannot be removed from the inventory.</remarks>
-  /// <param name="item">The item to put lock on.</param>
-  /// <param name="isLocked">The lock state.</param>
-  /// <seealso cref="DeleteItem"/>
   /// <seealso cref="InventoryItem.isLocked"/>
-  void SetItemLock(InventoryItem item, bool isLocked);
+  bool DeleteItems(InventoryItem[] deleteItems);
 
   /// <summary>
   /// Forces the container to refresh its state according to the new state of an item.
@@ -82,12 +85,17 @@ public interface IKISInventory {
   /// will be made if <paramref name="changedItems"/> are provided. In this case only that items
   /// will be updated. Callers can use this ability to optimize their calls and save CPU.
   /// </para>
+  /// <para>
+  /// Do not call this method if the changes were made thru the inventory methods (like adding or
+  /// removing items). The inventory is fully aware of such chages and can update accordingly. This
+  /// method must only be called when the item itself has changed (e.g. its config was updated). 
+  /// </para>
   /// </remarks>
   /// <param name="changedItems">
-  /// The items, which changed state was the reason of the inventory update. If empty, then all the
-  /// items in the inventory will be updated.
+  /// The items, which changed state was the reason of the inventory update. If <c>null</c>, then\
+  /// all the items in the inventory will be updated.
   /// </param>
-  void UpdateInventoryStats(params InventoryItem[] changedItems);
+  void UpdateInventoryStats(InventoryItem[] changedItems);
 }
 
 }  // namespace
