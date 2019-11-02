@@ -137,16 +137,13 @@ public class KISContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot delete locked item(s)");
       return false;
     }
-    if (!itemsList.Remove(item)) {
-      if (ReferenceEquals(item.inventory, this)) {
-        HostedDebugLog.Warning(this, "Item is already removed: {0}", item.avPart.name);
-      } else {
-        HostedDebugLog.Error(this, "Item was never owned by the inventory: realOwner={0}",
-                             item.inventory as PartModule);
-      }
-    } else {
-      HostedDebugLog.Fine(this, "Remove item: {0}", item.avPart.name);
+    if (deleteItems.Any(x => !ReferenceEquals(x.inventory, this) || !itemsList.Contains(x))) {
+      HostedDebugLog.Error(this, "Cannot delete item(s) that are not owned by the inventory");
+      return false;
     }
+    Array.ForEach(deleteItems, x => itemsList.Remove(x));
+    HostedDebugLog.Fine(
+        this, "Removed items: {0}", DbgFormatter.C2S(deleteItems, predicate: x => x.avPart.name));
     return true;
   }
 
