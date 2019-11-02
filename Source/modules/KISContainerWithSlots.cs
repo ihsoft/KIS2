@@ -223,7 +223,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   void CloseInventoryWindow() {
     if (unityWindow != null) {
       HostedDebugLog.Fine(this, "Destroying inventory window");
-      Hierarchy.SafeDestory(gameObject);
+      Hierarchy.SafeDestory(unityWindow);
       unityWindow = null;
     }
   } 
