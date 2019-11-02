@@ -136,8 +136,7 @@ public class KISContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual InventoryItem AddPart(AvailablePart avPart, ConfigNode node) {
     var item = new InventoryItemImpl(this, avPart, node);
-    itemsList.Add(item);
-    UpdateInventoryStats(new[] { item });
+    AddItems(new[] { item });
     return item;
   }
 
@@ -168,6 +167,18 @@ public class KISContainerBase : AbstractPartModule,
     _usedVolume = -1;
     _contentMass = -1;
     _contentCost = -1;
+  }
+  #endregion
+
+  #region Inheritable methods
+  /// <summary>Adds the items to the inbventory and updates it.</summary>
+  /// <remarks>
+  /// All items must be referred by this inventory but not owned. No preconditions are checked.
+  /// </remarks>
+  /// <param name="addItems">The items to add.</param>
+  protected virtual void AddItems(InventoryItem[] addItems) {
+    itemsList.AddRange(addItems);
+    UpdateInventoryStats(addItems);
   }
   #endregion
 }
