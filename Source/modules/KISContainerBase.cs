@@ -152,7 +152,7 @@ public class KISContainerBase : AbstractPartModule,
     if (changedItems != null && changedItems.Length > 0) {
       changedItems.ToList().ForEach(i => i.UpdateConfig());
     } else {
-      DebugEx.Fine("Updating all items in the inventory...");
+      HostedDebugLog.Fine(this, "Updating all items in the inventory...");
       itemsList.ForEach(i => i.UpdateConfig());
     }
     _usedVolume = -1;
