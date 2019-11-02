@@ -247,11 +247,18 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// <summary>Adds an item to the slot.</summary>
   /// <remarks>
   /// It's an error for this method if the item cannot be added. The callers must verify if it can
-  /// be added via <see cref="CheckCanAdd"/>.
+  /// be added via <see cref="CheckCanAddItems"/> before attempting to add anything.
   /// </remarks>
-  /// <param name="items">The items to add.</param>
-  /// <returns><c>true</c> if the items were added to the slot.</returns>
+  /// <param name="items">
+  /// The items to add. They are not copied, they are added as the references. These items must
+  /// belong to the same inventory as the slot!
+  /// </param>
+  /// <returns>
+  /// <c>true</c> if the items were added to the slot. In case of adding has failed, the error(s)
+  /// will be logged.
+  /// </returns>
   /// <seealso cref="UpdateTooltip"/>
+  /// <seealso cref="CheckCanAddItems"/>
   public bool AddItems(InventoryItem[] items) {
     if (CheckCanAdd(items, logErrors: true).Length > 0) {
       return false;
@@ -279,7 +286,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Verifies if the item can be added to the slot.</summary>
   /// <remarks>
-  /// The item must be "similar" to the other items in teh slot. At the very least, it must be the
+  /// The item must be "similar" to the other items in the slot. At the very least, it must be the
   /// same part. The part's state similarity is implementation dependent and the callers must not be
   /// guessing about it.
   /// </remarks>
@@ -331,6 +338,10 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #endregion
 
   #region Local utility methods
+  /// <summary>
+  /// Updates tooltip when mouse pointer is hoveriong over the slot AND the dragging mode was
+  /// started.
+  /// </summary>
   void UpdateDraggingStateTooltip() {
     currentTooltip.ClearInfoFileds();
     if (isEmpty) {
@@ -355,6 +366,10 @@ sealed class InventorySlotImpl : IKISDragTarget {
     }
   }
 
+  /// <summary>
+  /// Updates tooltip when mouse pointer is hovering over the slot but the dragging mode was not
+  /// started.
+  /// </summary>
   void UpdateSimpleHoveringTooltip() {
     currentTooltip.ClearInfoFileds();
     if (isEmpty) {

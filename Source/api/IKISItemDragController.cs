@@ -65,13 +65,12 @@ public interface IKISItemDragController {
 
   /// <summary>Indicates that the target is willing to consume the dragged items.</summary>
   /// <remarks>
-  /// By calling this method the caller is signing that it's ready to take ownership to
-  /// <see cref="leasedItems"/>. If this method retuns success, then the <see cref="leasedItems"/>
-  /// will be cleared, so caller has to make a copy before the call.  
+  /// By calling this method the caller is stating that it's ready to take ownership to the
+  /// <see cref="leasedItems"/>. If this method retuns success, then the dragging mode ends.
   /// </remarks>
   /// <returns>
-  /// The items consumed, or <c>null</c> if the provider refused the transfer deal. In the latter
-  /// case the dragging operation stays running.
+  /// The items to consume, or <c>null</c> if the provider refused the complete the deal. In the
+  /// latter case the dragging operation stays running and unchanged.
   /// </returns>
   /// <seealso cref="leasedItems"/>
   /// <seealso cref="IKISDragTarget.OnKISDragEnd"/>

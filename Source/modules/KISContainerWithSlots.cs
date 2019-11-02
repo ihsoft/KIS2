@@ -189,6 +189,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   #endregion
 
   #region Local utility methods
+  /// <summary>Opens the inventory window.</summary>
   void OpenInventoryWindow() {
     if (unityWindow != null) {
       return;  // Nothing to do.
@@ -218,6 +219,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     UpdateInventoryWindow();
   }
 
+  /// <summary>Destroys the inventory window.</summary>
   void CloseInventoryWindow() {
     if (unityWindow != null) {
       HostedDebugLog.Fine(this, "Destroying inventory window");
@@ -226,6 +228,8 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     }
   } 
 
+  /// <summary>Updates stats in the open inventory window.</summary>
+  /// <remarks>It's safe to call it when the inventory window is not open.</remarks>
   void UpdateInventoryWindow() {
     if (unityWindow != null) {
       var text = new List<string>();
@@ -266,6 +270,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     }
   }
 
+  /// <summary>Callback for the Unity slot click action.</summary>
   void OnSlotClick(Slot slot, PointerEventData.InputButton button) {
     var inventorySlot = inventorySlots[slot.slotIndex];
     if (KISAPI.ItemDragController.isDragging) {

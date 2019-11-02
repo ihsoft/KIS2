@@ -139,6 +139,7 @@ sealed class InventoryItemImpl : InventoryItem {
   #endregion
 
   #region API methods
+  /// <summary>Makes a new item from the part definition.</summary>
   internal InventoryItemImpl(IKISInventory inventory, AvailablePart avPart, ConfigNode node) {
     this.inventory = inventory;
     this.avPart = avPart;
