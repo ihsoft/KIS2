@@ -149,6 +149,7 @@ public class KISContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual void UpdateInventoryStats(InventoryItem[] changedItems) {
+    if (changedItems != null && changedItems.Length > 0) {
       changedItems.ToList().ForEach(i => i.UpdateConfig());
     } else {
       DebugEx.Fine("Updating all items in the inventory...");
