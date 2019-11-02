@@ -264,6 +264,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       unityWindow.StartSlotTooltip();
       inventorySlot.UpdateTooltip();
       KISAPI.ItemDragController.RegisterTarget(inventorySlot);
+      unityWindow.currentTooltip.StartCoroutine(UpdateHoveredHints(inventorySlot));
     } else {
       KISAPI.ItemDragController.UnregisterTarget(inventorySlot);
       unityWindow.DestroySlotTooltip();
@@ -367,6 +368,21 @@ public sealed class KISContainerWithSlots : KISContainerBase,
         inventorySlots.RemoveAt(deleteIndex);
       }
       UpdateInventoryStats(null);
+    }
+  }
+
+  /// <summary>Updates tooltip hints in every frame to catch the keyboard actions.</summary>
+  /// <remarks>
+  /// This coroutine is expected to be scheduled on the tooltip object. When it dies, so does this
+  /// coroutine.
+  /// </remarks>
+  IEnumerator UpdateHoveredHints(InventorySlotImpl inventorySlot) {
+    if (!UIKISInventoryTooltip.Tooltip.showHints) {
+      yield break;  // No hints, no tracking.
+    }
+    while (true) {  // The coroutine will die with the tooltip.
+      inventorySlot.UpdateHints();
+      yield return null;
     }
   }
   #endregion
