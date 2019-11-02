@@ -197,6 +197,11 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     HostedDebugLog.Fine(this, "Creating inventory window");
     unityWindow = UnityPrefabController.CreateInstance<UIKISInventoryWindow>(
         "KISInventoryDialog", UIMasterController.Instance.actionCanvas.transform);
+    
+    //FIXME: Fix it in the prefab via TMPro.
+    DebugEx.Warning("*** Enabling PerfectPixel mode on the root UI canvas!");
+    UIMasterController.Instance.actionCanvas.pixelPerfect = true;
+    
     unityWindow.gameObject.AddComponent<UIScalableWindowController>();
     unityWindow.onSlotHover.Add(OnSlotHover);
     unityWindow.onSlotClick.Add(OnSlotClick);
