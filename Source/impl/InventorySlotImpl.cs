@@ -243,20 +243,17 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #region API methods
   /// <summary>Adds an item to the slot.</summary>
   /// <remarks>
-  /// It's an error for this method if the item cannot be added. The callers must verify if it can
-  /// be added via <see cref="CheckCanAddItems"/> before attempting to add anything.
+  /// This method doesn't check preconditions. The items will be added even if it breask the slot's
+  /// logic. The caller is resposible to verify if the items can be added via the
+  /// <see cref="CheckCanAddItems"/> before attempting to add anything.
   /// </remarks>
-  /// <param name="items">
+  /// <param name="addItems">
   /// The items to add. They are not copied, they are added as the references. These items must
   /// belong to the same inventory as the slot!
   /// </param>
-  /// <returns>
-  /// <c>true</c> if the items were added to the slot. In case of adding has failed, the error(s)
-  /// will be logged.
-  /// </returns>
   /// <seealso cref="UpdateTooltip"/>
   /// <seealso cref="CheckCanAddItems"/>
-  public bool AddItems(InventoryItem[] items) {
+  public void AddItems(InventoryItem[] addItems) {
     UpdateSlotItems(addItems: addItems);
     UpdateUnitySlot();
     if (inventory.unityWindow.hoveredSlot == unitySlot) {
@@ -288,7 +285,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// <returns>
   /// <c>null</c> if the item can be added to the slot, or a list of human readable errors.
   /// </returns>
-  public ErrorReason[] CheckCanAdd(InventoryItem[] items, bool logErrors = false) {
+  public ErrorReason[] CheckCanAddItems(InventoryItem[] items, bool logErrors = false) {
     Preconditions.MinElements(items, 1);
     var res = new HashSet<ErrorReason>();
     var slotPartName = isEmpty ? items[0].avPart.name : avPart.name;
@@ -317,6 +314,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// <remarks>
   /// If the slot is empty, then no update is made. The tooltip visibility is never affected.
   /// </remarks>
+  /// <seealso cref="currentTooltip"/>
   public void UpdateTooltip() {
     if (KISAPI.ItemDragController.isDragging) {
       UpdateDraggingStateTooltip();
