@@ -186,10 +186,11 @@ public class PartModelUtilsImpl {
   /// <param name="avPart">The part proto to get the models from.</param>
   /// <param name="variant">
   /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
-  /// <paramref name="partNode"/>.
+  /// <paramref name="partNode"/>. If both the <paramref name="variant"/> and the
+  /// <paramref name="partNode"/> are sepcified, then varian argument will be considered.  
   /// </param>
   /// <param name="partNode">
-  /// The part's persistent config. It will be looked up for the variant if it's not specified.
+  /// The part's persistent config. It will be looked up for the variant and other volume modifiers.
   /// </param>
   /// <returns>The volume in liters.</returns>
   public double GetPartVolume(
