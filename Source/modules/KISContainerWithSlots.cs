@@ -5,6 +5,7 @@
 using KSPDev.LogUtils;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 using System.Collections.Generic;
 using KSP.UI;
 using System.Reflection;
@@ -20,7 +21,7 @@ using KIS2.UIKISInventorySlot;
 using KIS2.GUIUtils;
 using KSPDev.Unity;
 using UnityEngine.EventSystems;
-using KSPDev.Prefabs;
+using KSPDev.PrefabUtils;
 
 namespace KIS2 {
 
@@ -93,6 +94,10 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   /// <summary>Inventory slots. They always exactly match the Unity window slots.</summary>
   readonly List<InventorySlotImpl> inventorySlots = new List<InventorySlotImpl>();
+
+  /// <summary>Index that resolves item to the slot that contains it.</summary>
+  readonly Dictionary<InventoryItem, InventorySlotImpl> itemToSlotMap =
+      new Dictionary<InventoryItem, InventorySlotImpl>();
   #endregion
 
   #region AbstractPartModule overrides
@@ -131,9 +136,21 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       HostedDebugLog.Warning(this, "No slots available for part: {0}", avPart.name);
       return null;
     }
-    var item = base.AddItem(avPart, node);
-    slot.AddItems(new[] { item });
+    var item = new InventoryItemImpl(this, avPart, node);
+    AddItemsToSlot(new[] { item }, slot);
     return item;
+  }
+
+  /// <inheritdoc/>
+  public override bool DeleteItems(InventoryItem[] deleteItems) {
+    if (base.DeleteItems(deleteItems)) {
+      foreach (var deleteItem in deleteItems) {
+        itemToSlotMap[deleteItem].DeleteItem(deleteItem);
+        itemToSlotMap.Remove(deleteItem);
+      }
+      return true;
+    }
+    return false;
   }
 
 
@@ -259,6 +276,18 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   InventorySlotImpl FindSlotForPart(AvailablePart avAprt, ConfigNode node) {
     //FIXME: look in the existing slots first. 
     return GetFreeSlot();
+  }
+
+  /// <summary>Add items to the specified slot of the inventory.</summary>
+  /// <remarks>
+  /// The items must belong to the inventory, but not be owned by it (i.e. not to be in the
+  /// <see cref="items"/>). This method doesn't check any preconditions.
+  /// </remarks>
+  /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
+  void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
+    AddItems(addItems);
+    slot.AddItems(addItems);
+    Array.ForEach(addItems, x => itemToSlotMap.Add(x, slot));
   }
   #endregion
 
