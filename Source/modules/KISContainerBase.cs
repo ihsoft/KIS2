@@ -119,25 +119,6 @@ public class KISContainerBase : AbstractPartModule,
                    guiString = NeedMoreVolume.Format(partVolume - (maxVolume - usedVolume)),
                  });
     }
-    var partBox = KISAPI.PartModelUtils.GetPartBounds(avPart, partNode: node);
-    if (partBox.x > maxItemSize.x) {
-      errors.Add(new ErrorReason() {
-                   shortString = "SizeTooLarge",
-                   guiString = WidthTooLarge.Format(partBox.x, maxItemSize.x),
-                 });
-    }
-    if (partBox.y > maxItemSize.y) {
-      errors.Add(new ErrorReason() {
-                   shortString = "SizeTooLarge",
-                   guiString = HeightTooLarge.Format(partBox.y, maxItemSize.y),
-                 });
-    }
-    if (partBox.z > maxItemSize.z) {
-      errors.Add(new ErrorReason() {
-                   shortString = "SizeTooLarge",
-                   guiString = LengthTooLarge.Format(partBox.z, maxItemSize.z),
-                 });
-    }
     return errors.Count > 0 ? errors.ToArray() : null;
   }
 
