@@ -366,7 +366,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
         }
         inventorySlots.RemoveAt(deleteIndex);
       }
-      UpdateInventoryStats();
+      UpdateInventoryStats(null);
     }
   }
   #endregion

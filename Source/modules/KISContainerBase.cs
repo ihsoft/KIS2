@@ -137,7 +137,7 @@ public class KISContainerBase : AbstractPartModule,
   public virtual InventoryItem AddPart(AvailablePart avPart, ConfigNode node) {
     var item = new InventoryItemImpl(this, avPart, node);
     itemsList.Add(item);
-    UpdateInventoryStats(item);
+    UpdateInventoryStats(new[] { item });
     return item;
   }
 
