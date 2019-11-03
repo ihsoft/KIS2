@@ -132,7 +132,7 @@ public class KISContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot add {0} part(s):\n{1}",
                            avParts.Length, DbgFormatter.C2S(errors, separator: "\n"));
     }
-    return errors.ToArray();
+    return errors.Count > 0 ? errors.ToArray() : null;
   }
 
   /// <inheritdoc/>

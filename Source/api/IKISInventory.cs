@@ -13,7 +13,7 @@ public interface IKISInventory {
   InventoryItem[] items { get; }
 
   /// <summary>Maximum dimensions of the inner inventory space.</summary>
-  /// <remarks>Objects that are large in any of the dimensions cannot fit the inventory.</remarks>
+  /// <remarks>Objects that are larger in any of the dimensions cannot fit the inventory.</remarks>
   Vector3 maxInnerSize { get; }
 
   /// <summary>Maximum volume of all the items that inventory can hold.</summary>
@@ -45,7 +45,7 @@ public interface IKISInventory {
   /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a
   /// precondition.
   /// </param>
-  /// <returns>Empty array if the part can be added, or a list of reasons why not.</returns>
+  /// <returns><c>null</c> if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddPart"/>
   ErrorReason[] CheckCanAddParts(
       AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false);
