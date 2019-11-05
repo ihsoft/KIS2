@@ -26,37 +26,37 @@ namespace KIS2 {
 sealed class InventorySlotImpl : IKISDragTarget {
 
   #region Localizable strings
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<MassType> MassTootltipText = new Message<MassType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<MassType> MassTooltipText = new Message<MassType>(
       "",
       defaultTemplate: "Mass: <b><<1>></b>",
       description: "Mass of a single item in the slot tooltip when all items have equal mass.\n"
           + " The <<1>> argument is the mass of type MassType.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<VolumeLType> VolumeTootltipText = new Message<VolumeLType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<VolumeLType> VolumeTooltipText = new Message<VolumeLType>(
       "",
       defaultTemplate: "Volume: <b><<1>></b>",
       description: "Volume of the item for the slot tooltip. All items in th slot have the same"
           + " volume.n\n"
           + " The <<1>> argument is the volume of type VolumeLType.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<CostType> CostTootltipText = new Message<CostType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<CostType> CostTooltipText = new Message<CostType>(
       "",
       defaultTemplate: "Cost: <b><<1>></b>",
       description: "Cost of a single item for the slot tooltip when all items have equal cost.\n"
           + " The <<1>> argument is the cost of type CostType.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<string> VariantTootltipText = new Message<string>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<string> VariantTooltipText = new Message<string>(
       "",
       defaultTemplate: "Variant: <b><<1>></b>",
       description: "Name of the variant of the items in the slot tooltip. All items in the slot"
           + " have the same variant.\n"
           + " The <<1>> argument is a localized name of the variant.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message3/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
   static readonly Message<ResourceType, CompactNumberType, CompactNumberType> NormalResourceValueText =
       new Message<ResourceType, CompactNumberType, CompactNumberType>(
           "",
@@ -67,7 +67,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
               + " The <<2>> argument is the current amount of the resource.\n"
               + " The <<3>> argument is the maximum amount of the resource.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message3/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
   static readonly Message<ResourceType, CompactNumberType, CompactNumberType> SpecialResourceValueText =
       new Message<ResourceType, CompactNumberType, CompactNumberType>(
           "",
@@ -79,77 +79,76 @@ sealed class InventorySlotImpl : IKISDragTarget {
               + " The <<2>> argument is the current amount of the resource.\n"
               + " The <<3>> argument is the maximum amount of the resource.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType> TakeSlotHintText = new Message<KeyboardEventType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> TakeSlotHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab the stack",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
           + " the user should do to start dragging the whole slot form the inventory.\n"
-          + " The <<1>> argument is a user firendly action name.");
+          + " The <<1>> argument is a user friendly action name.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType> TakeOneItemHintText = new Message<KeyboardEventType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> TakeOneItemHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>1</color> item",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
           + " the user should do to start dragging exactly ONE item from the inventory slot.\n"
-          + " The <<1>> argument is a user firendly action name.");
+          + " The <<1>> argument is a user friendly action name.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType> TakeTenItemsHintText = new Message<KeyboardEventType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> TakeTenItemsHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>10</color> items",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
           + " the user should do to start dragging 10 items from the inventory.\n"
-          + " The <<1>> argument is a user firendly action name.");
+          + " The <<1>> argument is a user friendly action name.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
-  readonly static Message DifferentPartsTooltipText = new Message(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message DifferentPartsReasonText = new Message(
       "",
       defaultTemplate: "Different parts",
-      description: "Info text that is shown in the inventory slot tooltip. It tells that the"
-          + " dragged item(s) cannot be added to the stack due to it already contains a different"
-          + " part. All items in the slot are required to be the same part!");
+      description: "Error message that is presented when parts cannot be added to the inventory"
+          + " slot due to some of them don't match to each other or the other items in the slot.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
-  readonly static Message StoreItemsTooltipText = new Message(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message StoreItemsTooltipText = new Message(
       "",
       defaultTemplate: "Store items",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " stored into an empty slot.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly static Message<KeyboardEventType> StoreItemsHintText = new Message<KeyboardEventType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> StoreItemsHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
           + " the user should do to STORE the dragged items into the hovered slot.\n"
-          + " The <<1>> argument is a user firendly action name.");
+          + " The <<1>> argument is a user friendly action name.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
-  readonly static Message AddItemsTooltipText = new Message(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message AddItemsTooltipText = new Message(
       "",
       defaultTemplate: "Add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " added into an non-empty slot.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
-  readonly static Message<KeyboardEventType> AddItemsHintText = new Message<KeyboardEventType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message<KeyboardEventType> AddItemsHintText = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to the stack",
       description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
           + " the user should do to ADD the dragged items into the hovered slot.\n"
-          + " The <<1>> argument is a user firendly action name.");
+          + " The <<1>> argument is a user friendly action name.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
-  readonly static Message CannotAddItemsTooltipText = new Message(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotAddItemsTooltipText = new Message(
       "",
       defaultTemplate: "Cannot add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can"
           + " NOT be added into the slot.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message0/*"/>
-  readonly static Message<int> AddItemsCountHintText = new Message<int>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message<int> AddItemsCountHintText = new Message<int>(
       "",
       defaultTemplate: "Add <color=#5a5><<1>></color> items",
       description: "Hint text that is shown in the inventory slot tooltip. It tells how many items"
@@ -197,7 +196,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
   bool _isLocked;
   #endregion
 
-  #region Local fields and constants
+  #region Local constants
   static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
   static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
   static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");

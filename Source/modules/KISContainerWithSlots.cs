@@ -30,37 +30,37 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     IHasGUI {
 
   #region Localizable GUI strings.
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<string> DialogTitle = new Message<string>(
       "",
       defaultTemplate: "Inventory: <<1>>",
       description: "Title of the inventory dialog for this part.\n"
-          + " The <<1>> argument is a user friendly name of the onwer part.",
+          + " The <<1>> argument is a user friendly name of the owner part.",
       example: "Inventory: SC-62 Portable Container");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> InventoryContentMassTxt = new Message<MassType>(
       "",
       defaultTemplate: "Content mass: <color=#58F6AE><<1>></color>");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CostType> InventoryContentCostTxt = new Message<CostType>(
       "",
       defaultTemplate: "Content cost: <color=#58F6AE><<1>></color>");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> AvailableVolumeTxt = new Message<VolumeLType>(
       "",
       defaultTemplate: "Available volume: <color=yellow><<1>></color>");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> MaxVolumeTxt = new Message<VolumeLType>(
       "",
       defaultTemplate: "Maximum volume: <color=#58F6AE><<1>></color>");
   #endregion
 
   #region Part's config fields
-  /// <include file="SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
   public Vector2 minGridSize = new Vector2(3, 1);
   
@@ -68,7 +68,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   [KSPField]
   public Vector2 maxGridSize = new Vector2(16, 9);
 
-  /// <include file="SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField(isPersistant = true)]
   public Vector2 persistedGridSize;
   #endregion
@@ -93,10 +93,10 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   internal UIKISInventoryWindow unityWindow;
 
   /// <summary>Inventory slots. They always exactly match the Unity window slots.</summary>
-  readonly List<InventorySlotImpl> inventorySlots = new List<InventorySlotImpl>();
+  readonly List<InventorySlotImpl> _inventorySlots = new List<InventorySlotImpl>();
 
   /// <summary>Index that resolves item to the slot that contains it.</summary>
-  readonly Dictionary<InventoryItem, InventorySlotImpl> itemToSlotMap =
+  readonly Dictionary<InventoryItem, InventorySlotImpl> _itemToSlotMap =
       new Dictionary<InventoryItem, InventorySlotImpl>();
   #endregion
 
@@ -137,7 +137,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       return null;
     }
     var item = new InventoryItemImpl(this, avPart, node);
-    AddItemsToSlot(new[] { item }, slot);
+    AddItemsToSlot(new InventoryItem[] { item }, slot);
     return item;
   }
 
@@ -145,8 +145,8 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   public override bool DeleteItems(InventoryItem[] deleteItems) {
     if (base.DeleteItems(deleteItems)) {
       foreach (var deleteItem in deleteItems) {
-        itemToSlotMap[deleteItem].DeleteItem(deleteItem);
-        itemToSlotMap.Remove(deleteItem);
+        _itemToSlotMap[deleteItem].DeleteItem(deleteItem);
+        _itemToSlotMap.Remove(deleteItem);
       }
       return true;
     }
@@ -281,19 +281,19 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   /// <summary>Add items to the specified slot of the inventory.</summary>
   /// <remarks>
   /// The items must belong to the inventory, but not be owned by it (i.e. not to be in the
-  /// <see cref="items"/>). This method doesn't check any preconditions.
+  /// <see cref="addItems"/>). This method doesn't check any preconditions.
   /// </remarks>
   /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
   void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
     AddItems(addItems);
     slot.AddItems(addItems);
-    Array.ForEach(addItems, x => itemToSlotMap.Add(x, slot));
+    Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
   }
   #endregion
 
   #region Unity window callbacks
   void OnSlotHover(Slot slot, bool isHover) {
-    var inventorySlot = inventorySlots[slot.slotIndex];
+    var inventorySlot = _inventorySlots[slot.slotIndex];
     if (isHover) {
       unityWindow.StartSlotTooltip();
       inventorySlot.UpdateTooltip();
@@ -384,22 +384,22 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   }
 
   void OnGridSizeChanged() {
-    if (unityWindow.slots.Length != inventorySlots.Count) {
+    if (unityWindow.slots.Length != _inventorySlots.Count) {
       HostedDebugLog.Fine(this, "Resizing inventory controller: oldSlots={0}, newSlots={1}",
-                          inventorySlots.Count, unityWindow.slots.Length);
-      for (var i = inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
-        inventorySlots.Add(new InventorySlotImpl(this, unityWindow.slots[i]));
+                          _inventorySlots.Count, unityWindow.slots.Length);
+      for (var i = _inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
+        _inventorySlots.Add(new InventorySlotImpl(this, unityWindow.slots[i]));
       }
-      while (inventorySlots.Count > unityWindow.slots.Length) {
-        var deleteIndex = inventorySlots.Count - 1;
-        var slot = inventorySlots[deleteIndex];
+      while (_inventorySlots.Count > unityWindow.slots.Length) {
+        var deleteIndex = _inventorySlots.Count - 1;
+        var slot = _inventorySlots[deleteIndex];
         foreach (var item in slot.items) {
           HostedDebugLog.Error(
               this, "Dropping item from a non-empty slot: slotIdx={0}, item={1}",
               deleteIndex, item.avPart.name);
           DeleteItems(new[] { item });
         }
-        inventorySlots.RemoveAt(deleteIndex);
+        _inventorySlots.RemoveAt(deleteIndex);
       }
       UpdateInventoryStats(null);
     }

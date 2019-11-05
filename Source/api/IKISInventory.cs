@@ -53,7 +53,7 @@ public interface IKISInventory {
   /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
-  /// responsibility of the caller.
+  /// responsibility of the caller. However, it still can fail.
   /// </remarks>
   /// <param name="avPart">The part proto.</param>
   /// <param name="node">The part's persisted state.</param>

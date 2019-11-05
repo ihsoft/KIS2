@@ -19,7 +19,7 @@ namespace KIS2.GUIUtils {
 /// </remarks>
 public sealed class VolumeLType {
   /// <summary>Localized suffix for the "liter" untis. Scale x1.</summary>
-  public static readonly Message liter = new Message(
+  public static readonly Message Liter = new Message(
       "#kisLOC_99000", defaultTemplate: " L", description: "Liter unit for a volume value.");
 
   /// <summary>A wrapped numeric value.</summary>
@@ -66,9 +66,9 @@ public sealed class VolumeLType {
   /// <returns>A formatted and localized string</returns>
   public static string Format(double value, string format = null) {
     if (format != null) {
-      return value.ToString(format) + liter;
+      return value.ToString(format) + Liter;
     }
-    return CompactNumberType.Format(value) + liter;
+    return CompactNumberType.Format(value) + Liter;
   }
 
   /// <summary>Returns a string formatted as a human friendly volume specification.</summary>
