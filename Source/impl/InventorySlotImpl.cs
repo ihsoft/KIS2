@@ -312,7 +312,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
 
   #region Local utility methods
   /// <summary>
-  /// Updates tooltip when mouse pointer is hoveriong over the slot AND the dragging mode was
+  /// Updates tooltip when mouse pointer is hovering over the slot AND the dragging mode was
   /// started.
   /// </summary>
   void UpdateDraggingStateTooltip() {
@@ -363,12 +363,12 @@ sealed class InventorySlotImpl : IKISDragTarget {
     var infoLines = new List<string>();
 
     // Basic stats.
-    infoLines.Add(MassTootltipText.Format(item.fullMass));
-    infoLines.Add(VolumeTootltipText.Format(item.volume));
-    infoLines.Add(CostTootltipText.Format(item.fullCost));
+    infoLines.Add(MassTooltipText.Format(item.fullMass));
+    infoLines.Add(VolumeTooltipText.Format(item.volume));
+    infoLines.Add(CostTooltipText.Format(item.fullCost));
     var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, item.itemConfig);
     if (variant != null) {
-      infoLines.Add(VariantTootltipText.Format(variant.DisplayName));
+      infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
     }
     currentTooltip.baseInfo.text = string.Join("\n", infoLines.ToArray());
 
@@ -446,18 +446,18 @@ sealed class InventorySlotImpl : IKISDragTarget {
       return;
     }
     unitySlot.slotImage = iconImage;
-    unitySlot.stackSize = "x" + items.Length;
+    unitySlot.stackSize = "x" + slotItems.Length;
     //FIXME: show hotkey if enabled.
 
     // Slot resources info.
-    if (items[0].resources.Length > 0) {
+    if (slotItems[0].resources.Length > 0) {
       var cumAvgPct = 0.0;
-      foreach (var item in items) {
+      foreach (var item in slotItems) {
         if (item.resources.Length > 0) {
           cumAvgPct += item.resources.Sum(r => r.amount / r.maxAmount) / item.resources.Length;
         }
       }
-      unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / items.Length);
+      unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / slotItems.Length);
     } else {
       unitySlot.resourceStatus = null;
     }
