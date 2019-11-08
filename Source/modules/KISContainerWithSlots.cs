@@ -146,14 +146,14 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   /// <inheritdoc/>
   public override bool DeleteItems(InventoryItem[] deleteItems) {
-    if (base.DeleteItems(deleteItems)) {
-      foreach (var deleteItem in deleteItems) {
-        _itemToSlotMap[deleteItem].DeleteItem(deleteItem);
-        _itemToSlotMap.Remove(deleteItem);
-      }
-      return true;
+    if (!base.DeleteItems(deleteItems)) {
+      return false;
     }
-    return false;
+    foreach (var deleteItem in deleteItems) {
+      _itemToSlotMap[deleteItem].DeleteItem(deleteItem);
+      _itemToSlotMap.Remove(deleteItem);
+    }
+    return true;
   }
 
   /// <inheritdoc/>
@@ -271,24 +271,27 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   /// <summary>Destroys the inventory window.</summary>
   void CloseInventoryWindow() {
-    if (unityWindow != null) {
-      HostedDebugLog.Fine(this, "Destroying inventory window");
-      Hierarchy.SafeDestory(unityWindow);
-      unityWindow = null;
+    if (unityWindow == null) {
+      return;
     }
+    HostedDebugLog.Fine(this, "Destroying inventory window");
+    Hierarchy.SafeDestory(unityWindow);
+    unityWindow = null;
   } 
 
   /// <summary>Updates stats in the open inventory window.</summary>
   /// <remarks>It's safe to call it when the inventory window is not open.</remarks>
   void UpdateInventoryWindow() {
-    if (unityWindow != null) {
-      var text = new List<string>();
-      text.Add(InventoryContentMassTxt.Format(contentMass));
-      text.Add(InventoryContentCostTxt.Format(contentCost));
-      text.Add(MaxVolumeTxt.Format(maxVolume));
-      text.Add(AvailableVolumeTxt.Format(Math.Max(maxVolume - usedVolume, 0)));
-      unityWindow.mainStats = string.Join("\n", text.ToArray());
+    if (unityWindow == null) {
+      return;
     }
+    var text = new List<string> {
+        InventoryContentMassTxt.Format(contentMass),
+        InventoryContentCostTxt.Format(contentCost),
+        MaxVolumeTxt.Format(maxVolume),
+        AvailableVolumeTxt.Format(Math.Max(maxVolume - usedVolume, 0))
+    };
+    unityWindow.mainStats = string.Join("\n", text.ToArray());
   }
 
   /// <summary>Check if inventory has enough slots to accomodate the items.</summary>
