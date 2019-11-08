@@ -299,9 +299,9 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     var inventorySlot = _inventorySlots[slot.slotIndex];
     if (isHover) {
       unityWindow.StartSlotTooltip();
+      unityWindow.currentTooltip.StartCoroutine(UpdateHoveredHints(inventorySlot));
       inventorySlot.UpdateTooltip();
       KISAPI.ItemDragController.RegisterTarget(inventorySlot);
-      unityWindow.currentTooltip.StartCoroutine(UpdateHoveredHints(inventorySlot));
     } else {
       KISAPI.ItemDragController.UnregisterTarget(inventorySlot);
       unityWindow.DestroySlotTooltip();
