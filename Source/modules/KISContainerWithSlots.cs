@@ -2,26 +2,22 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using KSPDev.LogUtils;
-using UnityEngine;
-using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 using KSP.UI;
-using System.Reflection;
 using System;
 using System.Linq;
 using KSPDev.GUIUtils;
-using KSPDev.ModelUtils;
-using KSPDev.PartUtils;
-using KSPDev.KSPInterfaces;
 using KSPDev.GUIUtils.TypeFormatters;
+using KSPDev.LogUtils;
+using KSPDev.ModelUtils;
+using KSPDev.PrefabUtils;
 using KISAPIv2;
 using KIS2.UIKISInventorySlot;
 using KIS2.GUIUtils;
 using KSPDev.Unity;
+using UnityEngine;
 using UnityEngine.EventSystems;
-using KSPDev.PrefabUtils;
 
 namespace KIS2 {
 

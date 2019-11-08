@@ -2,15 +2,15 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using KISAPIv2;
+using KIS2.GUIUtils;
+using KSPDev.GUIUtils;
+using KSPDev.GUIUtils.TypeFormatters;
+using KSPDev.LogUtils;
+using KSPDev.PartUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using KISAPIv2;
-using KSPDev.GUIUtils;
-using KSPDev.GUIUtils.TypeFormatters;
-using KIS2.GUIUtils;
-using KSPDev.LogUtils;
-using KSPDev.PartUtils;
 using UnityEngine;
 
 namespace KIS2 {
