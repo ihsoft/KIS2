@@ -285,7 +285,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   /// </remarks>
   /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
   void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
-    AddItems(addItems);
+    UpdateItems(addItems: addItems);
     slot.AddItems(addItems);
     Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
   }

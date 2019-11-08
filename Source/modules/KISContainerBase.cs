@@ -176,16 +176,6 @@ public class KISContainerBase : AbstractPartModule,
   #endregion
 
   #region Inheritable methods
-  /// <summary>Adds the items to the inbventory and updates it.</summary>
-  /// <remarks>
-  /// All items must be referred by this inventory but not owned. No preconditions are checked.
-  /// </remarks>
-  /// <param name="addItems">The items to add.</param>
-  protected virtual void AddItems(InventoryItem[] addItems) {
-    UpdateItems(addItems: addItems);
-    UpdateInventoryStats(addItems);
-  }
-
   /// <summary>Adds or deletes the inventory items.</summary>
   protected void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
     if (addItems != null) {
