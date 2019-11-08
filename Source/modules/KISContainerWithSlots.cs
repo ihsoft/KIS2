@@ -156,7 +156,29 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     return false;
   }
 
-
+  /// <inheritdoc/>
+  public override ErrorReason[] CheckCanAddParts(
+      AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false) {
+    var res = base.CheckCanAddParts(avParts, nodes, logErrors);
+    if (res != null) {
+      return res;  // Don't go deeper when the volume constraints are not satisfied.
+    }
+    if (CheckHasSlots(avParts, nodes ?? new ConfigNode[avParts.Length])) {
+      return null;
+    }
+    var errors = new[] {
+        new ErrorReason() {
+            shortString = NoSlotsReason,
+            guiString = NoSlotsReasonText,
+        }
+    };
+    if (logErrors) {
+      HostedDebugLog.Error(this, "Cannot add {0} part(s):\n{1}",
+                           avParts.Length, DbgFormatter.C2S(errors, separator: "\n"));
+    }
+    return errors;
+  }
+  
   /// <inheritdoc/>
   public override void UpdateInventoryStats(InventoryItem[] changedItems) {
     base.UpdateInventoryStats(changedItems);
@@ -180,22 +202,25 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       "externalTankCapsule",
   };
 
-  void AddFuelPart(float minPct, float maxPct) {
-    var avPartIndex = (int) (UnityEngine.Random.value * fuleParts.Length);
-    var avPart = PartLoader.getPartInfoByName(fuleParts[avPartIndex]);
-    if (avPart == null) {
-      DebugEx.Error("*** bummer: no part {0}", fuleParts[avPartIndex]);
-      return;
+  void AddFuelParts(float minPct, float maxPct, int num = 1, bool same = false) {
+    var avParts = new AvailablePart[num];
+    var nodes = new ConfigNode[num];
+    AvailablePart avPart = null;
+    for (var i = 0; i < num; ++i) {
+      if (avPart == null || !same) {
+        var avPartIndex = (int) (UnityEngine.Random.value * _fuelParts.Length);
+        avPart = PartLoader.getPartInfoByName(_fuelParts[avPartIndex]);
+      }
+      avParts[i] = avPart;
+      var node = KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab);
+      foreach (var res in KISAPI.PartNodeUtils.GetResources(node)) {
+        var amount = UnityEngine.Random.Range(minPct, maxPct) * res.maxAmount;
+        KISAPI.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
+      }
+      nodes[i] = node;
     }
-    DebugEx.Info("*** adding fuel part: {0}", avPart.name);
     //FIXME: check volume and size
-    
-    var node = KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-    foreach (var res in KISAPI.PartNodeUtils.GetResources(node)) {
-      var amount = UnityEngine.Random.Range(minPct, maxPct) * res.maxAmount;
-      KISAPI.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
-    }
-    AddPart(avPart, node);
+    AddParts(avParts, nodes);
   }
 
   void AddPartByName(string partName) {
@@ -266,19 +291,43 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     }
   }
 
-  /// <summary>Returns first empty slot in the invetory.</summary>
-  /// <returns>The available slot or <c>null</c> if none found.</returns>
-  InventorySlotImpl GetFreeSlot() {
-    //FIXME: extend windows size.
-    return inventorySlots.FirstOrDefault(s => s.isEmpty);
+  /// <summary>Check if inventory has enough slots to accomodate the items.</summary>
+  bool CheckHasSlots(IReadOnlyList<AvailablePart> avParts, IReadOnlyList<ConfigNode> nodes) {
+    var newSlots = new HashSet<InventorySlotImpl>();
+    for (var i = 0; i < avParts.Count; ++i) {
+      var avPart = avParts[i];
+      var node = nodes[i] ?? KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab);
+      var slot = FindSlotForPart(avPart, node, preferredSlots: newSlots);
+      if (slot == null) {
+        return false;
+      }
+      if (slot.isEmpty) {
+        newSlots.Add(new InventorySlotImpl(this, slot.unitySlot));
+      }
+    }
+    var emptySlots = _inventorySlots.Count(s => s.isEmpty);
+    return emptySlots > newSlots.Count;
   }
 
   /// <summary>Tries to find a slot where this item can stack.</summary>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
-  /// <seealso cref="GetFreeSlot"/>
-  InventorySlotImpl FindSlotForPart(AvailablePart avAprt, ConfigNode node) {
-    //FIXME: look in the existing slots first. 
-    return GetFreeSlot();
+  InventorySlotImpl FindSlotForPart(AvailablePart avPart, ConfigNode node,
+                                    IEnumerable<InventorySlotImpl> preferredSlots = null) {
+    InventorySlotImpl slot = null;
+    var matchItem = new InventoryItemImpl(this, avPart, node);
+    if (preferredSlots != null) {
+      slot = preferredSlots.FirstOrDefault(
+          x => x.CheckCanAddItems(new InventoryItem[] { matchItem }) == null);
+    }
+    if (slot == null) {
+      slot = _inventorySlots
+          .Where(x => !x.isEmpty)
+          .FirstOrDefault(x => x.CheckCanAddItems(new InventoryItem[] { matchItem }) == null);
+    }
+    if (slot == null) {
+      slot = _inventorySlots.FirstOrDefault(s => s.isEmpty);
+    }
+    return slot;
   }
 
   /// <summary>Add items to the specified slot of the inventory.</summary>
