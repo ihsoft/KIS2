@@ -166,13 +166,10 @@ sealed class InventorySlotImpl : IKISDragTarget {
   public readonly KISContainerWithSlots inventory;
 
   /// <summary>Part proto of this slot.</summary>
-  public AvailablePart avPart {
-    get { return !isEmpty ? items[0].avPart : null; }
-  }
+  public AvailablePart avPart => !isEmpty ? slotItems[0].avPart : null;
 
   /// <summary>Inventory items in the slot.</summary>
-  /// TODO(ihsoft): May be cache it if used extensively.
-  public InventoryItem[] items { get; private set; }
+  public InventoryItem[] slotItems { get; private set; } = new InventoryItem[0];
 
   /// <summary>Generalized icon of the slot.</summary>
   public Texture iconImage {
@@ -183,9 +180,7 @@ sealed class InventorySlotImpl : IKISDragTarget {
   }
 
   /// <summary>Tells if this slot has any part item.</summary>
-  public bool isEmpty {
-    get { return items.Length == 0; }
-  }
+  public bool isEmpty => slotItems.Length == 0;
 
   public bool isLocked {
     get { return _isLocked; }
@@ -205,33 +200,31 @@ sealed class InventorySlotImpl : IKISDragTarget {
   static readonly Event StoreIntoStackEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
-  #region Local fields and properties 
-  bool canAcceptDraggedItems;
-  ErrorReason[] canAcceptDraggedItemsCheckResult;
-
-  UIKISInventoryTooltip.Tooltip currentTooltip {
-    get { return inventory.unityWindow.currentTooltip; }
-  }
+  #region Local fields and properties
+  readonly SortedSet<InventoryItem> _itemsSet = new SortedSet<InventoryItem>();
+  bool _canAcceptDraggedItems;
+  ErrorReason[] _canAcceptDraggedItemsCheckResult;
+  UIKISInventoryTooltip.Tooltip currentTooltip => inventory.unityWindow.currentTooltip;
   #endregion
 
   #region IKISDragTarget implementation
   /// <inheritdoc/>
   public void OnKISDragStart() {
-    canAcceptDraggedItemsCheckResult = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
-    canAcceptDraggedItems = canAcceptDraggedItemsCheckResult.Length == 0;
+    _canAcceptDraggedItemsCheckResult = CheckCanAddItems(KISAPI.ItemDragController.leasedItems);
+    _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
     UpdateTooltip();
   }
 
   /// <inheritdoc/>
   public void OnKISDragEnd(bool isCancelled) {
-    canAcceptDraggedItemsCheckResult = null;
-    canAcceptDraggedItems = false;
+    _canAcceptDraggedItemsCheckResult = null;
+    _canAcceptDraggedItems = false;
     UpdateTooltip();
   }
 
   /// <inheritdoc/>
   public bool OnKISDrag(bool pointerMoved) {
-    return canAcceptDraggedItems;
+    return _canAcceptDraggedItems;
   }
   #endregion
 
@@ -244,11 +237,11 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #region API methods
   /// <summary>Adds an item to the slot.</summary>
   /// <remarks>
-  /// This method doesn't check preconditions. The items will be added even if it breask the slot's
-  /// logic. The caller is resposible to verify if the items can be added via the
+  /// This method doesn't check preconditions. The items will be added even if it break the slot's
+  /// logic. The caller is responsible to verify if the items can be added via the
   /// <see cref="CheckCanAddItems"/> before attempting to add anything.
   /// </remarks>
-  /// <param name="addItems">
+  /// <param name="items">
   /// The items to add. They are not copied, they are added as the references. These items must
   /// belong to the same inventory as the slot!
   /// </param>
@@ -272,13 +265,13 @@ sealed class InventorySlotImpl : IKISDragTarget {
     return true;
   }
 
-  /// <summary>Verifies if the item can be added to the slot.</summary>
+  /// <summary>Verifies if the items can be added to the slot.</summary>
   /// <remarks>
-  /// The item must be "similar" to the other items in the slot. At the very least, it must be the
+  /// The items must be "similar" to the other items in the slot. At the very least, it must be the
   /// same part. The part's state similarity is implementation dependent and the callers must not be
   /// guessing about it.
   /// </remarks>
-  /// <param name="items">The items to check. It must not be empty.</param>
+  /// <param name="checkItems">The items to check. It must not be empty.</param>
   /// <param name="logErrors">
   /// If <c>true</c>, then all the found errors will be written to the system log. Callers may use
   /// this option when they don't normally expect any errors.

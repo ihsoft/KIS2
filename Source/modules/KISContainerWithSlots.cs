@@ -53,6 +53,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   static readonly Message<VolumeLType> MaxVolumeTxt = new Message<VolumeLType>(
       "",
       defaultTemplate: "Maximum volume: <color=#58F6AE><<1>></color>");
+
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message NoSlotsReasonText = new Message(
       "",
