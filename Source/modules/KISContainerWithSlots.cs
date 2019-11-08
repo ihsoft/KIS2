@@ -111,19 +111,23 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   public void OnGUI() {
     // FIXME: drop this debug code.
     if (Event.current.Equals(Event.KeyboardEvent("1")) && unityWindow != null) {
-      unityWindow.SetGridSize(new Vector2(3, 1));
+      AddFuelParts(1, 1, 3);
     }
     if (Event.current.Equals(Event.KeyboardEvent("2")) && unityWindow != null) {
-      AddFuelPart(0.1f, 0.5f);
+      AddFuelParts(0.1f, 0.5f);
     }
     if (Event.current.Equals(Event.KeyboardEvent("3")) && unityWindow != null) {
-      AddFuelPart(0.5f, 0.5f);
+      AddFuelParts(0.5f, 0.5f);
     }
     if (Event.current.Equals(Event.KeyboardEvent("4")) && unityWindow != null) {
-      AddFuelPart(1, 1);
+      AddFuelParts(1, 1);
     }
     if (Event.current.Equals(Event.KeyboardEvent("5")) && unityWindow != null) {
-      AddPartByName("seatExternalCmd");
+      AddFuelParts(0.1f, 0.5f, num: 3, same: true);
+    }
+    if (Event.current.Equals(Event.KeyboardEvent("6")) && unityWindow != null
+        && _inventorySlots.Count > 0 && _inventorySlots[0].slotItems.Length > 0) {
+      DeleteItems(_inventorySlots[0].slotItems);
     }
   }
   #endregion
@@ -187,7 +191,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   #endregion
 
   #region DEBUG methods
-  string[] fuleParts = new string[] {
+  readonly string[] _fuelParts = new string[] {
       "RadialOreTank",
       "SmallTank",
       "fuelTankSmallFlat",
@@ -197,7 +201,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       "fuelTankSmallFlat",
       "fuelTankSmall",
       "fuelTank",
-      "fuelTank_long",
+      "fuelTank.long",
       "RCSTank1-2",
       "externalTankCapsule",
   };
