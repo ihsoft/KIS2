@@ -320,21 +320,22 @@ sealed class InventorySlotImpl : IKISDragTarget {
     if (isEmpty) {
       currentTooltip.title = StoreItemsTooltipText;
       currentTooltip.baseInfo.text = null;
-      currentTooltip.hints = StoreItemsHintText.Format(StoreIntoStackEvent);
     } else {
-      var res = CheckCanAdd(KISAPI.ItemDragController.leasedItems);
-      if (res.Length == 0) {
+      if (_canAcceptDraggedItems) {
         currentTooltip.title = AddItemsTooltipText;
         currentTooltip.baseInfo.text = KISAPI.ItemDragController.leasedItems.Length > 1
             ? AddItemsCountHintText.Format(KISAPI.ItemDragController.leasedItems.Length)
             : null;
-        currentTooltip.hints = AddItemsHintText.Format(StoreIntoStackEvent);
       } else {
         currentTooltip.title = CannotAddItemsTooltipText;
-        currentTooltip.baseInfo.text = string.Join(
-            "\n",
-            res.Where(r => r.guiString != null).Select(r => r.guiString).ToArray());
-        currentTooltip.hints = null;
+        if (_canAcceptDraggedItemsCheckResult != null) {
+          currentTooltip.baseInfo.text = string.Join(
+              "\n",
+              _canAcceptDraggedItemsCheckResult
+                  .Where(r => r.guiString != null)
+                  .Select(r => r.guiString)
+                  .ToArray());
+        }
       }
     }
   }
