@@ -2,9 +2,9 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using KISAPIv2;
 using System;
 using System.Linq;
-using KISAPIv2;
 using UnityEngine;
 
 namespace KIS2 {

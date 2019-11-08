@@ -60,7 +60,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   [KSPField]
   public Vector2 minGridSize = new Vector2(3, 1);
   
-  /// <include file="SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
   public Vector2 maxGridSize = new Vector2(16, 9);
 
