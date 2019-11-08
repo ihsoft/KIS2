@@ -156,6 +156,28 @@ sealed class InventorySlotImpl : IKISDragTarget {
       description: "Hint text that is shown in the inventory slot tooltip. It tells how many items"
           + " will be added into the stack in case of the action has completed.\n"
           + " The <<1>> argument is the number of items being added.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> TakeOneModifierHintText =
+      new Message<KeyboardEventType>(
+          "",
+          defaultTemplate: "Press and hold <b><color=#5a5><<1>></color></b>"
+              + " to take <color=#5a5>1</color> item",
+          description: "Hint text that is shown in the inventory slot tooltip. It tells what key"
+              + " modifier to press and hold to enable the mode in which only one item is grabbed"
+              + " on the inventory slot click.\n"
+              + " The <<1>> argument is the keyboard key that needs to be pressed and held.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> TakeTenModifierHintText =
+      new Message<KeyboardEventType>(
+          "",
+          defaultTemplate: "Press and hold <b><color=#5a5><<1>></color></b>"
+              + " to take <color=#5a5>10</color> items",
+          description: "Hint text that is shown in the inventory slot tooltip. It tells what key"
+              + " modifier to press and hold to enable the mode in which only one item is grabbed"
+              + " on the inventory slot click.\n"
+              + " The <<1>> argument is the keyboard key that needs to be pressed and held.");
   #endregion
 
   #region API properties and fields
@@ -203,8 +225,11 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #region Local constants
   static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
   static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
+  static readonly Event TakeOneItemModifierEvent = Event.KeyboardEvent("LeftAlt");
   static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
-  static readonly Event StoreIntoStackEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event TakeTenItemsModifierEvent = Event.KeyboardEvent("LeftShift");
+  static readonly Event AddItemsIntoStackEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event DropIntoSlotEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
   #region Local fields and properties
@@ -306,7 +331,37 @@ sealed class InventorySlotImpl : IKISDragTarget {
     } else {
       UpdateSimpleHoveringTooltip();
     }
+    UpdateHints();
     currentTooltip.UpdateLayout();
+  }
+
+  /// <summary>Fills or updates the hints section of the slot tooltip.</summary>
+  /// <remarks>
+  /// The hints may depend on the current game state (like the keyboard keys pressed), so it's
+  /// assumed that this method may be called every frame when the interactive mode is ON.
+  /// </remarks>
+  /// <seealso cref="currentTooltip"/>
+  /// <seealso cref="UIKISInventoryTooltip.Tooltip.showHints"/>
+  public void UpdateHints() {
+    var hints = new List<string>();
+    if (KISAPI.ItemDragController.isDragging) {
+      if (isEmpty) {
+        hints.Add(StoreItemsHintText.Format(DropIntoSlotEvent));
+      } else if (_canAcceptDraggedItems) {
+        hints.Add(AddItemsHintText.Format(AddItemsIntoStackEvent));
+      }
+    } else if (!isEmpty) {
+      if (EventChecker.CheckClickEvent(TakeSlotEvent)) {
+        hints.Add(TakeSlotHintText.Format(TakeSlotEvent));
+        hints.Add(TakeOneModifierHintText.Format(TakeOneItemModifierEvent));
+        hints.Add(TakeTenModifierHintText.Format(TakeTenItemsModifierEvent));
+      } else if (EventChecker.CheckClickEvent(TakeOneItemEvent)) {
+        hints.Add(TakeOneItemHintText.Format(TakeOneItemEvent));
+      } else if (EventChecker.CheckClickEvent(TakeTenItemsEvent)) {
+        hints.Add(TakeTenItemsHintText.Format(TakeTenItemsEvent));
+      }
+    }
+    currentTooltip.hints = hints.Count > 0 ? string.Join("\n", hints.ToArray()) : null;
   }
   #endregion
 
@@ -347,11 +402,10 @@ sealed class InventorySlotImpl : IKISDragTarget {
   void UpdateSimpleHoveringTooltip() {
     currentTooltip.ClearInfoFileds();
     if (isEmpty) {
-      tooltip.hints = null;
       return;
     }
-    if (items.Length == 1) {
-      UpdateSingleItemTooltip(items[0]);
+    if (slotItems.Length == 1) {
+      UpdateSingleItemTooltip(slotItems[0]);
     } else {
       //FIXME: handle multuple item slots
       currentTooltip.baseInfo.text = "*** multiple items";
@@ -392,19 +446,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
       }
       currentTooltip.availableResourcesInfo.text = string.Join("\n", resItems.ToArray());
     } else {
-    }
-
-    // The hints.
-    var hints = new List<string>();
-    hints.Add(TakeSlotHintText.Format(TakeSlotEvent));
-    if (items.Length > 1) {
-      hints.Add(TakeOneItemHintText.Format(TakeOneItemEvent));
-    }
-    if (items.Length > 10) {
-      hints.Add(TakeTenItemsHintText.Format(TakeTenItemsEvent));
       currentTooltip.availableResourcesInfo.text = null;
     }
-    tooltip.hints = string.Join("\n", hints.ToArray());
   }
 
   /// <summary>Gives an approximate short string for a percent value.</summary>
