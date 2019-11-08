@@ -254,22 +254,15 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// </param>
   /// <seealso cref="UpdateTooltip"/>
   /// <seealso cref="CheckCanAddItems"/>
-  public void AddItems(InventoryItem[] addItems) {
-    UpdateSlotItems(addItems: addItems);
-    UpdateUnitySlot();
-    if (inventory.unityWindow.hoveredSlot == unitySlot) {
-      UpdateTooltip();
-    }
-    return true;
+  public void AddItems(InventoryItem[] items) {
+    UpdateItems(addItems: items);
   }
 
-  public bool DeleteItem(InventoryItem item) {
-    UpdateSlotItems(deleteItems: new[] { item });
-    UpdateUnitySlot();
-    if (inventory.unityWindow.hoveredSlot == unitySlot) {
-      UpdateTooltip();
-    }
-    return true;
+  /// <summary>Deletes items from the slot.</summary>
+  /// <remarks>The items won't be removed from the inventory.</remarks>
+  /// <param name="items">The items to delete.</param>
+  public void DeleteItems(InventoryItem[] items) {
+    UpdateItems(deleteItems: items);
   }
 
   /// <summary>Verifies if the items can be added to the slot.</summary>
@@ -286,29 +279,20 @@ sealed class InventorySlotImpl : IKISDragTarget {
   /// <returns>
   /// <c>null</c> if the item can be added to the slot, or a list of human readable errors.
   /// </returns>
-  public ErrorReason[] CheckCanAddItems(InventoryItem[] items, bool logErrors = false) {
-    Preconditions.MinElements(items, 1);
-    var res = new HashSet<ErrorReason>();
-    var slotPartName = isEmpty ? items[0].avPart.name : avPart.name;
-    foreach (var item in items) {
-      if (item.avPart.name != slotPartName) {
-        if (logErrors) {
-          DebugEx.Error(
-              "Mixed parts in the batch: expected={0}, got={1}", slotPartName, item.avPart.name);
-        }
-        return new[] {
-            new ErrorReason() {
-                shortString = "DifferentPart",
-                guiString = DifferentPartsTooltipText,
-            },
-        };
-      }
-      //FIXME: implement similarity check.
+  public ErrorReason[] CheckCanAddItems(InventoryItem[] checkItems, bool logErrors = false) {
+    Preconditions.MinElements(checkItems, 1);
+    var errors = new HashSet<ErrorReason>();
+    var slotPartName = isEmpty ? checkItems[0].avPart.name : avPart.name;
+    if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
+      errors.Add(new ErrorReason() {
+          shortString = DifferentPartReason,
+          guiString = DifferentPartsReasonText,
+      });
     }
-    if (logErrors && res.Count > 0) {
-      DebugEx.Error("Cannot add items to slot:\n{0}", DbgFormatter.C2S(res, separator: "\n"));
+    if (logErrors && errors.Count > 0) {
+      DebugEx.Error("Cannot add items to slot:\n{0}", DbgFormatter.C2S(errors, separator: "\n"));
     }
-    return res.Count > 0 ? res.ToArray() : null;
+    return errors.Count > 0 ? errors.ToArray() : null;
   }
 
   /// <summary>Fills tooltip with the slot info.</summary>
@@ -479,6 +463,21 @@ sealed class InventorySlotImpl : IKISDragTarget {
     }
     // Slot science data.
     // FIXME: implement
+  }
+
+  /// <summary>Adds or deletes items to/from the slot.</summary>
+  void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
+    if (addItems != null) {
+      Array.ForEach(addItems, x => _itemsSet.Add(x));
+    }
+    if (deleteItems != null) {
+      Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
+    }
+    slotItems = _itemsSet.ToArray();
+    UpdateUnitySlot();
+    if (inventory.unityWindow.hoveredSlot == unitySlot) {
+      UpdateTooltip();
+    }
   }
   #endregion
 }
