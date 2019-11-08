@@ -164,8 +164,9 @@ public sealed class KISContainerWithSlots : KISContainerBase,
     if (!base.DeleteItems(deleteItems)) {
       return false;
     }
+    //FIXME: group by slot to effectively delete many items from one slot.
     foreach (var deleteItem in deleteItems) {
-      _itemToSlotMap[deleteItem].DeleteItem(deleteItem);
+      _itemToSlotMap[deleteItem].DeleteItems(new[] {deleteItem});
       _itemToSlotMap.Remove(deleteItem);
     }
     return true;
