@@ -159,6 +159,13 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #endregion
 
   #region API properties and fields
+  /// <summary>
+  /// Short name of the checking error for the case when parts with different signature are being
+  /// added to the slot.
+  /// </summary>
+  /// <seealso cref="DifferentPartsReasonText"/>
+  public const string DifferentPartReason = "DifferentPart";
+
   /// <summary>Unity object that represents the slot.</summary>
   public readonly UIKISInventorySlot.Slot unitySlot;
 
