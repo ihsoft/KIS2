@@ -53,6 +53,12 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   static readonly Message<VolumeLType> MaxVolumeTxt = new Message<VolumeLType>(
       "",
       defaultTemplate: "Maximum volume: <color=#58F6AE><<1>></color>");
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message NoSlotsReasonText = new Message(
+      "",
+      defaultTemplate: "No enough compatible slots",
+      description: "Error message that is presented when parts cannot be added to the inventory"
+          + " due to there are not enough compatible/empty slots available.");
   #endregion
 
   #region Part's config fields
@@ -82,6 +88,14 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       CloseInventoryWindow();
     }
   }
+  #endregion
+
+  #region API fields and properties
+  /// <summary>
+  /// Short name of the checking error for teh case when parts cannot fit to the existing slots.
+  /// </summary>
+  /// <seealso cref="NoSlotsReasonText"/>
+  public const string NoSlotsReason = "NoSlots";
   #endregion
 
   #region Local utility fields and properties.
