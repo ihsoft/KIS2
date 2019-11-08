@@ -201,7 +201,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       DebugEx.Error("*** bummer: no part {0}", partName);
       return;
     }
-    AddPart(avPart, KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab));
+    AddParts(new[] {avPart}, new ConfigNode[1]);
   }
   #endregion
 
@@ -281,7 +281,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   /// <summary>Add items to the specified slot of the inventory.</summary>
   /// <remarks>
   /// The items must belong to the inventory, but not be owned by it (i.e. not to be in the
-  /// <see cref="addItems"/>). This method doesn't check any preconditions.
+  /// <see cref="KISContainerBase.inventoryItems"/>). This method doesn't check any preconditions.
   /// </remarks>
   /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
   void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
@@ -393,7 +393,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
       while (_inventorySlots.Count > unityWindow.slots.Length) {
         var deleteIndex = _inventorySlots.Count - 1;
         var slot = _inventorySlots[deleteIndex];
-        foreach (var item in slot.items) {
+        foreach (var item in slot.slotItems) {
           HostedDebugLog.Error(
               this, "Dropping item from a non-empty slot: slotIdx={0}, item={1}",
               deleteIndex, item.avPart.name);

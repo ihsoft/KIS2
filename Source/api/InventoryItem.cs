@@ -15,7 +15,7 @@ public interface InventoryItem {
   /// inventory afterwards, the link still can point to the former parent. It's not allowed or
   /// expected that an item changes inventory parent during its lifetime.
   /// </remarks>
-  IKISInventory inventory { get; }
+  IKisInventory inventory { get; }
 
   /// <summary>Part poro.</summary>
   AvailablePart avPart { get; }
@@ -95,7 +95,7 @@ public interface InventoryItem {
   /// </remarks>
   /// <seealso cref="itemConfig"/>
   /// <seealso cref="inventory"/>
-  /// <seealso cref="IKISInventory.UpdateInventoryStats"/>
+  /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
   void UpdateConfig();
 }
 

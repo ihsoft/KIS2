@@ -13,17 +13,17 @@ namespace KIS2 {
 sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
-  public IKISInventory inventory { get; private set; }
+  public IKisInventory inventory { get; }
 
   /// <inheritdoc/>
-  public AvailablePart avPart { get; private set; }
+  public AvailablePart avPart { get; }
 
   /// <inheritdoc/>
-  public Part physicalPart { get; internal set; }
+  public ConfigNode itemConfig { get; }
   
   /// <inheritdoc/>
-  public ConfigNode itemConfig { get; private set; }
-  
+  public Part physicalPart { get; }
+
   /// <inheritdoc/>
   public double volume {
     get {
@@ -140,13 +140,12 @@ sealed class InventoryItemImpl : InventoryItem {
 
   #region API methods
   /// <summary>Makes a new item from the part definition.</summary>
-  internal InventoryItemImpl(IKISInventory inventory, AvailablePart avPart, ConfigNode node) {
+  internal InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig) {
     this.inventory = inventory;
     this.avPart = avPart;
-    this.itemConfig = node;
+    this.itemConfig = itemConfig;
   }
   #endregion
 }
   
 }  // namespace
-

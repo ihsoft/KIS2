@@ -8,9 +8,9 @@ using UnityEngine;
 namespace KISAPIv2 {
 
 /// <summary>Basic interface that every inventory must implement to work with KIS.</summary>
-public interface IKISInventory {
+public interface IKisInventory {
   /// <summary>Items in the inventory.</summary>
-  InventoryItem[] items { get; }
+  InventoryItem[] inventoryItems { get; }
 
   /// <summary>Maximum dimensions of the inner inventory space.</summary>
   /// <remarks>Objects that are larger in any of the dimensions cannot fit the inventory.</remarks>
@@ -46,20 +46,23 @@ public interface IKISInventory {
   /// precondition.
   /// </param>
   /// <returns><c>null</c> if the part can be added, or a list of reasons why not.</returns>
-  /// <seealso cref="AddPart"/>
+  /// <seealso cref="AddParts"/>
   ErrorReason[] CheckCanAddParts(
       AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false);
 
-  /// <summary>Adds a new part into the inventory.</summary>
+  /// <summary>Adds new parts into the inventory.</summary>
   /// <remarks>
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
-  /// responsibility of the caller. However, it still can fail.
+  /// responsibility of the caller.
   /// </remarks>
-  /// <param name="avPart">The part proto.</param>
-  /// <param name="node">The part's persisted state.</param>
-  /// <returns>The newly created item or <c>null</c> if add failed.</returns>
+  /// <param name="avParts">The part protos.</param>
+  /// <param name="nodes">
+  /// The part persisted states. An entry can be <c>null</c> if default state from prfab should be
+  /// used.
+  /// </param>
+  /// <returns>The newly created items.</returns>
   /// <seealso cref="CheckCanAddParts"/>
-  InventoryItem AddPart(AvailablePart avPart, ConfigNode node);
+  InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes);
 
   /// <summary>Removes the specified items from inventory.</summary>
   /// <remarks>

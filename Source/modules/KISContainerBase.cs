@@ -19,7 +19,7 @@ namespace KIS2 {
 /// Base module to handle inventory items. It can only hold items, no GUI is offered.
 /// </summary>
 public class KISContainerBase : AbstractPartModule,
-    IKISInventory {
+    IKisInventory {
   //FIXME: Add descriptions to the strings.
   #region Localizable GUI strings
   /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -63,12 +63,12 @@ public class KISContainerBase : AbstractPartModule,
   #endregion
 
   #region Local fields and properties
-  readonly SortedSet<InventoryItem> itemsSet = new SortedSet<InventoryItem>();
+  readonly HashSet<InventoryItem> itemsSet = new HashSet<InventoryItem>();
   #endregion
 
   #region IKISInventory properties
   /// <inheritdoc/>
-  public InventoryItem[] items { get; private set; }
+  public InventoryItem[] inventoryItems { get; private set; }
 
   /// <inheritdoc/>
   public Vector3 maxInnerSize { get { return maxItemSize; } }
@@ -136,10 +136,13 @@ public class KISContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem AddPart(AvailablePart avPart, ConfigNode node) {
-    var item = new InventoryItemImpl(this, avPart, node);
-    AddItems(new[] { item });
-    return item;
+  public virtual InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
+    var items = new InventoryItem[avParts.Length];
+    for (var i = 0; i < avParts.Length; i++) {
+      items[i] = new InventoryItemImpl(this, avParts[i], nodes[i]);
+    }
+    UpdateItems(addItems: items);
+    return items;
   }
 
   /// <inheritdoc/>
@@ -191,7 +194,8 @@ public class KISContainerBase : AbstractPartModule,
     if (deleteItems != null) {
       Array.ForEach(deleteItems, x => itemsSet.Remove(x));
     }
-    items = itemsSet.ToArray();
+    inventoryItems = itemsSet.ToArray();
+    UpdateInventoryStats(addItems);
   }
   #endregion
 }
