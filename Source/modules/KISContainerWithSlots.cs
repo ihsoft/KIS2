@@ -130,15 +130,18 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override InventoryItem AddPart(AvailablePart avPart, ConfigNode node) {
-    var slot = FindSlotForPart(avPart, node);
-    if (slot == null) {
-      HostedDebugLog.Warning(this, "No slots available for part: {0}", avPart.name);
-      return null;
+  public override InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
+    var newItems = base.AddParts(avParts, nodes);
+    foreach (var item in newItems) {
+      var slot = FindSlotForPart(item.avPart, item.itemConfig);
+      if (slot == null) {
+        HostedDebugLog.Error(
+            this, "No slots available. Using last slot: part={0}", item.avPart.name);
+        slot = _inventorySlots.Last();
+      }
+      AddItemsToSlot(new InventoryItem[] { item }, slot);
     }
-    var item = new InventoryItemImpl(this, avPart, node);
-    AddItemsToSlot(new InventoryItem[] { item }, slot);
-    return item;
+    return newItems;
   }
 
   /// <inheritdoc/>
