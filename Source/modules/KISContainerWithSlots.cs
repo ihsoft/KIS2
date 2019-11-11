@@ -22,7 +22,7 @@ using UnityEngine.EventSystems;
 namespace KIS2 {
 
   //FIXME: separate container and inventory concepts. data vs UI
-public sealed class KISContainerWithSlots : KISContainerBase,
+public sealed class KISContainerWithSlots : KisContainerBase,
     IHasGUI {
 
   #region Localizable GUI strings.
@@ -352,7 +352,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
   /// <summary>Add items to the specified slot of the inventory.</summary>
   /// <remarks>
   /// The items must belong to the inventory, but not be owned by it (i.e. not to be in the
-  /// <see cref="KISContainerBase.inventoryItems"/>). This method doesn't check any preconditions.
+  /// <see cref="KisContainerBase.inventoryItems"/>). This method doesn't check any preconditions.
   /// </remarks>
   /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
   void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {

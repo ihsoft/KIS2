@@ -18,7 +18,7 @@ namespace KIS2 {
 /// <summary>
 /// Base module to handle inventory items. It can only hold items, no GUI is offered.
 /// </summary>
-public class KISContainerBase : AbstractPartModule,
+public class KisContainerBase : AbstractPartModule,
     IKisInventory {
   //FIXME: Add descriptions to the strings.
   #region Localizable GUI strings
@@ -62,10 +62,6 @@ public class KISContainerBase : AbstractPartModule,
   public Vector3 maxItemSize;
   #endregion
 
-  #region Local fields and properties
-  readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
-  #endregion
-
   #region IKISInventory properties
   /// <inheritdoc/>
   public InventoryItem[] inventoryItems { get; private set; }
@@ -77,36 +73,24 @@ public class KISContainerBase : AbstractPartModule,
   public double maxVolume => maxContainerVolume;
 
   /// <inheritdoc/>
-  public double usedVolume {
-    get {
-      if (_usedVolume < 0) {
-        _usedVolume = _itemsSet.Sum(i => i.volume);
-      }
-      return _usedVolume;
-    }
-  }
-  double _usedVolume = -1;
+  public double usedVolume { get; private set; }
 
   /// <inheritdoc/>
-  public double contentMass {
-    get {
-      if (_contentMass < 0) {
-        _contentMass = _itemsSet.Sum(i => i.fullMass);
-      }
-      return _contentMass;
-    }
-  }
-  double _contentMass = -1;
+  public double contentMass { get; private set; }
 
-  public double contentCost {
-    get {
-      if (_contentCost < 0) {
-        _contentCost = _itemsSet.Sum(i => i.fullCost);
-      }
-      return _contentCost;
-    }
-  }
-  double _contentCost;
+  /// <inheritdoc/>
+  public double contentCost { get; private set; }
+  #endregion
+
+  #region Inhertitable fields and properties
+  /// <summary>
+  /// Reflection of <see cref="inventoryItems"/> in a form of hash set for quick lookup operations. 
+  /// </summary>
+  /// <remarks>
+  /// Do not modify this set directly! Descendants must call <see cref="UpdateItems"/> to add or
+  /// remove items from the collection.
+  /// </remarks>
+  protected readonly HashSet<InventoryItem> inventoryItemsSet = new HashSet<InventoryItem>();
   #endregion
 
   #region IKISInventory implementation
@@ -151,7 +135,8 @@ public class KISContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot delete locked item(s)");
       return false;
     }
-    if (deleteItems.Any(x => !ReferenceEquals(x.inventory, this) || !_itemsSet.Contains(x))) {
+    if (deleteItems.Any(
+        x => !ReferenceEquals(x.inventory, this) || !inventoryItemsSet.Contains(x))) {
       HostedDebugLog.Error(this, "Cannot delete item(s) that are not owned by the inventory");
       return false;
     }
@@ -163,15 +148,13 @@ public class KISContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual void UpdateInventoryStats(InventoryItem[] changedItems) {
-    if (changedItems != null && changedItems.Length > 0) {
-      changedItems.ToList().ForEach(i => i.UpdateConfig());
+    if (changedItems != null) {
+      Array.ForEach(changedItems, i => i.UpdateConfig());
     } else {
       HostedDebugLog.Fine(this, "Updating all items in the inventory...");
-      _itemsSet.ToList().ForEach(i => i.UpdateConfig());
+      Array.ForEach(inventoryItems, i => i.UpdateConfig());
     }
-    _usedVolume = -1;
-    _contentMass = -1;
-    _contentCost = -1;
+    UpdateStatsOnly();
   }
   #endregion
 
@@ -179,13 +162,22 @@ public class KISContainerBase : AbstractPartModule,
   /// <summary>Adds or deletes the inventory items.</summary>
   protected void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
     if (addItems != null) {
-      Array.ForEach(addItems, x => _itemsSet.Add(x));
+      Array.ForEach(addItems, x => inventoryItemsSet.Add(x));
     }
     if (deleteItems != null) {
-      Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
+      Array.ForEach(deleteItems, x => inventoryItemsSet.Remove(x));
     }
-    inventoryItems = _itemsSet.ToArray();
-    UpdateInventoryStats(addItems);
+    inventoryItems = inventoryItemsSet.ToArray();
+    UpdateStatsOnly();
+  }
+  #endregion
+
+  #region Local utility methods
+  /// <summary>Updates container stats without updating the item configs.</summary>
+  void UpdateStatsOnly() {
+    usedVolume = inventoryItems.Sum(i => i.volume);
+    contentMass = inventoryItems.Sum(i => i.fullMass);
+    contentCost = inventoryItems.Sum(i => i.fullCost);
   }
   #endregion
 }
