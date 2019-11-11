@@ -216,7 +216,6 @@ sealed class InventorySlotImpl : IKISDragTarget {
     set {
       _isLocked = value;
       unitySlot.isLocked = value;
-      //itemsList.ForEach(i => i.isLocked = value);
     }
   }
   bool _isLocked;
@@ -511,12 +510,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
 
     // Slot resources info.
     if (slotItems[0].resources.Length > 0) {
-      var cumAvgPct = 0.0;
-      foreach (var item in slotItems) {
-        if (item.resources.Length > 0) {
-          cumAvgPct += item.resources.Sum(r => r.amount / r.maxAmount) / item.resources.Length;
-        }
-      }
+      var cumAvgPct = slotItems.Where(item => item.resources.Length > 0)
+          .Sum(item => item.resources.Sum(r => r.amount / r.maxAmount) / item.resources.Length);
       unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / slotItems.Length);
     } else {
       unitySlot.resourceStatus = null;

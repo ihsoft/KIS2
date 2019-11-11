@@ -93,7 +93,7 @@ public sealed class KISContainerWithSlots : KISContainerBase,
 
   #region API fields and properties
   /// <summary>
-  /// Short name of the checking error for teh case when parts cannot fit to the existing slots.
+  /// Short name of the checking error for the case when parts cannot fit to the existing slots.
   /// </summary>
   /// <seealso cref="NoSlotsReasonText"/>
   public const string NoSlotsReason = "NoSlots";
