@@ -641,4 +641,3 @@ sealed class InventorySlotImpl : IKISDragTarget {
 }
   
 }  // namespace
-

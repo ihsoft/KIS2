@@ -22,29 +22,29 @@ public class KISContainerBase : AbstractPartModule,
     IKisInventory {
   //FIXME: Add descriptions to the strings.
   #region Localizable GUI strings
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly Message<VolumeLType> NeedMoreVolume = new Message<VolumeLType>(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<VolumeLType> NeedMoreVolume = new Message<VolumeLType>(
       "",
       defaultTemplate: "Not enough volume, need +<<1>> more",
       description: "Message to present to the user at the main status area when an item being"
-          + " placed into the inventory cannot fit it due to not enouh free volume.\n"
+          + " placed into the inventory cannot fit it due to not enough free volume.\n"
           + "The <<1>> parameter is the volume delta that would be needed for the item to fit of"
           + " type VolumeLType.");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly Message<DistanceType, DistanceType> WidthTooLarge =
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<DistanceType, DistanceType> WidthTooLarge =
       new Message<DistanceType, DistanceType>(
           "",
           defaultTemplate: "Width too large: <<1>> > <<2>>");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly Message<DistanceType, DistanceType> HeightTooLarge =
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<DistanceType, DistanceType> HeightTooLarge =
       new Message<DistanceType, DistanceType>(
           "",
           defaultTemplate: "Height too large: <<1>> > <<2>>");
 
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
-  readonly Message<DistanceType, DistanceType> LengthTooLarge =
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<DistanceType, DistanceType> LengthTooLarge =
       new Message<DistanceType, DistanceType>(
           "",
           defaultTemplate: "Length too large: <<1>> > <<2>>");
@@ -52,18 +52,18 @@ public class KISContainerBase : AbstractPartModule,
 
   #region Part's config fields
   /// <summary>Maximum volume that this container can contain.</summary>
-  /// <include file="SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
   public double maxContainerVolume;
 
-  /// <summary>Maximum size of the item that can fit the contianer.</summary>
-  /// <include file="SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
+  /// <summary>Maximum size of the item that can fit the container.</summary>
+  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
   public Vector3 maxItemSize;
   #endregion
 
   #region Local fields and properties
-  readonly HashSet<InventoryItem> itemsSet = new HashSet<InventoryItem>();
+  readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
   #endregion
 
   #region IKISInventory properties
@@ -71,16 +71,16 @@ public class KISContainerBase : AbstractPartModule,
   public InventoryItem[] inventoryItems { get; private set; }
 
   /// <inheritdoc/>
-  public Vector3 maxInnerSize { get { return maxItemSize; } }
+  public Vector3 maxInnerSize => maxItemSize;
 
   /// <inheritdoc/>
-  public double maxVolume { get { return maxContainerVolume; } }
+  public double maxVolume => maxContainerVolume;
 
   /// <inheritdoc/>
   public double usedVolume {
     get {
       if (_usedVolume < 0) {
-        _usedVolume = itemsSet.Sum(i => i.volume);
+        _usedVolume = _itemsSet.Sum(i => i.volume);
       }
       return _usedVolume;
     }
@@ -91,7 +91,7 @@ public class KISContainerBase : AbstractPartModule,
   public double contentMass {
     get {
       if (_contentMass < 0) {
-        _contentMass = itemsSet.Sum(i => i.fullMass);
+        _contentMass = _itemsSet.Sum(i => i.fullMass);
       }
       return _contentMass;
     }
@@ -101,7 +101,7 @@ public class KISContainerBase : AbstractPartModule,
   public double contentCost {
     get {
       if (_contentCost < 0) {
-        _contentCost = itemsSet.Sum(i => i.fullCost);
+        _contentCost = _itemsSet.Sum(i => i.fullCost);
       }
       return _contentCost;
     }
@@ -151,7 +151,7 @@ public class KISContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot delete locked item(s)");
       return false;
     }
-    if (deleteItems.Any(x => !ReferenceEquals(x.inventory, this) || !itemsSet.Contains(x))) {
+    if (deleteItems.Any(x => !ReferenceEquals(x.inventory, this) || !_itemsSet.Contains(x))) {
       HostedDebugLog.Error(this, "Cannot delete item(s) that are not owned by the inventory");
       return false;
     }
@@ -167,7 +167,7 @@ public class KISContainerBase : AbstractPartModule,
       changedItems.ToList().ForEach(i => i.UpdateConfig());
     } else {
       HostedDebugLog.Fine(this, "Updating all items in the inventory...");
-      itemsSet.ToList().ForEach(i => i.UpdateConfig());
+      _itemsSet.ToList().ForEach(i => i.UpdateConfig());
     }
     _usedVolume = -1;
     _contentMass = -1;
@@ -179,12 +179,12 @@ public class KISContainerBase : AbstractPartModule,
   /// <summary>Adds or deletes the inventory items.</summary>
   protected void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
     if (addItems != null) {
-      Array.ForEach(addItems, x => itemsSet.Add(x));
+      Array.ForEach(addItems, x => _itemsSet.Add(x));
     }
     if (deleteItems != null) {
-      Array.ForEach(deleteItems, x => itemsSet.Remove(x));
+      Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
     }
-    inventoryItems = itemsSet.ToArray();
+    inventoryItems = _itemsSet.ToArray();
     UpdateInventoryStats(addItems);
   }
   #endregion
