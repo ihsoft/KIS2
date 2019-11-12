@@ -19,6 +19,7 @@ using KSPDev.Unity;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
   //FIXME: separate container and inventory concepts. data vs UI
@@ -150,12 +151,12 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     foreach (var item in newItems) {
       var slot = FindSlotForPart(item.avPart, item.itemConfig);
       if (slot == null) {
-        HostedDebugLog.Error(
-            this, "No slots available. Using last slot: part={0}", item.avPart.name);
-        slot = _inventorySlots.Last();
+        ArrangeSlots(); // Get rid of any empty invisible slots.
+        slot = FindSlotForPart(item.avPart, item.itemConfig, addInvisibleSlot: true);
       }
-      AddItemsToSlot(new InventoryItem[] { item }, slot);
+      AddItemsToSlot(new[] { item }, slot);
     }
+    ArrangeSlots();
     return newItems;
   }
 
@@ -166,9 +167,14 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     }
     //FIXME: group by slot to effectively delete many items from one slot.
     foreach (var deleteItem in deleteItems) {
-      _itemToSlotMap[deleteItem].DeleteItems(new[] {deleteItem});
+      var slot = _itemToSlotMap[deleteItem];
+      slot.DeleteItems(new[] {deleteItem});
       _itemToSlotMap.Remove(deleteItem);
+      if (unityWindow.hoveredSlot != null && unityWindow.hoveredSlot == slot.unitySlot) {
+        slot.UpdateTooltip();
+      }
     }
+    ArrangeSlots();
     return true;
   }
 
@@ -179,7 +185,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     if (res != null) {
       return res;  // Don't go deeper when the volume constraints are not satisfied.
     }
-    if (CheckHasSlots(avParts, nodes ?? new ConfigNode[avParts.Length])) {
+    if (CheckHasVisibleSlots(avParts, nodes ?? new ConfigNode[avParts.Length])) {
       return null;
     }
     var errors = new[] {
@@ -312,8 +318,8 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     unityWindow.mainStats = string.Join("\n", text.ToArray());
   }
 
-  /// <summary>Check if inventory has enough slots to accomodate the items.</summary>
-  bool CheckHasSlots(IReadOnlyList<AvailablePart> avParts, IReadOnlyList<ConfigNode> nodes) {
+  /// <summary>Check if inventory has enough visible slots to accomodate the items.</summary>
+  bool CheckHasVisibleSlots(IReadOnlyList<AvailablePart> avParts, IReadOnlyList<ConfigNode> nodes) {
     var newSlots = new HashSet<InventorySlotImpl>();
     for (var i = 0; i < avParts.Count; ++i) {
       var avPart = avParts[i];
@@ -330,24 +336,55 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     return emptySlots > newSlots.Count;
   }
 
-  /// <summary>Tries to find a slot where this item can stack.</summary>
+  /// <summary>Returns a slot where the item can be stored.</summary>
+  /// <remarks>
+  /// This method tries to find a best slot, so that the inventory is kept as dense as possible. By
+  /// default it only considers the slots that are visible in UI, but it can be overwritten.
+  /// </remarks>
+  /// <param name="avPart">The part to find a slot for.</param>
+  /// <param name="node">The parts config node.</param>
+  /// <param name="preferredSlots">
+  /// If set, then these slots will be checked for best fit first. The preferred slots can be
+  /// invisible.
+  /// </param>
+  /// <param name="addInvisibleSlot">
+  /// If <c>true</c>, then a new invisible slot will be created in the inventory in case of no
+  /// compatible visible slot was found.
+  /// </param>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
+  /// <seealso cref="InventorySlotImpl.unitySlot"/>
   InventorySlotImpl FindSlotForPart(AvailablePart avPart, ConfigNode node,
-                                    IEnumerable<InventorySlotImpl> preferredSlots = null) {
-    InventorySlotImpl slot = null;
-    var matchItem = new InventoryItemImpl(this, avPart, node);
+                                    IEnumerable<InventorySlotImpl> preferredSlots = null,
+                                    bool addInvisibleSlot = false) {
+    InventorySlotImpl slot;
+    var matchItems = new InventoryItem[] {
+        new InventoryItemImpl(this, avPart, node)
+    };
+    // First, try to store the item into one of the preferred slots.
     if (preferredSlots != null) {
-      slot = preferredSlots.FirstOrDefault(
-          x => x.CheckCanAddItems(new InventoryItem[] { matchItem }) == null);
+      slot = preferredSlots.FirstOrDefault(x => x.CheckCanAddItems(matchItems) == null);
+      if (slot != null) {
+        return slot;
+      }
     }
-    if (slot == null) {
-      slot = _inventorySlots
-          .Where(x => !x.isEmpty)
-          .FirstOrDefault(x => x.CheckCanAddItems(new InventoryItem[] { matchItem }) == null);
+    // Then, try to store the item into an existing slot to save slots space.
+    slot = _inventorySlots
+        .FirstOrDefault(x => !x.isEmpty && x.CheckCanAddItems(matchItems) == null);
+    if (slot != null) {
+      return slot;
     }
-    if (slot == null) {
-      slot = _inventorySlots.FirstOrDefault(s => s.isEmpty);
+    // Then, pick a first empty slot, given it's visible.
+    slot = _inventorySlots.FirstOrDefault(s => s.isEmpty && s.unitySlot != null);
+    if (slot != null) {
+      return slot;
     }
+    if (!addInvisibleSlot) {
+      return null;
+    }
+    // Finally, create a new invisible slot to fit the items.
+    HostedDebugLog.Warning(this, "Adding an invisible slot: slotIdx={0}", _inventorySlots.Count);
+    _inventorySlots.Add(new InventorySlotImpl(this, null));
+    slot = _inventorySlots[_inventorySlots.Count - 1];
     return slot;
   }
 
@@ -365,16 +402,14 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Unity window callbacks
-  void OnSlotHover(Slot slot, bool isHover) {
-    var inventorySlot = _inventorySlots[slot.slotIndex];
+  /// <summary>A callback that is called when pointer enters or leaves a UI slot.</summary>
+  /// <param name="hoveredSlot">The Unity slot that is a source of the event.</param>
+  /// <param name="isHover">Tells if pointer enters or leaves the UI element.</param>
+  void OnSlotHover(Slot hoveredSlot, bool isHover) {
     if (isHover) {
-      unityWindow.StartSlotTooltip();
-      unityWindow.currentTooltip.StartCoroutine(UpdateHoveredHints(inventorySlot));
-      inventorySlot.UpdateTooltip();
-      KISAPI.ItemDragController.RegisterTarget(inventorySlot);
+      RegisterHoverCallback(hoveredSlot);
     } else {
-      KISAPI.ItemDragController.UnregisterTarget(inventorySlot);
-      unityWindow.DestroySlotTooltip();
+      UnregisterHoverCallback(hoveredSlot);
     }
   }
 
@@ -396,24 +431,59 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   }
 
   void OnGridSizeChanged() {
-    if (unityWindow.slots.Length != _inventorySlots.Count) {
-      HostedDebugLog.Fine(this, "Resizing inventory controller: oldSlots={0}, newSlots={1}",
-                          _inventorySlots.Count, unityWindow.slots.Length);
-      for (var i = _inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
-        _inventorySlots.Add(new InventorySlotImpl(this, unityWindow.slots[i]));
+    ArrangeSlots();
+  }
+
+  /// <summary>
+  /// Ensures that each UI slot has a corresponded inventory slot. Also, updates and optimizes the
+  /// inventory slots that are not currently present in UI. 
+  /// </summary>
+  /// <remarks>
+  /// This method must be called each time the inventory or unity slots number is changed.
+  /// </remarks>
+  void ArrangeSlots() {
+    // Visible slots order may change, it would make the tooltip irrelevant.
+    if (unityWindow.hoveredSlot != null) {
+      UnregisterHoverCallback(unityWindow.hoveredSlot);
+    }
+
+    // Compact the slots when there are hidden slots to let them show up.
+    var visibleSlots = unityWindow.slots.Length;
+    for (var i = _inventorySlots.Count - 1; i >= 0; --i) {
+      if (_inventorySlots.Count > visibleSlots || !_inventorySlots[i].isEmpty) {
+        continue;
       }
-      while (_inventorySlots.Count > unityWindow.slots.Length) {
-        var deleteIndex = _inventorySlots.Count - 1;
-        var slot = _inventorySlots[deleteIndex];
-        foreach (var item in slot.slotItems) {
-          HostedDebugLog.Error(
-              this, "Dropping item from a non-empty slot: slotIdx={0}, item={1}",
-              deleteIndex, item.avPart.name);
-          DeleteItems(new[] { item });
+      if (i < visibleSlots) {
+        HostedDebugLog.Warning(this, "Compact an empty slot: slotIdx={0}", i);
+      }
+      _inventorySlots.RemoveAt(i);
+    }
+
+    // Add up slots to match the current UI.
+    for (var i = _inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
+      _inventorySlots.Add(new InventorySlotImpl(this, null));
+    }
+
+    // Align logical slots with the visible slots in UI.
+    for (var i = 0; i < _inventorySlots.Count; ++i) {
+      var slot = _inventorySlots[i];
+      var newUnitySlot = i < unityWindow.slots.Length
+          ? unityWindow.slots[i]
+          : null;
+      if (!slot.isEmpty) {
+        if (slot.unitySlot != null && newUnitySlot == null) {
+          HostedDebugLog.Warning(this, "Slot becomes hidden in UI: slotIdx={0}", i);
+        } else if (slot.unitySlot == null && newUnitySlot != null) {
+          HostedDebugLog.Fine(this, "Hidden slot becomes visible in UI: slotIdx={0}", i);
         }
-        _inventorySlots.RemoveAt(deleteIndex);
       }
-      UpdateInventoryStats(null);
+      slot.unitySlot = newUnitySlot;
+    }
+    UpdateInventoryStats(new InventoryItem[0]);
+
+    // Restore the tooltip callbacks if needed.
+    if (unityWindow.hoveredSlot != null) {
+      RegisterHoverCallback(unityWindow.hoveredSlot);
     }
   }
 
@@ -422,6 +492,8 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// This coroutine is expected to be scheduled on the tooltip object. When it dies, so does this
   /// coroutine.
   /// </remarks>
+  // ReSharper disable once MemberCanBeMadeStatic.Local
+  // NOTE: Nope, this method cannot be static.
   IEnumerator UpdateHoveredHints(InventorySlotImpl inventorySlot) {
     if (!UIKISInventoryTooltip.Tooltip.showHints) {
       yield break;  // No hints, no tracking.
@@ -429,6 +501,32 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     while (true) {  // The coroutine will die with the tooltip.
       inventorySlot.UpdateHints();
       yield return null;
+    }
+  }
+
+  /// <summary>Destroys tooltip and stops any active logic on the UI slot.</summary>
+  /// <param name="hoveredSlot">The UI element that is a target of the hover event.</param>
+  void UnregisterHoverCallback(Slot hoveredSlot) {
+    var inventorySlot = _inventorySlots.FirstOrDefault(x => x.unitySlot == hoveredSlot);
+    if (inventorySlot != null) {
+      KISAPI.ItemDragController.UnregisterTarget(inventorySlot);
+      unityWindow.DestroySlotTooltip();
+    } else {
+      HostedDebugLog.Error(this, "No inventory slot found: unitySlot={0}", hoveredSlot);
+    }
+  }
+
+  /// <summary>Establishes a tooltip and starts the active logic on a UI slot.</summary>
+  /// <param name="hoveredSlot">The UI element that is a target of the hover event.</param>
+  void RegisterHoverCallback(Slot hoveredSlot) {
+    var inventorySlot = _inventorySlots.FirstOrDefault(x => x.unitySlot == hoveredSlot);
+    if (inventorySlot != null) {
+      unityWindow.StartSlotTooltip();
+      unityWindow.currentTooltip.StartCoroutine(UpdateHoveredHints(inventorySlot));
+      inventorySlot.UpdateTooltip();
+      KISAPI.ItemDragController.RegisterTarget(inventorySlot);
+    } else {
+      HostedDebugLog.Error(this, "No inventory slot found: unitySlot={0}", hoveredSlot);
     }
   }
   #endregion

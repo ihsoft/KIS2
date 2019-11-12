@@ -16,6 +16,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>Internal class that holds inventory slot logic.</summary>
@@ -25,7 +26,7 @@ namespace KIS2 {
 /// internal state, they cannot stack to the same slot.
 /// </remarks>
 /// <seealso cref="KISContainerWithSlots"/>
-sealed class InventorySlotImpl : IKISDragTarget {
+internal sealed class InventorySlotImpl : IKISDragTarget {
 
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -189,7 +190,15 @@ sealed class InventorySlotImpl : IKISDragTarget {
   public const string DifferentPartReason = "DifferentPart";
 
   /// <summary>Unity object that represents the slot.</summary>
-  public readonly UIKISInventorySlot.Slot unitySlot;
+  /// <remarks>It can be <c>null</c> if the slot is not shown in the inventory window.</remarks>
+  public UIKISInventorySlot.Slot unitySlot {
+    get { return _unitySlot;  }
+    set {
+      _unitySlot = value;
+      UpdateUnitySlot();
+    }
+  }
+  UIKISInventorySlot.Slot _unitySlot;
 
   /// <summary>Inventory that owns this slot.</summary>
   public readonly KISContainerWithSlots inventory;
@@ -211,7 +220,9 @@ sealed class InventorySlotImpl : IKISDragTarget {
     get { return _isLocked; }
     set {
       _isLocked = value;
-      unitySlot.isLocked = value;
+      if (unitySlot != null) {
+        unitySlot.isLocked = value;
+      }
     }
   }
   bool _isLocked;
@@ -272,7 +283,6 @@ sealed class InventorySlotImpl : IKISDragTarget {
       // NOT expected. When you don't know what to do, play the "BIP WRONG" sound!
       UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
     }
-    return;
   }
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
@@ -500,13 +510,15 @@ sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Updates the slot's GUI to the current KIS slot state.</summary>
   void UpdateUnitySlot() {
-    if (isEmpty) {
+    if (unitySlot == null) {
+      return;
+    }
+    if (isEmpty || unitySlot == null) {
       unitySlot.ClearContent();
       return;
     }
     unitySlot.slotImage = iconImage;
     unitySlot.stackSize = "x" + slotItems.Length;
-    //FIXME: show hotkey if enabled.
 
     // Slot resources info.
     if (slotItems[0].resources.Length > 0) {
@@ -588,39 +600,13 @@ sealed class InventorySlotImpl : IKISDragTarget {
     //FIXME
     DebugEx.Warning("*** drop items requested");
     
-    //FIXME: veriodfy what is clicked. ingore unknown events
+    //FIXME: verify what is clicked. ignore unknown events
     var storeItems = isEmpty && EventChecker.CheckClickEvent(DropIntoSlotEvent, button);
     var stackItems = !isEmpty && EventChecker.CheckClickEvent(AddItemsIntoStackEvent, button);
     if (!storeItems && !stackItems) {
       return;  // Nothing to do.
     }
-//    var dropItems = KISAPI.ItemDragController.leasedItems;
-//    var canStoreItems =
-//        CheckCanAddItems(dropItems, logErrors: true).Length == 0
-//        && inventory.CheckCanAddItems(dropItems, logErrors: true).Length == 0;
-//    if (!canStoreItems) {
-//      UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
-//      HostedDebugLog.Error(
-//          inventory, "Cannot store dragged items to the slot: idx={0}", unitySlot.slotIndex);
-//      return;
-//    }
-//
-//    if (storeItems) {
-//      // Store items into empty slot.
-//    } else {
-//      // Add items into the non-empty slot.
-//    }
-//    //FIXME: ensure we can accep the dragged items! there will be no way back.
-//    var consumedItems = KISAPI.ItemDragController.ConsumeItems();
-//    if (consumedItems != null) {
-//      //FIXME
-//      DebugEx.Warning("Adding {0} items from dragged pack", consumedItems.Length);
-//      //FIXME: verify if can add!
-//      AddItems(consumedItems);
-//    } else {
-//      // FIXME: bip wrong!
-//      DebugEx.Error("The items owner has unexpectably refused the transfer deal");
-//    }
+    //FIXME: implement other branches
   }
 
   /// <summary>Adds or deletes items to/from the slot.</summary>
@@ -642,7 +628,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
           .ToArray();
     }
     UpdateUnitySlot();
-    if (inventory.unityWindow.hoveredSlot == unitySlot) {
+    if (inventory.unityWindow.hoveredSlot != null
+        && inventory.unityWindow.hoveredSlot == unitySlot) {
       UpdateTooltip();
     }
   }
