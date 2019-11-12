@@ -64,7 +64,7 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory properties
   /// <inheritdoc/>
-  public InventoryItem[] inventoryItems { get; private set; }
+  public InventoryItem[] inventoryItems { get; private set; } = new InventoryItem[0];
 
   /// <inheritdoc/>
   public Vector3 maxInnerSize => maxItemSize;
@@ -90,6 +90,7 @@ public class KisContainerBase : AbstractPartModule,
   /// Do not modify this set directly! Descendants must call <see cref="UpdateItems"/> to add or
   /// remove items from the collection.
   /// </remarks>
+  /// <seealso cref="UpdateItems"/>
   protected readonly HashSet<InventoryItem> inventoryItemsSet = new HashSet<InventoryItem>();
   #endregion
 
@@ -148,36 +149,41 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual void UpdateInventoryStats(InventoryItem[] changedItems) {
-    if (changedItems != null) {
-      Array.ForEach(changedItems, i => i.UpdateConfig());
-    } else {
+    if (changedItems == null) {
       HostedDebugLog.Fine(this, "Updating all items in the inventory...");
       Array.ForEach(inventoryItems, i => i.UpdateConfig());
+    } else if (changedItems.Length > 0) {
+      HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Length);
+      Array.ForEach(changedItems, i => i.UpdateConfig());
     }
-    UpdateStatsOnly();
+    usedVolume = inventoryItems.Sum(i => i.volume);
+    contentMass = inventoryItems.Sum(i => i.fullMass);
+    contentCost = inventoryItems.Sum(i => i.fullCost);
   }
   #endregion
 
   #region Inheritable methods
   /// <summary>Adds or deletes the inventory items.</summary>
-  protected void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
+  /// <remarks>This method is optimized to update large batches.</remarks>
+  protected virtual void UpdateItems(
+      InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
     if (addItems != null) {
       Array.ForEach(addItems, x => inventoryItemsSet.Add(x));
     }
     if (deleteItems != null) {
       Array.ForEach(deleteItems, x => inventoryItemsSet.Remove(x));
     }
-    inventoryItems = inventoryItemsSet.ToArray();
-    UpdateStatsOnly();
-  }
-  #endregion
-
-  #region Local utility methods
-  /// <summary>Updates container stats without updating the item configs.</summary>
-  void UpdateStatsOnly() {
-    usedVolume = inventoryItems.Sum(i => i.volume);
-    contentMass = inventoryItems.Sum(i => i.fullMass);
-    contentCost = inventoryItems.Sum(i => i.fullCost);
+    // Reconstruct the items array so that the existing items keep their original order, and the new
+    // items (if any) are added at the tail.  
+    if (addItems != null) {
+      inventoryItems = inventoryItems.Where(x => inventoryItemsSet.Contains(x))
+          .Concat(addItems)
+          .ToArray();
+    } else {
+      inventoryItems = inventoryItems.Where(x => inventoryItemsSet.Contains(x))
+          .ToArray();
+    }
+    UpdateInventoryStats(new InventoryItem[0]);
   }
   #endregion
 }

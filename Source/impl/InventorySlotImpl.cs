@@ -232,7 +232,11 @@ sealed class InventorySlotImpl : IKISDragTarget {
   #endregion
 
   #region Local fields and properties
-  readonly SortedSet<InventoryItem> _itemsSet = new SortedSet<InventoryItem>();
+  /// <summary>
+  /// Reflection of <see cref="slotItems"/> in a form of hash set for quick lookup operations. 
+  /// </summary>
+  /// <seealso cref="UpdateItems"/>
+  readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
   bool _canAcceptDraggedItems;
   ErrorReason[] _canAcceptDraggedItemsCheckResult;
   UIKISInventoryTooltip.Tooltip currentTooltip => inventory.unityWindow.currentTooltip;
@@ -631,7 +635,16 @@ sealed class InventorySlotImpl : IKISDragTarget {
     if (deleteItems != null) {
       Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
     }
-    slotItems = _itemsSet.ToArray();
+    // Reconstruct the items array so that the existing items keep their original order, and the new
+    // items (if any) are added at the tail.  
+    if (addItems != null) {
+      slotItems = slotItems.Where(x => _itemsSet.Contains(x))
+          .Concat(addItems)
+          .ToArray();
+    } else {
+      slotItems = slotItems.Where(x => _itemsSet.Contains(x))
+          .ToArray();
+    }
     UpdateUnitySlot();
     if (inventory.unityWindow.hoveredSlot == unitySlot) {
       UpdateTooltip();
