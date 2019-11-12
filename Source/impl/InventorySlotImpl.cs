@@ -201,12 +201,8 @@ sealed class InventorySlotImpl : IKISDragTarget {
   public InventoryItem[] slotItems { get; private set; } = new InventoryItem[0];
 
   /// <summary>Generalized icon of the slot.</summary>
-  public Texture iconImage {
-    get {
-      // FIXME: dynamically pick the best icon resolution. 
-      return !isEmpty ? KISAPI.PartIconUtils.MakeDefaultIcon(avPart, 256, null) : null;
-    }
-  }
+  public Texture iconImage =>
+      !isEmpty ? KISAPI.PartIconUtils.MakeDefaultIcon(avPart, 256, null) : null;
 
   /// <summary>Tells if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Length == 0;

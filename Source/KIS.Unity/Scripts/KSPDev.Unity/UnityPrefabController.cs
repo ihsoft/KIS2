@@ -56,10 +56,10 @@ public static class UnityPrefabController {
   }
 
   /// <summary>Adds prefab to the library.</summary>
-  /// <param name="prefab">The perfab to add.</param>
+  /// <param name="prefab">The prefab to add.</param>
   /// <param name="prefabName">The name, under which the prefab will be registered.</param>
   /// <returns>
-  /// <c>true</c> if prefab was sucessfully added, or <c>false</c> thos perfab has alerady been
+  /// <c>true</c> if prefab was successfully added, or <c>false</c> if prefab has already been
   /// added.
   /// </returns>
   /// <seealso cref="IsPrefabRegistered"/>
@@ -69,7 +69,7 @@ public static class UnityPrefabController {
     var prefabs = GetPrefabsForType(prefab.GetType(), failIfNotFound: false);
     if (prefabs.ContainsKey(prefabName)) {
       Debug.LogWarningFormat(
-          "Prefab is already initalized: type={0}, name={1}", prefab.GetType(), prefabName);
+          "Prefab is already initialized: type={0}, name={1}", prefab.GetType(), prefabName);
       return false;
     }
     prefabs[prefabName] = prefab;
@@ -80,7 +80,7 @@ public static class UnityPrefabController {
   /// <summary>Checks if prefab is already added.</summary>
   /// <param name="prefab">The prefab to check.</param>
   /// <param name="prefabName">The name, under which the prefab was registered.</param>
-  /// <returns><c>true</c> if there is such prefab in the libarary.</returns>
+  /// <returns><c>true</c> if there is such prefab in the library.</returns>
   /// <seealso cref="RegisterPrefab"/>
   public static bool IsPrefabRegistered(Component prefab, string prefabName) {
     var prefabs = GetPrefabsForType(prefab.GetType(), failIfNotFound: false, makeIfNotFound: false);
@@ -114,14 +114,13 @@ public static class UnityPrefabController {
     Component prefab;
     if (prefabName == null) {
       if (prefabs.Count > 1) {
-        throw new ArgumentException(string.Format(
-          "Multiple prefabs found: type={0}, count={1}", type, prefabs.Keys.Count));
+        throw new ArgumentException(
+            $"Multiple prefabs found: type={type}, count={prefabs.Keys.Count}");
       }
       prefab = prefabs.Values.First();
     } else {
       if (!prefabs.TryGetValue(prefabName, out prefab)) {
-        throw new ArgumentException(string.Format(
-            "Prefab not found: type={0}, name={1}", type, prefabName));
+        throw new ArgumentException($"Prefab not found: type={type}, name={prefabName}");
       }
     }
     return prefab as Component;
@@ -133,8 +132,7 @@ public static class UnityPrefabController {
     Dictionary<string, Component> prefabs;
     if (!registeredPrefabs.TryGetValue(prefabType, out prefabs)) {
       if (failIfNotFound) {
-        throw new ArgumentException(
-            string.Format("No prefabs found for type: {0}", prefabType));
+        throw new ArgumentException($"No prefabs found for type: {prefabType}");
       }
       if (!makeIfNotFound) {
         return null;

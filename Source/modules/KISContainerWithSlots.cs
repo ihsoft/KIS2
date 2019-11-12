@@ -253,7 +253,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <summary>Opens the inventory window.</summary>
   void OpenInventoryWindow() {
     if (unityWindow != null) {
-      return;  // Nothing to do.
+      return; // Nothing to do.
     }
     HostedDebugLog.Fine(this, "Creating inventory window");
     unityWindow = UnityPrefabController.CreateInstance<UIKISInventoryWindow>(
