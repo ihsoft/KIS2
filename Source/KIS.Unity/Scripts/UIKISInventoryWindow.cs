@@ -333,9 +333,9 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
       slots = slotsGrid.transform.Cast<Transform>()
           .Select(t => t.GetComponent<Slot>())
           .ToArray();
+      gridSize = newSize;
       onGridSizeChanged.ForEach(notify => notify());
       SendMessage("ControlUpdated", gameObject, SendMessageOptions.DontRequireReceiver);
-      gridSize = newSize;
     }
   }
 
