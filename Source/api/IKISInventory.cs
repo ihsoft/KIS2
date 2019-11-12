@@ -78,26 +78,29 @@ public interface IKisInventory {
   bool DeleteItems(InventoryItem[] deleteItems);
 
   /// <summary>
-  /// Forces the container to refresh its state according to the new state of an item.
+  /// Forces the container to refresh its state according to the new state of the items.
   /// </summary>
   /// <remarks>
   /// Every change to any item in the inventory must result in calling of this method. The items
-  /// will <i>not</i> send updates to the owner inventory (they are forbidden to do this).
+  /// will <i>not</i> send updates to the owner inventory automatically.
   /// <para>
-  /// Before updating own state, the inventory will update every single item in it. An exception
-  /// will be made if <paramref name="changedItems"/> are provided. In this case only that items
-  /// will be updated. Callers can use this ability to optimize their calls and save CPU.
+  /// Before updating own state, the inventory will update every single item config. An exception
+  /// will be made if parameter <paramref name="changedItems"/> is provided. In this case only the
+  /// specified items will be updated. Callers can use this ability to optimize their calls and
+  /// save CPU.
   /// </para>
   /// <para>
-  /// Do not call this method if the changes were made thru the inventory methods (like adding or
-  /// removing items). The inventory is fully aware of such chages and can update accordingly. This
-  /// method must only be called when the item itself has changed (e.g. its config was updated). 
+  /// This method will be called internally when the item number changes. In this case
+  /// <paramref name="changedItems"/> is an empty collection. Normally, the external callers don't
+  /// need to do that, since each implementation should keep control on the items number change.
   /// </para>
   /// </remarks>
   /// <param name="changedItems">
-  /// The items, which changed state was the reason of the inventory update. If <c>null</c>, then\
-  /// all the items in the inventory will be updated.
+  /// The items, which changed state was the reason of the inventory update. If <c>null</c>, then
+  /// all the items in the inventory will be updated. It can also be an empty array, in which case
+  /// the inventory will refresh its own state, but not the items configs. 
   /// </param>
+  /// <seealso cref="InventoryItem.itemConfig"/>
   void UpdateInventoryStats(InventoryItem[] changedItems);
 }
 
