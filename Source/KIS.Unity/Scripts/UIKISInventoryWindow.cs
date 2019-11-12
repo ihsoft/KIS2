@@ -4,13 +4,14 @@
 
 using KIS2.UIKISInventorySlot;
 using KSPDev.Unity;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+// ReSharper disable RedundantDefaultMemberInitializer
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>
@@ -37,21 +38,21 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   #region Callback handlers
   /// <summary>Handles mouse button clicks on a slot.</summary>
-  /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
+  /// <param name="slot">The Unity slot class for which this event was generated.</param>
   /// <param name="button">The pointer button that was clicked.</param>
   /// <seealso cref="onSlotClick"/>
   public delegate void OnSlotClick(Slot slot, PointerEventData.InputButton button);
 
   /// <summary>Handles slot's pointer enter/leave events.</summary>
-  /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
+  /// <param name="slot">The Unity slot class for which this event was generated.</param>
   /// <param name="isHover">
-  /// <c>true</c> if mouse pointer has entered the control's <c>Rect</c>.
+  /// <c>true</c> if mouse pointer has entered the control <c>Rect</c>.
   /// </param>
   /// <seealso cref="onSlotHover"/>
   public delegate void OnSlotHover(Slot slot, bool isHover);
 
   /// <summary>Handles actions on a slot.</summary>
-  /// <param name="slot">The Unity slot class for which this evnt was generated.</param>
+  /// <param name="slot">The Unity slot class for which this event was generated.</param>
   /// <param name="actionButtonNum">The number of the button on the slot that was clicked.</param>
   /// <param name="button">The pointer button that was clicked.</param>
   /// <seealso cref="onSlotAction"/>
@@ -80,7 +81,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   #region Local fields
   const string ColumnsSliderTextPattern = "Width: {0} columns";
   const string RowsSliderTextPattern = "Height: {0} rows";
-  Slot prefabSlot;
+  Slot _prefabSlot;
   #endregion
 
   #region API properties and fields
@@ -144,15 +145,11 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// size gets reduced, the slots at the end are destroyed first.
   /// </remarks>
   /// <seealso cref="SetGridSize"/>
-  public Slot[] slots {
-    get { return _slots; }
-    private set { _slots = value; }
-  }
-  Slot[] _slots = new Slot[0];
+  public Slot[] slots { get; private set; } = new Slot[0];
 
-  /// <summary>Minmum size of the grid.</summary>
+  /// <summary>Minimum size of the grid.</summary>
   /// <remarks>
-  /// Consistency is not checked. The caller is resposible to keep the grid size relevant to the
+  /// Consistency is not checked. The caller is responsible to keep the grid size relevant to the
   /// window controls.
   /// </remarks>
   /// <seealso cref="maxSize"/>
@@ -167,7 +164,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   /// <summary>Maximum size of the grid.</summary>
   /// <remarks>
-  /// Consistency is not checked. The caller is resposible to keep the grid size relevant to the
+  /// Consistency is not checked. The caller is responsible to keep the grid size relevant to the
   /// window controls.
   /// </remarks>
   /// <seealso cref="minSize"/>
@@ -206,8 +203,8 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   public override void Awake() {
     base.Awake();
     if (!isPrefab) {
-      prefabSlot = slotsGrid.transform.GetChild(0).GetComponent<Slot>();
-      prefabSlot.transform.SetParent(null, worldPositionStays: true);
+      _prefabSlot = slotsGrid.transform.GetChild(0).GetComponent<Slot>();
+      _prefabSlot.transform.SetParent(null, worldPositionStays: true);
     }
   }
 
@@ -243,8 +240,8 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   #region IKSPDevPointerListener implementation - UIKISInventorySlot
   /// <inheritdoc/>
-  public int priority { get { return 0; } }
-  
+  public int priority => 0;
+
   /// <inheritdoc/>
   public void OnPointerButtonClick(GameObject owner, Slot source, PointerEventData eventData) {
     onSlotClick.ForEach(notify => notify(source, eventData.button));
@@ -345,7 +342,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// slot). No other callbacks will be invoked after this point. The controllers must call this
   /// method before they request window deletion.
   /// </remarks>
-  public void OnBeforeDestoy() {
+  public void OnBeforeDestroy() {
     hoveredSlot = null;
     onSlotClick.Clear();
     onSlotHover.Clear();
@@ -364,7 +361,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   }
 
   Slot AddSlotAtEnd() {
-    var newSlot = Instantiate<Slot>(prefabSlot, slotsGrid.transform, worldPositionStays: true);
+    var newSlot = Instantiate(_prefabSlot, slotsGrid.transform, worldPositionStays: true);
     newSlot.name = "Slot";
     newSlot.gameObject.SetActive(true);
     return newSlot;
