@@ -112,7 +112,7 @@ sealed class InventoryItemImpl : InventoryItem {
   ScienceData[] _science;
   
   /// <inheritdoc/>
-  public bool isEquipped { get; private set; }
+  public bool isEquipped => false;
 
   /// <inheritdoc/>
   public bool isLocked { get; private set; }

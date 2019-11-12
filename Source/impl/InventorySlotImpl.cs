@@ -216,9 +216,10 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   /// <summary>Tells if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Length == 0;
 
+  /// <summary>Tells if this slot items are participating in a drag action.</summary>
   public bool isLocked {
     get { return _isLocked; }
-    set {
+    private set {
       _isLocked = value;
       if (unitySlot != null) {
         unitySlot.isLocked = value;
