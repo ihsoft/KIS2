@@ -84,14 +84,19 @@ public interface InventoryItem {
   bool isLocked { get; }
 
   /// <summary>Sets locked state.</summary>
+  /// <remarks>
+  /// The inventory may need to know if the item's lock stat has updated. The actor, that changes
+  /// the state, is responsible to notify the inventory via the
+  /// <see cref="IKisInventory.UpdateInventoryStats"/> method.
+  /// </remarks>
   /// <seealso cref="isLocked"/>
   void SetLocked(bool newState);
 
   /// <summary>Updates all cached values from the part's config node.</summary>
   /// <remarks>
-  /// This method must always be called when the node is changed. Note, that this method must
-  /// <i>not</i> notify the owner inventory about the updates. The actor, that changes the item, is
-  /// responsible to do that.
+  /// This method must always be called when the node is changed. Note, that this method doesn't
+  /// notify the owner inventory about the updates. The actor, that changes the item, is responsible
+  /// to do that via the <see cref="IKisInventory.UpdateInventoryStats"/> method.
   /// </remarks>
   /// <seealso cref="itemConfig"/>
   /// <seealso cref="inventory"/>

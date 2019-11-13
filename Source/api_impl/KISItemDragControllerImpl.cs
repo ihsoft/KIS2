@@ -34,7 +34,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
   /// <summary>Locks all game's keyboard events and starts updating the drag targets.</summary>
   /// <remarks>
   /// Once this object is created, all the normal game keys will be locked. Including the key that
-  /// calls system menu (ESC). The autosave abilty will also be blocked. To exit this mode user
+  /// calls system menu (ESC). The autosave ability will also be blocked. To exit this mode user
   /// either need to press <c>ESC</c> or the code needs to cancel the drag mode via
   /// <see cref="CancelItemsLease"/>.
   /// <para>

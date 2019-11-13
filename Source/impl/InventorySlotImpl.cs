@@ -548,7 +548,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   }
 
   /// <summary>
-  /// Handles slot clicks when the drag operation is not started or has started on this slot.
+  /// Handles slot clicks when the drag operation is not started or has started on this same slot.
   /// </summary>
   /// <remarks>Beeps and logs an error if the action cannot be completed.</remarks>
   /// <returns><c>true</c> if action was successful.</returns>
