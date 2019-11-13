@@ -218,16 +218,17 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   public bool isEmpty => slotItems.Length == 0;
 
   /// <summary>Tells if this slot items are participating in a drag action.</summary>
-  public bool isLocked {
-    get { return _isLocked; }
+  /// FIXME: actually set it from the slots items state.
+  public bool hasDraggedItems {
+    get { return _hasDraggedItems; }
     private set {
-      _isLocked = value;
+      _hasDraggedItems = value;
       if (unitySlot != null) {
         unitySlot.isLocked = value;
       }
     }
   }
-  bool _isLocked;
+  bool _hasDraggedItems;
   #endregion
 
   #region Local constants
@@ -254,6 +255,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   #region IKISDragTarget implementation
   /// <inheritdoc/>
   public void OnKISDragStart() {
+    //FIXME: refactor to StartAcceptingMode method/property
     _canAcceptDraggedItemsCheckResult = CheckCanAddItems(KISAPI.ItemDragController.leasedItems);
     _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
     UpdateTooltip();
@@ -274,14 +276,16 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Handles mouse clicks on the Unity slot.</summary>
   public void OnSlotClicked(PointerEventData.InputButton button) {
-    if (KISAPI.ItemDragController.isDragging && isLocked
+    var actionHandled = false;
+    if (KISAPI.ItemDragController.isDragging && hasDraggedItems
         || !KISAPI.ItemDragController.isDragging) {
       // User wants to take/add items to the dragging action.
-      MouseClickTakeItems(button);
+      actionHandled = MouseClickTakeItems(button);
     } else if (KISAPI.ItemDragController.isDragging) {
       // User wants to store items into the slot.
-      MouseClickDropItems(button);
-    } else {
+      actionHandled = MouseClickDropItems(button);
+    } 
+    if (!actionHandled) {
       // NOT expected. When you don't know what to do, play the "BIP WRONG" sound!
       UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
     }
@@ -353,6 +357,8 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   /// </remarks>
   /// <seealso cref="currentTooltip"/>
   public void UpdateTooltip() {
+    //FIXME: adjust slot number by the number of dragging items!
+    //FIXME: check if dragging has started not from this slot.
     if (KISAPI.ItemDragController.isDragging) {
       UpdateDraggingStateTooltip();
     } else {
@@ -372,6 +378,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   public void UpdateHints() {
     var hints = new List<string>();
     if (KISAPI.ItemDragController.isDragging) {
+      //FIXME: need to know if this slot was the source 
       if (isEmpty) {
         hints.Add(StoreItemsHintText.Format(DropIntoSlotEvent));
       } else if (_canAcceptDraggedItems) {
@@ -536,7 +543,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Triggers when items from this slot are consumed by the target.</summary>
   bool ConsumeSlotItems() {
-    isLocked = false;
+    hasDraggedItems = false;
     Array.ForEach(KISAPI.ItemDragController.leasedItems, i => i.SetLocked(false));
     inventory.DeleteItems(KISAPI.ItemDragController.leasedItems);
     return true;
@@ -544,7 +551,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Triggers when dragging items from this slot has been canceled.</summary>
   void CancelSlotLeasedItems() {
-    isLocked = false;
+    hasDraggedItems = false;
     Array.ForEach(KISAPI.ItemDragController.leasedItems, i => i.SetLocked(false));
   }
 
@@ -552,45 +559,62 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   /// Handles slot clicks when the drag operation is not started or has started on this same slot.
   /// </summary>
   /// <remarks>Beeps and logs an error if the action cannot be completed.</remarks>
-  /// <returns><c>true</c> if action was successful.</returns>
+  /// <returns>
+  /// <c>true</c> if the action was handled by the method (either successfully or not).
+  /// </returns>
   bool MouseClickTakeItems(PointerEventData.InputButton button) {
+    var actionHandled = false;
     var newCanTakeItems = slotItems.Where(i => !i.isLocked).ToArray();
     InventoryItem[] itemsToDrag = null;
-    if (EventChecker.CheckClickEvent(TakeSlotEvent, button)
-        && !isLocked && !KISAPI.ItemDragController.isDragging
-        && newCanTakeItems.Length > 0) {
-      DebugEx.Warning("*** take whole slot");
-      itemsToDrag = newCanTakeItems;
-    } else if (EventChecker.CheckClickEvent(TakeOneItemEvent, button)
-               && newCanTakeItems.Length >= 1) {
-      DebugEx.Warning("*** take one item");
-      itemsToDrag = newCanTakeItems.Take(1).ToArray();
-    } else if (EventChecker.CheckClickEvent(TakeTenItemsEvent, button)
-               && newCanTakeItems.Length >= 10) {
-      DebugEx.Warning("*** take ten items");
-      itemsToDrag = newCanTakeItems.Take(10).ToArray();
+    
+    //FIXME action handled concept sucks
+
+    // Go thru the known mouse+keyboard events for the action.
+    if (EventChecker.CheckClickEvent(TakeSlotEvent, button)) {
+      actionHandled = true;
+      if (newCanTakeItems.Length > 0) {
+        DebugEx.Warning("*** take whole slot");
+        itemsToDrag = newCanTakeItems;
+      }
+    }
+    if (EventChecker.CheckClickEvent(TakeOneItemEvent, button) && itemsToDrag == null) {
+      actionHandled = true;
+      if (newCanTakeItems.Length >= 1) {
+        DebugEx.Warning("*** take one item");
+        itemsToDrag = newCanTakeItems.Take(1).ToArray();
+      }
+    }
+    if (EventChecker.CheckClickEvent(TakeTenItemsEvent, button) && itemsToDrag == null) {
+      actionHandled = true;
+      if (newCanTakeItems.Length >= 10) {
+        DebugEx.Warning("*** take ten items");
+        itemsToDrag = newCanTakeItems.Take(10).ToArray();
+      }
+    }
+    if (!actionHandled) {
+      return false; // Not something we can handle here.
     }
     if (itemsToDrag == null) {
       UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
-      HostedDebugLog.Error(
+      HostedDebugLog.Warning(
           inventory, "Cannot take items from slot: totalItems={0}, canTakeItems={1}",
           slotItems.Length, newCanTakeItems.Length);
-      return false;
+      return true;
     }
 
+    // Either add or set the grabbed items.
     if (KISAPI.ItemDragController.isDragging) {
-      Array.ForEach(KISAPI.ItemDragController.leasedItems, i => i.SetLocked(false));
       itemsToDrag = itemsToDrag.Concat(KISAPI.ItemDragController.leasedItems).ToArray();
       KISAPI.ItemDragController.CancelItemsLease();
     }
     KISAPI.ItemDragController.LeaseItems(
         iconImage, itemsToDrag, ConsumeSlotItems, CancelSlotLeasedItems);
+    Array.ForEach(itemsToDrag, i => i.SetLocked(true));
     var dragIconObj = KISAPI.ItemDragController.dragIconObj;
     dragIconObj.hasScience = unitySlot.hasScience;
-    dragIconObj.stackSize = itemsToDrag.Length;//FIXME: get it from unity when it's fixed to int
+    dragIconObj.stackSize = itemsToDrag.Length; //FIXME: get it from unity when it's fixed to int
     dragIconObj.resourceStatus = unitySlot.resourceStatus;
-    isLocked = true;
-    Array.ForEach(itemsToDrag, i => i.SetLocked(true));
+    hasDraggedItems = true;
     return true;
   }
 
@@ -598,17 +622,32 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   /// Handles slot clicks when there is a drag operation pending from another slot.
   /// </summary>
   /// <param name="button"></param>
-  void MouseClickDropItems(PointerEventData.InputButton button) {
+  bool MouseClickDropItems(PointerEventData.InputButton button) {
     //FIXME
     DebugEx.Warning("*** drop items requested");
-    
-    //FIXME: verify what is clicked. ignore unknown events
     var storeItems = isEmpty && EventChecker.CheckClickEvent(DropIntoSlotEvent, button);
     var stackItems = !isEmpty && EventChecker.CheckClickEvent(AddItemsIntoStackEvent, button);
     if (!storeItems && !stackItems) {
-      return;  // Nothing to do.
+      return false;
     }
-    //FIXME: implement other branches
+    var items = KISAPI.ItemDragController.leasedItems;
+    //FIXME: for the same inventory move the volume check must be skipped (to let overflowed inventories be organized).
+    if (CheckCanAddItems(items, logErrors: true) != null) {
+      UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
+      HostedDebugLog.Warning(
+          inventory, "Cannot store/stack dragged items to slot: draggedItems={0}", items.Length);
+      return true;
+    }
+    items = KISAPI.ItemDragController.ConsumeItems();
+    if (items == null) {
+      UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
+      HostedDebugLog.Warning(inventory, "Source has cancelled the dragged items lease");
+      return true;
+    }
+    //FIXME: this is absolutely awful.
+    //FIXME: it won't work across multiple inventories! 
+    inventory.AddItemsToSlot(items, this);
+    return true;
   }
 
   /// <summary>Adds or deletes items to/from the slot.</summary>

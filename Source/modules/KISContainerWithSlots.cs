@@ -147,17 +147,22 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   #region KISContainerBase overrides
   /// <inheritdoc/>
   public override InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
-    var newItems = base.AddParts(avParts, nodes);
-    foreach (var item in newItems) {
-      var slot = FindSlotForPart(item.avPart, item.itemConfig);
+    // Ignore the base method implementation.
+    // FIXME: get back to the approach of adding to base.
+    var newItemsList = new List<InventoryItem>();
+    for (var i = 0; i < avParts.Length; i++) {
+      var avPart = avParts[i];
+      var itemConfig = nodes[i];
+      var slot = FindSlotForPart(avPart, itemConfig);
       if (slot == null) {
-        ArrangeSlots(); // Get rid of any empty invisible slots.
-        slot = FindSlotForPart(item.avPart, item.itemConfig, addInvisibleSlot: true);
+        ArrangeSlots(); // Make compaction and tray again.
+        slot = FindSlotForPart(avPart, itemConfig, addInvisibleSlot: true);
       }
-      AddItemsToSlot(new[] { item }, slot);
+      var item = new InventoryItemImpl(this, avPart, itemConfig);
+      AddItemsToSlot(new InventoryItem[] {item}, slot);
+      newItemsList.Add(item);
     }
-    ArrangeSlots();
-    return newItems;
+    return newItemsList.ToArray();
   }
 
   /// <inheritdoc/>
@@ -394,7 +399,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <see cref="KisContainerBase.inventoryItems"/>). This method doesn't check any preconditions.
   /// </remarks>
   /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
-  void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
+  internal void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
     UpdateItems(addItems: addItems);
     slot.AddItems(addItems);
     Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
@@ -447,16 +452,23 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       UnregisterHoverCallback(unityWindow.hoveredSlot);
     }
 
-    // Compact the slots when there are hidden slots to let them show up.
+    // Compact empty slots when there are hidden slots in the inventory. This may let some of the
+    // hidden slots to become visible. 
     var visibleSlots = unityWindow.slots.Length;
-    for (var i = _inventorySlots.Count - 1; i >= 0; --i) {
-      if (_inventorySlots.Count > visibleSlots || !_inventorySlots[i].isEmpty) {
-        continue;
+    for (var i = _inventorySlots.Count - 1; i >= 0 && _inventorySlots.Count > visibleSlots; --i) {
+      if (!_inventorySlots[i].isEmpty) {
+        continue; 
       }
-      if (i < visibleSlots) {
+      if (i >= visibleSlots) {
+        // Simple cleanup, do it silently.
+        //FIXME
+        HostedDebugLog.Warning(this, "**** CLEANUP an empty slot: slotIdx={0}", i);
+        _inventorySlots.RemoveAt(i); 
+      } else {
+        // Cleanup of a visible empty slot. The inventory layout will change.
         HostedDebugLog.Warning(this, "Compact an empty slot: slotIdx={0}", i);
+        _inventorySlots.RemoveAt(i);
       }
-      _inventorySlots.RemoveAt(i);
     }
 
     // Add up slots to match the current UI.
