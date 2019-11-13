@@ -10,6 +10,7 @@ using KSPDev.PartUtils;
 using KSPDev.ProcessingUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
+using Smooth.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -613,21 +614,18 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   /// <summary>Adds or deletes items to/from the slot.</summary>
   void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
     if (addItems != null) {
-      Array.ForEach(addItems, x => _itemsSet.Add(x));
+      _itemsSet.AddAll(addItems);
     }
     if (deleteItems != null) {
       Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
     }
     // Reconstruct the items array so that the existing items keep their original order, and the new
-    // items (if any) are added at the tail.  
+    // items (if any) are added at the tail.
+    var newItems = slotItems.Where(x => _itemsSet.Contains(x));
     if (addItems != null) {
-      slotItems = slotItems.Where(x => _itemsSet.Contains(x))
-          .Concat(addItems)
-          .ToArray();
-    } else {
-      slotItems = slotItems.Where(x => _itemsSet.Contains(x))
-          .ToArray();
+      newItems = newItems.Concat(addItems);
     }
+    slotItems = newItems.ToArray();
     UpdateUnitySlot();
     if (inventory.unityWindow.hoveredSlot != null
         && inventory.unityWindow.hoveredSlot == unitySlot) {

@@ -8,6 +8,7 @@ using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
+using Smooth.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -168,21 +169,18 @@ public class KisContainerBase : AbstractPartModule,
   protected virtual void UpdateItems(
       InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
     if (addItems != null) {
-      Array.ForEach(addItems, x => inventoryItemsSet.Add(x));
+      inventoryItemsSet.AddAll(addItems);
     }
     if (deleteItems != null) {
       Array.ForEach(deleteItems, x => inventoryItemsSet.Remove(x));
     }
     // Reconstruct the items array so that the existing items keep their original order, and the new
     // items (if any) are added at the tail.  
+    var newItems = inventoryItems.Where(x => inventoryItemsSet.Contains(x));
     if (addItems != null) {
-      inventoryItems = inventoryItems.Where(x => inventoryItemsSet.Contains(x))
-          .Concat(addItems)
-          .ToArray();
-    } else {
-      inventoryItems = inventoryItems.Where(x => inventoryItemsSet.Contains(x))
-          .ToArray();
+      newItems = newItems.Concat(addItems);
     }
+    inventoryItems = newItems.ToArray();
     UpdateInventoryStats(new InventoryItem[0]);
   }
   #endregion
