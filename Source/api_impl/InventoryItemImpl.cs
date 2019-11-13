@@ -144,6 +144,11 @@ sealed class InventoryItemImpl : InventoryItem {
     this.avPart = avPart;
     this.itemConfig = itemConfig;
   }
+
+  /// <summary>Makes a new inventory item from another item.</summary>
+  internal static InventoryItem CopyFrom(IKisInventory inventory, InventoryItem item) {
+    return new InventoryItemImpl(inventory, item.avPart, item.itemConfig);
+  }
   #endregion
 }
   
