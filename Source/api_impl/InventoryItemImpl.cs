@@ -9,7 +9,7 @@ using UnityEngine;
 namespace KIS2 {
 
 /// <summary>Implementation for the inventory item.</summary>
-sealed class InventoryItemImpl : InventoryItem {
+internal sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
   public IKisInventory inventory { get; }
@@ -24,92 +24,29 @@ sealed class InventoryItemImpl : InventoryItem {
   public Part physicalPart { get; }
 
   /// <inheritdoc/>
-  public double volume {
-    get {
-      if (_volume < 0) {
-        _volume = KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
-      }
-      return _volume;
-    }
-  }
-  double _volume = -1;
+  public double volume { get; private set; }
   
   /// <inheritdoc/>
-  public Vector3 size {
-    get {
-      if (!_size.HasValue) {
-        _size = KISAPI.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
-      }
-      return _size.Value;
-    }
-  }
-  Vector3? _size;
+  public Vector3 size { get; private set; }
 
   /// <inheritdoc/>
-  public double dryMass {
-    get {
-      if (_dryMass < 0) {
-        _dryMass = KISAPI.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);
-      }
-      return _dryMass;
-    }
-  }
-  double _dryMass = -1;
+  public double dryMass { get; private set; }
   
   /// <inheritdoc/>
-  public double dryCost {
-    get {
-      if (_dryCost < 0) {
-        _dryCost = KISAPI.PartNodeUtils.GetPartDryCost(avPart, partNode: itemConfig);
-      }
-      return _dryCost;
-    }
-  }
-  double _dryCost = -1;
+  public double dryCost { get; private set; }
   
   /// <inheritdoc/>
-  public double fullMass {
-    get {
-      if (_fullMass < 0) {
-        _fullMass = dryMass + resources.Sum(r => r.amount * r.definition.density);
-      }
-      return _fullMass;
-    }
-  }
-  double _fullMass = -1;
+  public double fullMass { get; private set; }
   
   /// <inheritdoc/>
-  public double fullCost {
-    get {
-      if (_fullCost < 0) {
-        _fullCost = dryCost + resources.Sum(r => r.amount * r.definition.unitCost);
-      }
-      return _fullCost;
-    }
-  }
-  double _fullCost = -1;
-  
+  public double fullCost { get; private set; }
+
   /// <inheritdoc/>
-  public ProtoPartResourceSnapshot[] resources {
-    get {
-      if (_resources == null) {
-        _resources = KISAPI.PartNodeUtils.GetResources(itemConfig);
-      }
-      return _resources;
-    }
-  }
-  ProtoPartResourceSnapshot[] _resources;
-  
+  public ProtoPartResourceSnapshot[] resources { get; private set; }
+      = new ProtoPartResourceSnapshot[0];
+
   /// <inheritdoc/>
-  public ScienceData[] science {
-    get {
-      if (_science == null) {
-        _science = KISAPI.PartNodeUtils.GetScience(itemConfig);
-      }
-      return _science;
-    }
-  }
-  ScienceData[] _science;
+  public ScienceData[] science { get; private set; } = new ScienceData[0];
   
   /// <inheritdoc/>
   public bool isEquipped => false;
@@ -121,32 +58,34 @@ sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem implementation
   /// <inheritdoc/>
   public void SetLocked(bool newState) {
+    //FIXME: notify inventory? or let caller doing it?
     isLocked = newState;
   }
 
   /// <inheritdoc/>
   public void UpdateConfig() {
-    _volume = -1;
-    _size = null;
-    _dryMass = -1;
-    _dryCost = -1;
-    _fullMass = -1;
-    _fullCost = -1;
-    _resources = null;
-    _science = null;
+    volume = KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
+    size = KISAPI.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
+    dryMass = KISAPI.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);
+    dryCost = KISAPI.PartNodeUtils.GetPartDryCost(avPart, partNode: itemConfig);
+    fullMass = dryMass + resources.Sum(r => r.amount * r.definition.density);
+    fullCost = dryCost + resources.Sum(r => r.amount * r.definition.unitCost);
+    resources = KISAPI.PartNodeUtils.GetResources(itemConfig);
+    science = KISAPI.PartNodeUtils.GetScience(itemConfig);
   }
   #endregion
 
   #region API methods
   /// <summary>Makes a new item from the part definition.</summary>
-  internal InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig) {
+  public InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig) {
     this.inventory = inventory;
     this.avPart = avPart;
     this.itemConfig = itemConfig;
+    UpdateConfig();
   }
 
   /// <summary>Makes a new inventory item from another item.</summary>
-  internal static InventoryItem CopyFrom(IKisInventory inventory, InventoryItem item) {
+  public static InventoryItem CopyFrom(IKisInventory inventory, InventoryItem item) {
     return new InventoryItemImpl(inventory, item.avPart, item.itemConfig);
   }
   #endregion
