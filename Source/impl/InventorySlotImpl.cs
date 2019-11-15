@@ -27,7 +27,7 @@ namespace KIS2 {
 /// internal state, they cannot stack to the same slot.
 /// </remarks>
 /// <seealso cref="KISContainerWithSlots"/>
-internal sealed class InventorySlotImpl : IKISDragTarget {
+internal sealed class InventorySlotImpl {
 
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -83,30 +83,6 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
               + " The <<2>> argument is the current amount of the resource.\n"
               + " The <<3>> argument is the maximum amount of the resource.");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeSlotHintText = new Message<KeyboardEventType>(
-      "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab the stack",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-          + " the user should do to start dragging the whole slot form the inventory.\n"
-          + " The <<1>> argument is a user friendly action name.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeOneItemHintText = new Message<KeyboardEventType>(
-      "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>1</color> item",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-          + " the user should do to start dragging exactly ONE item from the inventory slot.\n"
-          + " The <<1>> argument is a user friendly action name.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeTenItemsHintText = new Message<KeyboardEventType>(
-      "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>10</color> items",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-          + " the user should do to start dragging 10 items from the inventory.\n"
-          + " The <<1>> argument is a user friendly action name.");
-
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message DifferentPartsReasonText = new Message(
       "",
@@ -114,72 +90,6 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
       description: "Error message that is presented when parts cannot be added to the inventory"
           + " slot due to some of them don't match to each other or the other items in the slot.");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message StoreItemsTooltipText = new Message(
-      "",
-      defaultTemplate: "Store items",
-      description: "The text to show in the title of the slot tooltip when the dragged items can be"
-          + " stored into an empty slot.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> StoreItemsHintText = new Message<KeyboardEventType>(
-      "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-          + " the user should do to STORE the dragged items into the hovered slot.\n"
-          + " The <<1>> argument is a user friendly action name.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message AddItemsTooltipText = new Message(
-      "",
-      defaultTemplate: "Add items to stack",
-      description: "The text to show in the title of the slot tooltip when the dragged items can be"
-          + " added into an non-empty slot.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message<KeyboardEventType> AddItemsHintText = new Message<KeyboardEventType>(
-      "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to the stack",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-          + " the user should do to ADD the dragged items into the hovered slot.\n"
-          + " The <<1>> argument is a user friendly action name.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message CannotAddItemsTooltipText = new Message(
-      "",
-      defaultTemplate: "Cannot add items to stack",
-      description: "The text to show in the title of the slot tooltip when the dragged items can"
-          + " NOT be added into the slot.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message<int> AddItemsCountHintText = new Message<int>(
-      "",
-      defaultTemplate: "Add <color=#5a5><<1>></color> items",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells how many items"
-          + " will be added into the stack in case of the action has completed.\n"
-          + " The <<1>> argument is the number of items being added.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeOneModifierHintText =
-      new Message<KeyboardEventType>(
-          "",
-          defaultTemplate: "Press and hold <b><color=#5a5><<1>></color></b>"
-              + " to take <color=#5a5>1</color> item",
-          description: "Hint text that is shown in the inventory slot tooltip. It tells what key"
-              + " modifier to press and hold to enable the mode in which only one item is grabbed"
-              + " on the inventory slot click.\n"
-              + " The <<1>> argument is the keyboard key that needs to be pressed and held.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeTenModifierHintText =
-      new Message<KeyboardEventType>(
-          "",
-          defaultTemplate: "Press and hold <b><color=#5a5><<1>></color></b>"
-              + " to take <color=#5a5>10</color> items",
-          description: "Hint text that is shown in the inventory slot tooltip. It tells what key"
-              + " modifier to press and hold to enable the mode in which only one item is grabbed"
-              + " on the inventory slot click.\n"
-              + " The <<1>> argument is the keyboard key that needs to be pressed and held.");
   #endregion
 
   #region API properties and fields
@@ -201,6 +111,20 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   }
   UIKISInventorySlot.Slot _unitySlot;
 
+  /// <summary>
+  /// Number of the items that was claimed by the inventory fro the removal. They must be skipped
+  /// from the UI related updates.
+  /// </summary>
+  /// <remarks>The items are always reserved starting from item 0.</remarks>
+  public int reservedItems {
+    get { return _reservedItems; }
+    set {
+      _reservedItems = value;
+      UpdateUnitySlot();
+    }
+  }
+  int _reservedItems;
+
   /// <summary>Inventory that owns this slot.</summary>
   public readonly KISContainerWithSlots inventory;
 
@@ -216,29 +140,6 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
 
   /// <summary>Tells if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Length == 0;
-
-  /// <summary>Tells if this slot items are participating in a drag action.</summary>
-  /// FIXME: actually set it from the slots items state.
-  public bool hasDraggedItems {
-    get { return _hasDraggedItems; }
-    private set {
-      _hasDraggedItems = value;
-      if (unitySlot != null) {
-        unitySlot.isLocked = value;
-      }
-    }
-  }
-  bool _hasDraggedItems;
-  #endregion
-
-  #region Local constants
-  static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
-  static readonly Event TakeOneItemModifierEvent = Event.KeyboardEvent("LeftAlt");
-  static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
-  static readonly Event TakeTenItemsModifierEvent = Event.KeyboardEvent("LeftShift");
-  static readonly Event AddItemsIntoStackEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event DropIntoSlotEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
   #region Local fields and properties
@@ -247,49 +148,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   /// </summary>
   /// <seealso cref="UpdateItems"/>
   readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
-  bool _canAcceptDraggedItems;
-  ErrorReason[] _canAcceptDraggedItemsCheckResult;
-  UIKISInventoryTooltip.Tooltip currentTooltip => inventory.unityWindow.currentTooltip;
   #endregion
-
-  #region IKISDragTarget implementation
-  /// <inheritdoc/>
-  public void OnKISDragStart() {
-    //FIXME: refactor to StartAcceptingMode method/property
-    _canAcceptDraggedItemsCheckResult = CheckCanAddItems(KISAPI.ItemDragController.leasedItems);
-    _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
-    UpdateTooltip();
-  }
-
-  /// <inheritdoc/>
-  public void OnKISDragEnd(bool isCancelled) {
-    _canAcceptDraggedItemsCheckResult = null;
-    _canAcceptDraggedItems = false;
-    UpdateTooltip();
-  }
-
-  /// <inheritdoc/>
-  public bool OnKISDrag(bool pointerMoved) {
-    return _canAcceptDraggedItems;
-  }
-  #endregion
-
-  /// <summary>Handles mouse clicks on the Unity slot.</summary>
-  public void OnSlotClicked(PointerEventData.InputButton button) {
-    var actionHandled = false;
-    if (KISAPI.ItemDragController.isDragging && hasDraggedItems
-        || !KISAPI.ItemDragController.isDragging) {
-      // User wants to take/add items to the dragging action.
-      actionHandled = MouseClickTakeItems(button);
-    } else if (KISAPI.ItemDragController.isDragging) {
-      // User wants to store items into the slot.
-      actionHandled = MouseClickDropItems(button);
-    } 
-    if (!actionHandled) {
-      // NOT expected. When you don't know what to do, play the "BIP WRONG" sound!
-      UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
-    }
-  }
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
   public InventorySlotImpl(KISContainerWithSlots inventory, UIKISInventorySlot.Slot unitySlot) {
@@ -345,6 +204,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
           guiString = DifferentPartsReasonText,
       });
     }
+    //FIXME: check for similarity
     if (logErrors && errors.Count > 0) {
       DebugEx.Error("Cannot add items to slot:\n{0}", DbgFormatter.C2S(errors, separator: "\n"));
     }
@@ -352,114 +212,40 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
   }
 
   /// <summary>Fills tooltip with the slot info.</summary>
-  /// <remarks>
-  /// If the slot is empty, then no update is made. The tooltip visibility is never affected.
-  /// </remarks>
-  /// <seealso cref="currentTooltip"/>
-  public void UpdateTooltip() {
-    //FIXME: adjust slot number by the number of dragging items!
-    //FIXME: check if dragging has started not from this slot.
-    if (KISAPI.ItemDragController.isDragging) {
-      UpdateDraggingStateTooltip();
+  /// <remarks>If the slot is empty, then all info fields are erased.</remarks>
+  public void UpdateTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
+    tooltip.ClearInfoFileds();
+    if (isEmpty) {
+      return;
+    }
+    //FIXME: consider reservedItems
+    if (slotItems.Length == 1) {
+      UpdateSingleItemTooltip(tooltip);
     } else {
-      UpdateSimpleHoveringTooltip();
+      //FIXME: handle multiple item slots
+      tooltip.baseInfo.text = "*** multiple items";
     }
-    UpdateHints();
-    currentTooltip.UpdateLayout();
-  }
-
-  /// <summary>Fills or updates the hints section of the slot tooltip.</summary>
-  /// <remarks>
-  /// The hints may depend on the current game state (like the keyboard keys pressed), so it's
-  /// assumed that this method may be called every frame when the interactive mode is ON.
-  /// </remarks>
-  /// <seealso cref="currentTooltip"/>
-  /// <seealso cref="UIKISInventoryTooltip.Tooltip.showHints"/>
-  public void UpdateHints() {
-    var hints = new List<string>();
-    if (KISAPI.ItemDragController.isDragging) {
-      //FIXME: need to know if this slot was the source 
-      if (isEmpty) {
-        hints.Add(StoreItemsHintText.Format(DropIntoSlotEvent));
-      } else if (_canAcceptDraggedItems) {
-        hints.Add(AddItemsHintText.Format(AddItemsIntoStackEvent));
-      }
-    } else if (!isEmpty) {
-      if (EventChecker.CheckClickEvent(TakeSlotEvent)) {
-        hints.Add(TakeSlotHintText.Format(TakeSlotEvent));
-        hints.Add(TakeOneModifierHintText.Format(TakeOneItemModifierEvent));
-        hints.Add(TakeTenModifierHintText.Format(TakeTenItemsModifierEvent));
-      } else if (EventChecker.CheckClickEvent(TakeOneItemEvent)) {
-        hints.Add(TakeOneItemHintText.Format(TakeOneItemEvent));
-      } else if (EventChecker.CheckClickEvent(TakeTenItemsEvent)) {
-        hints.Add(TakeTenItemsHintText.Format(TakeTenItemsEvent));
-      }
-    }
-    currentTooltip.hints = hints.Count > 0 ? string.Join("\n", hints.ToArray()) : null;
+    tooltip.UpdateLayout();
   }
   #endregion
 
   #region Local utility methods
-  /// <summary>
-  /// Updates tooltip when mouse pointer is hovering over the slot AND the dragging mode was
-  /// started.
-  /// </summary>
-  void UpdateDraggingStateTooltip() {
-    currentTooltip.ClearInfoFileds();
-    if (isEmpty) {
-      currentTooltip.title = StoreItemsTooltipText;
-      currentTooltip.baseInfo.text = null;
-    } else {
-      if (_canAcceptDraggedItems) {
-        currentTooltip.title = AddItemsTooltipText;
-        currentTooltip.baseInfo.text = KISAPI.ItemDragController.leasedItems.Length > 1
-            ? AddItemsCountHintText.Format(KISAPI.ItemDragController.leasedItems.Length)
-            : null;
-      } else {
-        currentTooltip.title = CannotAddItemsTooltipText;
-        if (_canAcceptDraggedItemsCheckResult != null) {
-          currentTooltip.baseInfo.text = string.Join(
-              "\n",
-              _canAcceptDraggedItemsCheckResult
-                  .Where(r => r.guiString != null)
-                  .Select(r => r.guiString)
-                  .ToArray());
-        }
-      }
-    }
-  }
-
-  /// <summary>
-  /// Updates tooltip when mouse pointer is hovering over the slot but the dragging mode was not
-  /// started.
-  /// </summary>
-  void UpdateSimpleHoveringTooltip() {
-    currentTooltip.ClearInfoFileds();
-    if (isEmpty) {
-      return;
-    }
-    if (slotItems.Length == 1) {
-      UpdateSingleItemTooltip(slotItems[0]);
-    } else {
-      //FIXME: handle multuple item slots
-      currentTooltip.baseInfo.text = "*** multiple items";
-    }
-  }
-
   /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
-  void UpdateSingleItemTooltip(InventoryItem item) {
-    currentTooltip.title = avPart.title;
-    var infoLines = new List<string>();
+  void UpdateSingleItemTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
+    var item = slotItems[0];
+    tooltip.title = avPart.title;
+    var infoLines = new List<string> {
+        MassTooltipText.Format(item.fullMass),
+        VolumeTooltipText.Format(item.volume),
+        CostTooltipText.Format(item.fullCost)
+    };
 
     // Basic stats.
-    infoLines.Add(MassTooltipText.Format(item.fullMass));
-    infoLines.Add(VolumeTooltipText.Format(item.volume));
-    infoLines.Add(CostTooltipText.Format(item.fullCost));
     var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, item.itemConfig);
     if (variant != null) {
       infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
     }
-    currentTooltip.baseInfo.text = string.Join("\n", infoLines.ToArray());
+    tooltip.baseInfo.text = string.Join("\n", infoLines);
 
     // Available resources stats.
     // Populate the available resources on the part. 
@@ -478,14 +264,14 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
               resource.maxAmount));
         }
       }
-      currentTooltip.availableResourcesInfo.text = string.Join("\n", resItems.ToArray());
+      tooltip.availableResourcesInfo.text = string.Join("\n", resItems);
     } else {
-      currentTooltip.availableResourcesInfo.text = null;
+      tooltip.availableResourcesInfo.text = null;
     }
   }
 
   /// <summary>Gives an approximate short string for a percent value.</summary>
-  string GetResourceAmountStatus(double percent) {
+  static string GetResourceAmountStatus(double percent) {
     string text;
     if (percent < double.Epsilon) {
       text = "0%";
@@ -527,7 +313,7 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
       return;
     }
     unitySlot.slotImage = iconImage;
-    unitySlot.stackSize = "x" + slotItems.Length;
+    unitySlot.stackSize = "x" + (slotItems.Length - reservedItems);
 
     // Slot resources info.
     if (slotItems[0].resources.Length > 0) {
@@ -539,115 +325,6 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
     }
     // Slot science data.
     // FIXME: implement
-  }
-
-  /// <summary>Triggers when items from this slot are consumed by the target.</summary>
-  bool ConsumeSlotItems() {
-    hasDraggedItems = false;
-    Array.ForEach(KISAPI.ItemDragController.leasedItems, i => i.SetLocked(false));
-    inventory.DeleteItems(KISAPI.ItemDragController.leasedItems);
-    return true;
-  }
-
-  /// <summary>Triggers when dragging items from this slot has been canceled.</summary>
-  void CancelSlotLeasedItems() {
-    hasDraggedItems = false;
-    Array.ForEach(KISAPI.ItemDragController.leasedItems, i => i.SetLocked(false));
-  }
-
-  /// <summary>
-  /// Handles slot clicks when the drag operation is not started or has started on this same slot.
-  /// </summary>
-  /// <remarks>Beeps and logs an error if the action cannot be completed.</remarks>
-  /// <returns>
-  /// <c>true</c> if the action was handled by the method (either successfully or not).
-  /// </returns>
-  bool MouseClickTakeItems(PointerEventData.InputButton button) {
-    var actionHandled = false;
-    var newCanTakeItems = slotItems.Where(i => !i.isLocked).ToArray();
-    InventoryItem[] itemsToDrag = null;
-    
-    //FIXME action handled concept sucks
-
-    // Go thru the known mouse+keyboard events for the action.
-    if (EventChecker.CheckClickEvent(TakeSlotEvent, button)) {
-      actionHandled = true;
-      if (newCanTakeItems.Length > 0) {
-        DebugEx.Warning("*** take whole slot");
-        itemsToDrag = newCanTakeItems;
-      }
-    }
-    if (EventChecker.CheckClickEvent(TakeOneItemEvent, button) && itemsToDrag == null) {
-      actionHandled = true;
-      if (newCanTakeItems.Length >= 1) {
-        DebugEx.Warning("*** take one item");
-        itemsToDrag = newCanTakeItems.Take(1).ToArray();
-      }
-    }
-    if (EventChecker.CheckClickEvent(TakeTenItemsEvent, button) && itemsToDrag == null) {
-      actionHandled = true;
-      if (newCanTakeItems.Length >= 10) {
-        DebugEx.Warning("*** take ten items");
-        itemsToDrag = newCanTakeItems.Take(10).ToArray();
-      }
-    }
-    if (!actionHandled) {
-      return false; // Not something we can handle here.
-    }
-    if (itemsToDrag == null) {
-      UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
-      HostedDebugLog.Warning(
-          inventory, "Cannot take items from slot: totalItems={0}, canTakeItems={1}",
-          slotItems.Length, newCanTakeItems.Length);
-      return true;
-    }
-
-    // Either add or set the grabbed items.
-    if (KISAPI.ItemDragController.isDragging) {
-      itemsToDrag = itemsToDrag.Concat(KISAPI.ItemDragController.leasedItems).ToArray();
-      KISAPI.ItemDragController.CancelItemsLease();
-    }
-    KISAPI.ItemDragController.LeaseItems(
-        iconImage, itemsToDrag, ConsumeSlotItems, CancelSlotLeasedItems);
-    Array.ForEach(itemsToDrag, i => i.SetLocked(true));
-    var dragIconObj = KISAPI.ItemDragController.dragIconObj;
-    dragIconObj.hasScience = unitySlot.hasScience;
-    dragIconObj.stackSize = itemsToDrag.Length; //FIXME: get it from unity when it's fixed to int
-    dragIconObj.resourceStatus = unitySlot.resourceStatus;
-    hasDraggedItems = true;
-    return true;
-  }
-
-  /// <summary>
-  /// Handles slot clicks when there is a drag operation pending from another slot.
-  /// </summary>
-  /// <param name="button"></param>
-  bool MouseClickDropItems(PointerEventData.InputButton button) {
-    //FIXME
-    DebugEx.Warning("*** drop items requested");
-    var storeItems = isEmpty && EventChecker.CheckClickEvent(DropIntoSlotEvent, button);
-    var stackItems = !isEmpty && EventChecker.CheckClickEvent(AddItemsIntoStackEvent, button);
-    if (!storeItems && !stackItems) {
-      return false;
-    }
-    var items = KISAPI.ItemDragController.leasedItems;
-    //FIXME: for the same inventory move the volume check must be skipped (to let overflowed inventories be organized).
-    if (CheckCanAddItems(items, logErrors: true) != null) {
-      UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
-      HostedDebugLog.Warning(
-          inventory, "Cannot store/stack dragged items to slot: draggedItems={0}", items.Length);
-      return true;
-    }
-    items = KISAPI.ItemDragController.ConsumeItems();
-    if (items == null) {
-      UISoundPlayer.instance.Play(KISAPI.CommonConfig.sndPathBipWrong);
-      HostedDebugLog.Warning(inventory, "Source has cancelled the dragged items lease");
-      return true;
-    }
-    //FIXME: this is absolutely awful.
-    //FIXME: it won't work across multiple inventories! 
-    inventory.AddItemsToSlot(items, this);
-    return true;
   }
 
   /// <summary>Adds or deletes items to/from the slot.</summary>
@@ -666,10 +343,6 @@ internal sealed class InventorySlotImpl : IKISDragTarget {
     }
     slotItems = newItems.ToArray();
     UpdateUnitySlot();
-    if (inventory.unityWindow.hoveredSlot != null
-        && inventory.unityWindow.hoveredSlot == unitySlot) {
-      UpdateTooltip();
-    }
   }
   #endregion
 }
