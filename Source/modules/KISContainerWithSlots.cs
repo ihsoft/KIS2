@@ -583,7 +583,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
         hints.Add(TakeTenItemsHintText.Format(TakeTenItemsEvent));
       }
     }
-    currentTooltip.hints = hints.Count > 0 ? string.Join("\n", hints.ToArray()) : null;
+    currentTooltip.hints = hints.Count > 0 ? string.Join("\n", hints) : null;
   }
 
   /// <summary>
