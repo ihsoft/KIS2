@@ -77,8 +77,8 @@ internal sealed class InventorySlotImpl {
           "",
           defaultTemplate: "<<1>>: <b><color=yellow><<2>></color></b> / <b><<3>></b>",
           description: "Resource status string in the slot tooltip when the available amount is at"
-              + " the level that is not normally expected (e.g. 'half-full' for ore tanks or"
-              + " 'half-empty' for the fuel ones).\n"
+              + " the level that is not normally expected (e.g. 'full' for ore tanks or 'empty' for"
+              + " the fuel ones).\n"
               + " The <<1>> argument is a localized name of the resource.\n"
               + " The <<2>> argument is the current amount of the resource.\n"
               + " The <<3>> argument is the maximum amount of the resource.");
@@ -164,8 +164,8 @@ internal sealed class InventorySlotImpl {
   /// <see cref="CheckCanAddItems"/> before attempting to add anything.
   /// </remarks>
   /// <param name="items">
-  /// The items to add. They are not copied, they are added as the references. These items must
-  /// belong to the same inventory as the slot!
+  /// The items to add. They are not copied, they are added as the references. These items must be
+  /// already added to the inventory.
   /// </param>
   /// <seealso cref="UpdateTooltip"/>
   /// <seealso cref="CheckCanAddItems"/>
