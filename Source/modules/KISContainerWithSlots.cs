@@ -2,7 +2,6 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System.Collections;
 using System.Collections.Generic;
 using KSP.UI;
 using System;
@@ -162,6 +161,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// Short name of the checking error for the case when parts cannot fit to the existing slots.
   /// </summary>
   /// <seealso cref="NoSlotsErrorReason"/>
+  // ReSharper disable once MemberCanBePrivate.Global
   public const string NoSlotsReason = "NoSlots";
   #endregion
 
@@ -372,6 +372,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     AddParts(avParts, nodes);
   }
 
+  // ReSharper disable once UnusedMember.Local
   void AddPartByName(string partName) {
     var avPart = PartLoader.getPartInfoByName(partName);
     if (avPart == null) {
