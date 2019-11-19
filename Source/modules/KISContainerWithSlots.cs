@@ -414,6 +414,51 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   }
   #endregion
 
+  #region Unity window callbacks
+  /// <summary>A callback that is called when pointer enters or leaves a UI slot.</summary>
+  /// <param name="hoveredSlot">The Unity slot that is a source of the event.</param>
+  /// <param name="isHover">Tells if pointer enters or leaves the UI element.</param>
+  void OnSlotHover(Slot hoveredSlot, bool isHover) {
+    if (isHover) {
+      RegisterSlotHoverCallback();
+    } else {
+      UnregisterSlotHoverCallback();
+    }
+  }
+
+  /// <summary>Callback for the Unity slot click action.</summary>
+  void OnSlotClick(Slot slot, PointerEventData.InputButton button) {
+    if (_slotWithPointerFocus == null) {
+      HostedDebugLog.Error(this, "Unexpected slot click event");
+      return;
+    }
+    if (KISAPI.ItemDragController.isDragging && _slotWithPointerFocus == _dragSourceSlot
+        || !KISAPI.ItemDragController.isDragging) {
+      MouseClickTakeItems(button); // User wants to start/add items to the dragging action.
+    } else if (KISAPI.ItemDragController.isDragging) {
+      MouseClickDropItems(button); // User wants to store items into the slot.
+    }
+  }
+
+  /// <summary>Callback on the slot's action button click.</summary>
+  void OnSlotAction(Slot slot, int actionButtonNum, PointerEventData.InputButton button) {
+    //FIXME
+    HostedDebugLog.Fine(
+        this, "Clicked: slot={0}, action={1}, button={2}", slot.slotIndex, actionButtonNum, button);
+  }
+
+  /// <summary>Callback that is called when the slots grid is trying to resize.</summary>
+  Vector2 OnNewGridSize(Vector2 newSize) {
+    //FIXME: check if not below non-empty slots
+    return newSize;
+  }
+
+  /// <summary>Callback when the slots grid size has changed.</summary>
+  void OnGridSizeChanged() {
+    ArrangeSlots();  // Trigger compaction if there are invisible items.
+  }
+  #endregion
+
   #region Local utility methods
   /// <summary>Opens the inventory window.</summary>
   void OpenInventoryWindow() {
@@ -716,54 +761,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
           KISAPI.ItemDragController.leasedItems.Length);
     }
   }
-  #endregion
 
-  #region Unity window callbacks
-  /// <summary>A callback that is called when pointer enters or leaves a UI slot.</summary>
-  /// <param name="hoveredSlot">The Unity slot that is a source of the event.</param>
-  /// <param name="isHover">Tells if pointer enters or leaves the UI element.</param>
-  void OnSlotHover(Slot hoveredSlot, bool isHover) {
-    if (isHover) {
-      RegisterSlotHoverCallback();
-    } else {
-      UnregisterSlotHoverCallback();
-    }
-  }
-
-  /// <summary>Callback for the Unity slot click action.</summary>
-  void OnSlotClick(Slot slot, PointerEventData.InputButton button) {
-    if (_slotWithPointerFocus == null) {
-      HostedDebugLog.Error(this, "Unexpected slot click event");
-      return;
-    }
-    if (KISAPI.ItemDragController.isDragging && _slotWithPointerFocus == _dragSourceSlot
-        || !KISAPI.ItemDragController.isDragging) {
-      MouseClickTakeItems(button); // User wants to start/add items to the dragging action.
-    } else if (KISAPI.ItemDragController.isDragging) {
-      MouseClickDropItems(button); // User wants to store items into the slot.
-    }
-  }
-
-  /// <summary>Callback on the slot's action button click.</summary>
-  void OnSlotAction(Slot slot, int actionButtonNum, PointerEventData.InputButton button) {
-    //FIXME
-    HostedDebugLog.Fine(
-        this, "Clicked: slot={0}, action={1}, button={2}", slot.slotIndex, actionButtonNum, button);
-  }
-
-  /// <summary>Callback that is called when the slots grid is trying to resize.</summary>
-  Vector2 OnNewGridSize(Vector2 newSize) {
-    //FIXME: check if not below non-empty slots
-    return newSize;
-  }
-
-  /// <summary>Callback when the slots grid size has changed.</summary>
-  void OnGridSizeChanged() {
-    ArrangeSlots();  // Trigger compaction if there are invisible items.
-  }
-  #endregion
-
-  #region Local utility methods
   /// <summary>
   /// Ensures that each UI slot has a corresponded inventory slot. Also, updates and optimizes the
   /// inventory slots that are not currently present in UI. 
