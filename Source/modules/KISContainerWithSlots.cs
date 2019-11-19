@@ -273,7 +273,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   }
   #endregion
 
-  #region IHasGUI implementation
+  #region DEBUG: IHasGUI implementation
   public void OnGUI() {
     // FIXME: drop this debug code.
     if (Event.current.Equals(Event.KeyboardEvent("1")) && unityWindow != null) {
@@ -367,7 +367,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   }
   #endregion
 
-  #region DEBUG methods
+  #region DEBUG: parts spawning methods
   readonly string[] _fuelParts = new string[] {
       "RadialOreTank",
       "SmallTank",
