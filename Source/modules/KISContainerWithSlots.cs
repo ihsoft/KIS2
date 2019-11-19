@@ -206,7 +206,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <summary>Inventory window that is opened at the moment.</summary>
   UIKISInventoryWindow unityWindow;
 
-  /// <summary>Inventory slots. They always exactly match the Unity window slots.</summary>
+  /// <summary>Inventory slots.</summary>
+  /// <remarks>NSome or all slots may not be represented in the UI.</remarks>
+  /// <seealso cref="InventorySlotImpl.isVisible"/>
   readonly List<InventorySlotImpl> _inventorySlots = new List<InventorySlotImpl>();
 
   /// <summary>Index that resolves item to the slot that contains it.</summary>
@@ -327,7 +329,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       var slot = _itemToSlotMap[deleteItem];
       slot.DeleteItems(new[] {deleteItem});
       _itemToSlotMap.Remove(deleteItem);
-      if (unityWindow.hoveredSlot != null && unityWindow.hoveredSlot == slot.unitySlot) {
+      if (slot == _slotWithPointerFocus) {
         slot.UpdateTooltip(unityWindow.currentTooltip);
       }
     }
@@ -458,6 +460,8 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     HostedDebugLog.Fine(this, "Destroying inventory window");
     Hierarchy.SafeDestory(unityWindow);
     unityWindow = null;
+    // Immediately make all slots invisible. Don't relay on Unity cleanup routines.  
+    _inventorySlots.ForEach(x => x.BindTo(null));
   } 
 
   /// <summary>Updates stats in the open inventory window.</summary>
@@ -486,7 +490,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
         return false;
       }
       if (slot.isEmpty) {
-        newSlots.Add(new InventorySlotImpl(this, slot.unitySlot));
+        newSlots.Add(new InventorySlotImpl(null));
       }
     }
     var emptySlots = _inventorySlots.Count(s => s.isEmpty);
@@ -531,7 +535,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       return slot;
     }
     // Then, pick a first empty slot, given it's visible.
-    slot = _inventorySlots.FirstOrDefault(s => s.isEmpty && s.unitySlot != null);
+    slot = _inventorySlots.FirstOrDefault(s => s.isEmpty && s.isVisible);
     if (slot != null) {
       return slot;
     }
@@ -540,7 +544,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     }
     // Finally, create a new invisible slot to fit the items.
     HostedDebugLog.Warning(this, "Adding an invisible slot: slotIdx={0}", _inventorySlots.Count);
-    _inventorySlots.Add(new InventorySlotImpl(this, null));
+    _inventorySlots.Add(new InventorySlotImpl(null));
     slot = _inventorySlots[_inventorySlots.Count - 1];
     return slot;
   }
@@ -656,9 +660,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     Array.ForEach(itemsToDrag, i => i.SetLocked(true));
     SetDraggedSlot(_slotWithPointerFocus, itemsToDrag.Length);
     var dragIconObj = KISAPI.ItemDragController.dragIconObj;
-    dragIconObj.hasScience = _slotWithPointerFocus.unitySlot.hasScience;
+    dragIconObj.hasScience = _slotWithPointerFocus.hasScience;
     dragIconObj.stackSize = itemsToDrag.Length;
-    dragIconObj.resourceStatus = _slotWithPointerFocus.unitySlot.resourceStatus;
+    dragIconObj.resourceStatus = _slotWithPointerFocus.resourceStatus;
   }
 
   /// <summary>Triggers when items from this slot are consumed by the target.</summary>
@@ -791,7 +795,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
     // Add up slots to match the current UI.
     for (var i = _inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
-      _inventorySlots.Add(new InventorySlotImpl(this, null));
+      _inventorySlots.Add(new InventorySlotImpl(null));
     }
 
     // Align logical slots with the visible slots in UI.
@@ -801,13 +805,13 @@ public sealed class KISContainerWithSlots : KisContainerBase,
           ? unityWindow.slots[i]
           : null;
       if (!slot.isEmpty) {
-        if (slot.unitySlot != null && newUnitySlot == null) {
+        if (slot.isVisible && newUnitySlot == null) {
           HostedDebugLog.Warning(this, "Slot becomes hidden in UI: slotIdx={0}", i);
-        } else if (slot.unitySlot == null && newUnitySlot != null) {
+        } else if (!slot.isVisible && newUnitySlot != null) {
           HostedDebugLog.Fine(this, "Hidden slot becomes visible in UI: slotIdx={0}", i);
         }
       }
-      slot.unitySlot = newUnitySlot;
+      slot.BindTo(newUnitySlot);
     }
     UpdateInventoryStats(new InventoryItem[0]);
 
@@ -843,8 +847,8 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
   /// <summary>Establishes a tooltip and starts the active logic on a UI slot.</summary>
   void RegisterSlotHoverCallback() {
-    _slotWithPointerFocus = _inventorySlots.FirstOrDefault(
-        x => x.unitySlot != null && x.unitySlot == unityWindow.hoveredSlot);
+    _slotWithPointerFocus =
+        _inventorySlots.FirstOrDefault(x => x.IsBoundTo(unityWindow.hoveredSlot));
     if (_slotWithPointerFocus == null) {
       HostedDebugLog.Error(this, "Expected to get a hovered slot, but none was found");
       return;
@@ -858,13 +862,13 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <summary>(Re)sets the current drag operation source.</summary>
   void SetDraggedSlot(InventorySlotImpl newDraggedSlot, int draggedItemsNum = 0) {
     if (_dragSourceSlot != null) {
-      _dragSourceSlot.unitySlot.isLocked = false;
+      _dragSourceSlot.isLocked = false;
       _dragSourceSlot.reservedItems = 0;
       _dragSourceSlot = null;
     }
     _dragSourceSlot = newDraggedSlot;
     if (_dragSourceSlot != null) {
-      _dragSourceSlot.unitySlot.isLocked = true;
+      _dragSourceSlot.isLocked = true;
       _dragSourceSlot.reservedItems = draggedItemsNum;
     }
   }

@@ -4,7 +4,6 @@
 
 using KISAPIv2;
 using KIS2.GUIUtils;
-using KSPDev.InputUtils;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using KSPDev.ProcessingUtils;
@@ -15,7 +14,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
@@ -98,18 +96,37 @@ internal sealed class InventorySlotImpl {
   /// added to the slot.
   /// </summary>
   /// <seealso cref="DifferentPartsReasonText"/>
+  // ReSharper disable once MemberCanBePrivate.Global
   public const string DifferentPartReason = "DifferentPart";
 
-  /// <summary>Unity object that represents the slot.</summary>
-  /// <remarks>It can be <c>null</c> if the slot is not shown in the inventory window.</remarks>
-  public UIKISInventorySlot.Slot unitySlot {
-    get { return _unitySlot;  }
-    set {
-      _unitySlot = value;
-      UpdateUnitySlot();
-    }
+  /// <summary>Tells if this slot is visible in the inventory dialog.</summary>
+  /// <remarks>
+  /// Slot can be invisible in two cases: the dialog is closed or there are not enough UI elements
+  /// to represent all the slots in the dialog. In the latter case, the tail slots become invisible.
+  /// </remarks>
+  public bool isVisible => _unitySlot != null;
+
+  /// <summary>
+  /// Tells if the slot is participating in a multi-frame operation and must not get removed from
+  /// the dialog.
+  /// </summary>
+  /// <remarks>
+  /// The content of the locked slot can change as long as the affected items are not locked.
+  /// </remarks>
+  public bool isLocked {
+    // ReSharper disable once UnusedMember.Global
+    get {  return _unitySlot.isLocked; }
+    set { _unitySlot.isLocked = value; }
   }
-  UIKISInventorySlot.Slot _unitySlot;
+
+  /// <summary>Tells if the item in the slot has science data.</summary>
+  /// <remarks>Items that have data are not allowed to stack in the slots.</remarks>
+  public bool hasScience => isVisible && _unitySlot.hasScience;
+
+  /// <summary>
+  /// Gives percentile string that describes the aggregate state of the items in the slot.
+  /// </summary>
+  public string resourceStatus => isVisible ? _unitySlot.resourceStatus : null;
 
   /// <summary>
   /// Number of the items that was claimed by the inventory fro the removal. They must be skipped
@@ -125,12 +142,6 @@ internal sealed class InventorySlotImpl {
   }
   int _reservedItems;
 
-  /// <summary>Inventory that owns this slot.</summary>
-  public readonly KISContainerWithSlots inventory;
-
-  /// <summary>Part proto of this slot.</summary>
-  public AvailablePart avPart => !isEmpty ? slotItems[0].avPart : null;
-
   /// <summary>Inventory items in the slot.</summary>
   public InventoryItem[] slotItems { get; private set; } = new InventoryItem[0];
 
@@ -143,6 +154,13 @@ internal sealed class InventorySlotImpl {
   #endregion
 
   #region Local fields and properties
+  /// <summary>Part proto of this slot.</summary>
+  AvailablePart avPart => !isEmpty ? slotItems[0].avPart : null;
+
+  /// <summary>Unity object that represents the slot.</summary>
+  /// <remarks>It can be <c>null</c> if the slot is not shown in the inventory window.</remarks>
+  UIKISInventorySlot.Slot _unitySlot;
+
   /// <summary>
   /// Reflection of <see cref="slotItems"/> in a form of hash set for quick lookup operations. 
   /// </summary>
@@ -151,12 +169,33 @@ internal sealed class InventorySlotImpl {
   #endregion
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
-  public InventorySlotImpl(KISContainerWithSlots inventory, UIKISInventorySlot.Slot unitySlot) {
-    this.inventory = inventory;
-    this.unitySlot = unitySlot;
+  public InventorySlotImpl(UIKISInventorySlot.Slot unitySlot) {
+    BindTo(unitySlot);
   }
 
   #region API methods
+  /// <summary>Attaches this slot to a Unity slot object.</summary>
+  /// <remarks>
+  /// The slots that are not attached to any Unity object are invisible. Invisible slots are fully
+  /// functional slots, except the UI related properties and methods are NO-OP. 
+  /// </remarks>
+  /// <param name="newUnitySlot">The slot or <c>null</c> if slot should become invisible.</param>
+  /// <seealso cref="isVisible"/>
+  public void BindTo(UIKISInventorySlot.Slot newUnitySlot) {
+    var needUpdate = _unitySlot != newUnitySlot;
+    _unitySlot = newUnitySlot;
+    if (needUpdate) {
+      UpdateUnitySlot();
+    }
+  }
+
+  /// <summary>Checks if this slot is represented by the specified Unity slot object.</summary>
+  /// <param name="checkUnitySlot">The Unity slot to check against.</param>
+  /// <seealso cref="isVisible"/>
+  public bool IsBoundTo(UIKISInventorySlot.Slot checkUnitySlot) {
+    return isVisible && _unitySlot == checkUnitySlot;
+  }
+
   /// <summary>Adds an item to the slot.</summary>
   /// <remarks>
   /// This method doesn't check preconditions. The items will be added even if it break the slot's
@@ -305,23 +344,23 @@ internal sealed class InventorySlotImpl {
 
   /// <summary>Updates the slot's GUI to the current KIS slot state.</summary>
   void UpdateUnitySlot() {
-    if (unitySlot == null) {
+    if (_unitySlot == null) {
       return;
     }
-    if (isEmpty || unitySlot == null) {
-      unitySlot.ClearContent();
+    if (isEmpty || _unitySlot == null) {
+      _unitySlot.ClearContent();
       return;
     }
-    unitySlot.slotImage = iconImage;
-    unitySlot.stackSize = "x" + (slotItems.Length - reservedItems);
+    _unitySlot.slotImage = iconImage;
+    _unitySlot.stackSize = "x" + (slotItems.Length - reservedItems);
 
     // Slot resources info.
     if (slotItems[0].resources.Length > 0) {
       var cumAvgPct = slotItems.Where(item => item.resources.Length > 0)
           .Sum(item => item.resources.Sum(r => r.amount / r.maxAmount) / item.resources.Length);
-      unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / slotItems.Length);
+      _unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / slotItems.Length);
     } else {
-      unitySlot.resourceStatus = null;
+      _unitySlot.resourceStatus = null;
     }
     // Slot science data.
     // FIXME: implement
