@@ -37,122 +37,95 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       example: "Inventory: SC-62 Portable Container");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<MassType> InventoryContentMassTxt = new Message<MassType>(
+  static readonly Message<MassType> InventoryContentMassStat = new Message<MassType>(
       "",
       defaultTemplate: "Content mass: <color=#58F6AE><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<CostType> InventoryContentCostTxt = new Message<CostType>(
+  static readonly Message<CostType> InventoryContentCostStat = new Message<CostType>(
       "",
       defaultTemplate: "Content cost: <color=#58F6AE><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<VolumeLType> AvailableVolumeTxt = new Message<VolumeLType>(
+  static readonly Message<VolumeLType> AvailableVolumeStat = new Message<VolumeLType>(
       "",
       defaultTemplate: "Available volume: <color=yellow><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<VolumeLType> MaxVolumeTxt = new Message<VolumeLType>(
+  static readonly Message<VolumeLType> MaxVolumeStat = new Message<VolumeLType>(
       "",
       defaultTemplate: "Maximum volume: <color=#58F6AE><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message NoSlotsReasonText = new Message(
+  static readonly Message NoSlotsErrorReason = new Message(
       "",
       defaultTemplate: "No enough compatible slots",
-      description: "Error message that is presented when parts cannot be added to the inventory"
+      description: "Error message that is presented when parts cannot be added into the inventory"
           + " due to there are not enough compatible/empty slots available.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeSlotHintText = new Message<KeyboardEventType>(
+  static readonly Message<KeyboardEventType> TakeSlotHint = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab the stack",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-      + " the user should do to start dragging the whole slot form the inventory.\n"
+      description: "Hint text in the inventory slot tooltip that tells what action"
+      + " user should do to take the whole slot from the inventory and add it into the currently"
+      + " dragged pack.\n"
       + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeOneItemHintText = new Message<KeyboardEventType>(
+  static readonly Message<KeyboardEventType> TakeOneItemHint = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>1</color> item",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-      + " the user should do to start dragging exactly ONE item from the inventory slot.\n"
+      description: "Hint text in the inventory slot tooltip that tells what action"
+      + " user should do to add one item from the inventory slot into the currently dragged pack.\n"
       + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeTenItemsHintText = new Message<KeyboardEventType>(
+  static readonly Message<KeyboardEventType> TakeTenItemsHint = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>10</color> items",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-      + " the user should do to start dragging 10 items from the inventory.\n"
+      description: "Hint text in the inventory slot tooltip that tells what action"
+      + " user should do to add 10 items from the inventory slot into the currently dragged pack.\n"
       + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message StoreItemsTooltipText = new Message(
+  static readonly Message StoreToSlotActionTooltip = new Message(
       "",
       defaultTemplate: "Store items",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " stored into an empty slot.");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> StoreItemsHintText = new Message<KeyboardEventType>(
-      "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-          + " the user should do to STORE the dragged items into the hovered slot.\n"
-          + " The <<1>> argument is a user friendly action name.");
-
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message AddItemsTooltipText = new Message(
+  static readonly Message AddToSlotActionTooltip = new Message(
       "",
       defaultTemplate: "Add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " added into an non-empty slot.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message<KeyboardEventType> AddItemsHintText = new Message<KeyboardEventType>(
+  static readonly Message<KeyboardEventType> StoreToSlotActionHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to the stack",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells what action"
-          + " the user should do to ADD the dragged items into the hovered slot.\n"
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
+      description: "Hint text in the inventory slot tooltip that tells what action"
+          + " user should do to store the dragged items into the hovered slot."
+          + " The slot can be empty or have some items already.\n"
           + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message CannotAddItemsTooltipText = new Message(
+  static readonly Message<int> StoreToSlotCountHint = new Message<int>(
+      "",
+      defaultTemplate: "Add <color=#5a5><<1>></color> items",
+      description: "The text to show in the inventory tooltip that tells how many items will be"
+      + " added into the stack in case of the action has completed. The slot "
+      + " can be empty or have some items already.\n"
+      + " The <<1>> argument is the number of items being added.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotAddToStackTooltipText = new Message(
       "",
       defaultTemplate: "Cannot add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can"
-          + " NOT be added into the slot.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message<int> AddItemsCountHintText = new Message<int>(
-      "",
-      defaultTemplate: "Add <color=#5a5><<1>></color> items",
-      description: "Hint text that is shown in the inventory slot tooltip. It tells how many items"
-          + " will be added into the stack in case of the action has completed.\n"
-          + " The <<1>> argument is the number of items being added.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeOneModifierHintText =
-      new Message<KeyboardEventType>(
-          "",
-          defaultTemplate: "Press and hold <b><color=#5a5><<1>></color></b>"
-              + " to take <color=#5a5>1</color> item",
-          description: "Hint text that is shown in the inventory slot tooltip. It tells what key"
-              + " modifier to press and hold to enable the mode in which only one item is grabbed"
-              + " on the inventory slot click.\n"
-              + " The <<1>> argument is the keyboard key that needs to be pressed and held.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeTenModifierHintText =
-      new Message<KeyboardEventType>(
-          "",
-          defaultTemplate: "Press and hold <b><color=#5a5><<1>></color></b>"
-              + " to take <color=#5a5>10</color> items",
-          description: "Hint text that is shown in the inventory slot tooltip. It tells what key"
-              + " modifier to press and hold to enable the mode in which only one item is grabbed"
-              + " on the inventory slot click.\n"
-              + " The <<1>> argument is the keyboard key that needs to be pressed and held.");
+          + " NOT be added into the slot. Only shown when the target slot is not empty.");
   #endregion
 
   #region Part's config fields
@@ -188,18 +161,16 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <summary>
   /// Short name of the checking error for the case when parts cannot fit to the existing slots.
   /// </summary>
-  /// <seealso cref="NoSlotsReasonText"/>
+  /// <seealso cref="NoSlotsErrorReason"/>
   public const string NoSlotsReason = "NoSlots";
   #endregion
 
   #region Event static configs
-  public static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
-  public static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
-  public static readonly Event TakeOneItemModifierEvent = Event.KeyboardEvent("LeftAlt");
-  public static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
-  public static readonly Event TakeTenItemsModifierEvent = Event.KeyboardEvent("LeftShift");
-  public static readonly Event AddItemsIntoStackEvent = Event.KeyboardEvent("mouse0");
-  public static readonly Event DropIntoSlotEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
+  static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
+  static readonly Event AddIntoStackEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event DropIntoSlotEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
   #region Local fields and properties.
@@ -252,11 +223,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
   /// <inheritdoc/>
   public bool OnKISDrag(bool pointerMoved) {
-    if (_slotWithPointerFocus != _dragSourceSlot) {
-      UpdateDraggingStateTooltip();
-    } else {
-      _slotWithPointerFocus.UpdateTooltip(unityWindow.currentTooltip);  
-    }
+    UpdateTooltip();
     return _canAcceptDraggedItems;
   }
   #endregion
@@ -316,6 +283,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       AddItemsToSlot(new InventoryItem[] {item}, slot);
       newItemsList.Add(item);
     }
+    UpdateTooltip();
     return newItemsList.ToArray();
   }
 
@@ -350,7 +318,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     var errors = new[] {
         new ErrorReason() {
             shortString = NoSlotsReason,
-            guiString = NoSlotsReasonText,
+            guiString = NoSlotsErrorReason,
         }
     };
     if (logErrors) {
@@ -516,10 +484,10 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       return;
     }
     var text = new List<string> {
-        InventoryContentMassTxt.Format(contentMass),
-        InventoryContentCostTxt.Format(contentCost),
-        MaxVolumeTxt.Format(maxVolume),
-        AvailableVolumeTxt.Format(Math.Max(maxVolume - usedVolume, 0))
+        InventoryContentMassStat.Format(contentMass),
+        InventoryContentCostStat.Format(contentCost),
+        MaxVolumeStat.Format(maxVolume),
+        AvailableVolumeStat.Format(Math.Max(maxVolume - usedVolume, 0))
     };
     unityWindow.mainStats = string.Join("\n", text);
   }
@@ -558,7 +526,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// compatible visible slot was found.
   /// </param>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
-  /// <seealso cref="InventorySlotImpl.unitySlot"/>
+  /// <seealso cref="_inventorySlots"/>
   InventorySlotImpl FindSlotForPart(AvailablePart avPart, ConfigNode node,
                                     IEnumerable<InventorySlotImpl> preferredSlots = null,
                                     bool addInvisibleSlot = false) {
@@ -604,62 +572,6 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     UpdateItems(addItems: addItems);
     slot.AddItems(addItems);
     Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
-  }
-
-  /// <summary>Fills or updates the hints section of the slot tooltip.</summary>
-  /// <remarks>
-  /// The hints may depend on the current game state (like the keyboard keys pressed), so it's
-  /// assumed that this method may be called every frame when the interactive mode is ON.
-  /// </remarks>
-  /// <seealso cref="currentTooltip"/>
-  /// <seealso cref="UIKISInventoryTooltip.Tooltip.showHints"/>
-  void UpdateHints() {
-    var hints = new List<string>();
-    if (KISAPI.ItemDragController.isDragging && _slotWithPointerFocus != _dragSourceSlot) {
-      if (_slotWithPointerFocus.isEmpty) {
-        hints.Add(StoreItemsHintText.Format(DropIntoSlotEvent));
-      } else if (_canAcceptDraggedItems) {
-        hints.Add(AddItemsHintText.Format(AddItemsIntoStackEvent));
-      }
-    } else if (!_slotWithPointerFocus.isEmpty) {
-      if (EventChecker.CheckClickEvent(TakeSlotEvent)) {
-        hints.Add(TakeSlotHintText.Format(TakeSlotEvent));
-        hints.Add(TakeOneModifierHintText.Format(TakeOneItemModifierEvent));
-        hints.Add(TakeTenModifierHintText.Format(TakeTenItemsModifierEvent));
-      } else if (EventChecker.CheckClickEvent(TakeOneItemEvent)) {
-        hints.Add(TakeOneItemHintText.Format(TakeOneItemEvent));
-      } else if (EventChecker.CheckClickEvent(TakeTenItemsEvent)) {
-        hints.Add(TakeTenItemsHintText.Format(TakeTenItemsEvent));
-      }
-    }
-    currentTooltip.hints = hints.Count > 0 ? string.Join("\n", hints) : null;
-  }
-
-  /// <summary>
-  /// Updates tooltip when mouse pointer is hovering over the slot AND the dragging mode is
-  /// started.
-  /// </summary>
-  void UpdateDraggingStateTooltip() {
-    currentTooltip.ClearInfoFileds();
-    if (_slotWithPointerFocus.isEmpty) {
-      currentTooltip.title = StoreItemsTooltipText;
-      currentTooltip.baseInfo.text = null;
-    } else {
-      if (_canAcceptDraggedItems) {
-        currentTooltip.title = AddItemsTooltipText;
-        currentTooltip.baseInfo.text =
-            AddItemsCountHintText.Format(KISAPI.ItemDragController.leasedItems.Length);
-      } else {
-        currentTooltip.title = CannotAddItemsTooltipText;
-        if (_canAcceptDraggedItemsCheckResult != null) {
-          currentTooltip.baseInfo.text = string.Join(
-              "\n",
-              _canAcceptDraggedItemsCheckResult
-                  .Where(r => r.guiString != null)
-                  .Select(r => r.guiString));
-        }
-      }
-    }
   }
 
   /// <summary>
@@ -742,7 +654,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     var storeItems = _slotWithPointerFocus.isEmpty
         && EventChecker.CheckClickEvent(DropIntoSlotEvent, button);
     var stackItems = !_slotWithPointerFocus.isEmpty
-        && EventChecker.CheckClickEvent(AddItemsIntoStackEvent, button);
+        && EventChecker.CheckClickEvent(AddIntoStackEvent, button);
     InventoryItem[] consumedItems = null;
     if (storeItems || stackItems) {
       //FIXME: eligibility has already been checked
@@ -818,23 +730,6 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     }
   }
 
-  /// <summary>Updates tooltip hints in every frame to catch the keyboard actions.</summary>
-  /// <remarks>
-  /// This coroutine is expected to be scheduled on the tooltip object. When it dies, so does this
-  /// coroutine.
-  /// </remarks>
-  // ReSharper disable once MemberCanBeMadeStatic.Local
-  // NOTE: Nope, this method cannot be static.
-  IEnumerator UpdateHoveredHints(InventorySlotImpl inventorySlot) {
-    if (!UIKISInventoryTooltip.Tooltip.showHints) {
-      yield break;  // No hints, no tracking.
-    }
-    while (true) {  // The coroutine will die with the tooltip.
-      UpdateHints();
-      yield return null;
-    }
-  }
-
   /// <summary>Destroys tooltip and stops any active logic on the UI slot.</summary>
   void UnregisterSlotHoverCallback() {
     KISAPI.ItemDragController.UnregisterTarget(this);
@@ -851,8 +746,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       return;
     }
     unityWindow.StartSlotTooltip();
-    unityWindow.currentTooltip.StartCoroutine(UpdateHoveredHints(_slotWithPointerFocus));
-    _slotWithPointerFocus.UpdateTooltip(unityWindow.currentTooltip);
+    UpdateTooltip();
     KISAPI.ItemDragController.RegisterTarget(this);
   }
 
@@ -867,6 +761,51 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     if (_dragSourceSlot != null) {
       _dragSourceSlot.isLocked = true;
       _dragSourceSlot.reservedItems = draggedItemsNum;
+    }
+  }
+
+  /// <summary>Updates the currently focused slot (if any) with the relevant tooltip info.</summary>
+  /// <remarks>
+  /// This method needs to be called every time the slot content is changed in any way. Including
+  /// the updates to the slot item configs. Note, that this methods is expensive and it's not
+  /// advised to be invoked in every frame update.
+  /// </remarks>
+  void UpdateTooltip() {
+    if (_slotWithPointerFocus == null || currentTooltip == null) {
+      return;
+    }
+    currentTooltip.ClearInfoFileds();
+    if (_dragSourceSlot != null && _slotWithPointerFocus != _dragSourceSlot) {
+      currentTooltip.baseInfo.text =
+          StoreToSlotCountHint.Format(KISAPI.ItemDragController.leasedItems.Length);
+      currentTooltip.hints = StoreToSlotActionHint.Format(AddIntoStackEvent);
+      if (_canAcceptDraggedItems) {
+        currentTooltip.title = _slotWithPointerFocus.isEmpty
+            ? StoreToSlotActionTooltip
+            : AddToSlotActionTooltip;
+      } else {
+        currentTooltip.title = CannotAddToStackTooltipText;
+        if (_canAcceptDraggedItemsCheckResult != null) {
+          currentTooltip.baseInfo.text = string.Join(
+              "\n",
+              _canAcceptDraggedItemsCheckResult
+                  .Where(r => r.guiString != null)
+                  .Select(r => r.guiString));
+        }
+        currentTooltip.hints = null;
+      }
+    } else {
+      _slotWithPointerFocus.UpdateTooltip(unityWindow.currentTooltip);
+      if (!_slotWithPointerFocus.isEmpty) {
+        var hints = new List<string> {
+            TakeSlotHint.Format(TakeSlotEvent),
+            TakeOneItemHint.Format(TakeOneItemEvent),
+            TakeTenItemsHint.Format(TakeTenItemsEvent)
+        };
+        currentTooltip.hints = string.Join("\n", hints);
+      } else {
+        currentTooltip.hints = null;
+      }
     }
   }
   #endregion
