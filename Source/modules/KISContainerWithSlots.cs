@@ -149,7 +149,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       defaultTemplate = "KISv2: Inventory",
       description = "A context menu event that opens GUI for the inventory.")]
   public void ShowInventory() {
-    if (unityWindow == null) {
+    if (_unityWindow == null) {
       OpenInventoryWindow();
     } else {
       CloseInventoryWindow();
@@ -175,7 +175,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
   #region Local fields and properties.
   /// <summary>Inventory window that is opened at the moment.</summary>
-  UIKISInventoryWindow unityWindow;
+  UIKISInventoryWindow _unityWindow;
 
   /// <summary>Inventory slots.</summary>
   /// <remarks>NSome or all slots may not be represented in the UI.</remarks>
@@ -203,7 +203,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   ErrorReason[] _canAcceptDraggedItemsCheckResult;
 
   /// <summary>Shortcut to get the current tooltip.</summary>
-  UIKISInventoryTooltip.Tooltip currentTooltip => unityWindow.currentTooltip;
+  UIKISInventoryTooltip.Tooltip currentTooltip => _unityWindow.currentTooltip;
   #endregion
 
   #region IKISDragTarget implementation
@@ -218,7 +218,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   public void OnKISDragEnd(bool isCancelled) {
     _canAcceptDraggedItemsCheckResult = null;
     _canAcceptDraggedItems = false;
-    _slotWithPointerFocus.UpdateTooltip(unityWindow.currentTooltip);
+    _slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
   }
 
   /// <inheritdoc/>
@@ -243,22 +243,22 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   #region DEBUG: IHasGUI implementation
   public void OnGUI() {
     // FIXME: drop this debug code.
-    if (Event.current.Equals(Event.KeyboardEvent("1")) && unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("1")) && _unityWindow != null) {
       AddFuelParts(1, 1, 3);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("2")) && unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("2")) && _unityWindow != null) {
       AddFuelParts(0.1f, 0.5f);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("3")) && unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("3")) && _unityWindow != null) {
       AddFuelParts(0.5f, 0.5f);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("4")) && unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("4")) && _unityWindow != null) {
       AddFuelParts(1, 1);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("5")) && unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("5")) && _unityWindow != null) {
       AddFuelParts(0.1f, 0.5f, num: 3, same: true);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("6")) && unityWindow != null
+    if (Event.current.Equals(Event.KeyboardEvent("6")) && _unityWindow != null
         && _inventorySlots.Count > 0 && _inventorySlots[0].slotItems.Length > 0) {
       DeleteItems(_inventorySlots[0].slotItems);
     }
@@ -298,7 +298,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       slot.DeleteItems(new[] {deleteItem});
       _itemToSlotMap.Remove(deleteItem);
       if (slot == _slotWithPointerFocus) {
-        slot.UpdateTooltip(unityWindow.currentTooltip);
+        slot.UpdateTooltip(_unityWindow.currentTooltip);
       }
     }
     ArrangeSlots();
@@ -430,11 +430,11 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   #region Local utility methods
   /// <summary>Opens the inventory window.</summary>
   void OpenInventoryWindow() {
-    if (unityWindow != null) {
+    if (_unityWindow != null) {
       return; // Nothing to do.
     }
     HostedDebugLog.Fine(this, "Creating inventory window");
-    unityWindow = UnityPrefabController.CreateInstance<UIKISInventoryWindow>(
+    _unityWindow = UnityPrefabController.CreateInstance<UIKISInventoryWindow>(
         "KISInventoryDialog", UIMasterController.Instance.actionCanvas.transform);
 
     // TODO(ihsoft): Fix it in the prefab via TMPro.
@@ -443,12 +443,12 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       UIMasterController.Instance.actionCanvas.pixelPerfect = true;
     }
 
-    unityWindow.gameObject.AddComponent<UIScalableWindowController>();
-    unityWindow.onSlotHover.Add(OnSlotHover);
-    unityWindow.onSlotClick.Add(OnSlotClick);
-    unityWindow.onSlotAction.Add(OnSlotAction);
-    unityWindow.onNewGridSize.Add(OnNewGridSize);
-    unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
+    _unityWindow.gameObject.AddComponent<UIScalableWindowController>();
+    _unityWindow.onSlotHover.Add(OnSlotHover);
+    _unityWindow.onSlotClick.Add(OnSlotClick);
+    _unityWindow.onSlotAction.Add(OnSlotAction);
+    _unityWindow.onNewGridSize.Add(OnNewGridSize);
+    _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
 
     var gridSize = persistedGridSize;
     if (gridSize.x < minGridSize.x) {
@@ -458,21 +458,21 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       gridSize.y = minGridSize.y;
     }
     persistedGridSize = gridSize;
-    unityWindow.title = DialogTitle.Format(part.partInfo.title);
-    unityWindow.minSize = minGridSize;
-    unityWindow.maxSize = maxGridSize;
-    unityWindow.SetGridSize(persistedGridSize);
+    _unityWindow.title = DialogTitle.Format(part.partInfo.title);
+    _unityWindow.minSize = minGridSize;
+    _unityWindow.maxSize = maxGridSize;
+    _unityWindow.SetGridSize(persistedGridSize);
     UpdateInventoryWindow();
   }
 
   /// <summary>Destroys the inventory window.</summary>
   void CloseInventoryWindow() {
-    if (unityWindow == null) {
+    if (_unityWindow == null) {
       return;
     }
     HostedDebugLog.Fine(this, "Destroying inventory window");
-    Hierarchy.SafeDestory(unityWindow);
-    unityWindow = null;
+    Hierarchy.SafeDestory(_unityWindow);
+    _unityWindow = null;
     // Immediately make all slots invisible. Don't relay on Unity cleanup routines.  
     _inventorySlots.ForEach(x => x.BindTo(null));
   } 
@@ -480,7 +480,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <summary>Updates stats in the open inventory window.</summary>
   /// <remarks>It's safe to call it when the inventory window is not open.</remarks>
   void UpdateInventoryWindow() {
-    if (unityWindow == null) {
+    if (_unityWindow == null) {
       return;
     }
     var text = new List<string> {
@@ -489,7 +489,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
         MaxVolumeStat.Format(maxVolume),
         AvailableVolumeStat.Format(Math.Max(maxVolume - usedVolume, 0))
     };
-    unityWindow.mainStats = string.Join("\n", text);
+    _unityWindow.mainStats = string.Join("\n", text);
   }
 
   /// <summary>Check if inventory has enough visible slots to accomodate the items.</summary>
@@ -689,7 +689,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
     // Compact empty slots when there are hidden slots in the inventory. This may let some of the
     // hidden slots to become visible. 
-    var visibleSlots = unityWindow.slots.Length;
+    var visibleSlots = _unityWindow.slots.Length;
     for (var i = _inventorySlots.Count - 1; i >= 0 && _inventorySlots.Count > visibleSlots; --i) {
       if (!_inventorySlots[i].isEmpty) {
         continue; 
@@ -704,15 +704,15 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     }
 
     // Add up slots to match the current UI.
-    for (var i = _inventorySlots.Count; i < unityWindow.slots.Length; ++i) {
+    for (var i = _inventorySlots.Count; i < _unityWindow.slots.Length; ++i) {
       _inventorySlots.Add(new InventorySlotImpl(null));
     }
 
     // Align logical slots with the visible slots in UI.
     for (var i = 0; i < _inventorySlots.Count; ++i) {
       var slot = _inventorySlots[i];
-      var newUnitySlot = i < unityWindow.slots.Length
-          ? unityWindow.slots[i]
+      var newUnitySlot = i < _unityWindow.slots.Length
+          ? _unityWindow.slots[i]
           : null;
       if (!slot.isEmpty) {
         if (slot.isVisible && newUnitySlot == null) {
@@ -725,7 +725,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     }
 
     // Restore the tooltip callbacks if needed.
-    if (unityWindow.hoveredSlot != null) {
+    if (_unityWindow.hoveredSlot != null) {
       RegisterSlotHoverCallback();
     }
   }
@@ -733,19 +733,19 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <summary>Destroys tooltip and stops any active logic on the UI slot.</summary>
   void UnregisterSlotHoverCallback() {
     KISAPI.ItemDragController.UnregisterTarget(this);
-    unityWindow.DestroySlotTooltip();
+    _unityWindow.DestroySlotTooltip();
     _slotWithPointerFocus = null;
   }
 
   /// <summary>Establishes a tooltip and starts the active logic on a UI slot.</summary>
   void RegisterSlotHoverCallback() {
     _slotWithPointerFocus =
-        _inventorySlots.FirstOrDefault(x => x.IsBoundTo(unityWindow.hoveredSlot));
+        _inventorySlots.FirstOrDefault(x => x.IsBoundTo(_unityWindow.hoveredSlot));
     if (_slotWithPointerFocus == null) {
       HostedDebugLog.Error(this, "Expected to get a hovered slot, but none was found");
       return;
     }
-    unityWindow.StartSlotTooltip();
+    _unityWindow.StartSlotTooltip();
     UpdateTooltip();
     KISAPI.ItemDragController.RegisterTarget(this);
   }
@@ -795,7 +795,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
         currentTooltip.hints = null;
       }
     } else {
-      _slotWithPointerFocus.UpdateTooltip(unityWindow.currentTooltip);
+      _slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
       if (!_slotWithPointerFocus.isEmpty) {
         var hints = new List<string> {
             TakeSlotHint.Format(TakeSlotEvent),
