@@ -813,7 +813,6 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       }
       slot.BindTo(newUnitySlot);
     }
-    UpdateInventoryStats(new InventoryItem[0]);
 
     // Restore the tooltip callbacks if needed.
     if (unityWindow.hoveredSlot != null) {
