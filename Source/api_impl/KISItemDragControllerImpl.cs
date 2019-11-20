@@ -14,13 +14,14 @@ using System;
 using System.Linq;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <inheritdoc/>
 sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   #region Localizable strings
-  /// <include file="SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> CancelDraggingTxt = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "[<<1>>]: to cancel dragging",
@@ -34,7 +35,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
   /// <summary>Locks all game's keyboard events and starts updating the drag targets.</summary>
   /// <remarks>
   /// Once this object is created, all the normal game keys will be locked. Including the key that
-  /// calls system menu (ESC). The autosave ability will also be blocked. To exit this mode user
+  /// calls system menu (ESC). The auto save ability will also be blocked. To exit this mode user
   /// either need to press <c>ESC</c> or the code needs to cancel the drag mode via
   /// <see cref="CancelItemsLease"/>.
   /// <para>
@@ -50,21 +51,21 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
     #region Local fields
     const string TotalControlLock = "KISDragControllerUberLock";
-    readonly ScreenMessage statusScreenMessage =
+    readonly ScreenMessage _statusScreenMessage =
         new ScreenMessage("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
-    bool oldCanAutoSaveState;
-    bool controlsLocked;
-    Vector3 lastPointerPosition = -Vector2.one;
+    bool _oldCanAutoSaveState;
+    bool _controlsLocked;
+    Vector3 _lastPointerPosition = -Vector2.one;
     #endregion
 
     #region MonoBehaviour callbacks
     void Awake() {
-      statusScreenMessage.message = CancelDraggingTxt.Format(cancelEvent);
+      _statusScreenMessage.message = CancelDraggingTxt.Format(CancelEvent);
       InputLockManager.SetControlLock(
           ControlTypes.All & ~ControlTypes.CAMERACONTROLS, TotalControlLock);
-      oldCanAutoSaveState = HighLogic.CurrentGame.Parameters.Flight.CanAutoSave;
+      _oldCanAutoSaveState = HighLogic.CurrentGame.Parameters.Flight.CanAutoSave;
       HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = false;
-      controlsLocked = true;
+      _controlsLocked = true;
       DebugEx.Fine("KIS drag lock acquired");
     }
 
@@ -73,21 +74,21 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
     }
 
     void Update() {
-      if (!controlsLocked) {
+      if (!_controlsLocked) {
         return;
       }
-      ScreenMessages.PostScreenMessage(statusScreenMessage);
+      ScreenMessages.PostScreenMessage(_statusScreenMessage);
       var pointerMoved = false;
-      if (lastPointerPosition != Input.mousePosition) {
-        lastPointerPosition = Input.mousePosition;
+      if (_lastPointerPosition != Input.mousePosition) {
+        _lastPointerPosition = Input.mousePosition;
         pointerMoved = true;
       }
       var canConsume = false;
-      foreach (var target in controller.dragTargets) {
+      foreach (var target in controller._dragTargets) {
         canConsume |= SafeCallbacks.Func(() => target.OnKISDrag(pointerMoved), false);
       }
       controller.dragIconObj.showNoGo = !canConsume;
-      if (Input.GetKeyUp(cancelEvent.keyCode)) {
+      if (Input.GetKeyUp(CancelEvent.keyCode)) {
         // Delay release to not leak ESC key release to the game.
         AsyncCall.CallOnEndOfFrame(this, CancelLock);
       }
@@ -97,13 +98,13 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
     #region API methods
     /// <summary>Stops any tracking activity and cleanups the object.</summary>
     public void CancelLock() {
-      if (!controlsLocked) {
+      if (!_controlsLocked) {
         return;
       }
-      controlsLocked = false;
-      ScreenMessages.RemoveMessage(statusScreenMessage);
+      _controlsLocked = false;
+      ScreenMessages.RemoveMessage(_statusScreenMessage);
       InputLockManager.RemoveControlLock(TotalControlLock);
-      HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = oldCanAutoSaveState;
+      HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = _oldCanAutoSaveState;
       if (controller.isDragging) {
         controller.CancelItemsLease();
       }
@@ -116,9 +117,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   #region IKISItemDragController properties
   /// <inheritdoc/>
-  public bool isDragging {
-    get { return leasedItems != null; }
-  }
+  public bool isDragging => leasedItems != null;
 
   /// <inheritdoc/>
   public InventoryItem[] leasedItems { get; private set; }
@@ -136,29 +135,29 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   #region Local constants, properties and fields
   /// <summary>Keyboard event that cancels the dragging mode.</summary>
-  static readonly Event cancelEvent = Event.KeyboardEvent("[esc]");
+  static readonly Event CancelEvent = Event.KeyboardEvent("[esc]");
 
   /// <summary>Targets that need to get updated when dragging state is changed.</summary>
-  IKISDragTarget[] dragTargets = new IKISDragTarget[0];
+  IKISDragTarget[] _dragTargets = new IKISDragTarget[0];
 
   /// <summary>Current lock tracking object.</summary>
   /// <remarks>
   /// This object only exists when there is an active dragging operation. Its main purpose is
-  /// tracking the inoput locking state and notifying the drag targets.
+  /// tracking the input locking state and notifying the drag targets.
   /// </remarks>
-  /// <seealso cref="dragTargets"/>
-  DragModeTracker dragTracker;
+  /// <seealso cref="_dragTargets"/>
+  DragModeTracker _dragTracker;
 
   /// <summary>Action that is called when the dragged items being consumed.</summary>
   /// <remarks>
   /// The callback can return <c>false</c> to indicate that the consumption is not allowed. It will
   /// be treated as an error situation, but the game consistency won't suffer.
   /// </remarks>
-  Func<bool> consumeItemsFn;
+  Func<bool> _consumeItemsFn;
 
   /// <summary>Action that is called when the dragging is cancelled.</summary>
   /// <remarks>It's a cleanup action. It must never fail.</remarks>
-  Action cancelItemsLeaseFn;
+  Action _cancelItemsLeaseFn;
   #endregion
 
   #region KISItemDragController implementation
@@ -175,12 +174,12 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
       return false;
     }
     leasedItems = items;
-    this.consumeItemsFn = consumeItemsFn;
-    this.cancelItemsLeaseFn = cancelItemsLeaseFn;
+    _consumeItemsFn = consumeItemsFn;
+    _cancelItemsLeaseFn = cancelItemsLeaseFn;
     StartDragIcon(dragIcon);
-    Array.ForEach(dragTargets, t => SafeCallbacks.Action(t.OnKISDragStart));
-    dragTracker = new GameObject().AddComponent<DragModeTracker>();
-    dragTracker.controller = this;
+    Array.ForEach(_dragTargets, t => SafeCallbacks.Action(t.OnKISDragStart));
+    _dragTracker = new GameObject().AddComponent<DragModeTracker>();
+    _dragTracker.controller = this;
     return true;
   }
 
@@ -190,7 +189,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
       DebugEx.Error("Cannot consume items since nothing is being dragged");
       return null;
     }
-    var consumed = consumeItemsFn();
+    var consumed = _consumeItemsFn();
     if (!consumed) {
       DebugEx.Fine("Items not consumed: provider refused the deal");
       return null;
@@ -209,7 +208,7 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
     }
     DebugEx.Info("Cancel dragged items: count={0}", leasedItems.Length);
     try {
-      cancelItemsLeaseFn();
+      _cancelItemsLeaseFn();
     } catch (Exception ex) {
       // Don't let callers breaking the cleanup.
       DebugEx.Error("Custom cancel lease callback failed: {0}", ex);
@@ -219,8 +218,8 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   /// <inheritdoc/>
   public void RegisterTarget(IKISDragTarget target) {
-    if (!dragTargets.Contains(target)) {
-      dragTargets = dragTargets.Concat(new[] { target }).ToArray();
+    if (!_dragTargets.Contains(target)) {
+      _dragTargets = _dragTargets.Concat(new[] { target }).ToArray();
       if (isDragging) {
         SafeCallbacks.Action(target.OnKISDragStart);
       }
@@ -231,11 +230,11 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   /// <inheritdoc/>
   public void UnregisterTarget(IKISDragTarget target) {
-    if (dragTargets.Contains(target)) {
+    if (_dragTargets.Contains(target)) {
       if (isDragging) {
         SafeCallbacks.Action(() => target.OnKISDragEnd(isCancelled: true));
       }
-      dragTargets = dragTargets.Where((t, i) => t != target).ToArray();
+      _dragTargets = _dragTargets.Where((t, i) => t != target).ToArray();
     } else {
       DebugEx.Warning("Cannot unregister unknown target: {0}", target);
     }
@@ -253,15 +252,15 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   /// <summary>Cleans up any leased state and unlocks game.</summary>
   void ClearLease(bool isCancelled) {
-    consumeItemsFn = null;
-    cancelItemsLeaseFn = null;
+    _consumeItemsFn = null;
+    _cancelItemsLeaseFn = null;
     leasedItems = null;
     dragIconObj = null;
-    if (dragTracker != null) {
-      dragTracker.CancelLock();
-      dragTracker = null;
+    if (_dragTracker != null) {
+      _dragTracker.CancelLock();
+      _dragTracker = null;
     }
-    Array.ForEach(dragTargets, t => SafeCallbacks.Action(() => t.OnKISDragEnd(isCancelled)));
+    Array.ForEach(_dragTargets, t => SafeCallbacks.Action(() => t.OnKISDragEnd(isCancelled)));
   }
   #endregion
 }
