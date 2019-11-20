@@ -73,24 +73,23 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
     }
 
     void Update() {
-      if (controlsLocked) {
-        ScreenMessages.PostScreenMessage(statusScreenMessage);
-
-        var pointerMoved = false;
-        if (lastPointerPosition != Input.mousePosition) {
-          lastPointerPosition = Input.mousePosition;
-          pointerMoved = true;
-        }
-        var canConsume = false;
-        foreach (var target in controller.dragTargets) {
-          canConsume |= SafeCallbacks.Func(() => target.OnKISDrag(pointerMoved), false);
-        }
-        controller.dragIconObj.showNoGo = !canConsume;
-       
-        if (Input.GetKeyUp(cancelEvent.keyCode)) {
-          // Delay release to not leak ESC key release to the game.
-          AsyncCall.CallOnEndOfFrame(this, CancelLock);
-        }
+      if (!controlsLocked) {
+        return;
+      }
+      ScreenMessages.PostScreenMessage(statusScreenMessage);
+      var pointerMoved = false;
+      if (lastPointerPosition != Input.mousePosition) {
+        lastPointerPosition = Input.mousePosition;
+        pointerMoved = true;
+      }
+      var canConsume = false;
+      foreach (var target in controller.dragTargets) {
+        canConsume |= SafeCallbacks.Func(() => target.OnKISDrag(pointerMoved), false);
+      }
+      controller.dragIconObj.showNoGo = !canConsume;
+      if (Input.GetKeyUp(cancelEvent.keyCode)) {
+        // Delay release to not leak ESC key release to the game.
+        AsyncCall.CallOnEndOfFrame(this, CancelLock);
       }
     }
     #endregion
@@ -98,17 +97,18 @@ sealed class KISItemDragControllerImpl : IKISItemDragController  {
     #region API methods
     /// <summary>Stops any tracking activity and cleanups the object.</summary>
     public void CancelLock() {
-      if (controlsLocked) {
-        controlsLocked = false;
-        ScreenMessages.RemoveMessage(statusScreenMessage);
-        InputLockManager.RemoveControlLock(TotalControlLock);
-        HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = oldCanAutoSaveState;
-        if (controller.isDragging) {
-          controller.CancelItemsLease();
-        }
-        Hierarchy.SafeDestory(gameObject);  // Ensure the tracking is over.
-        DebugEx.Fine("KIS drag lock released");
+      if (!controlsLocked) {
+        return;
       }
+      controlsLocked = false;
+      ScreenMessages.RemoveMessage(statusScreenMessage);
+      InputLockManager.RemoveControlLock(TotalControlLock);
+      HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = oldCanAutoSaveState;
+      if (controller.isDragging) {
+        controller.CancelItemsLease();
+      }
+      Hierarchy.SafeDestory(gameObject);  // Ensure the tracking is over.
+      DebugEx.Fine("KIS drag lock released");
     }
     #endregion
   }
