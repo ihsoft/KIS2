@@ -32,23 +32,55 @@ internal sealed class InventorySlotImpl {
   static readonly Message<MassType> MassTooltipText = new Message<MassType>(
       "",
       defaultTemplate: "Mass: <b><<1>></b>",
-      description: "Mass of a single item in the slot tooltip when all items have equal mass.\n"
-          + " The <<1>> argument is the mass of type MassType.");
+      description: "A slot tooltip string that shows the mass of an item. It's used when the slot"
+          + " has exactly one item.\n"
+          + " The <<1>> argument is the item mass of type MassType.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
+  static readonly Message<MassType, MassType> MassMultipartTooltipText =
+      new Message<MassType, MassType>(
+          "",
+          defaultTemplate: "Mass: <b><<1>></b> (total: <b><<2>></b>)",
+          description: "A slot tooltip string that shows both the mass of an item and the total"
+              + " slot mass. It's used when the slot has more than one item.\n"
+              + " The <<1>> argument is the item mass.\n"
+              + " The <<2>> argument is the slot total mass.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> VolumeTooltipText = new Message<VolumeLType>(
       "",
       defaultTemplate: "Volume: <b><<1>></b>",
-      description: "Volume of the item for the slot tooltip. All items in th slot have the same"
-          + " volume.n\n"
-          + " The <<1>> argument is the volume of type VolumeLType.");
+      description: "A slot tooltip string that shows the volume of an item. It's used when the slot"
+          + " has exactly one item.\n"
+          + " The <<1>> argument is the item volume.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
+  static readonly Message<VolumeLType, VolumeLType> VolumeMultipartTooltipText =
+      new Message<VolumeLType, VolumeLType>(
+          "",
+          defaultTemplate: "Volume: <b><<1>></b> (total: <b><<2>></b>)",
+          description: "A slot tooltip string that shows both the volume of an item and the total"
+              + " slot volume. It's used when the slot has more than one item.\n"
+              + " The <<1>> argument is the item volume.\n"
+              + " The <<2>> argument is the slot total volume.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CostType> CostTooltipText = new Message<CostType>(
       "",
       defaultTemplate: "Cost: <b><<1>></b>",
-      description: "Cost of a single item for the slot tooltip when all items have equal cost.\n"
-          + " The <<1>> argument is the cost of type CostType.");
+      description: "A slot tooltip string that shows the cost of an item. It's used when the slot"
+          + " has exactly one item.\n"
+          + " The <<1>> argument is the item cost.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
+  static readonly Message<CostType, CostType> CostMultipartTooltipText =
+      new Message<CostType, CostType>(
+          "",
+          defaultTemplate: "Cost: <b><<1>></b> (total: <b><<2>></b>)",
+          description: "A slot tooltip string that shows both the cost of an item and the total"
+              + " slot cost. It's used when the slot has more than one item.\n"
+          + " The <<1>> argument is the item cost.\n"
+          + " The <<2>> argument is the slot total cost.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<string> VariantTooltipText = new Message<string>(
@@ -59,23 +91,25 @@ internal sealed class InventorySlotImpl {
           + " The <<1>> argument is a localized name of the variant.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType> NormalResourceValueText =
-      new Message<ResourceType, CompactNumberType, CompactNumberType>(
+  static readonly Message<ResourceType, CompactNumberType, CompactNumberType>
+      NormalResourceValueText = new Message<ResourceType, CompactNumberType, CompactNumberType>(
           "",
           defaultTemplate: "<<1>>: <b><<2>></b> / <b><<3>></b>",
           description: "Resource status string in the slot tooltip when the available amount is at"
-              + " the expected level (e.g. 'empty' for ore tanks or 'full' for the fuel ones).\n"
+              + " the expected level (e.g. 'empty' for the ore tanks or 'full' for the fuel"
+              + " ones).\n"
               + " The <<1>> argument is a localized name of the resource.\n"
               + " The <<2>> argument is the current amount of the resource.\n"
               + " The <<3>> argument is the maximum amount of the resource.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType> SpecialResourceValueText =
-      new Message<ResourceType, CompactNumberType, CompactNumberType>(
+  static readonly Message<ResourceType, CompactNumberType, CompactNumberType>
+      SpecialResourceValueText = new Message<ResourceType, CompactNumberType, CompactNumberType>(
           "",
           defaultTemplate: "<<1>>: <b><color=yellow><<2>></color></b> / <b><<3>></b>",
           description: "Resource status string in the slot tooltip when the available amount is at"
-              + " the level that is not normally expected (e.g. 'full' for ore tanks or 'empty' for"
+              + " the level that is not normally expected (e.g. 'full' for the ore tanks or"
+              + " 'empty' for"
               + " the fuel ones).\n"
               + " The <<1>> argument is a localized name of the resource.\n"
               + " The <<2>> argument is the current amount of the resource.\n"
@@ -244,6 +278,7 @@ internal sealed class InventorySlotImpl {
       });
     }
     //FIXME: check for similarity
+    //FIXME: check variants - must be equal.
     if (logErrors && errors.Count > 0) {
       DebugEx.Error("Cannot add items to slot:\n{0}", DbgFormatter.C2S(errors, separator: "\n"));
     }
@@ -257,12 +292,11 @@ internal sealed class InventorySlotImpl {
     if (isEmpty) {
       return;
     }
-    //FIXME: consider reservedItems
+    //FIXME: consider reservedItems or better the take one modifier
     if (slotItems.Length == 1) {
       UpdateSingleItemTooltip(tooltip);
     } else {
-      //FIXME: handle multiple item slots
-      tooltip.baseInfo.text = "*** multiple items";
+      UpdateMultipleItemsTooltip(tooltip);
     }
     tooltip.UpdateLayout();
   }
@@ -307,6 +341,28 @@ internal sealed class InventorySlotImpl {
     } else {
       tooltip.availableResourcesInfo.text = null;
     }
+  }
+
+  /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
+  void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
+    //FIXME: once fully implemented, join with the single part version.
+    var item = slotItems[0];
+    tooltip.title = avPart.title;
+    var infoLines = new List<string> {
+        MassMultipartTooltipText.Format(item.fullMass, slotItems.Sum(x => x.fullMass)),
+        VolumeMultipartTooltipText.Format(item.volume, slotItems.Sum(x => x.volume)),
+        CostMultipartTooltipText.Format(item.fullCost, slotItems.Sum(x => x.fullCost))
+    };
+
+    // Basic stats.
+    var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, item.itemConfig);
+    if (variant != null) {
+      infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
+    }
+    tooltip.baseInfo.text = string.Join("\n", infoLines);
+
+    // Available resources stats.
+    //TODO
   }
 
   /// <summary>Gives an approximate short string for a percent value.</summary>
