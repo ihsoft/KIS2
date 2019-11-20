@@ -597,10 +597,10 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       itemsToDrag = KISAPI.ItemDragController.leasedItems.Concat(itemsToDrag).ToArray();
       KISAPI.ItemDragController.CancelItemsLease();
     }
-    KISAPI.ItemDragController.LeaseItems(
-        _slotWithPointerFocus.iconImage, itemsToDrag, ConsumeSlotItems, CancelSlotLeasedItems);
     Array.ForEach(itemsToDrag, i => i.SetLocked(true));
     SetDraggedSlot(_slotWithPointerFocus, itemsToDrag.Length);
+    KISAPI.ItemDragController.LeaseItems(
+        _slotWithPointerFocus.iconImage, itemsToDrag, ConsumeSlotItems, CancelSlotLeasedItems);
     var dragIconObj = KISAPI.ItemDragController.dragIconObj;
     dragIconObj.hasScience = _slotWithPointerFocus.hasScience;
     dragIconObj.stackSize = itemsToDrag.Length;
@@ -641,12 +641,8 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     var stackItems = !_slotWithPointerFocus.isEmpty
         && EventChecker.CheckClickEvent(AddIntoStackEvent, button);
     InventoryItem[] consumedItems = null;
-    if (storeItems || stackItems) {
-      //FIXME: eligibility has already been checked
-      if (_slotWithPointerFocus.CheckCanAddItems(
-          KISAPI.ItemDragController.leasedItems, logErrors: true) == null) {
-        consumedItems = KISAPI.ItemDragController.ConsumeItems();
-      }
+    if ((storeItems || stackItems) && _canAcceptDraggedItems) {
+      consumedItems = KISAPI.ItemDragController.ConsumeItems();
       if (consumedItems != null) {
         var avParts = new AvailablePart[consumedItems.Length];
         var itemConfigs = new ConfigNode[consumedItems.Length];
@@ -769,7 +765,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     }
     currentTooltip.ClearInfoFileds();
     currentTooltip.gameObject.SetActive(false);
-    if (_dragSourceSlot != null && _slotWithPointerFocus != _dragSourceSlot) {
+    if (KISAPI.ItemDragController.isDragging && _slotWithPointerFocus != _dragSourceSlot) {
       currentTooltip.gameObject.SetActive(true);
       currentTooltip.baseInfo.text =
           StoreToSlotCountHint.Format(KISAPI.ItemDragController.leasedItems.Length);
@@ -807,9 +803,23 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
   /// <seealso cref="_canAcceptDraggedItems"/>
   void CheckCanAcceptDrops() {
-    if (KISAPI.ItemDragController.isDragging) {
-      _canAcceptDraggedItemsCheckResult =
-          _slotWithPointerFocus.CheckCanAddItems(KISAPI.ItemDragController.leasedItems);
+    if (KISAPI.ItemDragController.isDragging && _slotWithPointerFocus != null) {
+      // For the items from other inventories also check the basic constraints.
+      var checkItems = KISAPI.ItemDragController.leasedItems;
+      var otherInvAvParts = new List<AvailablePart>();
+      var otherInvPartConfigs = new List<ConfigNode>();
+      foreach (var checkItem in checkItems.Where(x => !ReferenceEquals(x.inventory, this))) {
+        otherInvAvParts.Add(checkItem.avPart);
+        otherInvPartConfigs.Add(checkItem.itemConfig);
+      }
+      _canAcceptDraggedItemsCheckResult = null;
+      if (otherInvAvParts.Count > 0) {
+        _canAcceptDraggedItemsCheckResult =
+            base.CheckCanAddParts(otherInvAvParts.ToArray(), otherInvPartConfigs.ToArray());
+      }
+      if (_canAcceptDraggedItemsCheckResult == null) {
+        _canAcceptDraggedItemsCheckResult = _slotWithPointerFocus.CheckCanAddItems(checkItems);
+      }
       _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
     } else {
       ClearAcceptState();
