@@ -789,18 +789,17 @@ public sealed class KISContainerWithSlots : KisContainerBase,
         }
         currentTooltip.hints = null;
       }
-    } else {
+    } else if (!_slotWithPointerFocus.isEmpty) {
+      currentTooltip.gameObject.SetActive(true);
       _slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
-      if (!_slotWithPointerFocus.isEmpty) {
-        var hints = new List<string> {
-            TakeSlotHint.Format(TakeSlotEvent),
-            TakeOneItemHint.Format(TakeOneItemEvent),
-            TakeTenItemsHint.Format(TakeTenItemsEvent)
-        };
-        currentTooltip.hints = string.Join("\n", hints);
-      } else {
-        currentTooltip.hints = null;
-      }
+      var hints = new List<string> {
+          TakeSlotHint.Format(TakeSlotEvent),
+          TakeOneItemHint.Format(TakeOneItemEvent),
+          TakeTenItemsHint.Format(TakeTenItemsEvent)
+      };
+      currentTooltip.hints = string.Join("\n", hints);
+    }
+  }
 
   /// <summary>
   /// Verifies if the currently dragged items can be stored into the hovered slot.
