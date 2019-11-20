@@ -9,7 +9,7 @@ using UnityEngine;
 namespace KISAPIv2 {
 
 /// <summary>
-/// Interface that controlls the inventory items movements between the inventories and the scene.
+/// Interface that controls the inventory items movements between the inventories and the scene.
 /// </summary>
 /// <remarks>
 /// This interface is not made for dealing with actual KIS items movements or instantiating the
@@ -41,18 +41,21 @@ public interface IKISItemDragController {
   UIKISInventorySlotDragIcon dragIconObj { get; }
 
   /// <summary>Offers items for the dragging.</summary>
-  /// <param name="dragIcon">The icon that will be representing this opertion.</param>
+  /// <remarks>
+  /// Items can belong to different inventories. The items can only be consumed all or none.
+  /// </remarks>
+  /// <param name="dragIcon">The icon that will be representing this operation.</param>
   /// <param name="items">
-  /// The items being offered. The caller must ensure these items won't change teir state bewteen
-  /// the start and the end of the drag operation. if this is not possible, the consume method must
-  /// do verification and deny the operation as needed.
+  /// The items being offered. The caller must ensure these items won't change their state between
+  /// the start and the end of the drag operation. If this is not possible, the consume method must
+  /// do verification and deny the operation if the change has occured.
   /// </param>
   /// <param name="consumeItemsFn">
   /// The function that will be called before consuming the items by the target. This function can
   /// cancel the operation, but it will be treated as an error by the target.
   /// </param>
   /// <param name="cancelItemsLeaseFn">
-  /// The cleanup action that is called when the drag operationis cancelled. This action must never
+  /// The cleanup action that is called when the drag operation is cancelled. This action must never
   /// fail.
   /// </param>
   /// <returns><c>true</c> if dragging has successfully started.</returns>
@@ -66,7 +69,7 @@ public interface IKISItemDragController {
   /// <summary>Indicates that the target is willing to consume the dragged items.</summary>
   /// <remarks>
   /// By calling this method the caller is stating that it's ready to take ownership to the
-  /// <see cref="leasedItems"/>. If this method retuns success, then the dragging mode ends.
+  /// <see cref="leasedItems"/>. If this method returns success, then the dragging mode ends.
   /// </remarks>
   /// <returns>
   /// The items to consume, or <c>null</c> if the provider refused the complete the deal. In the
@@ -76,7 +79,7 @@ public interface IKISItemDragController {
   /// <seealso cref="IKISDragTarget.OnKISDragEnd"/>
   InventoryItem[] ConsumeItems();
 
-  /// <summary>Cancels the current dragging operaton.</summary>
+  /// <summary>Cancels the current dragging operation.</summary>
   /// <seealso cref="leasedItems"/>
   /// <seealso cref="IKISDragTarget.OnKISDragEnd"/>
   void CancelItemsLease();

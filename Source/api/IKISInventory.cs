@@ -57,7 +57,7 @@ public interface IKisInventory {
   /// </remarks>
   /// <param name="avParts">The part protos.</param>
   /// <param name="nodes">
-  /// The part persisted states. An entry can be <c>null</c> if default state from prfab should be
+  /// The part persisted states. An entry can be <c>null</c> if default state from prefab should be
   /// used.
   /// </param>
   /// <returns>The newly created items.</returns>
