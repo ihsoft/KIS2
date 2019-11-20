@@ -268,23 +268,12 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   #region KISContainerBase overrides
   /// <inheritdoc/>
   public override InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
-    // Ignore the base method implementation.
-    // FIXME: get back to the approach of adding to base.
-    var newItemsList = new List<InventoryItem>();
-    for (var i = 0; i < avParts.Length; i++) {
-      var avPart = avParts[i];
-      var itemConfig = nodes[i];
-      var slot = FindSlotForPart(avPart, itemConfig);
-      if (slot == null) {
-        ArrangeSlots(); // Make compaction and tray again.
-        slot = FindSlotForPart(avPart, itemConfig, addInvisibleSlot: true);
-      }
-      var item = new InventoryItemImpl(this, avPart, itemConfig);
-      AddItemsToSlot(new InventoryItem[] {item}, slot);
-      newItemsList.Add(item);
+    var newItems = base.AddParts(avParts, nodes);
+    foreach (var item in newItems) {
+      AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
     }
     UpdateTooltip();
-    return newItemsList.ToArray();
+    return newItems;
   }
 
   /// <inheritdoc/>
@@ -499,7 +488,8 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     for (var i = 0; i < avParts.Count; ++i) {
       var avPart = avParts[i];
       var node = nodes[i] ?? KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-      var slot = FindSlotForPart(avPart, node, preferredSlots: newSlots);
+      var slot = FindSlotForItem(
+          new InventoryItemImpl(this, avPart, node), preferredSlots: newSlots);
       if (slot == null) {
         return false;
       }
@@ -524,17 +514,15 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// </param>
   /// <param name="addInvisibleSlot">
   /// If <c>true</c>, then a new invisible slot will be created in the inventory in case of no
-  /// compatible visible slot was found.
+  /// compatible slot was found.
   /// </param>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
   /// <seealso cref="_inventorySlots"/>
-  InventorySlotImpl FindSlotForPart(AvailablePart avPart, ConfigNode node,
+  InventorySlotImpl FindSlotForItem(InventoryItem item,
                                     IEnumerable<InventorySlotImpl> preferredSlots = null,
                                     bool addInvisibleSlot = false) {
     InventorySlotImpl slot;
-    var matchItems = new InventoryItem[] {
-        new InventoryItemImpl(this, avPart, node)
-    };
+    var matchItems = new[] { item };
     // First, try to store the item into one of the preferred slots.
     if (preferredSlots != null) {
       slot = preferredSlots.FirstOrDefault(x => x.CheckCanAddItems(matchItems) == null);
@@ -570,7 +558,6 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// </remarks>
   /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
   void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
-    UpdateItems(addItems: addItems);
     slot.AddItems(addItems);
     Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
   }
@@ -664,7 +651,14 @@ public sealed class KISContainerWithSlots : KisContainerBase,
         consumedItems = KISAPI.ItemDragController.ConsumeItems();
       }
       if (consumedItems != null) {
-        AddItemsToSlot(consumedItems, _slotWithPointerFocus);
+        var avParts = new AvailablePart[consumedItems.Length];
+        var itemConfigs = new ConfigNode[consumedItems.Length];
+        for (var i = 0; i < consumedItems.Length; i++) {
+          avParts[i] = consumedItems[i].avPart;
+          itemConfigs[i] = consumedItems[i].itemConfig;
+        } 
+        var newItems = base.AddParts(avParts, itemConfigs);
+        AddItemsToSlot(newItems, _slotWithPointerFocus);
       }
     }
     if (consumedItems == null) {
