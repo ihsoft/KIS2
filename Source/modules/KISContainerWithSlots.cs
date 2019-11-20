@@ -209,21 +209,18 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   #region IKISDragTarget implementation
   /// <inheritdoc/>
   public void OnKISDragStart() {
-    _canAcceptDraggedItemsCheckResult =
-        _slotWithPointerFocus.CheckCanAddItems(KISAPI.ItemDragController.leasedItems);
-    _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
+    CheckCanAcceptDrops();
+    UpdateTooltip();
   }
 
   /// <inheritdoc/>
   public void OnKISDragEnd(bool isCancelled) {
-    _canAcceptDraggedItemsCheckResult = null;
-    _canAcceptDraggedItems = false;
-    _slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
+    ClearAcceptState();
+    UpdateTooltip();
   }
 
   /// <inheritdoc/>
   public bool OnKISDrag(bool pointerMoved) {
-    UpdateTooltip();
     return _canAcceptDraggedItems;
   }
   #endregion
@@ -272,6 +269,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     foreach (var item in newItems) {
       AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
     }
+    CheckCanAcceptDrops();
     UpdateTooltip();
     return newItems;
   }
@@ -286,11 +284,10 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       var slot = _itemToSlotMap[deleteItem];
       slot.DeleteItems(new[] {deleteItem});
       _itemToSlotMap.Remove(deleteItem);
-      if (slot == _slotWithPointerFocus) {
-        slot.UpdateTooltip(_unityWindow.currentTooltip);
-      }
     }
     ArrangeSlots();
+    CheckCanAcceptDrops();
+    UpdateTooltip();
     return true;
   }
 
@@ -741,8 +738,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       return;
     }
     _unityWindow.StartSlotTooltip();
-    UpdateTooltip();
     KISAPI.ItemDragController.RegisterTarget(this);
+    CheckCanAcceptDrops();
+    UpdateTooltip();
   }
 
   /// <summary>(Re)sets the current drag operation source.</summary>
@@ -770,7 +768,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       return;
     }
     currentTooltip.ClearInfoFileds();
+    currentTooltip.gameObject.SetActive(false);
     if (_dragSourceSlot != null && _slotWithPointerFocus != _dragSourceSlot) {
+      currentTooltip.gameObject.SetActive(true);
       currentTooltip.baseInfo.text =
           StoreToSlotCountHint.Format(KISAPI.ItemDragController.leasedItems.Length);
       currentTooltip.hints = StoreToSlotActionHint.Format(AddIntoStackEvent);
@@ -801,7 +801,26 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       } else {
         currentTooltip.hints = null;
       }
+
+  /// <summary>
+  /// Verifies if the currently dragged items can be stored into the hovered slot.
+  /// </summary>
+  /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
+  /// <seealso cref="_canAcceptDraggedItems"/>
+  void CheckCanAcceptDrops() {
+    if (KISAPI.ItemDragController.isDragging) {
+      _canAcceptDraggedItemsCheckResult =
+          _slotWithPointerFocus.CheckCanAddItems(KISAPI.ItemDragController.leasedItems);
+      _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
+    } else {
+      ClearAcceptState();
     }
+  }
+
+  /// <summary>Resets the accept state to the default.</summary>
+  void ClearAcceptState() {
+    _canAcceptDraggedItemsCheckResult = null;
+    _canAcceptDraggedItems = false;
   }
   #endregion
 }
