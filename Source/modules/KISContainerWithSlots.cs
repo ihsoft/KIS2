@@ -178,7 +178,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   UIKISInventoryWindow _unityWindow;
 
   /// <summary>Inventory slots.</summary>
-  /// <remarks>NSome or all slots may not be represented in the UI.</remarks>
+  /// <remarks>Some or all slots may not be represented in the UI.</remarks>
   /// <seealso cref="InventorySlotImpl.isVisible"/>
   readonly List<InventorySlotImpl> _inventorySlots = new List<InventorySlotImpl>();
 
@@ -503,11 +503,11 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
   /// <summary>Returns a slot where the item can be stored.</summary>
   /// <remarks>
-  /// This method tries to find a best slot, so that the inventory is kept as dense as possible. By
-  /// default it only considers the slots that are visible in UI, but it can be overwritten.
+  /// This method tries to find a best slot, so that the inventory is kept as dense as possible.
   /// </remarks>
-  /// <param name="avPart">The part to find a slot for.</param>
-  /// <param name="node">The parts config node.</param>
+  /// <param name="item">
+  /// The item to find a slot for. It may belong to a different inventory.
+  /// </param>
   /// <param name="preferredSlots">
   /// If set, then these slots will be checked for best fit first. The preferred slots can be
   /// invisible.
