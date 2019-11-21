@@ -63,9 +63,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
           + " due to there are not enough compatible/empty slots available.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeSlotHint = new Message<KeyboardEventType>(
+  static readonly Message<KeyboardEventType> TakeStackHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab the stack",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab whole stack",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to take the whole slot from the inventory and add it into the currently"
       + " dragged pack.\n"
@@ -88,41 +88,55 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message StoreToSlotActionTooltip = new Message(
+  static readonly Message StoreIntoSlotActionTooltip = new Message(
       "",
-      defaultTemplate: "Store items",
+      defaultTemplate: "Store items into slot",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " stored into an empty slot.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message AddToSlotActionTooltip = new Message(
-      "",
-      defaultTemplate: "Add items to stack",
-      description: "The text to show in the title of the slot tooltip when the dragged items can be"
-          + " added into an non-empty slot.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message<KeyboardEventType> StoreToSlotActionHint = new Message<KeyboardEventType>(
+  static readonly Message<KeyboardEventType> StoreIntoSlotActionHint = new Message<KeyboardEventType>(
       "",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
       description: "Hint text in the inventory slot tooltip that tells what action"
-          + " user should do to store the dragged items into the hovered slot."
-          + " The slot can be empty or have some items already.\n"
-          + " The <<1>> argument is a user friendly action name.");
+      + " user should do to add the dragged items into an empty slot.\n"
+      + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message<int> StoreToSlotCountHint = new Message<int>(
+  static readonly Message<int> StoreIntoSlotCountHint = new Message<int>(
       "",
-      defaultTemplate: "Add <color=#5a5><<1>></color> items",
+      defaultTemplate: "Store <color=#5a5><<1>></color> items",
       description: "The text to show in the inventory tooltip that tells how many items will be"
-      + " added into the stack in case of the action has completed. The slot "
-      + " can be empty or have some items already.\n"
+      + " added into an empty slot in case of the action has completed.\n"
       + " The <<1>> argument is the number of items being added.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message CannotAddToSlotTooltipText = new Message(
+  static readonly Message AddToStackActionTooltip = new Message(
       "",
-      defaultTemplate: "Cannot add items to slot",
+      defaultTemplate: "Add items to stack",
+      description: "The text to show in the title of the slot tooltip when the dragged items can be"
+          + " added into a non-empty slot.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message<KeyboardEventType> AddToStackActionHint = new Message<KeyboardEventType>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to stack",
+      description: "Hint text in the inventory slot tooltip that tells what action"
+          + " user should do to add the dragged items into a non-empty slot.\n"
+          + " The <<1>> argument is a user friendly action name.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message<int> AddToStackCountHint = new Message<int>(
+      "",
+      defaultTemplate: "Add <color=#5a5><<1>></color> items",
+      description: "The text to show in the inventory tooltip that tells how many items will be"
+      + " added into a non-empty slot in case of the action has completed.\n"
+      + " The <<1>> argument is the number of items being added.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotAddToStackTooltipText = new Message(
+      "",
+      defaultTemplate: "Cannot add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can"
           + " NOT be added into the slot. Only shown when the target slot is not empty.");
   #endregion
@@ -169,8 +183,8 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
   static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
   static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
-  static readonly Event AddIntoStackEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event DropIntoSlotEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event AddToStackEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event StoreIntoSlotEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
   #region Local fields and properties.
@@ -639,9 +653,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   /// <seealso cref="_slotWithPointerFocus"/>
   void MouseClickDropItems(PointerEventData.InputButton button) {
     var storeItems = _slotWithPointerFocus.isEmpty
-        && EventChecker.CheckClickEvent(DropIntoSlotEvent, button);
+        && EventChecker.CheckClickEvent(StoreIntoSlotEvent, button);
     var stackItems = !_slotWithPointerFocus.isEmpty
-        && EventChecker.CheckClickEvent(AddIntoStackEvent, button);
+        && EventChecker.CheckClickEvent(AddToStackEvent, button);
     InventoryItem[] consumedItems = null;
     if ((storeItems || stackItems) && _canAcceptDraggedItems) {
       consumedItems = KISAPI.ItemDragController.ConsumeItems();
@@ -769,15 +783,20 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     currentTooltip.gameObject.SetActive(false);
     if (KISAPI.ItemDragController.isDragging && _slotWithPointerFocus != _dragSourceSlot) {
       currentTooltip.gameObject.SetActive(true);
-      currentTooltip.baseInfo.text =
-          StoreToSlotCountHint.Format(KISAPI.ItemDragController.leasedItems.Length);
-      currentTooltip.hints = StoreToSlotActionHint.Format(AddIntoStackEvent);
       if (_canAcceptDraggedItems) {
-        currentTooltip.title = _slotWithPointerFocus.isEmpty
-            ? StoreToSlotActionTooltip
-            : AddToSlotActionTooltip;
+        if (_slotWithPointerFocus.isEmpty) {
+          currentTooltip.title = StoreIntoSlotActionTooltip;
+          currentTooltip.baseInfo.text =
+              StoreIntoSlotCountHint.Format(KISAPI.ItemDragController.leasedItems.Length);
+          currentTooltip.hints = StoreIntoSlotActionHint.Format(StoreIntoSlotEvent);
+        } else {
+          currentTooltip.title = AddToStackActionTooltip;
+          currentTooltip.baseInfo.text =
+              AddToStackCountHint.Format(KISAPI.ItemDragController.leasedItems.Length);
+          currentTooltip.hints = AddToStackActionHint.Format(AddToStackEvent);
+        }
       } else {
-        currentTooltip.title = CannotAddToSlotTooltipText;
+        currentTooltip.title = CannotAddToStackTooltipText;
         if (_canAcceptDraggedItemsCheckResult != null) {
           currentTooltip.baseInfo.text = string.Join(
               "\n",
@@ -791,7 +810,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       currentTooltip.gameObject.SetActive(true);
       _slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
       var hints = new List<string> {
-          TakeSlotHint.Format(TakeSlotEvent),
+          TakeStackHint.Format(TakeSlotEvent),
           TakeOneItemHint.Format(TakeOneItemEvent),
           TakeTenItemsHint.Format(TakeTenItemsEvent)
       };
