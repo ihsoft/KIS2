@@ -136,6 +136,32 @@ internal sealed class InventorySlotImpl {
       description: "Error message that is presented when parts cannot be added to the inventory"
       + " slot due to their resource amounts are too different between each other or the slot's"
       + " items.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
+  static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
+      ResourceMultipartSpecialValueText = new Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>(
+          "",
+          defaultTemplate:
+          "<<1>>: <b><color=yellow>~<<2>></color></b> / <b><<3>></b> (total: <b><<4>></b>)",
+          description: "Resource status string in the slot tooltip when there are more than one"
+          + " items available in the slot and the resource reserve is varying in the items.\n"
+          + " The <<1>> argument is a localized name of the resource.\n"
+          + " The <<2>> argument is the estimated amount of the resource per item.\n"
+          + " The <<3>> argument is the maximum amount of the resource per item.\n"
+          + " The <<4>> argument is the slot total reserve.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
+  static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
+      ResourceMultipartValueText = new Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>(
+          "",
+          defaultTemplate: "<<1>>: <b><<2>></b> / <b><<3>></b> (total: <b><<4>></b>)",
+          description: "Resource status string in the slot tooltip when there are more than one"
+          + " items the available in the slot and the resource reserve in all the items is at its"
+          + " min or max value (i.e. it's exact).\n"
+          + " The <<1>> argument is a localized name of the resource.\n"
+          + " The <<2>> argument is the available amount of the resource per item.\n"
+          + " The <<3>> argument is the maximum amount of the resource per item.\n"
+          + " The <<4>> argument is the slot total reserve.");
   #endregion
 
   #region API properties and fields
@@ -391,28 +417,47 @@ internal sealed class InventorySlotImpl {
     } else {
       tooltip.availableResourcesInfo.text = null;
     }
+
+    //FIXME: show science
   }
 
   /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
   void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    //FIXME: once fully implemented, join with the single part version.
-    var item = slotItems[0];
+    var refItem = slotItems[0];
     tooltip.title = avPart.title;
-    var infoLines = new List<string> {
-        MassMultipartTooltipText.Format(item.fullMass, slotItems.Sum(x => x.fullMass)),
-        VolumeMultipartTooltipText.Format(item.volume, slotItems.Sum(x => x.volume)),
-        CostMultipartTooltipText.Format(item.fullCost, slotItems.Sum(x => x.fullCost))
-    };
 
     // Basic stats.
-    var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, item.itemConfig);
+    var infoLines = new List<string> {
+        MassMultipartTooltipText.Format(refItem.fullMass, slotItems.Sum(x => x.fullMass)),
+        VolumeMultipartTooltipText.Format(refItem.volume, slotItems.Sum(x => x.volume)),
+        CostMultipartTooltipText.Format(refItem.fullCost, slotItems.Sum(x => x.fullCost))
+    };
+    var variant = VariantsUtils.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
     if (variant != null) {
       infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
     }
     tooltip.baseInfo.text = string.Join("\n", infoLines);
 
     // Available resources stats.
-    //TODO
+    var resourceInfoLines = new List<string>();
+    foreach (var resource in refItem.resources) {
+      var amountSlot = _resourceSimilarityValues[resource.resourceName];
+      var totalAmount = slotItems.Sum(
+          x => x.resources.First(r => r.resourceName == resource.resourceName).amount);
+      if (amountSlot == 0 || amountSlot == 100) { // Show exact values with no highlighting.
+        resourceInfoLines.Add(
+            ResourceMultipartValueText.Format(
+                resource.resourceName, resource.amount, resource.maxAmount, totalAmount));
+      } else {
+        var amountPerItem = resource.maxAmount * amountSlot / 100.0;
+        resourceInfoLines.Add(
+            ResourceMultipartSpecialValueText.Format(
+                resource.resourceName, amountPerItem, resource.maxAmount, totalAmount));
+      }
+    }
+    tooltip.availableResourcesInfo.text = string.Join("\n", resourceInfoLines);
+
+    // Multi part slots don't support science, so skip it.
   }
 
   /// <summary>Gives an approximate short string for a percent value.</summary>
