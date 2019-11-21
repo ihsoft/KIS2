@@ -72,6 +72,10 @@ internal sealed class InventoryItemImpl : InventoryItem {
     fullMass = dryMass + resources.Sum(r => r.amount * r.definition.density);
     fullCost = dryCost + resources.Sum(r => r.amount * r.definition.unitCost);
     resources = KISAPI.PartNodeUtils.GetResources(itemConfig);
+    foreach (var resource in resources) {
+      resource.resourceRef = avPart.partPrefab.Resources
+          .First(x => x.resourceName == resource.resourceName);
+    }
     science = KISAPI.PartNodeUtils.GetScience(itemConfig);
   }
   #endregion
