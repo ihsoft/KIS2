@@ -474,8 +474,8 @@ internal sealed class InventorySlotImpl {
     var amountSlot = GetResourceAmountSlot(slotPercent);
     string text;
     if (amountSlot == 0) {
-      var defaultIsEmpty = KISAPI.PartNodeUtils.GetResources(avPart.partConfig)
-          .Any(r => r.amount < double.Epsilon); 
+      var defaultIsEmpty = slotItems[0].resources
+          .Any(r => r.resourceRef.amount < double.Epsilon); 
       text = defaultIsEmpty ? null : "0%";
     } else if (amountSlot == 5) {
       text = "<5%";
@@ -484,8 +484,8 @@ internal sealed class InventorySlotImpl {
     } else if (amountSlot != 100) {
       text = ">95%";
     } else {
-      var defaultIsFull = KISAPI.PartNodeUtils.GetResources(avPart.partConfig)
-          .Any(r => r.amount > double.Epsilon); 
+      var defaultIsFull = slotItems[0].resources
+          .Any(r => r.resourceRef.amount > double.Epsilon); 
       text = defaultIsFull ? null : "100%";
     }
     return text;
