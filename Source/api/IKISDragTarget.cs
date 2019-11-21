@@ -2,8 +2,8 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System;
-
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>
@@ -35,13 +35,13 @@ public interface IKISDragTarget {
 
   /// <summary>Asks the target if the items can be consumed by it.</summary>
   /// <remarks>
-  /// This callback is called each frame while there are items being dragged. Mutliple targets can
+  /// This callback is called each frame while there are items being dragged. Multiple targets can
   /// reply to this callback, and some (or all) of them can answer positively. It doesn't impound
-  /// any obligations on the tragets, but it does affect the GUI appearance of the dragged icon. If
+  /// any obligations on the targets, but it does affect the GUI appearance of the dragged icon. If
   /// no targets can accept the items, the user will notice.
   /// </remarks>
   /// <param name="pointerMoved">Tells if mouse pointer has moved in this frame.</param>
-  /// <returns><c>true</c> if the traget can accept the currently dragged items.</returns>
+  /// <returns><c>true</c> if the target can accept the currently dragged items.</returns>
   /// <seealso cref="IKISItemDragController.LeaseItems"/>
   bool OnKISDrag(bool pointerMoved);
 }

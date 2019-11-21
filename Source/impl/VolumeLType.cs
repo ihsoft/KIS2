@@ -5,6 +5,7 @@
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2.GUIUtils {
 
 /// <summary>
@@ -18,7 +19,7 @@ namespace KIS2.GUIUtils {
 /// </para>
 /// </remarks>
 public sealed class VolumeLType {
-  /// <summary>Localized suffix for the "liter" untis. Scale x1.</summary>
+  /// <summary>Localized suffix for the "liter" units. Scale x1.</summary>
   public static readonly Message Liter = new Message(
       "#kisLOC_99000", defaultTemplate: " L", description: "Liter unit for a volume value.");
 
@@ -60,7 +61,7 @@ public sealed class VolumeLType {
   /// </remarks>
   /// <param name="value">The numeric value to format.</param>
   /// <param name="format">
-  /// The specific float number format to use. If the format is not specified, then it's choosen
+  /// The specific float number format to use. If the format is not specified, then it's chosen
   /// basing on the value.
   /// </param>
   /// <returns>A formatted and localized string</returns>

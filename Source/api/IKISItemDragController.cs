@@ -6,6 +6,8 @@ using KIS2;
 using System;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>

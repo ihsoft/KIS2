@@ -7,6 +7,7 @@ using KSPDev.PrefabUtils;
 using System;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>Initializes the mod and warns if it's not loaded correctly.</summary>
@@ -16,7 +17,7 @@ public sealed class KISModLoadController : MonoBehaviour {
 
   #region MonoBehaviour overrides
   void Awake() {
-    DebugEx.Info("[KISModLoadController] Start loading configuartion...");
+    DebugEx.Info("[KISModLoadController] Start loading configuration...");
     //FIXME: check critical resources location 
     InvokeLoader(() => LoadAsset("ui_prefabs"));
     if (modIsInconsistent) {
@@ -38,7 +39,7 @@ public sealed class KISModLoadController : MonoBehaviour {
     }
   }
 
-  void LoadAsset(string assetFileName) {
+  static void LoadAsset(string assetFileName) {
     modIsInconsistent |= !PrefabLoader.LoadAllAssets(
         KSPUtil.ApplicationRootPath + "GameData/KIS/Prefabs/" + assetFileName);
   }

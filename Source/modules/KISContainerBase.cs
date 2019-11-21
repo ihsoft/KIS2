@@ -5,7 +5,6 @@
 using KISAPIv2;
 using KIS2.GUIUtils;
 using KSPDev.GUIUtils;
-using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using Smooth.Collections;
@@ -14,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>
@@ -31,24 +31,6 @@ public class KisContainerBase : AbstractPartModule,
           + " placed into the inventory cannot fit it due to not enough free volume.\n"
           + "The <<1>> parameter is the volume delta that would be needed for the item to fit of"
           + " type VolumeLType.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<DistanceType, DistanceType> WidthTooLarge =
-      new Message<DistanceType, DistanceType>(
-          "",
-          defaultTemplate: "Width too large: <<1>> > <<2>>");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<DistanceType, DistanceType> HeightTooLarge =
-      new Message<DistanceType, DistanceType>(
-          "",
-          defaultTemplate: "Height too large: <<1>> > <<2>>");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<DistanceType, DistanceType> LengthTooLarge =
-      new Message<DistanceType, DistanceType>(
-          "",
-          defaultTemplate: "Length too large: <<1>> > <<2>>");
   #endregion
 
   #region Part's config fields

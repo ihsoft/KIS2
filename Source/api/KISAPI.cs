@@ -1,5 +1,5 @@
 ﻿// Kerbal Inventory System API v2
-// API design and implemenation: igor.zavoychinskiy@gmail.com
+// API design and implementation: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 //
 // This module is used to build the API assembly. Once released to the public the version of this
@@ -16,14 +16,15 @@
 // FIXME: For now it's only a dummy! A lot of refactoring is needed before we get KIS API.
 
 // Name of the namespace denotes the API version.
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>KIS API, version 1.</summary>
 /// FIXME: This implementation is a FAKE for now. It's not a real API.
+// ReSharper disable once InconsistentNaming
+// ReSharper disable once IdentifierTypo
 public static class KISAPI {
-  /// <summary>Tells if API V1 was loaded and ready to use.</summary>
-  public static bool isLoaded = true;
-
   /// <summary>Utils to deal with various aspects of part models.</summary>
   public static readonly PartModelUtilsImpl PartModelUtils = new PartModelUtilsImpl();
 

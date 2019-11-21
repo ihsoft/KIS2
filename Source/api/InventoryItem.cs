@@ -2,25 +2,26 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>Basic container for a single inventory item.</summary>
 public interface InventoryItem {
   /// <summary>The inventory that owns this item.</summary>
   /// <remarks>
-  /// This is the inventory at which the item was intially created. If it was deleted form that
+  /// This is the inventory at which the item was initially created. If it was deleted form that
   /// inventory afterwards, the link still can point to the former parent. It's not allowed or
   /// expected that an item changes inventory parent during its lifetime.
   /// </remarks>
   IKisInventory inventory { get; }
 
-  /// <summary>Part poro.</summary>
+  /// <summary>Part proto.</summary>
   AvailablePart avPart { get; }
 
-  /// <summary>Real part in the secene if there was one created.</summary>
+  /// <summary>Real part in the scene if there was one created.</summary>
   /// <remarks>A real part is only defined when the items is equipped in mode "Part".</remarks>
   /// <value>The part or <c>null</c>.</value>
   Part physicalPart { get; }
@@ -56,11 +57,11 @@ public interface InventoryItem {
   /// <seealso cref="UpdateConfig"/>
   double dryCost { get; }
 
-  /// <summary>Mass of the part with all availabe resources.</summary>
+  /// <summary>Mass of the part with all available resources.</summary>
   /// <value>The mass in <c>tons</c>.</value>
   double fullMass { get; }
 
-  /// <summary>Cached cost of the part with all availabe resources.</summary>
+  /// <summary>Cached cost of the part with all available resources.</summary>
   /// <seealso cref="UpdateConfig"/>
   double fullCost { get; }
 

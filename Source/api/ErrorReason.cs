@@ -2,8 +2,8 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System;
-
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>Container for an error result.</summary>

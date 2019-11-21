@@ -6,6 +6,7 @@ using KISAPIv2;
 using System.Linq;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>Implementation for the inventory item.</summary>
@@ -82,11 +83,6 @@ internal sealed class InventoryItemImpl : InventoryItem {
     this.avPart = avPart;
     this.itemConfig = itemConfig;
     UpdateConfig();
-  }
-
-  /// <summary>Makes a new inventory item from another item.</summary>
-  public static InventoryItem CopyFrom(IKisInventory inventory, InventoryItem item) {
-    return new InventoryItemImpl(inventory, item.avPart, item.itemConfig);
   }
   #endregion
 }

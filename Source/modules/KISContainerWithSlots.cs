@@ -22,7 +22,7 @@ using UnityEngine.EventSystems;
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
 
-  //FIXME: separate container and inventory concepts. data vs UI
+// ReSharper disable once InconsistentNaming
 public sealed class KISContainerWithSlots : KisContainerBase,
     IHasGUI, IKISDragTarget {
 

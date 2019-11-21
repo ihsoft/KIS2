@@ -2,9 +2,10 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>Basic interface that every inventory must implement to work with KIS.</summary>
@@ -35,7 +36,7 @@ public interface IKisInventory {
 
   /// <summary>Verifies if the part can be added into the inventory.</summary>
   /// <remarks>This method verifies if <i>all</i> the parts can fit the inventory.</remarks>
-  /// <param name="avParts">The part protos.</param>
+  /// <param name="avParts">The part proto.</param>
   /// <param name="nodes">
   /// The part's persisted state. If <c>null</c>, then a default state will be created from the
   /// prefab. If an array is provided, then it can have <c>null</c> elements for the parts that have
@@ -55,7 +56,7 @@ public interface IKisInventory {
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
   /// responsibility of the caller.
   /// </remarks>
-  /// <param name="avParts">The part protos.</param>
+  /// <param name="avParts">The part proto.</param>
   /// <param name="nodes">
   /// The part persisted states. An entry can be <c>null</c> if default state from prefab should be
   /// used.

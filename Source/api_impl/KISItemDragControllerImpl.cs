@@ -18,7 +18,8 @@ using UnityEngine;
 namespace KIS2 {
 
 /// <inheritdoc/>
-sealed class KISItemDragControllerImpl : IKISItemDragController  {
+// ReSharper disable once InconsistentNaming
+internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
 
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
