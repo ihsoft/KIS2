@@ -269,8 +269,6 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     foreach (var item in newItems) {
       AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
     }
-    CheckCanAcceptDrops();
-    UpdateTooltip();
     return newItems;
   }
 
@@ -557,6 +555,10 @@ public sealed class KISContainerWithSlots : KisContainerBase,
   void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
     slot.AddItems(addItems);
     Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
+    if (slot == _slotWithPointerFocus) {
+      CheckCanAcceptDrops();
+      UpdateTooltip();
+    }
   }
 
   /// <summary>
