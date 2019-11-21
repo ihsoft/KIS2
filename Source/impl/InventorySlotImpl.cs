@@ -6,7 +6,6 @@ using KISAPIv2;
 using KIS2.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
-using KSPDev.ProcessingUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using Smooth.Collections;
@@ -122,6 +121,21 @@ internal sealed class InventorySlotImpl {
       description: "Error message that is presented when parts cannot be added to the inventory"
           + " slot due to some of them don't match to each other or the other items in the slot.");
 
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message DifferentResourcesReasonText = new Message(
+      "",
+      defaultTemplate: "Different resources",
+      description: "Error message that is presented when parts cannot be added to the inventory"
+      + " slot due to their resources or their amounts are too different between each other or the"
+      + " slot's items.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message DifferentResourceAmountsReasonText = new Message(
+      "",
+      defaultTemplate: "Different resource amounts",
+      description: "Error message that is presented when parts cannot be added to the inventory"
+      + " slot due to their resource amounts are too different between each other or the slot's"
+      + " items.");
   #endregion
 
   #region API properties and fields
@@ -132,6 +146,23 @@ internal sealed class InventorySlotImpl {
   /// <seealso cref="DifferentPartsReasonText"/>
   // ReSharper disable once MemberCanBePrivate.Global
   public const string DifferentPartReason = "DifferentPart";
+
+  /// <summary>
+  /// Short name of the checking error for the case when parts have different resource sets.
+  /// </summary>
+  /// <seealso cref="DifferentResourcesReasonText"/>
+  /// <seealso cref="CheckIfSimilar"/>
+  // ReSharper disable once MemberCanBePrivate.Global
+  public const string DifferentResourcesReason = "DifferentResources";
+
+  /// <summary>
+  /// Short name of the checking error for the case when parts have the same resources, but the
+  /// amounts are too to be stored in the same slot.
+  /// </summary>
+  /// <seealso cref="DifferentResourcesReasonText"/>
+  /// <seealso cref="CheckIfSimilar"/>
+  // ReSharper disable once MemberCanBePrivate.Global
+  public const string DifferentResourceAmountsReason = "DifferentResourcesAmounts";
 
   /// <summary>Tells if this slot is visible in the inventory dialog.</summary>
   /// <remarks>
@@ -200,6 +231,10 @@ internal sealed class InventorySlotImpl {
   /// </summary>
   /// <seealso cref="UpdateItems"/>
   readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
+
+  /// <summary>Rounded similarity values per resource name.</summary>
+  /// <seealso cref="CheckIfSimilar"/>
+  Dictionary<string, int> _resourceSimilarityValues;  
   #endregion
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
@@ -273,14 +308,27 @@ internal sealed class InventorySlotImpl {
     }
     var errors = new HashSet<ErrorReason>();
     var slotPartName = isEmpty ? checkItems[0].avPart.name : avPart.name;
+    //FIXME: check variants - must be equal.
     if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
       errors.Add(new ErrorReason() {
           shortString = DifferentPartReason,
           guiString = DifferentPartsReasonText,
       });
+    } else {
+      var checkSimilarityValues =
+          _resourceSimilarityValues ?? CalculateSimilarityValues(checkItems[0]);
+      if (checkItems.Any(x => !CheckIfSameResources(x, checkSimilarityValues))) {
+        errors.Add(new ErrorReason() {
+            shortString = DifferentResourcesReason,
+            guiString = DifferentResourcesReasonText,
+        });
+      } else if (checkItems.Any(x => !CheckIfSimilar(x, checkSimilarityValues))) {
+        errors.Add(new ErrorReason() {
+            shortString = DifferentResourceAmountsReason,
+            guiString = DifferentResourceAmountsReasonText,
+        });
+      }
     }
-    //FIXME: check for similarity
-    //FIXME: check variants - must be equal.
     if (logErrors && errors.Count > 0) {
       DebugEx.Error("Cannot add items to slot:\n{0}", DbgFormatter.C2S(errors, separator: "\n"));
     }
@@ -368,34 +416,32 @@ internal sealed class InventorySlotImpl {
   }
 
   /// <summary>Gives an approximate short string for a percent value.</summary>
-  static string GetResourceAmountStatus(double percent) {
+  /// <remarks>
+  /// The boundary values, 100% and 0%, are only shown if this value is not a default for any of the
+  /// part resources.
+  /// </remarks>
+  string GetSlotResourceAmountStatus() {
+    if (_resourceSimilarityValues == null) {
+      return null;
+    }
+    var slotPercent = _resourceSimilarityValues.Sum(x => (double) x.Value) / 100.0
+        / _resourceSimilarityValues.Count;
+    var amountSlot = GetResourceAmountSlot(slotPercent);
     string text;
-    if (percent < double.Epsilon) {
-      text = "0%";
-    } else if (percent < 0.05) {
+    if (amountSlot == 0) {
+      var defaultIsEmpty = KISAPI.PartNodeUtils.GetResources(avPart.partConfig)
+          .Any(r => r.amount < double.Epsilon); 
+      text = defaultIsEmpty ? null : "0%";
+    } else if (amountSlot == 5) {
       text = "<5%";
-    } else if (percent < 0.15) {
-      text = "~10%";
-    } else if (percent < 0.25) {
-      text = "~20%";
-    } else if (percent < 0.35) {
-      text = "~30%";
-    } else if (percent < 0.45) {
-      text = "~40%";
-    } else if (percent < 0.55) {
-      text = "~50%";
-    } else if (percent < 0.65) {
-      text = "~60%";
-    } else if (percent < 0.75) {
-      text = "~70%";
-    } else if (percent < 0.85) {
-      text = "~80%";
-    } else if (percent < 0.95) {
-      text = "~90%";
-    } else if (percent - 1 > double.Epsilon) {
+    } else if (amountSlot < 95) {
+      text = $"~{amountSlot}%";
+    } else if (amountSlot != 100) {
       text = ">95%";
     } else {
-      text = null;  // 100%
+      var defaultIsFull = KISAPI.PartNodeUtils.GetResources(avPart.partConfig)
+          .Any(r => r.amount > double.Epsilon); 
+      text = defaultIsFull ? null : "100%";
     }
     return text;
   }
@@ -411,26 +457,25 @@ internal sealed class InventorySlotImpl {
     }
     _unitySlot.slotImage = iconImage;
     _unitySlot.stackSize = "x" + (slotItems.Length - reservedItems);
+    _unitySlot.resourceStatus = GetSlotResourceAmountStatus();
 
-    // Slot resources info.
-    if (slotItems[0].resources.Length > 0) {
-      var cumAvgPct = slotItems.Where(item => item.resources.Length > 0)
-          .Sum(item => item.resources.Sum(r => r.amount / r.maxAmount) / item.resources.Length);
-      _unitySlot.resourceStatus = GetResourceAmountStatus(cumAvgPct / slotItems.Length);
-    } else {
-      _unitySlot.resourceStatus = null;
-    }
     // Slot science data.
     // FIXME: implement
   }
 
   /// <summary>Adds or deletes items to/from the slot.</summary>
   void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
-    if (addItems != null) {
+    if (addItems != null && addItems.Length > 0) {
+      if (_itemsSet.Count == 0) {
+        _resourceSimilarityValues = CalculateSimilarityValues(addItems[0]);
+      }
       _itemsSet.AddAll(addItems);
     }
-    if (deleteItems != null) {
+    if (deleteItems != null && deleteItems.Length > 0) {
       Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
+      if (_itemsSet.Count == 0) {
+        _resourceSimilarityValues = null;
+      }
     }
     // Reconstruct the items array so that the existing items keep their original order, and the new
     // items (if any) are added at the tail.
@@ -440,6 +485,47 @@ internal sealed class InventorySlotImpl {
     }
     slotItems = newItems.ToArray();
     UpdateUnitySlot();
+  }
+
+  /// <summary>Allocates the percentile into one of the 13 fixed slots.</summary>
+  /// <remarks>
+  /// The slots were chosen so that the grouping would make sense for the usual game cases.  
+  /// </remarks>
+  static int GetResourceAmountSlot(double percent) {
+    int res;
+    if (percent < double.Epsilon) {
+      res = 0; // 0%
+    } else if (percent < 0.05) {
+      res = 5; // (0%, 5%) 
+    } else if (percent < 0.95) {
+      // [-5%; +5%) with step 10 starting from 10%. 
+      res = (int) (Math.Floor((percent + 0.05) * 10) * 10);
+    } else if (percent - 1 > double.Epsilon) {
+      res = 95; // [95%, 100%)
+    } else {
+      res = 100; // 100%
+    }
+    return res;
+  }
+
+  /// <summary>Calculate amount slots from the item's resources reserve.</summary>
+  Dictionary<string, int> CalculateSimilarityValues(InventoryItem item) {
+    return item.resources.ToDictionary(r => r.resourceName,
+                                       r => GetResourceAmountSlot(r.amount / r.maxAmount));
+  }
+
+  /// <summary>Checks if items resources are the same and the amounts are somewhat close.</summary>
+  bool CheckIfSimilar(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
+    var checkSimilarityValues = CalculateSimilarityValues(checkItem);
+    return similarityValues.Count == checkSimilarityValues.Count
+        && !similarityValues.Except(checkSimilarityValues).Any();
+  }
+
+  /// <summary>Checks if items resources are the same, disregarding the amounts.</summary>
+  bool CheckIfSameResources(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
+    var checkSimilarityValues = CalculateSimilarityValues(checkItem);
+    return similarityValues.Count == checkSimilarityValues.Count
+        && !similarityValues.Keys.Except(checkSimilarityValues.Keys).Any();
   }
   #endregion
 }
