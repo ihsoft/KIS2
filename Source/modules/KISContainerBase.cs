@@ -24,9 +24,9 @@ public class KisContainerBase : AbstractPartModule,
   //FIXME: Add descriptions to the strings.
   #region Localizable GUI strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<VolumeLType> NeedMoreVolume = new Message<VolumeLType>(
+  static readonly Message<VolumeLType> NotEnoughVolumeText = new Message<VolumeLType>(
       "",
-      defaultTemplate: "Not enough volume, need +<<1>> more",
+      defaultTemplate: "Not enough volume: <color=#f88>-<<1>></color>",
       description: "Message to present to the user at the main status area when an item being"
           + " placed into the inventory cannot fit it due to not enough free volume.\n"
           + "The <<1>> parameter is the volume delta that would be needed for the item to fit of"
@@ -91,10 +91,12 @@ public class KisContainerBase : AbstractPartModule,
       //FIXME: Check part size.
     }
     if (usedVolume + partsVolume > maxVolume) {
+      // Normalize the used volume in case of the inventory is already overloaded. 
+      var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
-                   shortString = "VolumeTooLarge",
-                   guiString = NeedMoreVolume.Format(partsVolume - (maxVolume - usedVolume)),
-                 });
+          shortString = "VolumeTooLarge",
+          guiString = NotEnoughVolumeText.Format(partsVolume - freeVolume),
+      });
     }
     if (logErrors && errors.Count > 0) {
       HostedDebugLog.Error(this, "Cannot add {0} part(s):\n{1}",
