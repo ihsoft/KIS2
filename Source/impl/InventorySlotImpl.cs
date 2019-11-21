@@ -267,8 +267,8 @@ internal sealed class InventorySlotImpl {
 
   /// <summary>Adds an item to the slot.</summary>
   /// <remarks>
-  /// This method doesn't check preconditions. The items will be added even if it break the slot's
-  /// logic. The caller is responsible to verify if the items can be added via the
+  /// This method doesn't check preconditions. The items will be added even if it breaks the slot's
+  /// logic. The caller is responsible to verify if the item(s) can be added via the
   /// <see cref="CheckCanAddItems"/> before attempting to add anything.
   /// </remarks>
   /// <param name="items">
@@ -294,7 +294,7 @@ internal sealed class InventorySlotImpl {
   /// same part. The part's state similarity is implementation dependent and the callers must not be
   /// guessing about it.
   /// </remarks>
-  /// <param name="checkItems">The items to check. It must not be empty.</param>
+  /// <param name="checkItems">The items to check. If it's empty, the reply is always "yes".</param>
   /// <param name="logErrors">
   /// If <c>true</c>, then all the found errors will be written to the system log. Callers may use
   /// this option when they don't normally expect any errors.
@@ -451,7 +451,7 @@ internal sealed class InventorySlotImpl {
     if (_unitySlot == null) {
       return;
     }
-    if (isEmpty || _unitySlot == null) {
+    if (isEmpty) {
       _unitySlot.ClearContent();
       return;
     }
