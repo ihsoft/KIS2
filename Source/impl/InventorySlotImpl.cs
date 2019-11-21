@@ -268,7 +268,9 @@ internal sealed class InventorySlotImpl {
   /// <c>null</c> if the item can be added to the slot, or a list of human readable errors.
   /// </returns>
   public ErrorReason[] CheckCanAddItems(InventoryItem[] checkItems, bool logErrors = false) {
-    Preconditions.MinElements(checkItems, 1);
+    if (checkItems.Length == 0) {
+      return null;
+    }
     var errors = new HashSet<ErrorReason>();
     var slotPartName = isEmpty ? checkItems[0].avPart.name : avPart.name;
     if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
