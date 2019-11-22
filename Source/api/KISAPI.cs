@@ -22,9 +22,7 @@ namespace KISAPIv2 {
 
 /// <summary>KIS API, version 1.</summary>
 /// FIXME: This implementation is a FAKE for now. It's not a real API.
-// ReSharper disable once InconsistentNaming
-// ReSharper disable once IdentifierTypo
-public static class KISAPI {
+public static class KisApi {
   /// <summary>Utils to deal with various aspects of part models.</summary>
   public static readonly PartModelUtilsImpl PartModelUtils = new PartModelUtilsImpl();
 
@@ -40,8 +38,8 @@ public static class KISAPI {
   /// <summary>
   /// Controller that handles moving KIS items between the inventories and the scene.
   /// </summary>
-  public static readonly IKISItemDragController ItemDragController =
-      new KIS2.KISItemDragControllerImpl();
+  public static readonly IKisItemDragController ItemDragController =
+      new KIS2.KisItemDragControllerImpl();
 }
 
 }  // namespace

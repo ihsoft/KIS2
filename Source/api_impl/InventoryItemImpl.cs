@@ -65,18 +65,18 @@ internal sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public void UpdateConfig() {
-    volume = KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
-    size = KISAPI.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
-    dryMass = KISAPI.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);
-    dryCost = KISAPI.PartNodeUtils.GetPartDryCost(avPart, partNode: itemConfig);
+    volume = KisApi.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
+    size = KisApi.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
+    dryMass = KisApi.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);
+    dryCost = KisApi.PartNodeUtils.GetPartDryCost(avPart, partNode: itemConfig);
     fullMass = dryMass + resources.Sum(r => r.amount * r.definition.density);
     fullCost = dryCost + resources.Sum(r => r.amount * r.definition.unitCost);
-    resources = KISAPI.PartNodeUtils.GetResources(itemConfig);
+    resources = KisApi.PartNodeUtils.GetResources(itemConfig);
     foreach (var resource in resources) {
       resource.resourceRef = avPart.partPrefab.Resources
           .First(x => x.resourceName == resource.resourceName);
     }
-    science = KISAPI.PartNodeUtils.GetScience(itemConfig);
+    science = KisApi.PartNodeUtils.GetScience(itemConfig);
   }
   #endregion
 

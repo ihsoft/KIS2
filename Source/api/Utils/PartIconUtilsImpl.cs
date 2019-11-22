@@ -37,7 +37,7 @@ public sealed class PartIconUtils {
     }
     DebugEx.Fine("Creating a new icon for: part={0}, variant={1}, key={2}",
                  avPart.name, (variant != null ? variant.Name : "N/A"), cacheKey);
-    var iconPrefab = KISAPI.PartModelUtils.GetIconPrefab(avPart, variant);
+    var iconPrefab = KisApi.PartModelUtils.GetIconPrefab(avPart, variant);
     iconPrefab.transform.position = new Vector3(0, 0, 2f);
     iconPrefab.transform.rotation = Quaternion.Euler(-15f, 0.0f, 0.0f);
     iconPrefab.transform.Rotate(0.0f, -30f, 0.0f);

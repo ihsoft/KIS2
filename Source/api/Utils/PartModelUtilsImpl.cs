@@ -81,7 +81,7 @@ public class PartModelUtilsImpl {
 
     // Handle TweakScale settings.
     if (partNode != null) {
-      var scale = KISAPI.PartNodeUtils.GetTweakScaleSizeModifier(partNode);
+      var scale = KisApi.PartNodeUtils.GetTweakScaleSizeModifier(partNode);
       if (Math.Abs(1.0 - scale) > double.Epsilon) {
         DebugEx.Fine("Applying TweakScale size modifier: {0}", scale);
         var scaleRoot = new GameObject("TweakScale");
@@ -174,7 +174,7 @@ public class PartModelUtilsImpl {
   /// <returns>The volume in liters.</returns>
   /// FIXME: This method should capture real part bounds/volume
   public double GetPartVolume(Part part) {
-    var partNode = KISAPI.PartNodeUtils.PartSnapshot(part);
+    var partNode = KisApi.PartNodeUtils.PartSnapshot(part);
     return GetPartVolume(part.partInfo, partNode: partNode);
   }
 
@@ -215,7 +215,7 @@ public class PartModelUtilsImpl {
 //    var itemModule = avPart.partPrefab.Modules.OfType<KIS.ModuleKISItem>().FirstOrDefault();
 //    if (itemModule != null && itemModule.volumeOverride > 0) {
 //      return itemModule.volumeOverride  // Ignore geometry.
-//          * KISAPI.PartNodeUtils.GetTweakScaleSizeModifier(partNode);  // But respect TweakScale.
+//          * KisApi.PartNodeUtils.GetTweakScaleSizeModifier(partNode);  // But respect TweakScale.
 //    }
     var bounds = default(Bounds);
     if (variant == null && partNode != null) {

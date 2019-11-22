@@ -21,8 +21,8 @@ namespace KISAPIv2 {
 /// must be reacting on their events to verify if they can/should consume anything from the
 /// controller, and register themselves as targets if they can.
 /// </remarks>
-/// <seealso cref="IKISDragTarget"/>
-public interface IKISItemDragController {
+/// <seealso cref="IKisDragTarget"/>
+public interface IKisItemDragController {
   /// <summary>Tells if there are items being dragged by the controller.</summary>
   /// <seealso cref="leasedItems"/>
   bool isDragging { get; }
@@ -64,7 +64,7 @@ public interface IKISItemDragController {
   /// <seealso cref="leasedItems"/>
   /// <seealso cref="ConsumeItems"/>
   /// <seealso cref="InventoryItem.isLocked"/>
-  /// <seealso cref="IKISDragTarget.OnKISDragStart"/>
+  /// <seealso cref="IKisDragTarget.OnKisDragStart"/>
   bool LeaseItems(Texture dragIcon, InventoryItem[] items,
                   Func<bool> consumeItemsFn, Action cancelItemsLeaseFn);
 
@@ -78,12 +78,12 @@ public interface IKISItemDragController {
   /// latter case the dragging operation stays running and unchanged.
   /// </returns>
   /// <seealso cref="leasedItems"/>
-  /// <seealso cref="IKISDragTarget.OnKISDragEnd"/>
+  /// <seealso cref="IKisDragTarget.OnKisDragEnd"/>
   InventoryItem[] ConsumeItems();
 
   /// <summary>Cancels the current dragging operation.</summary>
   /// <seealso cref="leasedItems"/>
-  /// <seealso cref="IKISDragTarget.OnKISDragEnd"/>
+  /// <seealso cref="IKisDragTarget.OnKisDragEnd"/>
   void CancelItemsLease();
 
   /// <summary>
@@ -94,20 +94,20 @@ public interface IKISItemDragController {
   /// none of them can accept the drop, then UI will make it clear to the user.
   /// <para>
   /// If a target is registered when the dragging state is ON, then this target will immediately get
-  /// <see cref="IKISDragTarget.OnKISDragStart"/>.
+  /// <see cref="IKisDragTarget.OnKisDragStart"/>.
   /// </para>
   /// </remarks>
   /// <param name="target">The target to register.</param>
-  /// <seealso cref="IKISDragTarget.OnKISDrag"/>
-  void RegisterTarget(IKISDragTarget target);
+  /// <seealso cref="IKisDragTarget.OnKisDrag"/>
+  void RegisterTarget(IKisDragTarget target);
 
   /// <summary>Unregisters the drag target.</summary>
   /// <remarks>
   /// If a target is unregistered when the dragging state is ON, then this target will immediately
-  /// get <see cref="IKISDragTarget.OnKISDragEnd"/>.
+  /// get <see cref="IKisDragTarget.OnKisDragEnd"/>.
   /// </remarks>
   /// <param name="target">The target to unregister.</param>
-  void UnregisterTarget(IKISDragTarget target);
+  void UnregisterTarget(IKisDragTarget target);
 }
 
 }  // namespace

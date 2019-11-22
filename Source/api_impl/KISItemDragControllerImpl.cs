@@ -19,7 +19,7 @@ namespace KIS2 {
 
 /// <inheritdoc/>
 // ReSharper disable once InconsistentNaming
-internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
+internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
 
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -45,10 +45,10 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
   /// </para>
   /// </remarks>
   /// <seealso cref="LeaseItems"/>
-  /// <seealso cref="IKISDragTarget"/>
+  /// <seealso cref="IKisDragTarget"/>
   class DragModeTracker : MonoBehaviour {
     /// <summary>The controller object to notify.</summary>
-    public KISItemDragControllerImpl controller;
+    public KisItemDragControllerImpl controller;
 
     #region Local fields
     const string TotalControlLock = "KISDragControllerUberLock";
@@ -86,7 +86,7 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
       }
       var canConsume = false;
       foreach (var target in controller._dragTargets) {
-        canConsume |= SafeCallbacks.Func(() => target.OnKISDrag(pointerMoved), false);
+        canConsume |= SafeCallbacks.Func(() => target.OnKisDrag(pointerMoved), false);
       }
       controller.dragIconObj.showNoGo = !canConsume;
       if (Input.GetKeyUp(CancelEvent.keyCode)) {
@@ -116,7 +116,7 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
   }
   #endregion
 
-  #region IKISItemDragController properties
+  #region IKisItemDragController properties
   /// <inheritdoc/>
   public bool isDragging => leasedItems != null;
 
@@ -139,7 +139,7 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
   static readonly Event CancelEvent = Event.KeyboardEvent("[esc]");
 
   /// <summary>Targets that need to get updated when dragging state is changed.</summary>
-  IKISDragTarget[] _dragTargets = new IKISDragTarget[0];
+  IKisDragTarget[] _dragTargets = new IKisDragTarget[0];
 
   /// <summary>Current lock tracking object.</summary>
   /// <remarks>
@@ -178,7 +178,7 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
     _consumeItemsFn = consumeItemsFn;
     _cancelItemsLeaseFn = cancelItemsLeaseFn;
     StartDragIcon(dragIcon);
-    Array.ForEach(_dragTargets, t => SafeCallbacks.Action(t.OnKISDragStart));
+    Array.ForEach(_dragTargets, t => SafeCallbacks.Action(t.OnKisDragStart));
     _dragTracker = new GameObject().AddComponent<DragModeTracker>();
     _dragTracker.controller = this;
     return true;
@@ -218,11 +218,11 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
   }
 
   /// <inheritdoc/>
-  public void RegisterTarget(IKISDragTarget target) {
+  public void RegisterTarget(IKisDragTarget target) {
     if (!_dragTargets.Contains(target)) {
       _dragTargets = _dragTargets.Concat(new[] { target }).ToArray();
       if (isDragging) {
-        SafeCallbacks.Action(target.OnKISDragStart);
+        SafeCallbacks.Action(target.OnKisDragStart);
       }
     } else {
       DebugEx.Warning("Target is already registered: {0}", target);
@@ -230,10 +230,10 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
   }
 
   /// <inheritdoc/>
-  public void UnregisterTarget(IKISDragTarget target) {
+  public void UnregisterTarget(IKisDragTarget target) {
     if (_dragTargets.Contains(target)) {
       if (isDragging) {
-        SafeCallbacks.Action(() => target.OnKISDragEnd(isCancelled: true));
+        SafeCallbacks.Action(() => target.OnKisDragEnd(isCancelled: true));
       }
       _dragTargets = _dragTargets.Where((t, i) => t != target).ToArray();
     } else {
@@ -261,7 +261,7 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
       _dragTracker.CancelLock();
       _dragTracker = null;
     }
-    Array.ForEach(_dragTargets, t => SafeCallbacks.Action(() => t.OnKISDragEnd(isCancelled)));
+    Array.ForEach(_dragTargets, t => SafeCallbacks.Action(() => t.OnKisDragEnd(isCancelled)));
   }
   #endregion
 }

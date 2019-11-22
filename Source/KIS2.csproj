@@ -91,22 +91,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="api\ErrorReason.cs" />
-    <Compile Include="api\IKISDragTarget.cs" />
-    <Compile Include="api\IKISInventory.cs" />
-    <Compile Include="api\IKISItemDragController.cs" />
+    <Compile Include="api\IKisDragTarget.cs" />
+    <Compile Include="api\IKisInventory.cs" />
+    <Compile Include="api\IKisItemDragController.cs" />
     <Compile Include="api\InventoryItem.cs" />
-    <Compile Include="api\KISAPI.cs" />
+    <Compile Include="api\KisApi.cs" />
     <Compile Include="api\Utils\PartIconUtilsImpl.cs" />
     <Compile Include="api\Utils\PartNodeUtilsImpl.cs" />
     <Compile Include="api\Utils\PartModelUtilsImpl.cs" />
     <Compile Include="api_impl\CommonConfigImpl.cs" />
     <Compile Include="api_impl\InventoryItemImpl.cs" />
-    <Compile Include="api_impl\KISItemDragControllerImpl.cs" />
-    <Compile Include="controllers\ModLoadController.cs" />
+    <Compile Include="api_impl\KisItemDragControllerImpl.cs" />
+    <Compile Include="controllers\KisModLoadController.cs" />
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
-    <Compile Include="modules\KISContainerWithSlots.cs" />
-    <Compile Include="modules\KISContainerBase.cs" />
+    <Compile Include="modules\KisContainerWithSlots.cs" />
+    <Compile Include="modules\KisContainerBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -12,30 +12,30 @@ namespace KIS2 {
 
 /// <summary>Initializes the mod and warns if it's not loaded correctly.</summary>
 [KSPAddon(KSPAddon.Startup.Instantly, true /*once*/)]
-public sealed class KISModLoadController : MonoBehaviour {
-  public static bool modIsInconsistent { get; private set; }
+public sealed class KisModLoadController : MonoBehaviour {
+  static bool modIsInconsistent { get; set; }
 
   #region MonoBehaviour overrides
   void Awake() {
-    DebugEx.Info("[KISModLoadController] Start loading configuration...");
+    DebugEx.Info("[KisModLoadController] Start loading configuration...");
     //FIXME: check critical resources location 
     InvokeLoader(() => LoadAsset("ui_prefabs"));
     if (modIsInconsistent) {
-      DebugEx.Error("[KISModLoadController] Loaded with errors!");
+      DebugEx.Error("[KisModLoadController] Loaded with errors!");
     } else {
-      DebugEx.Info("[KISModLoadController] Successfully loaded!");
+      DebugEx.Info("[KisModLoadController] Successfully loaded!");
     }
     //FIXME: show a dialog on the game load if mod loading failed.
   }
   #endregion
 
   #region Local utility methods
-  void InvokeLoader(Action fn) {
+  static void InvokeLoader(Action fn) {
     try {
       fn();
     } catch (Exception ex) {
       modIsInconsistent = true;
-      DebugEx.Error("[KISModLoadController]: {0}", ex);
+      DebugEx.Error("[KisModLoadController]: {0}", ex);
     }
   }
 

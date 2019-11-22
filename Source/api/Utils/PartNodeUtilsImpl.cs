@@ -201,7 +201,7 @@ public class PartNodeUtilsImpl {
       AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
     // TweakScale compatibility
     if (partNode != null) {
-      var tweakScale = KISAPI.PartNodeUtils.GetTweakScaleModule(partNode);
+      var tweakScale = KisApi.PartNodeUtils.GetTweakScaleModule(partNode);
       if (tweakScale != null) {
         var tweakedCost = ConfigAccessor.GetValueByPath<double>(tweakScale, "DryCost");
         if (tweakedCost.HasValue) {

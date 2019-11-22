@@ -86,8 +86,8 @@ public class KisContainerBase : AbstractPartModule,
     double partsVolume = 0;
     for (var i = 0; i < avParts.Length; ++i) {
       var avPart = avParts[i];
-      var node = nodes[i] ?? KISAPI.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-      partsVolume += KISAPI.PartModelUtils.GetPartVolume(avPart, partNode: node);
+      var node = nodes[i] ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
+      partsVolume += KisApi.PartModelUtils.GetPartVolume(avPart, partNode: node);
       //FIXME: Check part size.
     }
     if (usedVolume + partsVolume > maxVolume) {
