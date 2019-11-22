@@ -253,6 +253,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
   #region DEBUG: IHasGUI implementation
   public void OnGUI() {
+    if (_unityWindow == null) {
+      return;
+    }
     // FIXME: drop this debug code.
     if (Event.current.Equals(Event.KeyboardEvent("1")) && _unityWindow != null) {
       AddFuelParts(1, 1, 3);
