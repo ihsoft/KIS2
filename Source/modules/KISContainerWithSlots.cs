@@ -134,6 +134,13 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       + " The <<1>> argument is the number of items being added.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotStoreIntoSlotTooltipText = new Message(
+      "",
+      defaultTemplate: "Cannot store items into slot",
+      description: "The text to show in the title of the slot tooltip when the dragged items can"
+      + " NOT be added into the slot. Only shown when the target slot is empty.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotAddToStackTooltipText = new Message(
       "",
       defaultTemplate: "Cannot add items to stack",
@@ -799,7 +806,9 @@ public sealed class KISContainerWithSlots : KisContainerBase,
           currentTooltip.hints = AddToStackActionHint.Format(AddToStackEvent);
         }
       } else {
-        currentTooltip.title = CannotAddToStackTooltipText;
+        currentTooltip.title = _slotWithPointerFocus.isEmpty
+            ? CannotStoreIntoSlotTooltipText
+            : CannotAddToStackTooltipText;
         if (_canAcceptDraggedItemsCheckResult != null) {
           currentTooltip.baseInfo.text = string.Join(
               "\n",
