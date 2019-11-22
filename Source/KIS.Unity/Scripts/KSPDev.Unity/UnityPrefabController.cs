@@ -7,14 +7,15 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KSPDev.Unity {
 
 /// <summary>Utility class to manage prefabs in Unity.</summary>
 /// <remarks>This class can be accessed from the scripts that run in Unity Editor.</remarks>
-/// <seealso cref="UIPrefabBaseScript"/>
+/// <seealso cref="UiPrefabBaseScript"/>
 public static class UnityPrefabController {
   /// <summary>All the registered prefab instances.</summary>
-  static readonly Dictionary<Type, Dictionary<string, Component>> registeredPrefabs =
+  static readonly Dictionary<Type, Dictionary<string, Component>> RegisteredPrefabs =
       new Dictionary<Type, Dictionary<string, Component>>();
 
   /// <summary>Creates instance from a registered prefab.</summary>
@@ -110,7 +111,7 @@ public static class UnityPrefabController {
   /// <exception cref="ArgumentException">if the prefab cannot be found.</exception>
   /// <seealso cref="RegisterPrefab"/>
   public static Component GetPrefab(Type type, string prefabName = null) {
-    var prefabs = GetPrefabsForType(type, failIfNotFound: true);
+    var prefabs = GetPrefabsForType(type);
     Component prefab;
     if (prefabName == null) {
       if (prefabs.Count > 1) {
@@ -123,14 +124,14 @@ public static class UnityPrefabController {
         throw new ArgumentException($"Prefab not found: type={type}, name={prefabName}");
       }
     }
-    return prefab as Component;
+    return prefab;
   }
 
   #region Local utility methods
   static Dictionary<string, Component> GetPrefabsForType(
       Type prefabType, bool failIfNotFound = true, bool makeIfNotFound = true) {
     Dictionary<string, Component> prefabs;
-    if (!registeredPrefabs.TryGetValue(prefabType, out prefabs)) {
+    if (!RegisteredPrefabs.TryGetValue(prefabType, out prefabs)) {
       if (failIfNotFound) {
         throw new ArgumentException($"No prefabs found for type: {prefabType}");
       }
@@ -138,7 +139,7 @@ public static class UnityPrefabController {
         return null;
       }
       prefabs = new Dictionary<string, Component>();
-      registeredPrefabs[prefabType] = prefabs;
+      RegisteredPrefabs[prefabType] = prefabs;
     }
     return prefabs;
   }

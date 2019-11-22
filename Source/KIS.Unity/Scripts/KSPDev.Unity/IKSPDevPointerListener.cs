@@ -5,6 +5,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+// ReSharper disable once CheckNamespace
 namespace KSPDev.Unity {
 
 /// <summary>Interface for the listeners that need "routed" pointer events.</summary>
@@ -13,7 +14,7 @@ namespace KSPDev.Unity {
 /// were delivered to a specific object that handles them all.
 /// </remarks>
 /// <seealso cref="GenericPointerNotifier&lt;TSource, TTarget&gt;"/>
-public interface IKSPDevPointerListener<in T> {
+public interface IKspDevPointerListener<in T> {
   /// <summary>Defines in what order the components will be handling events.</summary>
   /// <remarks>
   /// When order override is not needed, simply return zero, which is a default that means "main

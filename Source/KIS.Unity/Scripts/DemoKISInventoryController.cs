@@ -2,12 +2,12 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System;
 using KIS2.UIKISInventorySlot;
 using KSPDev.Unity;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>Helper class to debug behavior in Unity.</summary>
@@ -15,7 +15,7 @@ namespace KIS2 {
 /// This class must be removed before making the final prefabs. However, even if it manages to
 /// sneak into the game, it will simply not start there.
 /// </remarks>
-public sealed class DemoKISInventoryController : UIControlBaseScript {
+public sealed class DemoKisInventoryController : UiControlBaseScript {
 
   #region For Unity customization
   [SerializeField]
@@ -35,12 +35,12 @@ public sealed class DemoKISInventoryController : UIControlBaseScript {
   #endregion
 
   #region Local fields and properties
-  UIKISInventoryWindow unityWindow;
+  UiKisInventoryWindow _unityWindow;
   #endregion
 
   #region MonoBehaviour overrides
   void Awake() {
-    unityWindow = GetComponent<UIKISInventoryWindow>();
+    _unityWindow = GetComponent<UiKisInventoryWindow>();
   }
 
   void Start() {
@@ -48,14 +48,14 @@ public sealed class DemoKISInventoryController : UIControlBaseScript {
       enabled = false;
       return;
     }
-    if (!unityWindow.isPrefab) {
-      unityWindow.onSlotHover.Add(OnSlotHover);
-      unityWindow.onSlotClick.Add(OnSlotClick);
-      unityWindow.onSlotAction.Add(OnSlotAction);
-      unityWindow.onNewGridSize.Add(OnSizeChanged);
-      unityWindow.minSize = minSize;
-      unityWindow.maxSize = maxSize;
-      unityWindow.SetGridSize(minSize);
+    if (!_unityWindow.isPrefab) {
+      _unityWindow.onSlotHover.Add(OnSlotHover);
+      _unityWindow.onSlotClick.Add(OnSlotClick);
+      _unityWindow.onSlotAction.Add(OnSlotAction);
+      _unityWindow.onNewGridSize.Add(OnSizeChanged);
+      _unityWindow.minSize = minSize;
+      _unityWindow.maxSize = maxSize;
+      _unityWindow.SetGridSize(minSize);
     }
   }
   #endregion
@@ -64,7 +64,7 @@ public sealed class DemoKISInventoryController : UIControlBaseScript {
   void OnSlotHover(Slot slot, bool isHover) {
     LogInfo("Pointer hover: slot={0}, isHover={1}", slot.slotIndex, isHover);
     if (isHover) {
-      var tooltip = unityWindow.StartSlotTooltip();
+      var tooltip = _unityWindow.StartSlotTooltip();
       tooltip.title = hintTitle;
       tooltip.UpdateLayout();
     }

@@ -7,11 +7,12 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>UI class to represent an inventory slot while it's being dragged.</summary>
 /// <remarks>All elements in the prefab will become non-raycast targets on init.</remarks>
-public sealed class UIKISInventorySlotDragIcon : UIPrefabBaseScript {
+public sealed class UiKisInventorySlotDragIcon : UiPrefabBaseScript {
 
   #region Unity serialized fields
   [SerializeField]

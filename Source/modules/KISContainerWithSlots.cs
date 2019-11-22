@@ -196,7 +196,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
 
   #region Local fields and properties.
   /// <summary>Inventory window that is opened at the moment.</summary>
-  UIKISInventoryWindow _unityWindow;
+  UiKisInventoryWindow _unityWindow;
 
   /// <summary>Inventory slots.</summary>
   /// <remarks>Some or all slots may not be represented in the UI.</remarks>
@@ -443,7 +443,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
       return; // Nothing to do.
     }
     HostedDebugLog.Fine(this, "Creating inventory window");
-    _unityWindow = UnityPrefabController.CreateInstance<UIKISInventoryWindow>(
+    _unityWindow = UnityPrefabController.CreateInstance<UiKisInventoryWindow>(
         "KISInventoryDialog", UIMasterController.Instance.actionCanvas.transform);
 
     // TODO(ihsoft): Fix it in the prefab via TMPro.
@@ -789,7 +789,7 @@ public sealed class KISContainerWithSlots : KisContainerBase,
     if (_slotWithPointerFocus == null || currentTooltip == null) {
       return;
     }
-    currentTooltip.ClearInfoFileds();
+    currentTooltip.ClearInfoFields();
     currentTooltip.gameObject.SetActive(false);
     if (KISAPI.ItemDragController.isDragging && _slotWithPointerFocus != _dragSourceSlot) {
       currentTooltip.gameObject.SetActive(true);

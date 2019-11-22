@@ -2,10 +2,10 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using KSPDev.Unity;
 using System.Collections;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KSPDev.Unity {
 
 /// <summary>
@@ -15,7 +15,7 @@ namespace KSPDev.Unity {
 /// It automatically registers the asset as prefab. It also takes care of the editor case. Either
 /// add this script as-is to the target assembly root object, or inherit from it if you need type
 /// specification. In the latter case you'll be able to make instances by the final type instead of
-/// requesting <see cref="UIPrefabBaseScript"/> with different prefab names.
+/// requesting <see cref="UiPrefabBaseScript"/> with different prefab names.
 /// </remarks>
 /// <example>
 /// <para>
@@ -33,8 +33,8 @@ namespace KSPDev.Unity {
 /// var newObj2 = UnityPrefabController.CreateInstance&lt;MyType&gt;("name2");
 /// </code>
 /// </example>
-/// <seealso cref="IKSPDevUnityPrefab"/>
-public abstract class UIPrefabBaseScript : UIControlBaseScript, IKSPDevUnityPrefab {
+/// <seealso cref="IKspDevUnityPrefab"/>
+public abstract class UiPrefabBaseScript : UiControlBaseScript, IKspDevUnityPrefab {
 
   #region Unity serialized fields
   /// <summary>
@@ -47,7 +47,7 @@ public abstract class UIPrefabBaseScript : UIControlBaseScript, IKSPDevUnityPref
   /// <summary>Name under which the prefab is to be registered.</summary>
   /// <seealso cref="UnityPrefabController.RegisterPrefab"/>
   [SerializeField]
-  string prefabName = null;
+  string prefabName;
   #endregion
 
   #region IKSPDevUnityPrefab implemenation
@@ -62,14 +62,14 @@ public abstract class UIPrefabBaseScript : UIControlBaseScript, IKSPDevUnityPref
   #endregion
 
   #region MonoBehaviour implementations
-  /// <inheritdoc/>
+  /// <summary>Initializes the prefab.</summary>
   public virtual void Awake() {
     if (!isPrefab && !UnityPrefabController.IsPrefabRegistered(this, prefabName)) {
       isPrefab = true;
     }
   }
 
-  /// <inheritdoc/>
+  /// <summary>Handles editor logic.</summary>
   public virtual void Start() {
     if (Application.isEditor) {
       EditorStart();

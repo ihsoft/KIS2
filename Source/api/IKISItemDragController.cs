@@ -40,7 +40,7 @@ public interface IKISItemDragController {
   /// </remarks>
   /// <value>The object or <c>null</c> if nothing is being dragged.</value>
   /// <seealso cref="isDragging"/>
-  UIKISInventorySlotDragIcon dragIconObj { get; }
+  UiKisInventorySlotDragIcon dragIconObj { get; }
 
   /// <summary>Offers items for the dragging.</summary>
   /// <remarks>

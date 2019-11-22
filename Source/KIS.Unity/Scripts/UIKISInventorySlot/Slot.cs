@@ -3,14 +3,15 @@
 // License: Public Domain
 
 using KSPDev.Unity;
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KIS2.UIKISInventorySlot {
 
 /// <summary>Controller for a KIS inventory slot.</summary>
-public sealed class Slot : UIControlBaseScript {
+public sealed class Slot : UiControlBaseScript {
   #region Unity serialized fields
   [SerializeField]
   RawImage partImage = null;
@@ -36,9 +37,7 @@ public sealed class Slot : UIControlBaseScript {
 
   #region API properties and fields
   /// <summary>Zero based index of the slot.</summary>
-  public int slotIndex {
-    get { return transform.GetSiblingIndex(); }
-  }
+  public int slotIndex => transform.GetSiblingIndex();
 
   /// <summary>Image to show as the slot's background.</summary>
   /// <remarks>If set to <c>null</c>, then the background is transparent.</remarks>
@@ -96,7 +95,7 @@ public sealed class Slot : UIControlBaseScript {
     hasScience = false;
     isLocked = false;
     while (bottomControlsGrid.transform.childCount > 0) {
-      HierarchyUtils.SafeDestory(bottomControlsGrid.transform.GetChild(0));
+      HierarchyUtils.SafeDestroy(bottomControlsGrid.transform.GetChild(0));
     }
   }
 
@@ -105,7 +104,7 @@ public sealed class Slot : UIControlBaseScript {
   /// This will be a base state to create a new slot in the game. It only makes sense to call this
   /// method during the prefab initialization phase.
   /// </remarks>
-  /// <seealso cref="UIPrefabBaseScript"/>
+  /// <seealso cref="UiPrefabBaseScript"/>
   public void InitPrefab() {
     //FIXME: Capture the first button as prefab.  
     ClearContent();

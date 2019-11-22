@@ -17,8 +17,8 @@ namespace KIS2 {
 /// <summary>
 /// Unity class that controls KIS inventory layout and its basic GUI functionality.
 /// </summary>
-public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
-    IKSPDevPointerListener<Slot> {
+public sealed class UiKisInventoryWindow : UiPrefabBaseScript,
+    IKspDevPointerListener<Slot> {
   #region Unity serialized fields
   [SerializeField]
   Text headerText = null;
@@ -30,10 +30,10 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   GridLayoutGroup slotsGrid = null;
 
   [SerializeField]
-  UIKISHorizontalSliderControl sizeColumnsSlider = null;
+  UiKisHorizontalSliderControl sizeColumnsSlider = null;
 
   [SerializeField]
-  UIKISHorizontalSliderControl sizeRowsSlider = null;
+  UiKisHorizontalSliderControl sizeRowsSlider = null;
   #endregion
 
   #region Callback handlers
@@ -225,7 +225,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     firstSlot.InitPrefab();
     firstSlot.gameObject.SetActive(false);
     while (slotsGrid.transform.childCount > 1) {
-      HierarchyUtils.SafeDestory(slotsGrid.transform.GetChild(1));
+      HierarchyUtils.SafeDestroy(slotsGrid.transform.GetChild(1));
     }
     slotsGrid.gameObject.SetActive(false);
     return true;
@@ -260,7 +260,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
 
   #region Unity only listeners
   /// <summary>Not for external usage!</summary>
-  public void OnSizeChanged(UIKISHorizontalSliderControl slider) {
+  public void OnSizeChanged(UiKisHorizontalSliderControl slider) {
     // Restore sliders to the original values and expect the proper positions set in SetGridSize.
     var newSize = new Vector2(sizeColumnsSlider.value, sizeRowsSlider.value);
     SetGridSize(newSize);
@@ -293,7 +293,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
   /// <summary>Destroys the tooltip if one exists.</summary>
   /// <remarks>It's a cleanup method. It never throws errors.</remarks>
   public void DestroySlotTooltip() {
-    HierarchyUtils.SafeDestory(currentTooltip);
+    HierarchyUtils.SafeDestroy(currentTooltip);
     currentTooltip = null;
   }
 
@@ -357,7 +357,7 @@ public sealed class UIKISInventoryWindow : UIPrefabBaseScript,
     if (hoveredSlot != null && slotObj == hoveredSlot.gameObject) {
       hoveredSlot = null;
     }
-    HierarchyUtils.SafeDestory(slotObj);
+    HierarchyUtils.SafeDestroy(slotObj);
   }
 
   Slot AddSlotAtEnd() {

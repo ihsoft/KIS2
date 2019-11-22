@@ -2,12 +2,11 @@
 // Author: igor.zavoychinskiy@gmail.com
 // This software is distributed under Public domain license.
 
-using KSPDev.Unity;
 using System;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ReSharper disable once CheckNamespace
 namespace KSPDev.Unity {
 
 /// <summary>Script that tracks mouse position and aligns the control to it.</summary>
@@ -16,7 +15,7 @@ namespace KSPDev.Unity {
 /// set the desired offsets and clamping mode.
 /// <para>The position is aligned with respect to the owners pivot point.</para>
 /// </remarks>
-public sealed class UIFollowThePointerScript : UIControlBaseScript {
+public sealed class UiFollowThePointerScript : UiControlBaseScript {
 
   #region API fields an properties
   /// <summary>
@@ -46,34 +45,34 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
   /// <summary>Tells if any of the children in this assembly should be a ray cast target.</summary>
   /// <remarks>
   /// Normally, the controls that follow pointer should not be raycast targets, since it could
-  /// create an interferrence.
+  /// create an interference.
   /// </remarks>
-  public bool NoRaycastTargets;
+  public bool noRaycastTargets;
   #endregion
 
   #region Local fields
-  Canvas canvas;
-  RectTransform canvasRect;
-  Vector3 lastPointerPosition = -Vector2.one;
-  Vector2 lastControlSize = -Vector2.one;
+  Canvas _canvas;
+  RectTransform _canvasRect;
+  Vector3 _lastPointerPosition = -Vector2.one;
+  Vector2 _lastControlSize = -Vector2.one;
   #endregion
 
   #region MonoBehaviour callbacks
   void Awake() {
-    canvas = GetComponentInParent<Canvas>();
-    canvasRect = canvas.transform as RectTransform;
+    _canvas = GetComponentInParent<Canvas>();
+    _canvasRect = _canvas.transform as RectTransform;
   }
 
   void Start() {
-    if (NoRaycastTargets) {
+    if (noRaycastTargets) {
       Array.ForEach(gameObject.GetComponentsInChildren<Graphic>(), x => x.raycastTarget = false);
     }
   }
 
   void LateUpdate() {
-    if (lastPointerPosition != Input.mousePosition || lastControlSize != mainRect.sizeDelta) {
-      lastPointerPosition = Input.mousePosition;
-      lastControlSize = mainRect.sizeDelta;
+    if (_lastPointerPosition != Input.mousePosition || _lastControlSize != mainRect.sizeDelta) {
+      _lastPointerPosition = Input.mousePosition;
+      _lastControlSize = mainRect.sizeDelta;
       PositionToPointer();
     }
   }
@@ -82,7 +81,7 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
   #region Local utility methods
   void PositionToPointer() {
     var tooltipSize = mainRect.sizeDelta;
-    var canvasSize = canvasRect.sizeDelta;
+    var canvasSize = _canvasRect.sizeDelta;
     var newPos = Input.mousePosition;
     if (clampToScreen) {
       if (newPos.x + nonClampedPointerOffset.x + tooltipSize.x < Screen.width) {
@@ -98,8 +97,8 @@ public sealed class UIFollowThePointerScript : UIControlBaseScript {
     }
     Vector2 pos;
     RectTransformUtility.ScreenPointToLocalPointInRectangle(
-        canvasRect, newPos, canvas.worldCamera, out pos);
-    mainRect.position = canvas.transform.TransformPoint(pos);
+        _canvasRect, newPos, _canvas.worldCamera, out pos);
+    mainRect.position = _canvas.transform.TransformPoint(pos);
   }
   #endregion
 }

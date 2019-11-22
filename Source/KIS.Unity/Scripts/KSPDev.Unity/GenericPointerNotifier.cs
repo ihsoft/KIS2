@@ -2,11 +2,11 @@
 // Author: igor.zavoychinskiy@gmail.com
 // This software is distributed under Public domain license.
 
-using KSPDev.Unity;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+// ReSharper disable once CheckNamespace
 namespace KSPDev.Unity {
 
 /// <summary>Component that routes pointer events to another component.</summary>
@@ -29,11 +29,11 @@ namespace KSPDev.Unity {
 /// <typeparam name="TTarget">
 /// Component type of the <c>sink</c>. The game object of this component will be receiving the
 /// routed events. Only the components that implement
-/// <see cref="IKSPDevPointerListener&lt;TSource&gt;"/> interface will receive the events.
+/// <see cref="IKspDevPointerListener{T}"/> interface will receive the events.
 /// </typeparam>
 /// <seealso cref="eventSource"/>
 /// <seealso cref="eventTarget"/>
-public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
+public class GenericPointerNotifier<TSource, TTarget> : UiControlBaseScript,
     IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     where TSource : Component
     where TTarget : Component {
@@ -58,16 +58,16 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   #endregion
 
   #region Local fields and properties
-  IKSPDevPointerListener<TSource>[] listeners;
+  IKspDevPointerListener<TSource>[] _listeners;
   #endregion
 
   #region MonoBehaviour methods
-  /// <inheritdoc/>
+  /// <summary>Initializes listeners from the target.</summary>
   protected virtual void Start() {
-    listeners = eventTarget.GetComponents<IKSPDevPointerListener<TSource>>()
+    _listeners = eventTarget.GetComponents<IKspDevPointerListener<TSource>>()
         .OrderBy(l => l.priority)
         .ToArray();
-    if (listeners.Length == 0) {
+    if (_listeners.Length == 0) {
       LogWarning("No listeners found");
     }
   }
@@ -77,8 +77,8 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   /// <inheritdoc/>
   public virtual void OnPointerClick(PointerEventData eventData) {
     lastPointerData = eventData;
-    for (var i = 0; i < listeners.Length; ++i) {
-      listeners[i].OnPointerButtonClick(gameObject, eventSource, eventData);
+    foreach (var t in _listeners) {
+      t.OnPointerButtonClick(gameObject, eventSource, eventData);
     }
   }
   #endregion
@@ -88,8 +88,8 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   public virtual void OnPointerEnter(PointerEventData eventData) {
     isHovered = true;
     lastPointerData = eventData;
-    for (var i = 0; i < listeners.Length; ++i) {
-      listeners[i].OnPointerEnter(gameObject, eventSource, eventData);
+    foreach (var t in _listeners) {
+      t.OnPointerEnter(gameObject, eventSource, eventData);
     }
   }
   #endregion
@@ -99,8 +99,8 @@ public class GenericPointerNotifier<TSource, TTarget> : UIControlBaseScript,
   public virtual void OnPointerExit(PointerEventData eventData) {
     isHovered = false;
     lastPointerData = eventData;
-    for (var i = 0; i < listeners.Length; ++i) {
-      listeners[i].OnPointerExit(gameObject, eventSource, eventData);
+    foreach (var t in _listeners) {
+      t.OnPointerExit(gameObject, eventSource, eventData);
     }
   }
   #endregion

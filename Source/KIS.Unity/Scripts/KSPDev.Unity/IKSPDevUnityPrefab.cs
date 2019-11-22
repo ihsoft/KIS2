@@ -2,6 +2,8 @@
 // Author: igor.zavoychinskiy@gmail.com
 // This software is distributed under Public domain license.
 
+// ReSharper disable once CheckNamespace
+
 namespace KSPDev.Unity {
 
 /// <summary>
@@ -12,12 +14,12 @@ namespace KSPDev.Unity {
 /// via reflections or Unity messaging, so this interface is a "sugar" interface.
 /// <para>KSPDev calls the init method via reflections.</para>
 /// </remarks>
-/// <seealso cref="UIPrefabBaseScript"/>
-public interface IKSPDevUnityPrefab {
+/// <seealso cref="UiPrefabBaseScript"/>
+public interface IKspDevUnityPrefab {
   /// <summary>Tells if this object is a prefab.</summary>
   bool isPrefab { get; }
 
-  /// <summary>Called by the game on load or by Unity Edtior on the first object start.</summary>
+  /// <summary>Called by the game on load or by Unity Editor on the first object start.</summary>
   /// <remarks>
   /// This method should register the instance as a prefab in the
   /// <see cref="UnityPrefabController"/>. In a trivial case, the instance is simply passed to the
@@ -38,7 +40,7 @@ public interface IKSPDevUnityPrefab {
   /// </para>
   /// </remarks>
   /// <returns>
-  /// <c>true</c> if a new prefab has been registered. This value is intended for the decscendants
+  /// <c>true</c> if a new prefab has been registered. This value is intended for the descendants
   /// so that know if their logic should kick in. 
   /// </returns>
   /// <seealso cref="UnityPrefabController.RegisterPrefab"/>

@@ -3,14 +3,15 @@
 // License: Public Domain
 
 using KSPDev.Unity;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KIS2.UIKISInventoryTooltip {
 
 /// <summary>
-/// Tooltip window class to show key info about a KSP part. It can automatiaclly follow mouse cursor
+/// Tooltip window class to show key info about a KSP part. It can automatically follow mouse cursor
 /// or be statically attached to a control.
 /// </summary>
 /// <remarks>
@@ -24,7 +25,7 @@ namespace KIS2.UIKISInventoryTooltip {
 /// </para>
 /// </remarks>
 /// <seealso cref="InfoPanel"/>
-public sealed class Tooltip : UIPrefabBaseScript {
+public sealed class Tooltip : UiPrefabBaseScript {
 
   #region Unity serialized fields
   [SerializeField]
@@ -61,7 +62,7 @@ public sealed class Tooltip : UIPrefabBaseScript {
     }
   }
 
-  /// <summary>GUI hints, applicable to the tooltip's object. Rich text is supported.</summary>
+  /// <summary>GUI hints, applicable to the tooltip object. Rich text is supported.</summary>
   /// <remarks>Can be set to empty string to hide the control.</remarks>
   /// <seealso cref="showHints"/>
   public string hints {
@@ -73,24 +74,16 @@ public sealed class Tooltip : UIPrefabBaseScript {
   }
 
   /// <summary>Basic part's information.</summary>
-  public InfoPanel baseInfo {
-    get { return baseInfoPanel; }
-  }
+  public InfoPanel baseInfo => baseInfoPanel;
 
   /// <summary>Available resources on the part.</summary>
-  public InfoPanel availableResourcesInfo {
-    get { return resourcesInfoPanel; }
-  }
+  public InfoPanel availableResourcesInfo => resourcesInfoPanel;
 
   /// <summary>Resources that are required by the part.</summary>
-  public InfoPanel requiredResourcesInfo {
-    get { return requiresInfoPanel; }
-  }
+  public InfoPanel requiredResourcesInfo => requiresInfoPanel;
 
   /// <summary>Available science in the part.</summary>
-  public InfoPanel availableScienceInfo {
-    get { return scienceInfoPanel; }
-  }
+  public InfoPanel availableScienceInfo => scienceInfoPanel;
 
   /// <summary>Width of the client area of the tooltip.</summary>
   /// <remarks>
@@ -122,7 +115,7 @@ public sealed class Tooltip : UIPrefabBaseScript {
     if (!base.InitPrefab()) {
       return false;
     }
-    ClearInfoFileds();
+    ClearInfoFields();
     hints = null;
     return true;
   }
@@ -130,8 +123,7 @@ public sealed class Tooltip : UIPrefabBaseScript {
 
   #region API methods
   /// <summary>Clears all fields except the hints one.</summary>
-  /// FIXME: on all fields cleared, hide the tooltip
-  public void ClearInfoFileds() {
+  public void ClearInfoFields() {
     title = null;
     baseInfo.text = null;
     availableResourcesInfo.text = null;
@@ -140,12 +132,12 @@ public sealed class Tooltip : UIPrefabBaseScript {
   }
   
   /// <summary>
-  /// Updates tooltip's perferred size to make the best fit, given the current content.
+  /// Updates tooltip preferred size to make the best fit, given the current content.
   /// </summary>
   /// <remarks>
-  /// There is a special case when tooltip only has a title. In this case the window is shrinked
-  /// so that it takes minimum possible rect. In the other cases the window is resized to the
-  /// preffered size defined in prefab.
+  /// There is a special case when tooltip only has a title. In this case the window size is reduced
+  /// so that it takes the minimum possible rect. In the other cases the window is resized to the
+  /// preferred size defined in prefab.
   /// </remarks>
   /// <seealso cref="preferredContentWidth"/>
   public void UpdateLayout() {

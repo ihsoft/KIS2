@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+// ReSharper disable once CheckNamespace
 namespace KSPDev.Unity {
 
 /// <summary>
@@ -16,9 +17,10 @@ namespace KSPDev.Unity {
 /// Add this script to the main window object. Optionally, specify the control that will be
 /// "draggable" (it's usually a window header).
 /// </remarks>
-/// <seealso cref="IKSPDevUnityControlChanged"/>
-public class UIWindowDragControllerScript : UIControlBaseScript,
-    IKSPDevUnityControlChanged,
+/// <seealso cref="IKspDevUnityControlChanged"/>
+// ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
+public class UiWindowDragControllerScript : UiControlBaseScript,
+    IKspDevUnityControlChanged,
     IBeginDragHandler, IEndDragHandler, IDragHandler,
     IPointerDownHandler, IEventSystemHandler {
 
@@ -49,13 +51,9 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
 
   #region Inheritable fields and properties
   /// <summary>Game object that captures drag events for the window.</summary>
-  protected GameObject eventsTarget {
-    get {
-      // Don NOT optimize this call! Unity won't like it.
-      // disable once ConvertConditionalTernaryToNullCoalescing
-      return eventsTargetControl != null ? eventsTargetControl : mainRect.gameObject;
-    }
-  }
+  /// <remarks>Don NOT optimize this call! Unity won't like it.</remarks>
+  protected GameObject eventsTarget =>
+      eventsTargetControl != null ? eventsTargetControl : mainRect.gameObject;
   #endregion
 
   #region IBeginDragHandler implementation
@@ -121,8 +119,10 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
     LayoutRebuilder.ForceRebuildLayoutImmediate(mainRect);
     var parentDragRect = transform.parent.GetComponent<RectTransform>();
     var newPosition = mainRect.localPosition;
-    var minPos = parentDragRect.rect.min + windowClampOffset - mainRect.rect.min;
-    var maxPos = parentDragRect.rect.max - windowClampOffset - mainRect.rect.max;
+    var parentRc = parentDragRect.rect;
+    var mainRc = mainRect.rect;
+    var minPos = parentRc.min + windowClampOffset - mainRc.min;
+    var maxPos = parentRc.max - windowClampOffset - mainRc.max;
     if (minPos.y > maxPos.y) {
       var y = minPos.y;
       minPos.y = maxPos.y;
@@ -133,9 +133,10 @@ public class UIWindowDragControllerScript : UIControlBaseScript,
       minPos.x = maxPos.x;
       maxPos.x = x;
     }
-    newPosition.x = Mathf.Clamp(mainRect.localPosition.x, minPos.x, maxPos.x);
-    newPosition.y = Mathf.Clamp(mainRect.localPosition.y, minPos.y, maxPos.y);
-    var res = mainRect.localPosition != newPosition;
+    var localPosition = mainRect.localPosition;
+    newPosition.x = Mathf.Clamp(localPosition.x, minPos.x, maxPos.x);
+    newPosition.y = Mathf.Clamp(localPosition.y, minPos.y, maxPos.y);
+    var res = localPosition != newPosition;
     mainRect.localPosition = newPosition;
     return res;
   }

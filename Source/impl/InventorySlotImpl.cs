@@ -364,7 +364,7 @@ internal sealed class InventorySlotImpl {
   /// <summary>Fills tooltip with the slot info.</summary>
   /// <remarks>If the slot is empty, then all info fields are erased.</remarks>
   public void UpdateTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    tooltip.ClearInfoFileds();
+    tooltip.ClearInfoFields();
     if (isEmpty) {
       return;
     }

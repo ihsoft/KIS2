@@ -72,21 +72,21 @@
     <Compile Include="Scripts\DemoKISInventoryController.cs" />
     <Compile Include="Scripts\KSPDev.Unity\GenericPointerNotifier.cs" />
     <Compile Include="Scripts\KSPDev.Unity\HierarchyUtils.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\IKSPDevPointerListener.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\IKSPDevUnityPrefab.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\UIControlBaseScript.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\IKSPDevUnityControlChanged.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\UIFollowThePointerScript.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\UIPrefabBaseScript.cs" />
-    <Compile Include="Scripts\KSPDev.Unity\UIWindowDragControllerScript.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\IKspDevPointerListener.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\IKspDevUnityPrefab.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\UiControlBaseScript.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\IKspDevUnityControlChanged.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\UiFollowThePointerScript.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\UiPrefabBaseScript.cs" />
+    <Compile Include="Scripts\KSPDev.Unity\UiWindowDragControllerScript.cs" />
     <Compile Include="Scripts\KSPDev.Unity\UnityPrefabController.cs" />
-    <Compile Include="Scripts\UIKISHorizontalSliderControl.cs" />
-    <Compile Include="Scripts\UIKISInventorySlotDragIcon.cs" />
+    <Compile Include="Scripts\UiKisHorizontalSliderControl.cs" />
+    <Compile Include="Scripts\UiKisInventorySlotDragIcon.cs" />
     <Compile Include="Scripts\UIKISInventorySlot\Slot.cs" />
     <Compile Include="Scripts\UIKISInventorySlot\PointerNotifier.cs" />
     <Compile Include="Scripts\UIKISInventoryTooltip\InfoPanel.cs" />
     <Compile Include="Scripts\UIKISInventoryTooltip\Tooltip.cs" />
-    <Compile Include="Scripts\UIKISInventoryWindow.cs" />
+    <Compile Include="Scripts\UiKisInventoryWindow.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Scripts" />

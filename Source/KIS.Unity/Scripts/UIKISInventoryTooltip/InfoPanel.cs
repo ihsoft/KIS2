@@ -6,11 +6,13 @@ using KSPDev.Unity;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KIS2.UIKISInventoryTooltip {
 
-/// <summary>Basic element of the tootltip.</summary>
+/// <summary>Basic element of the tooltip.</summary>
 /// <seealso cref="Tooltip"/>
-public sealed class InfoPanel : UIControlBaseScript {
+public sealed class InfoPanel : UiControlBaseScript {
   #region Unity serialized fields
   [SerializeField]
   Text captionText = null;

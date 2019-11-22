@@ -6,10 +6,11 @@ using KSPDev.Unity;
 using UnityEngine;
 using UnityEngine.UI;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>KSP alike range value selection control.</summary>
-public sealed class UIKISHorizontalSliderControl : UIControlBaseScript {
+public sealed class UiKisHorizontalSliderControl : UiControlBaseScript {
   #region Unity serialized fields
   [SerializeField]
   Slider sliderControl = null;

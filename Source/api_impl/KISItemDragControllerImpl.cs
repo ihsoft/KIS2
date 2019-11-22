@@ -124,14 +124,14 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
   public InventoryItem[] leasedItems { get; private set; }
 
   /// <inheritdoc/>
-  public UIKISInventorySlotDragIcon dragIconObj {
+  public UiKisInventorySlotDragIcon dragIconObj {
     get { return _dragIconObj; }
     private set {
       Hierarchy.SafeDestory(_dragIconObj);
       _dragIconObj = value;
     }
   }
-  UIKISInventorySlotDragIcon _dragIconObj;
+  UiKisInventorySlotDragIcon _dragIconObj;
   #endregion
 
   #region Local constants, properties and fields
@@ -246,7 +246,7 @@ internal sealed class KISItemDragControllerImpl : IKISItemDragController  {
   /// <summary>Creates a drag icon object.</summary>
   /// <param name="dragIcon">The icon to show in the object.</param>
   void StartDragIcon(Texture dragIcon) {
-    dragIconObj = UnityPrefabController.CreateInstance<UIKISInventorySlotDragIcon>(
+    dragIconObj = UnityPrefabController.CreateInstance<UiKisInventorySlotDragIcon>(
         "KISDragIcon", UIMasterController.Instance.actionCanvas.transform);
     dragIconObj.slotImage = dragIcon;
   }

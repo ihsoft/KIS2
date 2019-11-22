@@ -4,13 +4,14 @@
 
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KSPDev.Unity {
 
 /// <summary>
 /// Base class of the Unity UI scripts that offers basic logging functionality and some convenience
 /// properties.
 /// </summary>
-public class UIControlBaseScript : MonoBehaviour {
+public class UiControlBaseScript : MonoBehaviour {
 
   /// <summary>UI transform rect of this control.</summary>
   public RectTransform mainRect {
