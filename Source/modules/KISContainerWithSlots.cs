@@ -300,12 +300,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (!base.DeleteItems(deleteItems)) {
       return false;
     }
-    //FIXME: group by slot to effectively delete many items from one slot.
-    foreach (var deleteItem in deleteItems) {
-      var slot = _itemToSlotMap[deleteItem];
-      slot.DeleteItems(new[] {deleteItem});
-      _itemToSlotMap.Remove(deleteItem);
+    var groupedBySlot = deleteItems
+        .GroupBy(x => _itemToSlotMap[x])
+        .ToDictionary(g => g.Key, g => g.ToArray());
+    foreach (var slot in groupedBySlot.Keys) {
+      slot.DeleteItems(groupedBySlot[slot]); // This updates UI, so can be expensive if not batched.
     }
+    Array.ForEach(deleteItems, x => _itemToSlotMap.Remove(x)); 
     ArrangeSlots();
     CheckCanAcceptDrops();
     UpdateTooltip();
