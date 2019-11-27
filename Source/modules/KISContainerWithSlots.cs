@@ -164,7 +164,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #region GUI menu action handlers
   [KSPEvent(guiActive = true, guiActiveUnfocused = true)]
   [LocalizableItem(
-      tag = "",
+      tag = "#01",
       defaultTemplate = "KISv2: Inventory",
       description = "A context menu event that opens GUI for the inventory.")]
   public void ShowInventory() {
