@@ -436,6 +436,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Callback when the slots grid size has changed.</summary>
   void OnGridSizeChanged() {
+    persistedGridSize = _unityWindow.gridSize;
     ArrangeSlots();  // Trigger compaction if there are invisible items.
   }
   #endregion
