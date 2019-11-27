@@ -426,7 +426,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Callback that is called when the slots grid is trying to resize.</summary>
   Vector2 OnNewGridSize(Vector2 newSize) {
-    //FIXME: check if not below non-empty slots
+    newSize = new Vector3(
+        Mathf.Min(Mathf.Max(newSize.x, minGridSize.x), maxGridSize.x),
+        Mathf.Min(Mathf.Max(newSize.y, minGridSize.y), maxGridSize.y),
+        0);
+    //FIXME: check if not slots become invisible.
     return newSize;
   }
 
