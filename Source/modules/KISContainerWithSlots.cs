@@ -710,10 +710,53 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       UnregisterSlotHoverCallback();
     }
 
+    var needFullDefrag = false;
+
+    // Add/remove columns in a user friendly manner.
+    if (newSlotGridWidth > slotGridWidth) {
+      // Pad each line with extra empty slot(s) at the right side of the grid.
+      // Skip the last line and let it be arranged for the invisible slots. 
+      var slotsToInsert = newSlotGridWidth - slotGridWidth;
+      for (var j = 0; j < slotGridHeight - 1; j++) {
+        for (var i = 0; i < slotsToInsert; i++) {
+          _inventorySlots.Insert(j * newSlotGridWidth + slotGridWidth, new InventorySlotImpl(null));
+        }
+      }
+    } else if (newSlotGridWidth < slotGridWidth) {
+      // Remove columns from the right and compact the items in the line when it overflows.
+      // Trigger full de-fragmentation if any of the lines cannot hold all the items.  
+      var slotsToDelete = slotGridWidth - newSlotGridWidth;
+      for (var j = slotGridHeight - 1; j >= 0; j--) {
+        var slotsDeleted = 0;
+        for (var i = slotGridWidth - 1; i >= 0 && slotsDeleted < slotsToDelete; i--) {
+          var slotIndex = j * slotGridWidth + i;
+          if (_inventorySlots[slotIndex].isEmpty) {
+            _inventorySlots.RemoveAt(slotIndex);
+            slotsDeleted++;
+          }
+        }
+        needFullDefrag |= slotsDeleted != slotsToDelete;
+      }
+      if (needFullDefrag) {
+        HostedDebugLog.Fine(this, "Inventory de-fragmentation triggered");
+      }
+    }
+
+    // Add/remove rows in a user friendly manner..
+    if (newSlotGridHeight < slotGridHeight && !needFullDefrag) {
+      // Trivial implementation. Just make full defrag if a line going to be consumed.  
+      needFullDefrag = _inventorySlots
+          .Skip((slotGridHeight - 1) * slotGridWidth)
+          .Take(slotGridWidth)
+          .Any(x => !x.isEmpty);
+    }
+
     // Compact empty slots when there are hidden slots in the inventory. This may let some of the
     // hidden slots to become visible. 
     var visibleSlots = _unityWindow.slots.Length;
-    for (var i = _inventorySlots.Count - 1; i >= 0 && _inventorySlots.Count > visibleSlots; --i) {
+    for (var i = _inventorySlots.Count - 1;
+         i >= 0 && (_inventorySlots.Count > visibleSlots || needFullDefrag);
+         --i) {
       if (!_inventorySlots[i].isEmpty) {
         continue; 
       }
@@ -721,7 +764,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         _inventorySlots.RemoveAt(i); // Simple cleanup, do it silently. 
       } else {
         // Cleanup of a visible empty slot. The inventory layout will change.
-        HostedDebugLog.Warning(this, "Compact an empty slot: slotIdx={0}", i);
+        HostedDebugLog.Warning(
+            this, "Cleanup an empty slot during de-fragmentation: slotIdx={0}", i);
         _inventorySlots.RemoveAt(i);
       }
     }
