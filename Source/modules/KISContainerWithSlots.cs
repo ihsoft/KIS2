@@ -488,7 +488,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     HostedDebugLog.Fine(this, "Destroying inventory window");
     Hierarchy.SafeDestory(_unityWindow);
     _unityWindow = null;
-    // Immediately make all slots invisible. Don't relay on Unity cleanup routines.  
+    // Immediately make all slots invisible. Don't rely on Unity cleanup routines.  
     _inventorySlots.ForEach(x => x.BindTo(null));
   } 
 
