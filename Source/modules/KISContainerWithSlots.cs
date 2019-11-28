@@ -158,9 +158,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Part's persistant fields
+  /// <summary>Current width of the slots grid.</summary>
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField(isPersistant = true)]
-  public Vector2 persistedGridSize;
+  public int slotGridWidth;
+
+  /// <summary>Current height of the slots grid.</summary>
+  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
+  [KSPField(isPersistant = true)]
+  public int slotGridHeight;
   #endregion
 
   #region GUI menu action handlers
@@ -440,7 +446,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Callback when the slots grid size has changed.</summary>
   void OnGridSizeChanged() {
-    persistedGridSize = _unityWindow.gridSize;
     ArrangeSlots();  // Trigger compaction if there are invisible items.
   }
   #endregion
@@ -468,18 +473,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.onNewGridSize.Add(OnNewGridSize);
     _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
 
-    var gridSize = persistedGridSize;
-    if (gridSize.x < minGridSize.x) {
-      gridSize.x = minGridSize.x;
-    }
-    if (gridSize.y < minGridSize.y) {
-      gridSize.y = minGridSize.y;
-    }
-    persistedGridSize = gridSize;
     _unityWindow.title = DialogTitle.Format(part.partInfo.title);
     _unityWindow.minSize = minGridSize;
     _unityWindow.maxSize = maxGridSize;
-    _unityWindow.SetGridSize(persistedGridSize);
+    _unityWindow.SetGridSize(new Vector3(slotGridWidth, slotGridHeight, 0)); 
     UpdateInventoryWindow();
   }
 
@@ -705,6 +702,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// This method must be called each time the inventory or unity slots number is changed.
   /// </remarks>
   void ArrangeSlots() {
+    var newSlotGridWidth = (int) _unityWindow.gridSize.x;
+    var newSlotGridHeight = (int) _unityWindow.gridSize.y;
+
     // Visible slots order may change, it would invalidate the tooltip.
     if (_slotWithPointerFocus != null) {
       UnregisterSlotHoverCallback();
@@ -751,6 +751,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (_unityWindow.hoveredSlot != null) {
       RegisterSlotHoverCallback();
     }
+
+    slotGridWidth = newSlotGridWidth;
+    slotGridHeight = newSlotGridHeight;
   }
 
   /// <summary>Destroys tooltip and stops any active logic on the UI slot.</summary>
