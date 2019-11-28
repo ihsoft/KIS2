@@ -155,7 +155,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
   public Vector2 maxGridSize = new Vector2(16, 9);
+  #endregion
 
+  #region Part's persistant fields
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField(isPersistant = true)]
   public Vector2 persistedGridSize;
@@ -246,11 +248,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region AbstractPartModule overrides
+  /// <inheritdoc/>
   public override void OnAwake() {
     base.OnAwake();
     useGUILayout = false;
   }
 
+  /// <inheritdoc/>
   public override void OnDestroy() {
     CloseInventoryWindow();
     base.OnDestroy();
