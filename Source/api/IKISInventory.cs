@@ -82,8 +82,9 @@ public interface IKisInventory {
   /// Forces the container to refresh its state according to the new state of the items.
   /// </summary>
   /// <remarks>
-  /// Every change to any item in the inventory must result in calling of this method. The items
-  /// will <i>not</i> send updates to the owner inventory automatically.
+  /// Every change to any item in the inventory must result in calling of this method. It relates to
+  /// <i>any</i> state change, which can be a config node, or lock state, or whatever. The items
+  /// do <i>not</i> send updates to the owner inventory automatically.
   /// <para>
   /// Before updating own state, the inventory will update every single item config. An exception
   /// will be made if parameter <paramref name="changedItems"/> is provided. In this case only the

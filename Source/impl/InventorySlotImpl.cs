@@ -291,7 +291,7 @@ internal sealed class InventorySlotImpl {
     return isVisible && _unitySlot == checkUnitySlot;
   }
 
-  /// <summary>Adds an item to the slot.</summary>
+  /// <summary>Adds items to the slot.</summary>
   /// <remarks>
   /// This method doesn't check preconditions. The items will be added even if it breaks the slot's
   /// logic. The caller is responsible to verify if the item(s) can be added via the
