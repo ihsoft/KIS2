@@ -3,6 +3,7 @@
 // License: Public Domain
 
 using KISAPIv2;
+using System;
 using System.Linq;
 using UnityEngine;
 
@@ -14,6 +15,9 @@ internal sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
   public IKisInventory inventory { get; }
+
+  /// <inheritdoc/>
+  public string itemId { get; }
 
   /// <inheritdoc/>
   public AvailablePart avPart { get; }
@@ -82,11 +86,19 @@ internal sealed class InventoryItemImpl : InventoryItem {
 
   #region API methods
   /// <summary>Makes a new item from the part definition.</summary>
-  public InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig) {
+  public InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig,
+                           string itemGuid = null) {
     this.inventory = inventory;
     this.avPart = avPart;
     this.itemConfig = itemConfig;
+    this.itemId = itemGuid ?? Guid.NewGuid().ToString();
     UpdateConfig();
+  }
+  #endregion
+
+  #region System overrides
+  public override int GetHashCode() {
+    return itemId.GetHashCode();
   }
   #endregion
 }

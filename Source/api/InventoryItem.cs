@@ -18,6 +18,9 @@ public interface InventoryItem {
   /// </remarks>
   IKisInventory inventory { get; }
 
+  /// <summary>Unique string ID that identifies the item within the inventory.</summary>
+  string itemId { get; }
+
   /// <summary>Part proto.</summary>
   AvailablePart avPart { get; }
 
