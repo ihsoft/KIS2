@@ -31,9 +31,10 @@ public sealed class UiKisHorizontalSliderControl : UiControlBaseScript {
   }
 
   /// <summary>Current value of the slider.</summary>
+  /// <remarks>The value change callback will not be invoked!</remarks>
   public float value {
     get { return sliderControl.value; }
-    set { sliderControl.value = value; }
+    set { sliderControl.SetValueWithoutNotify(value); }
   }
 
   /// <summary>Minimum value of the slider.</summary>
