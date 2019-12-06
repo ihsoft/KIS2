@@ -17,7 +17,7 @@ namespace KIS2 {
 /// <summary>
 /// Unity class that controls KIS inventory layout and its basic GUI functionality.
 /// </summary>
-public sealed class UiKisInventoryWindow : UiPrefabBaseScript,
+public class UiKisInventoryWindow : UiPrefabBaseScript,
     IKspDevPointerListener<Slot> {
   #region Unity serialized fields
   [SerializeField]
@@ -259,9 +259,8 @@ public sealed class UiKisInventoryWindow : UiPrefabBaseScript,
   #endregion
 
   #region Unity only listeners
-  /// <summary>Not for external usage!</summary>
-  public void OnSizeChanged(UiKisHorizontalSliderControl slider) {
-    // Restore sliders to the original values and expect the proper positions set in SetGridSize.
+  /// <summary>Called when any of the sliders changed.</summary>
+  protected void OnSizeChanged(UiKisHorizontalSliderControl slider) {
     var newSize = new Vector2(sizeColumnsSlider.value, sizeRowsSlider.value);
     SetGridSize(newSize);
   }
