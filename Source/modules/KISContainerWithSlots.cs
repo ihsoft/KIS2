@@ -472,6 +472,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.onSlotAction.Add(OnSlotAction);
     _unityWindow.onNewGridSize.Add(OnNewGridSize);
     _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
+    _unityWindow.onDialogClose.Add(CloseInventoryWindow);
 
     _unityWindow.title = DialogTitle.Format(part.partInfo.title);
     _unityWindow.minSize = minGridSize;

@@ -76,6 +76,10 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   /// <seealso cref="SetGridSize"/>
   /// <seealso cref="onNewGridSize"/>
   public delegate void OnGridSizeChanged();
+
+  /// <summary>Called when the dialog close is requested.</summary>
+  /// <remarks>The dialog doesn't actually close. One of the listeners should do it.</remarks>
+  public delegate void OnDialogClose();
   #endregion
 
   #region Local fields
@@ -196,6 +200,9 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
 
   /// <summary>Callback that is called when inventory grid size changed.</summary>
   public readonly List<OnGridSizeChanged> onGridSizeChanged = new List<OnGridSizeChanged>();
+
+  /// <summary>Callback that is called user asks to close the dialog.</summary>
+  public readonly List<OnDialogClose> onDialogClose = new List<OnDialogClose>();
   #endregion
 
   #region UIPrefabBaseScript overrides
@@ -263,6 +270,11 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   protected void OnSizeChanged(UiKisHorizontalSliderControl slider) {
     var newSize = new Vector2(sizeColumnsSlider.value, sizeRowsSlider.value);
     SetGridSize(newSize);
+  }
+
+  /// <summary>Called when close dialog button is clicked.</summary>
+  protected void OnDialogCloseClicked() {
+    onDialogClose.ForEach(x => x.Invoke());
   }
   #endregion
 
