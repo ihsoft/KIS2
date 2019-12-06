@@ -21,7 +21,6 @@ namespace KIS2 {
 /// </summary>
 public class KisContainerBase : AbstractPartModule,
     IKisInventory {
-  //FIXME: Add descriptions to the strings.
   #region Localizable GUI strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> NotEnoughVolumeText = new Message<VolumeLType>(
@@ -67,14 +66,34 @@ public class KisContainerBase : AbstractPartModule,
 
   #region Inhertitable fields and properties
   /// <summary>
-  /// Reflection of <see cref="inventoryItems"/> in a form of hash set for quick lookup operations. 
+  /// Reflection of <see cref="inventoryItems"/> in a form of map for quick lookup operations. 
   /// </summary>
   /// <remarks>
-  /// Do not modify this set directly! Descendants must call <see cref="UpdateItems"/> to add or
+  /// Do not modify this map directly! Descendants must call <see cref="UpdateItems"/> to add or
   /// remove items from the collection.
   /// </remarks>
   /// <seealso cref="UpdateItems"/>
-  protected readonly HashSet<InventoryItem> inventoryItemsSet = new HashSet<InventoryItem>();
+  /// <seealso cref="InventoryItem.itemId"/>
+  protected readonly Dictionary<string, InventoryItem> inventoryItemsMap =
+      new Dictionary<string, InventoryItem>();
+  #endregion
+
+  #region AbstractPartModule overrides
+  /// <inheritdoc/>
+  public override void OnLoad(ConfigNode node) {
+    base.OnLoad(node);
+    var restoredItems = node.GetNodes(InventoryItemImpl.PersistentConfigItemNode)
+        .Select(x => InventoryItemImpl.FromConfigNode(this, x))
+        .Where(x => x != null)
+        .ToArray();
+    UpdateItems(addItems: restoredItems);
+  }
+
+  /// <inheritdoc/>
+  public override void OnSave(ConfigNode node) {
+    base.OnSave(node);
+    Array.ForEach(inventoryItems, x => node.AddNode(InventoryItemImpl.ToConfigNode(x)));
+  }
   #endregion
 
   #region IKISInventory implementation
@@ -122,7 +141,7 @@ public class KisContainerBase : AbstractPartModule,
       return false;
     }
     if (deleteItems.Any(
-        x => !ReferenceEquals(x.inventory, this) || !inventoryItemsSet.Contains(x))) {
+        x => !ReferenceEquals(x.inventory, this) || !inventoryItemsMap.ContainsKey(x.itemId))) {
       HostedDebugLog.Error(this, "Cannot delete item(s) that are not owned by the inventory");
       return false;
     }
@@ -153,14 +172,14 @@ public class KisContainerBase : AbstractPartModule,
   protected virtual void UpdateItems(
       InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
     if (addItems != null) {
-      inventoryItemsSet.AddAll(addItems);
+      Array.ForEach(addItems, x => inventoryItemsMap.Add(x.itemId, x));
     }
     if (deleteItems != null) {
-      Array.ForEach(deleteItems, x => inventoryItemsSet.Remove(x));
+      Array.ForEach(deleteItems, x => inventoryItemsMap.Remove(x.itemId));
     }
     // Reconstruct the items array so that the existing items keep their original order, and the new
     // items (if any) are added at the tail.  
-    var newItems = inventoryItems.Where(x => inventoryItemsSet.Contains(x));
+    var newItems = inventoryItems.Where(x => inventoryItemsMap.ContainsKey(x.itemId));
     if (addItems != null) {
       newItems = newItems.Concat(addItems);
     }

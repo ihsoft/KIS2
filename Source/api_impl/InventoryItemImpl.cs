@@ -5,6 +5,7 @@
 using KISAPIv2;
 using System;
 using System.Linq;
+using KSPDev.LogUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -84,7 +85,41 @@ internal sealed class InventoryItemImpl : InventoryItem {
   }
   #endregion
 
+  #region Persistent node names
+  public const string PersistentConfigKisItemId = "kisItemId";
+  public const string PersistentConfigItemNode = "ITEM";
+  #endregion
+
   #region API methods
+  /// <summary>Restores inventory item from a saved state.</summary>
+  /// <param name="inventory">The inventory to bind the item to.</param>
+  /// <param name="savedState">The state to restore from.</param>
+  /// <returns>The item or <c>null</c> if item cannot be restored from the given state.</returns>
+  public static InventoryItem FromConfigNode(IKisInventory inventory, ConfigNode savedState) {
+    var partName = savedState.GetValue("name"); // It's a standard name for the part save node.
+    var avPart = PartLoader.getPartInfoByName(partName);
+    if (avPart == null) {
+      HostedDebugLog.Error(
+          inventory as PartModule, "Cannot load part form config: name={0}", partName);
+      return null;
+    }
+    var itemConfig = savedState.CreateCopy();
+    itemConfig.name = "PART";
+    itemConfig.RemoveValue(PersistentConfigKisItemId);
+    return new InventoryItemImpl(
+          inventory, avPart, itemConfig, itemGuid: savedState.GetValue(PersistentConfigKisItemId));
+  }
+
+  /// <summary>Saves an item into a config node.</summary>
+  /// <param name="item">The item to store.</param>
+  /// <returns>The config node. It's never <c>null</c>.</returns>
+  public static ConfigNode ToConfigNode(InventoryItem item) {
+    var node = item.itemConfig.CreateCopy();
+    node.SetValue(PersistentConfigKisItemId, item.itemId, createIfNotFound: true);
+    node.name = PersistentConfigItemNode;
+    return node;
+  }
+
   /// <summary>Makes a new item from the part definition.</summary>
   public InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig,
                            string itemGuid = null) {

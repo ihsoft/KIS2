@@ -201,6 +201,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   static readonly Event StoreIntoSlotEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
+  #region Persistent node names
+  const string PersistentConfigSlotNode = "SLOT";
+  const string PersistentConfigSlotItem = "item";
+  #endregion
+
   #region Local fields and properties.
   /// <summary>Inventory window that is opened at the moment.</summary>
   UiKisInventoryWindow _unityWindow;
@@ -264,6 +269,33 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public override void OnDestroy() {
     CloseInventoryWindow();
     base.OnDestroy();
+  }
+
+  /// <inheritdoc/>
+  public override void OnLoad(ConfigNode node) {
+    base.OnLoad(node);
+    var slotsNodes = node.GetNodes(PersistentConfigSlotNode);
+    foreach (var slotNode in slotsNodes) {
+      var slot = new InventorySlotImpl(null);
+      _inventorySlots.Add(slot);
+      var items = slotNode.GetValues(PersistentConfigSlotItem)
+          .Where(x => inventoryItemsMap.ContainsKey(x))
+          .Select(x => inventoryItemsMap[x])
+          .ToArray();
+      slot.AddItems(items);
+      Array.ForEach(items, x => _itemToSlotMap.Add(x, slot));
+    }
+    CheckCanAcceptDrops();
+    UpdateTooltip();
+  }
+
+  /// <inheritdoc/>
+  public override void OnSave(ConfigNode node) {
+    base.OnSave(node);
+    foreach (var slot in _inventorySlots) {
+      var slotsNode = node.AddNode(PersistentConfigSlotNode);
+      Array.ForEach(slot.slotItems, x => slotsNode.AddValue(PersistentConfigSlotItem, x.itemId));
+    }
   }
   #endregion
 
@@ -491,7 +523,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow = null;
     // Immediately make all slots invisible. Don't rely on Unity cleanup routines.  
     _inventorySlots.ForEach(x => x.BindTo(null));
-  } 
+  }
 
   /// <summary>Updates stats in the open inventory window.</summary>
   /// <remarks>It's safe to call it when the inventory window is not open.</remarks>
