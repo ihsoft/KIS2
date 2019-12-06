@@ -59,7 +59,7 @@ public class UiWindowDragControllerScript : UiControlBaseScript,
   #region IBeginDragHandler implementation
   /// <inheritdoc/>
   public void OnBeginDrag(PointerEventData eventData) {
-    if (!eventData.used && eventData.hovered.Contains(eventsTarget)) {
+    if (!eventData.used && eventData.pointerEnter == eventsTarget) {
       eventData.Use();
       isDragged = true;
     }
