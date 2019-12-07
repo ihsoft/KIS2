@@ -338,6 +338,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <inheritdoc/>
+  public override InventoryItem[] AddItems(InventoryItem[] items) {
+    var newItems = base.AddItems(items);
+    foreach (var item in newItems) {
+      AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
+    }
+    return newItems;
+  }
+
+  /// <inheritdoc/>
   public override bool DeleteItems(InventoryItem[] deleteItems) {
     if (!base.DeleteItems(deleteItems)) {
       return false;
@@ -709,13 +718,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if ((storeItems || stackItems) && _canAcceptDraggedItems) {
       consumedItems = KisApi.ItemDragController.ConsumeItems();
       if (consumedItems != null) {
-        var avParts = new AvailablePart[consumedItems.Length];
-        var itemConfigs = new ConfigNode[consumedItems.Length];
-        for (var i = 0; i < consumedItems.Length; i++) {
-          avParts[i] = consumedItems[i].avPart;
-          itemConfigs[i] = consumedItems[i].itemConfig;
-        } 
-        var newItems = base.AddParts(avParts, itemConfigs);
+        var newItems = base.AddItems(consumedItems);
         AddItemsToSlot(newItems, _slotWithPointerFocus);
       }
     }

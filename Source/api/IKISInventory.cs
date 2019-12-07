@@ -64,6 +64,17 @@ public interface IKisInventory {
   /// <returns>The newly created items.</returns>
   /// <seealso cref="CheckCanAddParts"/>
   InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes);
+  
+  /// <summary>Adds items from another inventory.</summary>
+  /// <remarks>
+  /// This method will make own copies of the source items, but the item ID will be persisted. It's
+  /// expected that the source items will be destroyed as soon as they are added into a new
+  /// inventory.
+  /// </remarks>
+  /// <param name="items">The items to add.</param>
+  /// <returns>The added items that belong to this inventory.</returns>
+  /// <seealso cref="InventoryItem.itemId"/>
+  InventoryItem[] AddItems(InventoryItem[] items);
 
   /// <summary>Removes the specified items from inventory.</summary>
   /// <remarks>
@@ -104,6 +115,17 @@ public interface IKisInventory {
   /// </param>
   /// <seealso cref="InventoryItem.itemConfig"/>
   void UpdateInventoryStats(InventoryItem[] changedItems);
+
+  /// <summary>Finds an item by its unique ID.</summary>
+  /// <remarks>
+  /// This method is expected to be efficient. So, it can be called from the performance demanding
+  /// applications.
+  /// </remarks>
+  /// <param name="itemId">The item ID to find.</param>
+  /// <returns>The item or <c>null</c> if not found.</returns>
+  /// <seealso cref="InventoryItem.itemId"/>
+  /// <seealso cref="inventoryItems"/>
+  InventoryItem FindItem(string itemId);
 }
 
 }  // namespace

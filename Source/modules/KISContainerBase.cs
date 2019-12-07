@@ -135,6 +135,16 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
+  public virtual InventoryItem[] AddItems(InventoryItem[] items) {
+    var ownItems = items
+        .Select(x => new InventoryItemImpl(this, x.avPart, x.itemConfig, itemGuid: x.itemId))
+        .Cast<InventoryItem>()
+        .ToArray();
+    UpdateItems(addItems: ownItems);
+    return ownItems;
+  }
+
+  /// <inheritdoc/>
   public virtual bool DeleteItems(InventoryItem[] deleteItems) {
     if (deleteItems.Any(x => x.isLocked)) {
       HostedDebugLog.Error(this, "Cannot delete locked item(s)");
@@ -163,6 +173,13 @@ public class KisContainerBase : AbstractPartModule,
     usedVolume = inventoryItems.Sum(i => i.volume);
     contentMass = inventoryItems.Sum(i => i.fullMass);
     contentCost = inventoryItems.Sum(i => i.fullCost);
+  }
+
+  /// <inheritdoc/>
+  public InventoryItem FindItem(string itemId) {
+    InventoryItem res = null;
+    inventoryItemsMap.TryGetValue(itemId, out res);
+    return res;
   }
   #endregion
 

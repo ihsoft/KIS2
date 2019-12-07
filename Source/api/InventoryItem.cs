@@ -19,6 +19,10 @@ public interface InventoryItem {
   IKisInventory inventory { get; }
 
   /// <summary>Unique string ID that identifies the item within the inventory.</summary>
+  /// <remarks>
+  /// The ID is generated when the part is first time added into inventory. This ID stays persistent
+  /// as the item is being moved between the inventories.
+  /// </remarks>
   string itemId { get; }
 
   /// <summary>Part proto.</summary>
