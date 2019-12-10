@@ -603,8 +603,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (slot != null) {
       return slot;
     }
-    // Then, pick a first empty slot, given it's visible.
-    slot = _inventorySlots.FirstOrDefault(s => s.isEmpty && s.isVisible);
+    // Then, pick a first empty slot.
+    slot = _inventorySlots.FirstOrDefault(s => s.isEmpty);
     if (slot != null) {
       return slot;
     }
