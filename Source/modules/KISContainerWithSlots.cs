@@ -285,6 +285,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       slot.AddItems(items);
       Array.ForEach(items, x => _itemToSlotMap.Add(x, slot));
     }
+    // Handle out of sync items to ensure every item is assigned to a slot.
+    var itemsWithNoSlot = inventoryItems.Where(x => !_itemToSlotMap.ContainsKey(x));
+    foreach (var item in itemsWithNoSlot) {
+      HostedDebugLog.Warning(this, "Loading non-slot item: {0}", item.itemId);
+      AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
+    }
     CheckCanAcceptDrops();
     UpdateTooltip();
   }
