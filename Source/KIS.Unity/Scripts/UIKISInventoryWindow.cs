@@ -371,11 +371,10 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
     HierarchyUtils.SafeDestroy(slotObj);
   }
 
-  Slot AddSlotAtEnd() {
+  void AddSlotAtEnd() {
     var newSlot = Instantiate(_prefabSlot, slotsGrid.transform, worldPositionStays: true);
     newSlot.name = "Slot";
     newSlot.gameObject.SetActive(true);
-    return newSlot;
   }
   #endregion
 }
