@@ -242,13 +242,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #region IKisDragTarget implementation
   /// <inheritdoc/>
   public void OnKisDragStart() {
-    CheckCanAcceptDrops();
     UpdateTooltip();
   }
 
   /// <inheritdoc/>
   public void OnKisDragEnd(bool isCancelled) {
-    ClearAcceptState();
     UpdateTooltip();
   }
 
@@ -282,17 +280,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           .Where(x => inventoryItemsMap.ContainsKey(x))
           .Select(x => inventoryItemsMap[x])
           .ToArray();
-      slot.AddItems(items);
-      Array.ForEach(items, x => _itemToSlotMap.Add(x, slot));
+      UpdateSlotItems(slot, addItems: items);
     }
     // Handle out of sync items to ensure every item is assigned to a slot.
     var itemsWithNoSlot = inventoryItems.Where(x => !_itemToSlotMap.ContainsKey(x));
     foreach (var item in itemsWithNoSlot) {
       HostedDebugLog.Warning(this, "Loading non-slot item: {0}", item.itemId);
-      AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
+      UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] { item });
     }
-    CheckCanAcceptDrops();
-    UpdateTooltip();
   }
 
   /// <inheritdoc/>
@@ -338,7 +333,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public override InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
     var newItems = base.AddParts(avParts, nodes);
     foreach (var item in newItems) {
-      AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
+      UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] { item });
     }
     return newItems;
   }
@@ -347,7 +342,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public override InventoryItem[] AddItems(InventoryItem[] items) {
     var newItems = base.AddItems(items);
     foreach (var item in newItems) {
-      AddItemsToSlot(new[] { item }, FindSlotForItem(item, addInvisibleSlot: true));
+      UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] { item });
     }
     return newItems;
   }
@@ -357,16 +352,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (!base.DeleteItems(deleteItems)) {
       return false;
     }
-    var groupedBySlot = deleteItems
-        .GroupBy(x => _itemToSlotMap[x])
-        .ToDictionary(g => g.Key, g => g.ToArray());
-    foreach (var slot in groupedBySlot.Keys) {
-      slot.DeleteItems(groupedBySlot[slot]); // This updates UI, so can be expensive if not batched.
+    foreach (var item in deleteItems) {
+      UpdateSlotItems(_itemToSlotMap[item], deleteItems: new[] { item });
     }
-    Array.ForEach(deleteItems, x => _itemToSlotMap.Remove(x)); 
-    ArrangeSlots();
-    CheckCanAcceptDrops();
-    UpdateTooltip();
     return true;
   }
 
@@ -624,21 +612,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     return slot;
   }
 
-  /// <summary>Add items to the specified slot of the inventory.</summary>
-  /// <remarks>
-  /// The items must belong to the inventory, but not be owned by it (i.e. not to be in the
-  /// <see cref="KisContainerBase.inventoryItems"/>). This method doesn't check any preconditions.
-  /// </remarks>
-  /// <seealso cref="InventorySlotImpl.CheckCanAddItems"/>
-  void AddItemsToSlot(InventoryItem[] addItems, InventorySlotImpl slot) {
-    slot.AddItems(addItems);
-    Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
-    if (slot == _slotWithPointerFocus) {
-      CheckCanAcceptDrops();
-      UpdateTooltip();
-    }
-  }
-
   /// <summary>
   /// Handles slot clicks when the drag operation is not started or has started on this same slot.
   /// </summary>
@@ -725,7 +698,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       consumedItems = KisApi.ItemDragController.ConsumeItems();
       if (consumedItems != null) {
         var newItems = base.AddItems(consumedItems);
-        AddItemsToSlot(newItems, _slotWithPointerFocus);
+        UpdateSlotItems(_slotWithPointerFocus, addItems: newItems);
       }
     }
     if (consumedItems == null) {
@@ -859,7 +832,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     _unityWindow.StartSlotTooltip();
     KisApi.ItemDragController.RegisterTarget(this);
-    CheckCanAcceptDrops();
     UpdateTooltip();
   }
 
@@ -884,6 +856,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// advised to be invoked in every frame update.
   /// </remarks>
   void UpdateTooltip() {
+    CheckCanAcceptDrops();
+
     if (_slotWithPointerFocus == null || currentTooltip == null) {
       return;
     }
@@ -953,14 +927,26 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
       _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
     } else {
-      ClearAcceptState();
+      _canAcceptDraggedItemsCheckResult = null;
+      _canAcceptDraggedItems = false;
     }
   }
 
-  /// <summary>Resets the accept state to the default.</summary>
-  void ClearAcceptState() {
-    _canAcceptDraggedItemsCheckResult = null;
-    _canAcceptDraggedItems = false;
+  /// <summary>Updates items list in the slot and updates indexes.</summary>
+  void UpdateSlotItems(InventorySlotImpl slot,
+                       InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
+    if (addItems != null) {
+      slot.AddItems(addItems);
+      Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
+    }
+    if (deleteItems != null) {
+      slot.DeleteItems(deleteItems);
+      Array.ForEach(deleteItems, x => _itemToSlotMap.Remove(x));
+      ArrangeSlots(); // Make de-frag in case of there are invisible slots. 
+    }
+    if (slot == _slotWithPointerFocus) {
+      UpdateTooltip();
+    }
   }
   #endregion
 }
