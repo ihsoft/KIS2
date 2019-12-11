@@ -714,7 +714,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// inventory slots that are not currently present in UI. 
   /// </summary>
   /// <remarks>
-  /// This method must be called each time the inventory or unity slots number is changed.
+  /// This method must be called each time the inventory or unity slots number is changed. It
+  /// implements a tricky logic that tries to adapt to the inventory GUI size change, and adjusts
+  /// the  slots so that the least number of the visible slots change their positions.
   /// </remarks>
   void ArrangeSlots() {
     var newSlotGridWidth = (int) _unityWindow.gridSize.x;
@@ -725,94 +727,131 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       UnregisterSlotHoverCallback();
     }
 
-    var needFullDefrag = false;
-
-    // Add/remove columns in a user friendly manner.
-    if (newSlotGridWidth > slotGridWidth) {
-      // Pad each line with extra empty slot(s) at the right side of the grid.
-      // Skip the last line and let it be arranged for the invisible slots. 
-      var slotsToInsert = newSlotGridWidth - slotGridWidth;
-      for (var j = 0; j < slotGridHeight - 1; j++) {
-        for (var i = 0; i < slotsToInsert; i++) {
-          _inventorySlots.Insert(j * newSlotGridWidth + slotGridWidth, new InventorySlotImpl(null));
+    // Make a grid from the flat slots array.
+    // Expand with empty slots at the right and bottom as needed.
+    var slotGrid = new InventorySlotImpl[
+        Math.Max(newSlotGridWidth, slotGridWidth),
+        Math.Max(newSlotGridHeight, slotGridHeight)];
+    for (var i = 0; i < slotGrid.GetLength(0); i++) {
+      for (var j = 0; j < slotGrid.GetLength(1); j++) {
+        if (i >= slotGridWidth || j >= slotGridHeight) {
+          slotGrid[i, j] = new InventorySlotImpl(null);
+        } else {
+          slotGrid[i, j] = _inventorySlots[j * slotGridWidth + i];
         }
       }
-    } else if (newSlotGridWidth < slotGridWidth) {
-      // Remove columns from the right and compact the items in the line when it overflows.
-      // Trigger full de-fragmentation if any of the lines cannot hold all the items.  
-      var slotsToDelete = slotGridWidth - newSlotGridWidth;
-      for (var j = slotGridHeight - 1; j >= 0; j--) {
+    }
+    var invisibleSlots = _inventorySlots
+        .Skip(slotGridWidth * slotGridHeight)
+        .ToList();
+
+    // Remove lines in a user friendly manner. The items from the bottom will be pulled up.
+    if (newSlotGridHeight < slotGridHeight) {
+      var slotsToDelete = slotGridHeight - newSlotGridHeight;
+      for (var col = 0; col < slotGrid.GetLength(0); col++) {
         var slotsDeleted = 0;
-        for (var i = slotGridWidth - 1; i >= 0 && slotsDeleted < slotsToDelete; i--) {
-          var slotIndex = j * slotGridWidth + i;
-          if (_inventorySlots[slotIndex].isEmpty) {
-            _inventorySlots.RemoveAt(slotIndex);
+        for (var row = slotGrid.GetLength(1) - 1; row >= 0 && slotsDeleted < slotsToDelete; row--) {
+          if (slotGrid[col, row] == null || slotGrid[col, row].isEmpty) {
+            slotGrid[col, row] = null;
+            slotsDeleted++;
+          } else {
+            for (var swapRow = row - 1; swapRow >= 0; swapRow--) {
+              if (!slotGrid[col, swapRow].isEmpty) {
+                continue;
+              }
+              slotGrid[col, swapRow] = slotGrid[col, row];
+              slotGrid[col, row] = null;
+              slotsDeleted++;
+              break;
+            }
+          }
+        }
+        // Move any overflow items into invisible list. They will be seeded over the inventory.
+        for (var row = slotGrid.GetLength(1) - 1; row >= 0 && slotsDeleted < slotsToDelete; row--) {
+          if (slotGrid[col, row] != null && !slotGrid[col, row].isEmpty) {
+            invisibleSlots.Add(slotGrid[col, row]);
+            slotGrid[col, row] = null;
             slotsDeleted++;
           }
         }
-        needFullDefrag |= slotsDeleted != slotsToDelete;
-      }
-      if (needFullDefrag) {
-        HostedDebugLog.Fine(this, "Inventory de-fragmentation triggered");
       }
     }
 
-    // Add/remove rows in a user friendly manner..
-    if (newSlotGridHeight < slotGridHeight && !needFullDefrag) {
-      // Trivial implementation. Just make full defrag if a line going to be consumed.  
-      needFullDefrag = _inventorySlots
-          .Skip((slotGridHeight - 1) * slotGridWidth)
-          .Take(slotGridWidth)
-          .Any(x => !x.isEmpty);
-    }
-
-    // Compact empty slots when there are hidden slots in the inventory. This may let some of the
-    // hidden slots to become visible. 
-    var visibleSlots = _unityWindow.slots.Length;
-    for (var i = _inventorySlots.Count - 1;
-         i >= 0 && (_inventorySlots.Count > visibleSlots || needFullDefrag);
-         --i) {
-      if (!_inventorySlots[i].isEmpty) {
-        continue; 
+    // Remove columns in a user friendly manner. The items from the right will be shifted to the
+    // left.
+    if (newSlotGridWidth < slotGridWidth) {
+      var slotsToDelete = slotGridWidth - newSlotGridWidth;
+      for (var row = 0; row < slotGrid.GetLength(1); row++) {
+        var slotsDeleted = 0;
+        for (var col = slotGrid.GetLength(0) - 1; col >= 0 && slotsDeleted < slotsToDelete; col--) {
+          if (slotGrid[col, row] == null || slotGrid[col, row].isEmpty) {
+            slotGrid[col, row] = null;
+            slotsDeleted++;
+          } else {
+            for (var swapCol = col - 1; swapCol >= 0; swapCol--) {
+              if (!slotGrid[swapCol, row].isEmpty) {
+                continue;
+              }
+              slotGrid[swapCol, row] = slotGrid[col, row];
+              slotGrid[col, row] = null;
+              slotsDeleted++;
+              break;
+            }
+          }
+        }
+        for (var col = slotGrid.GetLength(0) - 1; col >= 0 && slotsDeleted < slotsToDelete; col--) {
+          if (slotGrid[col, row] != null && !slotGrid[col, row].isEmpty) {
+            invisibleSlots.Add(slotGrid[col, row]);
+            slotGrid[col, row] = null;
+            slotsDeleted++;
+          }
+        }
       }
-      if (i >= visibleSlots) {
-        _inventorySlots.RemoveAt(i); // Simple cleanup, do it silently. 
-      } else {
-        // Cleanup of a visible empty slot. The inventory layout will change.
-        HostedDebugLog.Warning(
-            this, "Cleanup an empty slot during de-fragmentation: slotIdx={0}", i);
-        _inventorySlots.RemoveAt(i);
+    }
+
+    // Flatten the grid. Total number of non-null slots must be exactly the new size.
+    _inventorySlots.Clear();
+    for (var row = 0; row < slotGrid.GetLength(1); row++) {
+      for (var col = 0; col < slotGrid.GetLength(0); col++) {
+        if (slotGrid[col, row] != null) {
+          _inventorySlots.Add(slotGrid[col, row]);
+        }
+      }
+    }
+    slotGridWidth = newSlotGridWidth;
+    slotGridHeight = newSlotGridHeight;
+    if (_inventorySlots.Count != slotGridWidth * slotGridHeight) {
+      HostedDebugLog.Error(this, "Arrange slots logic is broken: hasSlots{0}, needSlots={1}",
+                           _inventorySlots.Count, slotGridWidth * slotGridHeight);
+    }
+
+    // Try to fit the invisible slots in the existing empty slots (if any).
+    for (var i = 0; i < _inventorySlots.Count && invisibleSlots.Count > 0; i++) {
+      if (_inventorySlots[i].isEmpty) {
+        _inventorySlots[i] = invisibleSlots[invisibleSlots.Count - 1];
+        invisibleSlots.RemoveAt(invisibleSlots.Count - 1);
       }
     }
 
-    // Add up slots to match the current UI.
-    for (var i = _inventorySlots.Count; i < _unityWindow.slots.Length; ++i) {
-      _inventorySlots.Add(new InventorySlotImpl(null));
+    // Anything that rest, adds at the tail. It's a bad condition.
+    foreach (var invisibleSlot in invisibleSlots) {
+      HostedDebugLog.Warning(this, "Hidden slot in inventory: slotIdx={0}", _inventorySlots.Count);
+      invisibleSlot.BindTo(null);
+      _inventorySlots.Add(invisibleSlot);
     }
 
-    // Align logical slots with the visible slots in UI.
-    for (var i = 0; i < _inventorySlots.Count; ++i) {
-      var slot = _inventorySlots[i];
+    // Bind inventory and Unity slots so that a one-to-one relation is maintained. 
+    for (var i = 0; i < _inventorySlots.Count; i++) {
       var newUnitySlot = i < _unityWindow.slots.Length
           ? _unityWindow.slots[i]
           : null;
-      if (!slot.isEmpty) {
-        if (slot.isVisible && newUnitySlot == null) {
-          HostedDebugLog.Warning(this, "Slot becomes hidden in UI: slotIdx={0}", i);
-        } else if (!slot.isVisible && newUnitySlot != null) {
-          HostedDebugLog.Fine(this, "Hidden slot becomes visible in UI: slotIdx={0}", i);
-        }
-      }
-      slot.BindTo(newUnitySlot);
+      _inventorySlots[i].BindTo(newUnitySlot);
     }
 
     // Restore the tooltip callbacks if needed.
     if (_unityWindow.hoveredSlot != null) {
       RegisterSlotHoverCallback();
     }
-
-    slotGridWidth = newSlotGridWidth;
-    slotGridHeight = newSlotGridHeight;
   }
 
   /// <summary>Destroys tooltip and stops any active logic on the UI slot.</summary>
