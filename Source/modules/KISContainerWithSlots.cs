@@ -750,29 +750,22 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var slotsToDelete = slotGridHeight - newSlotGridHeight;
       for (var col = 0; col < slotGrid.GetLength(0); col++) {
         var slotsDeleted = 0;
-        for (var row = slotGrid.GetLength(1) - 1; row >= 0 && slotsDeleted < slotsToDelete; row--) {
-          if (slotGrid[col, row] == null || slotGrid[col, row].isEmpty) {
-            slotGrid[col, row] = null;
-            slotsDeleted++;
-          } else {
-            for (var swapRow = row - 1; swapRow >= 0; swapRow--) {
-              if (!slotGrid[col, swapRow].isEmpty) {
-                continue;
-              }
-              slotGrid[col, swapRow] = slotGrid[col, row];
-              slotGrid[col, row] = null;
-              slotsDeleted++;
-              break;
+        for (var row = slotGrid.GetLength(1) - 1;
+             row >= 0 && slotsDeleted < slotsToDelete;
+             row--) {
+          var shiftRow = row;
+          while (shiftRow >= 0 && !slotGrid[col, shiftRow].isEmpty) {
+            shiftRow--;
+          }
+          if (shiftRow >= 0) {
+            for (var i = shiftRow; i < row; i++) {
+              slotGrid[col, i] = slotGrid[col, i + 1];
             }
-          }
-        }
-        // Move any overflow items into invisible list. They will be seeded over the inventory.
-        for (var row = slotGrid.GetLength(1) - 1; row >= 0 && slotsDeleted < slotsToDelete; row--) {
-          if (slotGrid[col, row] != null && !slotGrid[col, row].isEmpty) {
+          } else {
             invisibleSlots.Add(slotGrid[col, row]);
-            slotGrid[col, row] = null;
-            slotsDeleted++;
           }
+          slotGrid[col, row] = null;
+          slotsDeleted++;
         }
       }
     }
@@ -783,28 +776,22 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var slotsToDelete = slotGridWidth - newSlotGridWidth;
       for (var row = 0; row < slotGrid.GetLength(1); row++) {
         var slotsDeleted = 0;
-        for (var col = slotGrid.GetLength(0) - 1; col >= 0 && slotsDeleted < slotsToDelete; col--) {
-          if (slotGrid[col, row] == null || slotGrid[col, row].isEmpty) {
-            slotGrid[col, row] = null;
-            slotsDeleted++;
-          } else {
-            for (var swapCol = col - 1; swapCol >= 0; swapCol--) {
-              if (!slotGrid[swapCol, row].isEmpty) {
-                continue;
-              }
-              slotGrid[swapCol, row] = slotGrid[col, row];
-              slotGrid[col, row] = null;
-              slotsDeleted++;
-              break;
+        for (var col = slotGrid.GetLength(0) - 1;
+             col >= 0 && slotsDeleted < slotsToDelete;
+             col--) {
+          var shiftCol = col;
+          while (shiftCol >= 0 && !slotGrid[shiftCol, row].isEmpty) {
+            shiftCol--;
+          }
+          if (shiftCol >= 0) {
+            for (var i = shiftCol; i < col; i++) {
+              slotGrid[i, row] = slotGrid[i + 1, row];
             }
-          }
-        }
-        for (var col = slotGrid.GetLength(0) - 1; col >= 0 && slotsDeleted < slotsToDelete; col--) {
-          if (slotGrid[col, row] != null && !slotGrid[col, row].isEmpty) {
+          } else {
             invisibleSlots.Add(slotGrid[col, row]);
-            slotGrid[col, row] = null;
-            slotsDeleted++;
           }
+          slotGrid[col, row] = null;
+          slotsDeleted++;
         }
       }
     }
@@ -840,7 +827,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       _inventorySlots.Add(invisibleSlot);
     }
 
-    // Bind inventory and Unity slots so that a one-to-one relation is maintained. 
+    // Bind inventory and Unity slots so that a one-to-one relation is maintained.
     for (var i = 0; i < _inventorySlots.Count; i++) {
       var newUnitySlot = i < _unityWindow.slots.Length
           ? _unityWindow.slots[i]
