@@ -237,6 +237,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Shortcut to get the current tooltip.</summary>
   UIKISInventoryTooltip.Tooltip currentTooltip => _unityWindow.currentTooltip;
+
+  /// <summary>Last known position at the dialog close. It will be restored at open.</summary>
+  Vector3 screenPosition = -Vector3.one;
   #endregion
 
   #region IKisDragTarget implementation
@@ -517,6 +520,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.maxSize = maxGridSize;
     _unityWindow.SetGridSize(new Vector3(slotGridWidth, slotGridHeight, 0)); 
     UpdateInventoryWindow();
+
+    if (screenPosition != -Vector3.one) {
+      _unityWindow.mainRect.position = screenPosition;
+      _unityWindow.SendMessage(
+          nameof(IKspDevUnityControlChanged.ControlUpdated), _unityWindow.gameObject,
+          SendMessageOptions.DontRequireReceiver);
+    }
   }
 
   /// <summary>Destroys the inventory window.</summary>
@@ -525,6 +535,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       return;
     }
     HostedDebugLog.Fine(this, "Destroying inventory window");
+    screenPosition = _unityWindow.mainRect.position;
     if (_dragSourceSlot != null) {
       // TODO(ihsoft): Better, disable the close button when there are items in the dragging state.
       HostedDebugLog.Fine(this, "Cancel dragging items");
