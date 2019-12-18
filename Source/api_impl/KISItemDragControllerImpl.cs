@@ -62,8 +62,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     #region MonoBehaviour callbacks
     void Awake() {
       _statusScreenMessage.message = CancelDraggingTxt.Format(CancelEvent);
-      InputLockManager.SetControlLock(
-          ControlTypes.All & ~ControlTypes.CAMERACONTROLS, TotalControlLock);
+      InputLockManager.SetControlLock(DragControlsLockTypes, TotalControlLock);
       _oldCanAutoSaveState = HighLogic.CurrentGame.Parameters.Flight.CanAutoSave;
       HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = false;
       _controlsLocked = true;
@@ -159,6 +158,18 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   /// <summary>Action that is called when the dragging is cancelled.</summary>
   /// <remarks>It's a cleanup action. It must never fail.</remarks>
   Action _cancelItemsLeaseFn;
+
+  /// <summary>Lock mask for the dragging state.</summary>
+  /// <remarks>
+  /// The absolute conditions to be met:
+  /// <ul type="bullet">
+  /// <li>Now quick save/load ability.</li>
+  /// <li>No autosave.</li>
+  /// <li>No ship control.</li>
+  /// </ul>
+  /// </remarks>
+  const ControlTypes DragControlsLockTypes = ControlTypes.ALLBUTCAMERAS
+      & ~ControlTypes.ACTIONS_SHIP & ~ControlTypes.ACTIONS_EXTERNAL;
   #endregion
 
   #region KISItemDragController implementation
