@@ -327,6 +327,8 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
     if (newSize != size) {
       LogInfo("Resize bounds changed by handlers: original={0}, actual={1}", size, newSize);
     }
+    sizeColumnsSlider.value = newSize.x;
+    sizeRowsSlider.value = newSize.y;
 
     var neededSlots = (int) (newSize.x * newSize.y);
     slotsGrid.gameObject.SetActive(neededSlots > 0);
