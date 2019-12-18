@@ -476,7 +476,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         Mathf.Min(Mathf.Max(newSize.x, minGridSize.x), maxGridSize.x),
         Mathf.Min(Mathf.Max(newSize.y, minGridSize.y), maxGridSize.y),
         0);
-    //FIXME: check if not slots become invisible.
+    var minSlotsNeeded = _inventorySlots.Count(x => !x.isEmpty);
+    if (minSlotsNeeded > newSize.x * newSize.y) {
+      newSize = new Vector2(slotGridWidth, slotGridHeight);
+    }
     return newSize;
   }
 
