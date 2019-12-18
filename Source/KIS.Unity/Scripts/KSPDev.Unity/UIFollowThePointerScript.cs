@@ -47,7 +47,7 @@ public sealed class UiFollowThePointerScript : UiControlBaseScript {
   /// Normally, the controls that follow pointer should not be raycast targets, since it could
   /// create an interference.
   /// </remarks>
-  public bool noRaycastTargets;
+  public bool noRaycastTargets = true;
 
   /// <summary>
   /// Tells if this control must be be rendered over any other siblings of the parent.

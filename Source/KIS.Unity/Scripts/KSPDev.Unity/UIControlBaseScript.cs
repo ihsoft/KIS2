@@ -14,9 +14,7 @@ namespace KSPDev.Unity {
 public class UiControlBaseScript : MonoBehaviour {
 
   /// <summary>UI transform rect of this control.</summary>
-  public RectTransform mainRect {
-    get { return transform as RectTransform; }
-  }
+  public RectTransform mainRect => transform as RectTransform;
 
   #region Inheritable utility methods
   /// <summary>Logs an info record with the type information.</summary>
