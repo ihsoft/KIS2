@@ -525,11 +525,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       return;
     }
     HostedDebugLog.Fine(this, "Destroying inventory window");
+    if (_dragSourceSlot != null) {
+      // TODO(ihsoft): Better, disable the close button when there are items in the dragging state.
+      HostedDebugLog.Fine(this, "Cancel dragging items");
+      KisApi.ItemDragController.CancelItemsLease();
+    }
     Hierarchy.SafeDestory(_unityWindow);
     _unityWindow = null;
     // Immediately make all slots invisible. Don't rely on Unity cleanup routines.  
     _inventorySlots.ForEach(x => x.BindTo(null));
-    //FIXME: cancel any dragging operation or block close action in drag start.
   }
 
   /// <summary>Updates stats in the open inventory window.</summary>
