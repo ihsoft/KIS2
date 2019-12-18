@@ -352,7 +352,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (!base.DeleteItems(deleteItems)) {
       return false;
     }
-    //FIXME: do slots rearrange
     foreach (var item in deleteItems) {
       UpdateSlotItems(_itemToSlotMap[item], deleteItems: new[] { item });
     }

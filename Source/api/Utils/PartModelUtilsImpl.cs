@@ -165,7 +165,7 @@ public class PartModelUtilsImpl {
     return modelObj;
   }
 
-  /// <summary>Returns part's volume basing on its geometrics.</summary>
+  /// <summary>Returns part's volume basing on its geometric.</summary>
   /// <remarks>
   /// The volume is calculated basing on the smallest boundary box that encapsulates all the meshes
   /// in the part. The deployable parts can take much more space in the deployed state.
