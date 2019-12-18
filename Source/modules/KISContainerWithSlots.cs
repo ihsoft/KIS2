@@ -352,6 +352,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (!base.DeleteItems(deleteItems)) {
       return false;
     }
+    //FIXME: do slots rearrange
     foreach (var item in deleteItems) {
       UpdateSlotItems(_itemToSlotMap[item], deleteItems: new[] { item });
     }
@@ -526,6 +527,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow = null;
     // Immediately make all slots invisible. Don't rely on Unity cleanup routines.  
     _inventorySlots.ForEach(x => x.BindTo(null));
+    //FIXME: cancel any dragging operation or block close action in drag start.
   }
 
   /// <summary>Updates stats in the open inventory window.</summary>
@@ -660,10 +662,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     dragIconObj.resourceStatus = _slotWithPointerFocus.resourceStatus;
   }
 
-  /// <summary>Triggers when items from this slot are consumed by the target.</summary>
+  /// <summary>Triggers when items from the slot are consumed by the target.</summary>
   /// <remarks>
   /// This method may detect a failing condition. If it happens, the state must stay unchanged.
   /// </remarks>
+  /// <seealso cref="_dragSourceSlot"/>
   bool ConsumeSlotItems() {
     var leasedItems = KisApi.ItemDragController.leasedItems;
     Array.ForEach(leasedItems, i => i.SetLocked(false));

@@ -48,6 +48,14 @@ public sealed class UiFollowThePointerScript : UiControlBaseScript {
   /// create an interference.
   /// </remarks>
   public bool noRaycastTargets;
+
+  /// <summary>
+  /// Tells if this control must be be rendered over any other siblings of the parent.
+  /// </summary>
+  /// <remarks>
+  /// Unless the code implements own siblings ordering, this property must be <c>true</c>.  
+  /// </remarks>
+  public bool alwaysOnTop = true;
   #endregion
 
   #region Local fields
@@ -74,6 +82,9 @@ public sealed class UiFollowThePointerScript : UiControlBaseScript {
       _lastPointerPosition = Input.mousePosition;
       _lastControlSize = mainRect.sizeDelta;
       PositionToPointer();
+    }
+    if (alwaysOnTop) {
+      mainRect.transform.SetAsLastSibling();  
     }
   }
   #endregion
