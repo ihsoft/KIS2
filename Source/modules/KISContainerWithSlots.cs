@@ -748,6 +748,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         .Skip(slotGridWidth * slotGridHeight)
         .ToList();
 
+    // Make sure all the slot references are detached from the GUI. The code below may completely
+    // change the slots layout.
+    _inventorySlots.ForEach(x => x.BindTo(null));
+
     // Remove lines in a user friendly manner. The items from the bottom will be pulled up.
     if (newSlotGridHeight < slotGridHeight) {
       var slotsToDelete = slotGridHeight - newSlotGridHeight;
@@ -825,17 +829,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     // Anything that rest, adds at the tail. It's a bad condition.
     foreach (var invisibleSlot in invisibleSlots) {
-      HostedDebugLog.Warning(this, "Hidden slot in inventory: slotIdx={0}", _inventorySlots.Count);
-      invisibleSlot.BindTo(null);
+      HostedDebugLog.Warning(
+            this, "Hidden slot in inventory: part={0}, count={1}",
+            invisibleSlot.slotItems[0].avPart.name, invisibleSlot.slotItems.Length);
       _inventorySlots.Add(invisibleSlot);
     }
 
     // Bind inventory and Unity slots so that a one-to-one relation is maintained.
-    for (var i = 0; i < _inventorySlots.Count; i++) {
-      var newUnitySlot = i < _unityWindow.slots.Length
-          ? _unityWindow.slots[i]
-          : null;
-      _inventorySlots[i].BindTo(newUnitySlot);
+    for (var i = 0; i < _unityWindow.slots.Length; i++) {
+      _inventorySlots[i].BindTo(_unityWindow.slots[i]);
     }
 
     // Restore the tooltip callbacks if needed.

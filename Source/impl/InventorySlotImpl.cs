@@ -206,9 +206,15 @@ internal sealed class InventorySlotImpl {
   /// </remarks>
   public bool isLocked {
     // ReSharper disable once UnusedMember.Global
-    get {  return _unitySlot.isLocked; }
-    set { _unitySlot.isLocked = value; }
+    get { return _isLocked; }
+    set {
+      _isLocked = value;
+      if (_unitySlot != null) {
+        _unitySlot.isLocked = value;
+      }
+    }
   }
+  bool _isLocked;
 
   /// <summary>Tells if the item in the slot has science data.</summary>
   /// <remarks>Items that have data are not allowed to stack in the slots.</remarks>
