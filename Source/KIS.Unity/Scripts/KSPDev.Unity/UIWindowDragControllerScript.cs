@@ -47,6 +47,16 @@ public class UiWindowDragControllerScript : UiControlBaseScript,
 
   /// <summary>Tells if the window is being dragged.</summary>
   public virtual bool isDragged { get; private set; }
+
+  /// <summary>
+  /// Tells if the window position has changed since the last time this field was set to
+  /// <c>false</c>.
+  /// </summary>
+  /// <remarks>
+  /// This field is set each time the window drag mode is activated, even if the actual position
+  /// hasn't changed.
+  /// </remarks>
+  public bool positionChanged;
   #endregion
 
   #region Inheritable fields and properties
@@ -81,6 +91,7 @@ public class UiWindowDragControllerScript : UiControlBaseScript,
   public virtual void OnDrag(PointerEventData eventData) {
     if (isDragged && eventData.button == PointerEventData.InputButton.Left) {
       eventData.Use();
+      positionChanged = true;
       var position = mainRect.position;
       position.x += eventData.delta.x;
       position.y += eventData.delta.y;
