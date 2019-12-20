@@ -227,12 +227,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="GetDefaultDlgPos"/>
   const float DlgEditorSceneYOffset = 40.0f;
 
+  /// <summary>Distance between auto-arranged windows.</summary>
+  /// <seealso cref="ArrangeWindows"/>
+  const float WindowsGapSize = 5;
+
   /// <summary>
   /// Duration for the inventory windows to move on the screen to fit to the new layout. 
   /// </summary>
   /// <see cref="ArrangeWindows"/>
-  //const float WindowMoveAnimationDuration = 0.2f;  // Seconds.
-  const float WindowMoveAnimationDuration = 1.0f;  // Seconds.
+  const float WindowMoveAnimationDuration = 0.2f; // Seconds.
 
   /// <summary>Inventory window that is opened at the moment.</summary>
   UiKisInventoryWindow _unityWindow;
@@ -1085,7 +1088,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (calculateOnly) {
       var lastWindow = managedWindows[managedWindows.Count - 1];
       return lastWindow.mainRect.position
-          + new Vector3(lastWindow.mainRect.sizeDelta.x + 5, 0, 0);
+          + new Vector3(lastWindow.mainRect.sizeDelta.x + WindowsGapSize, 0, 0);
     }
     foreach (var window in managedWindows) {
       LayoutRebuilder.ForceRebuildLayoutImmediate(window.mainRect);
@@ -1096,7 +1099,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
         movingWindows.Add(window, StartCoroutine(AnimateMoveWindow(window, basePos)));
       }
-      basePos.x += window.mainRect.sizeDelta.x + 5; //FIXME: add constant
+      basePos.x += window.mainRect.sizeDelta.x + WindowsGapSize;
     }
     return basePos;
   }
