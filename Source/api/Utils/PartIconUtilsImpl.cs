@@ -3,11 +3,12 @@
 // License: Public Domain
 
 using KSPDev.LogUtils;
-using System;
+using KSPDev.PartUtils;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 public sealed class PartIconUtils {
@@ -17,7 +18,7 @@ public sealed class PartIconUtils {
   const int DefaultHighResolution = 512;
   const int DefaultStdResolution = 256;
 
-  static readonly Dictionary<string, Texture> iconsCache = new Dictionary<string, Texture>();
+  static readonly Dictionary<string, Texture> IconsCache = new Dictionary<string, Texture>();
 
   /// <summary>
   /// Makes a sprite that represents the part in it's default icon state. This is what is shown in
@@ -26,14 +27,14 @@ public sealed class PartIconUtils {
   /// <param name="avPart">The part to make icon for.</param>
   /// <param name="resolution">The size of the sprite. The part icon is always square.</param>
   /// <param name="variant">
-  /// The variant to apply to the part before capturing an icon. It can be null if not varian needs
+  /// The variant to apply to the part before capturing an icon. It can be null if not variant needs
   /// to be applied.
   /// </param>
-  /// <returns>The psrite of the icon.</returns>
+  /// <returns>The sprite of the icon.</returns>
   public Texture MakeDefaultIcon(AvailablePart avPart, int resolution, PartVariant variant) {
     var cacheKey = avPart.name + "-" + resolution + (variant == null ? "" : "-" + variant.Name);
     Texture result;
-    if (iconsCache.TryGetValue(cacheKey, out result) && result != null) {
+    if (IconsCache.TryGetValue(cacheKey, out result) && result != null) {
       // Note that the cached textures can get destroyed between the scenes.
       return result;
     }
@@ -45,7 +46,7 @@ public sealed class PartIconUtils {
     iconPrefab.transform.Rotate(0.0f, -30f, 0.0f);
     SetLayerRecursively(iconPrefab, IconCameraLayer);
 
-    // Setup lighiting.
+    // Setup lighting.
     GameObject lightObj = null;
     if (HighLogic.LoadedSceneIsFlight) {  // Editor has the right lights out of the box.
       lightObj = new GameObject();
@@ -69,8 +70,9 @@ public sealed class PartIconUtils {
     camera.cullingMask = 1 << IconCameraLayer;
     camera.ResetAspect();
 
-    var renderTarget = new RenderTexture(resolution, resolution, 16);
-    renderTarget.autoGenerateMips = false;
+    var renderTarget = new RenderTexture(resolution, resolution, 16) {
+        autoGenerateMips = false
+    };
     camera.targetTexture = renderTarget;
     camera.Render();
 
@@ -84,12 +86,12 @@ public sealed class PartIconUtils {
     result = snapshot;
 
     // Cleanup.
-    UnityEngine.Object.DestroyImmediate(iconPrefab);
-    UnityEngine.Object.DestroyImmediate(cameraObj);
-    UnityEngine.Object.DestroyImmediate(lightObj);
-    UnityEngine.Object.DestroyImmediate(renderTarget);
+    Object.DestroyImmediate(iconPrefab);
+    Object.DestroyImmediate(cameraObj);
+    Object.DestroyImmediate(lightObj);
+    Object.DestroyImmediate(renderTarget);
     
-    iconsCache.Add(cacheKey, result);
+    IconsCache.Add(cacheKey, result);
     return result;
   }
 
