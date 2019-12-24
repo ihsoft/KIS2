@@ -14,6 +14,8 @@ public sealed class PartIconUtils {
   const int IconCameraLayer = 8;
   const float InflightLightIntensity = 0.4f;
   const float IconCameraZoom = 0.75f;
+  const int DefaultHighResolution = 512;
+  const int DefaultStdResolution = 256;
 
   static readonly Dictionary<string, Texture> iconsCache = new Dictionary<string, Texture>();
 
@@ -91,12 +93,44 @@ public sealed class PartIconUtils {
     return result;
   }
 
+  /// <summary>
+  /// Makes a sprite that represents the part in it's default icon state. This is what is shown in
+  /// the editor when the part is not hovered.
+  /// </summary>
+  /// <param name="part">The part to make the icon for.</param>
+  /// <param name="resolution">
+  /// The size of the sprite. The part icon is always square. If not set, then the best size will be
+  /// picked based on the screen resolution.
+  /// </param>
+  /// <returns>The sprite of the icon.</returns>
+  public Texture MakeDefaultIcon(Part part, int? resolution = null) {
+    return MakeDefaultIcon(
+        part.partInfo,
+        GetBestIconResolution(resolution), VariantsUtils.GetCurrentPartVariant(part));
+  }
+
   #region Local utility methods
   void SetLayerRecursively(GameObject obj, int newLayer) {
     obj.layer = newLayer;
     for (var i = obj.transform.childCount - 1; i >= 0; --i) {
       SetLayerRecursively(obj.transform.GetChild(i).gameObject, newLayer);
     }
+  }
+
+  /// <summary>
+  /// Gives the best icon resolution if one is not explicitly set or doesn't make sense.
+  /// </summary>
+  /// <remarks>
+  /// This method have an ultimate power to override the caller's preference. It tries to give a
+  /// best resolution given a number of factors. The screen resolution is one of them.
+  /// </remarks>
+  /// <param name="requested">The caller's idea of the resolution.</param>
+  /// <returns></returns>
+  static int GetBestIconResolution(int? requested = null) {
+    if (Screen.currentResolution.height > 1080) {
+      return requested * 2 ?? DefaultHighResolution;
+    }
+    return requested ?? DefaultStdResolution;
   }
   #endregion
 }
