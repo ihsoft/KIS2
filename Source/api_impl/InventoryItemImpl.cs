@@ -129,6 +129,11 @@ internal sealed class InventoryItemImpl : InventoryItem {
     this.itemId = itemGuid ?? Guid.NewGuid().ToString();
     UpdateConfig();
   }
+
+  /// <inheritdoc cref="InventoryItemImpl(IKisInventory,AvailablePart,ConfigNode,string)"/>
+  public InventoryItemImpl(IKisInventory inventory, Part part, string itemGuid = null)
+      : this(inventory, part.partInfo, KisApi.PartNodeUtils.PartSnapshot(part), itemGuid) {
+  }
   #endregion
 
   #region System overrides
