@@ -44,7 +44,7 @@ public sealed class PartIconUtils {
     iconPrefab.transform.position = new Vector3(0, 0, 2f);
     iconPrefab.transform.rotation = Quaternion.Euler(-15f, 0.0f, 0.0f);
     iconPrefab.transform.Rotate(0.0f, -30f, 0.0f);
-    SetLayerRecursively(iconPrefab, IconCameraLayer);
+    iconPrefab.SetLayerRecursive(IconCameraLayer);
 
     // Setup lighting.
     GameObject lightObj = null;
@@ -112,13 +112,6 @@ public sealed class PartIconUtils {
   }
 
   #region Local utility methods
-  void SetLayerRecursively(GameObject obj, int newLayer) {
-    obj.layer = newLayer;
-    for (var i = obj.transform.childCount - 1; i >= 0; --i) {
-      SetLayerRecursively(obj.transform.GetChild(i).gameObject, newLayer);
-    }
-  }
-
   /// <summary>
   /// Gives the best icon resolution if one is not explicitly set or doesn't make sense.
   /// </summary>
