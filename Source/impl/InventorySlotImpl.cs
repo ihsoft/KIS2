@@ -137,6 +137,13 @@ internal sealed class InventorySlotImpl {
       + " slot due to their resource amounts are too different between each other or the slot's"
       + " items.");
 
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message DifferentVariantReasonText = new Message(
+      "",
+      defaultTemplate: "Different part variant",
+      description: "Error message that is presented when parts cannot be added to the inventory"
+      + " slot due to their variants are different between each other or with the slot's items.");
+
   /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
   static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
       ResourceMultipartSpecialValueText = new Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>(
@@ -189,6 +196,14 @@ internal sealed class InventorySlotImpl {
   /// <seealso cref="CheckIfSimilar"/>
   // ReSharper disable once MemberCanBePrivate.Global
   public const string DifferentResourceAmountsReason = "DifferentResourcesAmounts";
+
+  /// <summary>
+  /// Short name of the checking error for the case when parts with different variants are being
+  /// added to the slot.
+  /// </summary>
+  /// <seealso cref="DifferentVariantReasonText"/>
+  // ReSharper disable once MemberCanBePrivate.Global
+  public const string DifferentVariantReason = "DifferentVariant";
 
   /// <summary>Tells if this slot is visible in the inventory dialog.</summary>
   /// <remarks>
@@ -342,33 +357,30 @@ internal sealed class InventorySlotImpl {
     if (checkItems.Length == 0) {
       return null;
     }
-    var errors = new HashSet<ErrorReason>();
-    var slotPartName = isEmpty ? checkItems[0].avPart.name : avPart.name;
-    //FIXME: check variants - must be equal.
+    var refItem = isEmpty ? checkItems[0] : slotItems[0];
+
+    var slotPartName = isEmpty ? refItem.avPart.name : avPart.name;
     if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
-      errors.Add(new ErrorReason() {
-          shortString = DifferentPartReason,
-          guiString = DifferentPartsReasonText,
-      });
-    } else {
-      var checkSimilarityValues =
-          _resourceSimilarityValues ?? CalculateSimilarityValues(checkItems[0]);
-      if (checkItems.Any(x => !CheckIfSameResources(x, checkSimilarityValues))) {
-        errors.Add(new ErrorReason() {
-            shortString = DifferentResourcesReason,
-            guiString = DifferentResourcesReasonText,
-        });
-      } else if (checkItems.Any(x => !CheckIfSimilar(x, checkSimilarityValues))) {
-        errors.Add(new ErrorReason() {
-            shortString = DifferentResourceAmountsReason,
-            guiString = DifferentResourceAmountsReasonText,
-        });
-      }
+      return ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
     }
-    if (logErrors && errors.Count > 0) {
-      DebugEx.Error("Cannot add items to slot:\n{0}", DbgFormatter.C2S(errors, separator: "\n"));
+
+    var slotVariant = VariantsUtils2.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
+    if (checkItems.Any(
+        x => VariantsUtils2.GetCurrentPartVariant(x.avPart, x.itemConfig) != slotVariant)) {
+      return ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
     }
-    return errors.Count > 0 ? errors.ToArray() : null;
+
+    var checkSimilarityValues =
+        _resourceSimilarityValues ?? CalculateSimilarityValues(refItem);
+    if (checkItems.Any(x => !CheckIfSameResources(x, checkSimilarityValues))) {
+      return ReturnErrorReasons(logErrors, DifferentResourcesReason, DifferentResourcesReasonText);
+    }
+    if (checkItems.Any(x => !CheckIfSimilar(x, checkSimilarityValues))) {
+      return ReturnErrorReasons(
+          logErrors, DifferentResourceAmountsReason, DifferentResourceAmountsReasonText);
+    }
+
+    return null;
   }
 
   /// <summary>Fills tooltip with the slot info.</summary>
@@ -581,6 +593,19 @@ internal sealed class InventorySlotImpl {
     var checkSimilarityValues = CalculateSimilarityValues(checkItem);
     return similarityValues.Count == checkSimilarityValues.Count
         && !similarityValues.Keys.Except(checkSimilarityValues.Keys).Any();
+  }
+
+  /// <summary>
+  /// Returns a standard error reason response.</summary>
+  ErrorReason[] ReturnErrorReasons(bool logErrors, string reasonCode, string reasonText) {
+    var reason = new ErrorReason() {
+        shortString = reasonCode,
+        guiString = reasonText,
+    };
+    if (logErrors) {
+      DebugEx.Error("Cannot add items to slot:\n{0}", reason);
+    }
+    return new[] { reason };
   }
   #endregion
 }
