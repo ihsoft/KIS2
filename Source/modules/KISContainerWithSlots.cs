@@ -296,6 +296,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public bool OnKisDrag(bool pointerMoved) {
     return _canAcceptDraggedItems;
   }
+
+  /// <inheritdoc/>
+  public void OnFocusTarget(GameObject newTarget) {
+  }
   #endregion
 
   #region AbstractPartModule overrides
