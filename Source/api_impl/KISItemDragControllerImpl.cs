@@ -167,7 +167,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   /// The absolute conditions to be met:
   /// <ul type="bullet">
   /// <li>Now quick save/load ability.</li>
-  /// <li>No autosave.</li>
+  /// <li>No auto-save.</li>
   /// <li>No ship control.</li>
   /// </ul>
   /// </remarks>

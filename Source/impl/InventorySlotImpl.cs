@@ -609,5 +609,5 @@ internal sealed class InventorySlotImpl {
   }
   #endregion
 }
-  
+
 }  // namespace
