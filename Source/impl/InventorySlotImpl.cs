@@ -244,7 +244,11 @@ internal sealed class InventorySlotImpl {
 
   /// <summary>Generalized icon of the slot.</summary>
   public Texture iconImage =>
-      !isEmpty ? KisApi.PartIconUtils.MakeDefaultIcon(avPart, 256, null) : null;
+      !isEmpty 
+      ? KisApi.PartIconUtils.MakeDefaultIcon(
+          avPart, 256,
+          VariantsUtils.GetCurrentPartVariant(slotItems[0].avPart, slotItems[0].itemConfig))
+      : null;
 
   /// <summary>Tells if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Length == 0;
