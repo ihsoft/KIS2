@@ -219,12 +219,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
       return;
     }
     DebugEx.Info("Cancel dragged items: count={0}", leasedItems.Length);
-    try {
-      _cancelItemsLeaseFn();
-    } catch (Exception ex) {
-      // Don't let callers breaking the cleanup.
-      DebugEx.Error("Custom cancel lease callback failed: {0}", ex);
-    }
+    SafeCallbacks.Action(_cancelItemsLeaseFn);
     ClearLease(isCancelled: true);
   }
 
