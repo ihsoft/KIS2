@@ -533,6 +533,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     ArrangeSlots();  // Trigger compaction if there are invisible items.
     ArrangeWindows();
   }
+
+  /// <summary>Callback when pointers enters or leaves the dialog.</summary>
+  void OnEditorDialogHover(bool isHovered) {
+    KisApi.ItemDragController.SetFocusedTarget(isHovered ? _unityWindow.gameObject : null);
+  }
   #endregion
 
   #region Local utility methods
@@ -578,6 +583,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.onNewGridSize.Add(OnNewGridSize);
     _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
     _unityWindow.onDialogClose.Add(CloseInventoryWindow);
+    _unityWindow.onDialogHover.Add(OnEditorDialogHover);
 
     _unityWindow.title = DialogTitle.Format(part.partInfo.title);
     _unityWindow.minSize = minGridSize;
