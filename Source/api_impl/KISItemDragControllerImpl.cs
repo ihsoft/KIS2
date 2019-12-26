@@ -131,6 +131,9 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     }
   }
   UiKisInventorySlotDragIcon _dragIconObj;
+
+  /// <inheritdoc/>
+  public GameObject focusedTarget { get; private set; }
   #endregion
 
   #region Local constants, properties and fields
@@ -221,6 +224,12 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     DebugEx.Info("Cancel dragged items: count={0}", leasedItems.Length);
     SafeCallbacks.Action(_cancelItemsLeaseFn);
     ClearLease(isCancelled: true);
+  }
+
+  /// <inheritdoc/>
+  public void SetFocusedTarget(GameObject newTarget) {
+    Array.ForEach(_dragTargets, t => SafeCallbacks.Action(() => t.OnFocusTarget(newTarget)));
+    focusedTarget = newTarget;
   }
 
   /// <inheritdoc/>

@@ -42,6 +42,11 @@ public interface IKisItemDragController {
   /// <seealso cref="isDragging"/>
   UiKisInventorySlotDragIcon dragIconObj { get; }
 
+  /// <summary>Target that currently has the pointer focus.</summary>
+  /// <value>The object that represents GUI or <c>null</c> of there is none.</value>
+  /// <seealso cref="SetFocusedTarget"/>
+  GameObject focusedTarget { get; }
+
   /// <summary>Offers items for the dragging.</summary>
   /// <remarks>
   /// Items can belong to different inventories. The items can only be consumed all or none.
@@ -57,8 +62,8 @@ public interface IKisItemDragController {
   /// cancel the operation, but it will be treated as an error by the target.
   /// </param>
   /// <param name="cancelItemsLeaseFn">
-  /// The cleanup action that is called when the drag operation is cancelled. This action must never
-  /// fail.
+  /// The cleanup action that is called when the drag operation is cancelled. It's called before the
+  /// <see cref="leasedItems"/> are cleaned up. This action must never fail.
   /// </param>
   /// <returns><c>true</c> if dragging has successfully started.</returns>
   /// <seealso cref="leasedItems"/>
@@ -85,6 +90,15 @@ public interface IKisItemDragController {
   /// <seealso cref="leasedItems"/>
   /// <seealso cref="IKisDragTarget.OnKisDragEnd"/>
   void CancelItemsLease();
+
+  /// <summary>Sets the target GUI object that is currently owns the dragging focus.</summary>
+  /// <remarks>
+  /// Even though any caller can set the value, only the actual UI handlers should be doing it.
+  /// Exactly one GameObject acn be a focus target at the moment. In a normal case, it's the dialog
+  /// that has the pointer focus.
+  /// </remarks>
+  /// <param name="newTarget">The object that claims ownership on the focus.</param>
+  void SetFocusedTarget(GameObject newTarget);
 
   /// <summary>
   /// Registers a drag target that will be notified about the dragged items status.

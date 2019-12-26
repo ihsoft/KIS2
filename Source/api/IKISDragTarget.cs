@@ -4,6 +4,10 @@
 
 // ReSharper disable once CheckNamespace
 // ReSharper disable once IdentifierTypo
+using UnityEngine;
+
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>
@@ -44,6 +48,12 @@ public interface IKisDragTarget {
   /// <returns><c>true</c> if the target can accept the currently dragged items.</returns>
   /// <seealso cref="IKisItemDragController.LeaseItems"/>
   bool OnKisDrag(bool pointerMoved);
+
+  /// <summary>Notifies that a focus target is about to change.</summary>
+  /// <remarks>The callback is called <i>before</i> the target is changed.</remarks>
+  /// <param name="newTarget">The target that takes the focus.</param>
+  /// <seealso cref="IKisItemDragController.focusedTarget"/>
+  void OnFocusTarget(GameObject newTarget);
 }
 
 }  // namespace
