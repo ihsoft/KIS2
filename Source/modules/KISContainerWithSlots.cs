@@ -756,6 +756,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     dragIconObj.hasScience = _slotWithPointerFocus.hasScience;
     dragIconObj.stackSize = itemsToDrag.Length;
     dragIconObj.resourceStatus = _slotWithPointerFocus.resourceStatus;
+    UIPartActionController.Instance.partInventory.PlayPartSelectedSFX();
   }
 
   /// <summary>Triggers when items from the slot are consumed by the target.</summary>
@@ -798,6 +799,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       if (consumedItems != null) {
         var newItems = base.AddItems(consumedItems);
         UpdateSlotItems(_slotWithPointerFocus, addItems: newItems);
+        UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
       }
     }
     if (consumedItems == null) {
