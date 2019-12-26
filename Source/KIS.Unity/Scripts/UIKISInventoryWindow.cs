@@ -18,7 +18,7 @@ namespace KIS2 {
 /// Unity class that controls KIS inventory layout and its basic GUI functionality.
 /// </summary>
 public class UiKisInventoryWindow : UiPrefabBaseScript,
-    IKspDevPointerListener<Slot> {
+    IKspDevPointerListener<Slot>, IPointerEnterHandler, IPointerExitHandler {
   #region Unity serialized fields
   [SerializeField]
   Text headerText = null;
@@ -80,6 +80,9 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   /// <summary>Called when the dialog close is requested.</summary>
   /// <remarks>The dialog doesn't actually close. One of the listeners should do it.</remarks>
   public delegate void OnDialogClose();
+
+  /// <summary>Called when the dialog gets or looses the pointer focus.</summary>
+  public delegate void OnPointerHover(bool isHovered);
   #endregion
 
   #region Local fields
@@ -203,6 +206,25 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
 
   /// <summary>Callback that is called user asks to close the dialog.</summary>
   public readonly List<OnDialogClose> onDialogClose = new List<OnDialogClose>();
+
+  /// <summary>
+  /// Callback that is called when the pointer hovers over or blurs off the control.   
+  /// </summary>
+  public readonly List<OnPointerHover> onDialogHover = new List<OnPointerHover>();
+  #endregion
+
+  #region IPointerEnterHandler implemenation
+  /// <inheritdoc/>
+  public void OnPointerEnter(PointerEventData eventData) {
+    onDialogHover.ForEach(notify => notify(true));
+  }
+  #endregion
+
+  #region IPointerExitHandler implemenation
+  /// <inheritdoc/>
+  public void OnPointerExit(PointerEventData eventData) {
+    onDialogHover.ForEach(notify => notify(false));
+  }
   #endregion
 
   #region UIPrefabBaseScript overrides
