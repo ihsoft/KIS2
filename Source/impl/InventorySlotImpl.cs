@@ -364,9 +364,9 @@ internal sealed class InventorySlotImpl {
       return ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
     }
 
-    var slotVariant = VariantsUtils2.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
+    var slotVariant = VariantsUtils.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
     if (checkItems.Any(
-        x => VariantsUtils2.GetCurrentPartVariant(x.avPart, x.itemConfig) != slotVariant)) {
+        x => VariantsUtils.GetCurrentPartVariant(x.avPart, x.itemConfig) != slotVariant)) {
       return ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
     }
 
