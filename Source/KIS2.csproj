@@ -102,6 +102,7 @@
     <Compile Include="api_impl\CommonConfigImpl.cs" />
     <Compile Include="api_impl\InventoryItemImpl.cs" />
     <Compile Include="api_impl\KisItemDragControllerImpl.cs" />
+    <Compile Include="controllers\EditorItemDragController.cs" />
     <Compile Include="controllers\KisModLoadController.cs" />
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
