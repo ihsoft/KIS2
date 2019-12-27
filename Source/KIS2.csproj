@@ -114,9 +114,8 @@
     <Folder Include="api" />
     <Folder Include="api\Utils" />
     <Folder Include="api_impl" />
-    <Folder Include="modules" />
-    <Folder Include="controllers" />
     <Folder Include="KSPDev_candidates" />
+    <Folder Include="modules" />
     <Folder Include="impl" />
   </ItemGroup>
   <ItemGroup>
