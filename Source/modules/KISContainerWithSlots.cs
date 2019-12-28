@@ -88,6 +88,38 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       + " user should do to add 10 items from the inventory slot into the currently dragged pack.\n"
       + " The <<1>> argument is a user friendly action name.");
 
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> AddOneItemsHint = new Message<KeyboardEventType>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add <color=#5a5>1</color> item",
+      description: "Hint text in the inventory slot tooltip that tells what action"
+      + " user should do to add one item to the target slot.\n"
+      + " The <<1>> argument is a user friendly action name.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> AddTenItemsHint = new Message<KeyboardEventType>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add <color=#5a5>10</color> items",
+      description: "Hint text in the inventory slot tooltip that tells what action"
+      + " user should do to add 10 items to the target slot.\n"
+      + " The <<1>> argument is a user friendly action name.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> RemoveOneItemsHint = new Message<KeyboardEventType>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to remove <color=#5a5>1</color> item",
+      description: "Hint text in the inventory slot tooltip that tells what action"
+      + " user should do to remove one item from the target slot.\n"
+      + " The <<1>> argument is a user friendly action name.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> RemoveTenItemsHint = new Message<KeyboardEventType>(
+      "",
+      defaultTemplate: "<b><color=#5a5><<1>></color></b> to remove <color=#5a5>10</color> items",
+      description: "Hint text in the inventory slot tooltip that tells what action"
+      + " user should do to remove 10 items from the target slot.\n"
+      + " The <<1>> argument is a user friendly action name.");
+
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message StoreIntoSlotActionTooltip = new Message(
       "",
@@ -201,6 +233,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
   static readonly Event AddToStackEvent = Event.KeyboardEvent("mouse0");
   static readonly Event StoreIntoSlotEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event AddOneItemEvent = Event.KeyboardEvent("^mouse0");
+  static readonly Event AddTenItemsEvent = Event.KeyboardEvent("#mouse0");
+  static readonly Event RemoveOneItemEvent = Event.KeyboardEvent("^mouse1");
+  static readonly Event RemoveTenItemsEvent = Event.KeyboardEvent("#mouse1");
   #endregion
 
   #region Persistent node names
@@ -722,31 +758,96 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <remarks>This method requires a pointer actions target. It must not be <c>null</c>.</remarks>
   /// <seealso cref="_slotWithPointerFocus"/>
   void MouseClickTakeItems(PointerEventData.InputButton button) {
+    if (_slotWithPointerFocus.isEmpty) {
+      return; // Nothing to do.
+    }
+    if ((!HighLogic.LoadedSceneIsEditor || !MaybeAdjustSlotInEditor(button))
+        && !MaybeHandleSlotInFlight(button)) {
+      UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
+      HostedDebugLog.Warning(this, "No action for the pointer event");
+    }
+  }
+
+  /// <summary>Handles editor specific events on the slots.</summary>
+  /// <returns><c>true</c> if the event was handled.</returns>
+  bool MaybeAdjustSlotInEditor(PointerEventData.InputButton button) {
+    if (KisApi.ItemDragController.isDragging) {
+      return false;
+    }
+    var addAvParts = new List<AvailablePart>();
+    var addItemConfigs = new List<ConfigNode>();
+    var removeItems = new List<InventoryItem>();
+    var eventHandled = true;
+    if (EventChecker.CheckClickEvent(AddOneItemEvent, button)) {
+      addAvParts.Add(_slotWithPointerFocus.slotItems[0].avPart);
+      addItemConfigs.Add(_slotWithPointerFocus.slotItems[0].itemConfig);
+    } else if (EventChecker.CheckClickEvent(AddTenItemsEvent, button)) {
+      for (var i = 0; i < 10; i++) {
+        addAvParts.Add(_slotWithPointerFocus.slotItems[0].avPart);
+        addItemConfigs.Add(_slotWithPointerFocus.slotItems[0].itemConfig);
+      }
+    } else if (EventChecker.CheckClickEvent(RemoveOneItemEvent, button)) {
+      removeItems.Add(_slotWithPointerFocus.slotItems[0]);
+    } else if (EventChecker.CheckClickEvent(RemoveTenItemsEvent, button)) {
+      for (var i = 0; i < 10 && i < _slotWithPointerFocus.slotItems.Length; i++) {
+        removeItems.Add(_slotWithPointerFocus.slotItems[i]);
+      }
+    } else {
+      eventHandled = false;
+    }
+    if (removeItems.Count > 0) {
+      DeleteItems(removeItems.ToArray());
+    }
+    if (addAvParts.Count > 0) {
+      var addAvPartsArray = addAvParts.ToArray();
+      var addItemConfigsArray = addItemConfigs.ToArray();
+      var checkResult = CheckCanAddParts(addAvPartsArray, addItemConfigsArray);
+      if (checkResult == null) {
+        var newItems = base.AddParts(addAvPartsArray, addItemConfigsArray);
+        UpdateSlotItems(_slotWithPointerFocus, addItems: newItems);
+      } else {
+        UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
+        var errorMsg = checkResult
+            .Select(x => x.guiString)
+            .Where(x => !string.IsNullOrEmpty(x))
+            .ToArray();
+        if (errorMsg.Length > 0) {
+          ScreenMessaging.ShowPriorityScreenMessage(
+              ScreenMessaging.SetColorToRichText(
+                  string.Join("\n", errorMsg),
+                  ScreenMessaging.ErrorColor));
+        }
+      }
+    }
+    if (eventHandled) {
+      UpdateTooltip();
+    }
+    return eventHandled;
+  }
+
+  /// <summary>Handles flight specific events on the slots.</summary>
+  /// <returns><c>true</c> if the event was handled.</returns>
+  bool MaybeHandleSlotInFlight(PointerEventData.InputButton button) {
     var newCanTakeItems = _slotWithPointerFocus.slotItems
         .Where(i => !i.isLocked)
         .ToArray();
-    InventoryItem[] itemsToDrag = null;
-
-    // Go thru the known mouse+keyboard events for the action.
-    if (EventChecker.CheckClickEvent(TakeSlotEvent, button)) {
-      if (newCanTakeItems.Length > 0) {
-        itemsToDrag = newCanTakeItems;
-      }
-    } else if (EventChecker.CheckClickEvent(TakeOneItemEvent, button)) {
-      if (newCanTakeItems.Length >= 1) {
-        itemsToDrag = newCanTakeItems.Take(1).ToArray();
-      }
-    } else if (EventChecker.CheckClickEvent(TakeTenItemsEvent, button)) {
-      if (newCanTakeItems.Length >= 10) {
-        itemsToDrag = newCanTakeItems.Take(10).ToArray();
-      }
+    if (newCanTakeItems.Length == 0) {
+      return true; // Nothing to do, so consider the event was handled.
     }
-    if (itemsToDrag == null) {
-      UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
-      HostedDebugLog.Error(
-          this, "Cannot take items from slot: totalItems={0}, canTakeItems={1}",
-          _slotWithPointerFocus.slotItems.Length, newCanTakeItems.Length);
-      return;
+
+    var itemsToDrag = new InventoryItem[0];
+    var eventHandled = true;
+    if (EventChecker.CheckClickEvent(TakeSlotEvent, button)) {
+      itemsToDrag = newCanTakeItems;
+    } else if (EventChecker.CheckClickEvent(TakeOneItemEvent, button)) {
+      itemsToDrag = newCanTakeItems.Take(1).ToArray();
+    } else if (EventChecker.CheckClickEvent(TakeTenItemsEvent, button)) {
+      itemsToDrag = newCanTakeItems.Take(10).ToArray();
+    } else {
+      eventHandled = false;
+    }
+    if (itemsToDrag.Length == 0) {
+      return eventHandled;
     }
 
     // Either add or set the grabbed items.
@@ -760,9 +861,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         _slotWithPointerFocus.iconImage, itemsToDrag, ConsumeSlotItems, CancelSlotLeasedItems);
     var dragIconObj = KisApi.ItemDragController.dragIconObj;
     dragIconObj.hasScience = _slotWithPointerFocus.hasScience;
-    dragIconObj.stackSize = itemsToDrag.Length;
+    dragIconObj.stackSize = KisApi.ItemDragController.leasedItems.Length;
     dragIconObj.resourceStatus = _slotWithPointerFocus.resourceStatus;
     UIPartActionController.Instance.partInventory.PlayPartSelectedSFX();
+    return true;
   }
 
   /// <summary>Triggers when items from the slot are consumed by the target.</summary>
@@ -1028,11 +1130,23 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     } else if (!_slotWithPointerFocus.isEmpty) {
       currentTooltip.gameObject.SetActive(true);
       _slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
-      var hints = new List<string> {
-          TakeStackHint.Format(TakeSlotEvent),
-          TakeOneItemHint.Format(TakeOneItemEvent),
-          TakeTenItemsHint.Format(TakeTenItemsEvent)
-      };
+      List<string> hints;
+      if (HighLogic.LoadedSceneIsEditor) {
+        hints = new List<string> {
+            TakeStackHint.Format(TakeSlotEvent),
+            TakeOneItemHint.Format(TakeOneItemEvent),
+            AddOneItemsHint.Format(AddOneItemEvent),
+            AddTenItemsHint.Format(AddTenItemsEvent),
+            RemoveOneItemsHint.Format(RemoveOneItemEvent),
+            RemoveTenItemsHint.Format(RemoveTenItemsEvent)
+        };
+      } else {
+        hints = new List<string> {
+            TakeStackHint.Format(TakeSlotEvent),
+            TakeOneItemHint.Format(TakeOneItemEvent),
+            TakeTenItemsHint.Format(TakeTenItemsEvent)
+        };
+      }
       currentTooltip.hints = string.Join("\n", hints);
     }
   }
