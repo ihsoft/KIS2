@@ -270,7 +270,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   UIKISInventoryTooltip.Tooltip currentTooltip => _unityWindow.currentTooltip;
 
   /// <summary>Last known position at the dialog close. It will be restored at open.</summary>
-  Vector3? screenPosition;
+  Vector3? _screenPosition;
 
   /// <summary>All slots inventory windows opened till now.</summary>
   /// TODO(ihsoft): Move into some global location to support other GUI modules.
@@ -591,13 +591,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.SetGridSize(new Vector3(slotGridWidth, slotGridHeight, 0)); 
     UpdateInventoryWindow();
 
-    if (screenPosition == null) {
+    if (_screenPosition == null) {
       var basePos = ArrangeWindows(calculateOnly: true);
-      HostedDebugLog.Fine(this, "Set calculated window positon: {0}", basePos);
+      HostedDebugLog.Fine(this, "Set calculated window position: {0}", basePos);
       _unityWindow.mainRect.localPosition = basePos;
     } else {
-      HostedDebugLog.Fine(this, "Restore window position: {0}", screenPosition);
-      _unityWindow.mainRect.localPosition = screenPosition.Value;
+      HostedDebugLog.Fine(this, "Restore window position: {0}", _screenPosition);
+      _unityWindow.mainRect.localPosition = _screenPosition.Value;
       var dragWindow = _unityWindow.gameObject.GetComponent<UiWindowDragControllerScript>();
       if (dragWindow != null) {
         dragWindow.positionChanged = true;
@@ -617,7 +617,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     HostedDebugLog.Fine(this, "Destroying inventory window");
     var dragWindow = _unityWindow.gameObject.GetComponent<UiWindowDragControllerScript>();
     if (dragWindow == null || dragWindow.positionChanged) {
-      screenPosition = _unityWindow.mainRect.localPosition;
+      _screenPosition = _unityWindow.mainRect.localPosition;
     }
     if (_dragSourceSlot != null) {
       // TODO(ihsoft): Better, disable the close button when there are items in the dragging state.
