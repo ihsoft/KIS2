@@ -39,10 +39,17 @@ public interface IKisDragTarget {
 
   /// <summary>Asks the target if the items can be consumed by it.</summary>
   /// <remarks>
+  /// <p>
   /// This callback is called each frame while there are items being dragged. Multiple targets can
   /// reply to this callback, and some (or all) of them can answer positively. It doesn't impound
   /// any obligations on the targets, but it does affect the GUI appearance of the dragged icon. If
   /// no targets can accept the items, the user will notice.
+  /// </p>
+  /// <p>
+  /// The callbacks must not modify dragging state! If the decision is made in the callback, the
+  /// actual consume or cancel action must be executed outside of the callback branch. E.g. by
+  /// scheduling the call at the end of the frame.
+  /// </p>
   /// </remarks>
   /// <param name="pointerMoved">Tells if mouse pointer has moved in this frame.</param>
   /// <returns><c>true</c> if the target can accept the currently dragged items.</returns>

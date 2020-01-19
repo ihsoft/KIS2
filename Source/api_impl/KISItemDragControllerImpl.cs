@@ -50,6 +50,10 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     /// <summary>The controller object to notify.</summary>
     public KisItemDragControllerImpl controller;
 
+    /// <summary>Tells if callbacks are being handling.</summary>
+    /// <remarks>Not all actions with the controller are allowed in this mode.</remarks>
+    public bool isInCallbackCycle { get; private set; }
+  
     #region Local fields
     const string TotalControlLock = "KISDragControllerUberLock";
     readonly ScreenMessage _statusScreenMessage =
@@ -77,6 +81,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
       if (!_controlsLocked) {
         return;
       }
+      isInCallbackCycle = true;
       ScreenMessages.PostScreenMessage(_statusScreenMessage);
       var pointerMoved = false;
       if (_lastPointerPosition != Input.mousePosition) {
@@ -92,6 +97,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
         // Delay release to not leak ESC key release to the game.
         AsyncCall.CallOnEndOfFrame(this, CancelLock);
       }
+      isInCallbackCycle = false;
     }
     #endregion
 
@@ -204,6 +210,9 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
       DebugEx.Error("Cannot consume items since nothing is being dragged");
       return null;
     }
+    if (_dragTracker.isInCallbackCycle) {
+      throw new InvalidOperationException("Cannot consume items from a drag callback!");
+    }
     var consumed = _consumeItemsFn();
     if (!consumed) {
       DebugEx.Fine("Items not consumed: provider refused the deal");
@@ -220,6 +229,9 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     if (!isDragging) {
       DebugEx.Warning("Cannot cancel dragging since nothing is being dragged");
       return;
+    }
+    if (_dragTracker.isInCallbackCycle) {
+      throw new InvalidOperationException("Cannot cancel dragging from a drag callback!");
     }
     DebugEx.Info("Cancel dragged items: count={0}", leasedItems.Length);
     SafeCallbacks.Action(_cancelItemsLeaseFn);
