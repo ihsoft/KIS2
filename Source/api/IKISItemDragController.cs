@@ -93,11 +93,18 @@ public interface IKisItemDragController {
 
   /// <summary>Sets the target GUI object that is currently owns the dragging focus.</summary>
   /// <remarks>
+  /// <p>
   /// Even though any caller can set the value, only the actual UI handlers should be doing it.
-  /// Exactly one GameObject acn be a focus target at the moment. In a normal case, it's the dialog
+  /// Exactly one GameObject can be a focus target at the moment. In a normal case, it's the dialog
   /// that has the pointer focus.
+  /// </p>
+  /// <p>
+  /// When the focused control looses focus, it must call this method with <c>null</c> to indicate
+  /// that the focus has been released.
+  /// </p>
   /// </remarks>
   /// <param name="newTarget">The object that claims ownership on the focus.</param>
+  /// <seealso cref="focusedTarget"/>
   void SetFocusedTarget(GameObject newTarget);
 
   /// <summary>
