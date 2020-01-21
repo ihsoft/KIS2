@@ -185,6 +185,10 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   /// <inheritdoc/>
   public bool LeaseItems(Texture dragIcon, InventoryItem[] items,
                          Func<bool> consumeItemsFn, Action cancelItemsLeaseFn) {
+    ArgumentGuard.NotNull(dragIcon, nameof(dragIcon));
+    ArgumentGuard.HasElements(items, nameof(items));
+    ArgumentGuard.NotNull(consumeItemsFn, nameof(consumeItemsFn));
+    ArgumentGuard.NotNull(cancelItemsLeaseFn, nameof(cancelItemsLeaseFn));
     if (isDragging) {
       DebugEx.Error("Cannot start a new dragging: oldLeasedItems={0}, newLeasedItems={1}",
                     leasedItems.Length, items.Length);
@@ -246,6 +250,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
 
   /// <inheritdoc/>
   public void RegisterTarget(IKisDragTarget target) {
+    ArgumentGuard.NotNull(target, nameof(target));
     if (!_dragTargets.Contains(target)) {
       _dragTargets = _dragTargets.Concat(new[] { target }).ToArray();
       if (isDragging) {
@@ -258,6 +263,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
 
   /// <inheritdoc/>
   public void UnregisterTarget(IKisDragTarget target) {
+    ArgumentGuard.NotNull(target, nameof(target));
     if (_dragTargets.Contains(target)) {
       if (isDragging) {
         SafeCallbacks.Action(() => target.OnKisDragEnd(isCancelled: true));
