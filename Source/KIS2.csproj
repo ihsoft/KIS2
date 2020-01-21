@@ -58,7 +58,7 @@
     <Reference Include="KIS.Unity">
       <HintPath>KISUnity\Assets\Plugins\KIS.Unity.dll</HintPath>
     </Reference>
-    <Reference Include="KSPDev_Utils.2.0">
+    <Reference Include="KSPDev_Utils.2.0, Version=2.0.7231.38433, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\Binaries\KSPDev_Utils.2.0.dll</HintPath>
     </Reference>
     <Reference Include="System">
@@ -106,6 +106,7 @@
     <Compile Include="controllers\KisModLoadController.cs" />
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
+    <Compile Include="KSPDev_candidates\EventChecker2.cs" />
     <Compile Include="modules\KisContainerWithSlots.cs" />
     <Compile Include="modules\KisContainerBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -114,7 +115,6 @@
     <Folder Include="api" />
     <Folder Include="api\Utils" />
     <Folder Include="api_impl" />
-    <Folder Include="KSPDev_candidates" />
     <Folder Include="modules" />
     <Folder Include="impl" />
   </ItemGroup>

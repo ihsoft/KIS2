@@ -778,17 +778,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var addItemConfigs = new List<ConfigNode>();
     var removeItems = new List<InventoryItem>();
     var eventHandled = true;
-    if (EventChecker.CheckClickEvent(AddOneItemEvent, button)) {
+    if (EventChecker2.CheckClickEvent(AddOneItemEvent, inputButton: button)) {
       addAvParts.Add(_slotWithPointerFocus.slotItems[0].avPart);
       addItemConfigs.Add(_slotWithPointerFocus.slotItems[0].itemConfig);
-    } else if (EventChecker.CheckClickEvent(AddTenItemsEvent, button)) {
+    } else if (EventChecker2.CheckClickEvent(AddTenItemsEvent, inputButton: button)) {
       for (var i = 0; i < 10; i++) {
         addAvParts.Add(_slotWithPointerFocus.slotItems[0].avPart);
         addItemConfigs.Add(_slotWithPointerFocus.slotItems[0].itemConfig);
       }
-    } else if (EventChecker.CheckClickEvent(RemoveOneItemEvent, button)) {
+    } else if (EventChecker2.CheckClickEvent(RemoveOneItemEvent, inputButton: button)) {
       removeItems.Add(_slotWithPointerFocus.slotItems[0]);
-    } else if (EventChecker.CheckClickEvent(RemoveTenItemsEvent, button)) {
+    } else if (EventChecker2.CheckClickEvent(RemoveTenItemsEvent, inputButton: button)) {
       for (var i = 0; i < 10 && i < _slotWithPointerFocus.slotItems.Length; i++) {
         removeItems.Add(_slotWithPointerFocus.slotItems[i]);
       }
@@ -837,11 +837,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     var itemsToDrag = new InventoryItem[0];
     var eventHandled = true;
-    if (EventChecker.CheckClickEvent(TakeSlotEvent, button)) {
+    if (EventChecker2.CheckClickEvent(TakeSlotEvent, inputButton: button)) {
       itemsToDrag = newCanTakeItems;
-    } else if (EventChecker.CheckClickEvent(TakeOneItemEvent, button)) {
+    } else if (EventChecker2.CheckClickEvent(TakeOneItemEvent, inputButton: button)) {
       itemsToDrag = newCanTakeItems.Take(1).ToArray();
-    } else if (EventChecker.CheckClickEvent(TakeTenItemsEvent, button)) {
+    } else if (EventChecker2.CheckClickEvent(TakeTenItemsEvent, inputButton: button)) {
       itemsToDrag = newCanTakeItems.Take(10).ToArray();
     } else {
       eventHandled = false;
@@ -898,9 +898,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="_slotWithPointerFocus"/>
   void MouseClickDropItems(PointerEventData.InputButton button) {
     var storeItems = _slotWithPointerFocus.isEmpty
-        && EventChecker.CheckClickEvent(StoreIntoSlotEvent, button);
+        && EventChecker2.CheckClickEvent(StoreIntoSlotEvent, inputButton: button);
     var stackItems = !_slotWithPointerFocus.isEmpty
-        && EventChecker.CheckClickEvent(AddToStackEvent, button);
+        && EventChecker2.CheckClickEvent(AddToStackEvent, inputButton: button);
     InventoryItem[] consumedItems = null;
     if ((storeItems || stackItems) && _canAcceptDraggedItems) {
       consumedItems = KisApi.ItemDragController.ConsumeItems();
