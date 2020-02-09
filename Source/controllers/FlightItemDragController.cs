@@ -22,8 +22,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region Local fields and properties
-  bool isActiveModelInScene =>
-      _savedFlightPartModel != null && _savedFlightPartModel.gameObject.activeSelf;
+  bool isActiveModelInScene => _savedFlightPartModel != null;
 
   static readonly Color GoodToPlaceColor = new Color(0f, 1f, 0f, 0.2f);
   static readonly Color NotGoodToPlaceColor = new Color(1f, 0f, 0f, 0.2f);
@@ -75,24 +74,16 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <inheritdoc/>
   bool IKisDragTarget.OnKisDrag(bool pointerMoved) {
-    //FIXME: how to know result?
-    PositionModelInTheScene();
-    return isActiveModelInScene; // Not of our concern.
+    return PositionModelInTheScene();
   }
 
   /// <inheritdoc/>
   void IKisDragTarget.OnFocusTarget(GameObject newTarget) {
     if (newTarget != null) {
-      if (_savedFlightPartModel != null) {
-        _savedFlightPartModel.gameObject.SetActive(false);
-      }
+      DestroyDraggedModel();
     } else {
       if (KisApi.ItemDragController.isDragging) {
-        if (_savedFlightPartModel == null) {
-          MakeDraggedModelFromItem();
-        } else {
-          _savedFlightPartModel.gameObject.SetActive(true);
-        }
+        MakeDraggedModelFromItem();
       }
     }
   }
@@ -164,24 +155,30 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       renderer.material.color = color;
     }
 
-    // If no surface or parts is hit, then just cleanup the hit point. 
+    // If no surface or part is hit, then show the part being carried. 
     if (!colliderHit) {
       DebugEx.Fine("Not hitting anything. Destroying the hit object...");
       Hierarchy.SafeDestory(_hitTransform);
       _hitTransform = null;
+
+      var cameraTransform = camera.transform;
+      _savedFlightPartModel.position = cameraTransform.position + ray.direction * 10.0f;  // FIX: CONSTANT?
+      _savedFlightPartModel.rotation = cameraTransform.rotation;
+
+      //FIXME: position on screen
       return false;
     }
-    var newHitTransform = false;
+    var newHitTransform = false;  // Only for the logging purpose.
     if (_hitTransform == null) {
       _hitTransform = new GameObject("KISHitTarget").transform;
       newHitTransform = true;
     }
     _hitTransform.position = hit.point;
 
-    // Adjust hit object hierarchy.
+    // Find out if a part was hit.
     var hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
     if (hitPart == null) {
-      // Hit the surface. A lot of things may get wrong if the surface is not leveled!
+      // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
       // Align the model to the celestial body normal and rely on the game's logic on the vessel
       // positioning. It may (and, likely, will) not match to what we may have presented in GUI.
       if (_hitTransform.parent != null || newHitTransform) {
@@ -191,7 +188,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       var surfaceNorm = FlightGlobals.getUpAxis(FlightGlobals.ActiveVessel.mainBody, hit.point);
       _hitTransform.rotation = Quaternion.LookRotation(surfaceNorm);
     } else {
-      // Hit a part. Bind to this point!
+      // We've hit a part. Bind to this point!
       if (_hitTransform.parent == null || newHitTransform) {
         DebugEx.Fine("Hit part: part={0}, at={1}, norm={2}", hitPart, hit.point, hit.normal);
         _hitTransform.SetParent(hitPart.transform);
