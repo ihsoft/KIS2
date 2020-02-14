@@ -27,7 +27,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// When it's the case, it means the pointer is placed outside of any GUI element. However, it
   /// doesn't mean that the dragged item can be dropped into the scene. 
   /// </remarks>
-  bool isActiveModelInScene => _savedFlightPartModel != null;
+  bool isActiveModelInScene => _draggedModel != null;
 
   /// <summary>
   /// Main texture color for the dragged model renderers when the item can be dropped at the pointed
@@ -63,20 +63,23 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   const float MaxRaycastDistance = 50;
 
   /// <summary>Model of the part or assembly that is being dragged.</summary>
-  /// <seealso cref="_surfaceTouchPoint"/>
-  /// <seealso cref="_hitTransform"/>
-  Transform _savedFlightPartModel;
+  /// <seealso cref="_touchPointTransform"/>
+  /// <seealso cref="_hitPointTransform"/>
+  Transform _draggedModel;
 
   /// <summary>Transform of the point which received the pointer hit.</summary>
   /// <remarks>
   /// It can be attached to part if a part has been hit, or be a static object if it was surface.
+  /// This transform, is dynamically created when something is hit, and destroyed when there is
+  /// nothing.
   /// </remarks>
-  /// <seealso cref="_surfaceTouchPoint"/>
-  Transform _hitTransform;
+  /// <seealso cref="_touchPointTransform"/>
+  Transform _hitPointTransform;
 
   /// <summary>Transform in the dragged model that should contact with the hit point.</summary>
-  /// <seealso cref="_hitTransform"/>
-  Transform _surfaceTouchPoint;
+  /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
+  /// <seealso cref="_hitPointTransform"/>
+  Transform _touchPointTransform;
   #endregion
 
   #region MonoBehaviour overrides
@@ -147,33 +150,33 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return; // Cannot be placed into the world.
     }
     DebugEx.Fine("Creating flight scene dragging model...");
-    _savedFlightPartModel = new GameObject("KisDragModel").transform; //FIXME: make the model.
-    _savedFlightPartModel.gameObject.SetActive(true); //FIXME: needed?
+    _draggedModel = new GameObject("KisDragModel").transform; //FIXME: make the model.
+    _draggedModel.gameObject.SetActive(true); //FIXME: needed?
     var partItem = KisApi.ItemDragController.leasedItems[0];
     var draggedPart = MakeSamplePart(partItem.avPart, partItem.itemConfig);
     var dragModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart);
-    dragModel.transform.SetParent(_savedFlightPartModel, worldPositionStays: false);
+    dragModel.transform.SetParent(_draggedModel, worldPositionStays: false);
     dragModel.transform.rotation = draggedPart.initRotation;
-    _surfaceTouchPoint = new GameObject("surfaceTouchPoint").transform;
-    _surfaceTouchPoint.SetParent(_savedFlightPartModel, worldPositionStays: false);
+    _touchPointTransform = new GameObject("surfaceTouchPoint").transform;
+    _touchPointTransform.SetParent(_draggedModel, worldPositionStays: false);
     //FIXME: take it from the colliders, not meshes.
     var bounds = KisApi.PartModelUtils.GetPartBounds(draggedPart);
     var dist = bounds.center.y + bounds.extents.y;
-    _surfaceTouchPoint.position += -_savedFlightPartModel.up * dist;  
-    _surfaceTouchPoint.rotation = Quaternion.LookRotation(
-        -_savedFlightPartModel.up, -_savedFlightPartModel.forward);
+    _touchPointTransform.position += -_draggedModel.up * dist;  
+    _touchPointTransform.rotation = Quaternion.LookRotation(
+        -_draggedModel.up, -_draggedModel.forward);
     Hierarchy.SafeDestory(draggedPart);
   }
 
   /// <summary>Cleans up the dragged model.</summary>
   /// <remarks>It's safe to call it many times.</remarks>
   void DestroyDraggedModel() {
-    if (_savedFlightPartModel == null) {
+    if (_draggedModel == null) {
       return; // Nothing to do.
     }
     DebugEx.Fine("Destroying flight scene dragging model...");
-    Hierarchy.SafeDestory(_savedFlightPartModel);
-    _savedFlightPartModel = null;
+    Hierarchy.SafeDestory(_draggedModel);
+    _draggedModel = null;
   }
 
   /// <summary>Aligns the dragged model to the pointer.</summary>
@@ -197,27 +200,27 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var color = colliderHit
         ? GoodToPlaceColor
         : NotGoodToPlaceColor;
-    foreach (var renderer in _savedFlightPartModel.GetComponentsInChildren<Renderer>()) {
+    foreach (var renderer in _draggedModel.GetComponentsInChildren<Renderer>()) {
       renderer.material.color = color;
     }
 
     // If no surface or part is hit, then show the part being carried. 
     if (!colliderHit) {
-      Hierarchy.SafeDestory(_hitTransform);
-      _hitTransform = null;
+      Hierarchy.SafeDestory(_hitPointTransform);
+      _hitPointTransform = null;
       var cameraTransform = camera.transform;
-      _savedFlightPartModel.position =
+      _draggedModel.position =
           cameraTransform.position + ray.direction * HangingObjectDistance;
-      _savedFlightPartModel.rotation = cameraTransform.rotation;
+      _draggedModel.rotation = cameraTransform.rotation;
 
       //FIXME: position on screen
       return false;
     }
-    var needNewHitTransform = _hitTransform == null; // Will be used for logging.
+    var needNewHitTransform = _hitPointTransform == null; // Will be used for logging.
     if (needNewHitTransform) {
-      _hitTransform = new GameObject("KISHitTarget").transform;
+      _hitPointTransform = new GameObject("KISHitTarget").transform;
     }
-    _hitTransform.position = hit.point;
+    _hitPointTransform.position = hit.point;
 
     // Find out if a part was hit.
     var hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
@@ -225,30 +228,30 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
       // Align the model to the celestial body normal and rely on the game's logic on the vessel
       // positioning. It may (and, likely, will) not match to what we may have presented in GUI.
-      if (_hitTransform.parent != null || needNewHitTransform) {
+      if (_hitPointTransform.parent != null || needNewHitTransform) {
         DebugEx.Fine("Hit surface: collider={0}, celestialBody={1}",
                      hit.collider.transform, FlightGlobals.ActiveVessel.mainBody);
-        _hitTransform.SetParent(null);
+        _hitPointTransform.SetParent(null);
       }
       var surfaceNorm = FlightGlobals.getUpAxis(FlightGlobals.ActiveVessel.mainBody, hit.point);
-      _hitTransform.rotation = Quaternion.LookRotation(surfaceNorm);
+      _hitPointTransform.rotation = Quaternion.LookRotation(surfaceNorm);
     } else {
       // We've hit a part. Bind to this point!
-      if (_hitTransform.parent != hitPart.transform || needNewHitTransform) {
+      if (_hitPointTransform.parent != hitPart.transform || needNewHitTransform) {
         DebugEx.Fine("Hit part: part={0}", hitPart);
-        _hitTransform.SetParent(hitPart.transform);
+        _hitPointTransform.SetParent(hitPart.transform);
       }
       //FIXME: choose "not-up" when hitting the up/down plane of the target part. 
-      _hitTransform.rotation = Quaternion.LookRotation(hit.normal, hitPart.transform.up);
+      _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hitPart.transform.up);
     }
-    AlignTransforms.SnapAlign(_savedFlightPartModel, _surfaceTouchPoint, _hitTransform);
+    AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
     return true;
   }
 
   /// <summary>Consumes the item being dragged and makes a scene vessel from it.</summary>
   void CreateVesselFromDraggedItem() {
-    var pos = _savedFlightPartModel.position;
-    var rot = _savedFlightPartModel.rotation;
+    var pos = _draggedModel.position;
+    var rot = _draggedModel.rotation;
     var partItem = KisApi.ItemDragController.leasedItems[0];
     //FIXME: cancel for debug, must be consume in prod
     KisApi.ItemDragController.CancelItemsLease();
