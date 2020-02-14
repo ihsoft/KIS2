@@ -22,14 +22,60 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region Local fields and properties
+  /// <summary>Tells if there is an item model being displayed in the scene.</summary>
+  /// <remarks>
+  /// When it's the case, it means the pointer is placed outside of any GUI element. However, it
+  /// doesn't mean that the dragged item can be dropped into the scene. 
+  /// </remarks>
   bool isActiveModelInScene => _savedFlightPartModel != null;
 
+  /// <summary>
+  /// Main texture color for the dragged model renderers when the item can be dropped at the pointed
+  /// located. 
+  /// </summary>
+  /// <seealso cref="MaxRaycastDistance"/>
   static readonly Color GoodToPlaceColor = new Color(0f, 1f, 0f, 0.2f);
+
+  /// <summary>
+  /// Main texture color for the dragged model renderers when the item CANNOT be dropped at the
+  /// pointed located. It's also used fro the hanging item model coloring.
+  /// </summary>
+  /// <seealso cref="MaxRaycastDistance"/>
+  /// <seealso cref="HangingObjectDistance"/>
   static readonly Color NotGoodToPlaceColor = new Color(1f, 0f, 0f, 0.2f);
 
+  /// <summary>Distance from the camera of the object that cannot be placed anywhere.</summary>
+  /// <remarks>
+  /// If an item cannot be dropped, it will be "hanging" at the camera at this distance. It mostly
+  /// affects the object's size.
+  /// </remarks>
+  /// <seealso cref="NotGoodToPlaceColor"/>
+  const float HangingObjectDistance = 10.0f;
+
+  /// <summary>
+  /// Maximum distance from the current camera to the hit point, where an item can be dropped.  
+  /// </summary>
+  /// <remarks>
+  /// Hit points out of this radius will not be considered as the drop points. The dragged object
+  /// will not be allowed to drop. 
+  /// </remarks>
+  /// <seealso cref="HangingObjectDistance"/>
   const float MaxRaycastDistance = 50;
+
+  /// <summary>Model of the part or assembly that is being dragged.</summary>
+  /// <seealso cref="_surfaceTouchPoint"/>
+  /// <seealso cref="_hitTransform"/>
   Transform _savedFlightPartModel;
+
+  /// <summary>Transform of the point which received the pointer hit.</summary>
+  /// <remarks>
+  /// It can be attached to part if a part has been hit, or be a static object if it was surface.
+  /// </remarks>
+  /// <seealso cref="_surfaceTouchPoint"/>
   Transform _hitTransform;
+
+  /// <summary>Transform in the dragged model that should contact with the hit point.</summary>
+  /// <seealso cref="_hitTransform"/>
   Transform _surfaceTouchPoint;
   #endregion
 
@@ -46,7 +92,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   void Update() {
     if (!Input.anyKeyDown) {
-      return; // Only event handlers are here. 
+      return; // Only key/mouse event handlers are in this method. 
     }
     if (isActiveModelInScene) {
       if (EventChecker2.CheckClickEvent(DropItemToScene)) {
@@ -157,21 +203,19 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
     // If no surface or part is hit, then show the part being carried. 
     if (!colliderHit) {
-      DebugEx.Fine("Not hitting anything. Destroying the hit object...");
       Hierarchy.SafeDestory(_hitTransform);
       _hitTransform = null;
-
       var cameraTransform = camera.transform;
-      _savedFlightPartModel.position = cameraTransform.position + ray.direction * 10.0f;  // FIX: CONSTANT?
+      _savedFlightPartModel.position =
+          cameraTransform.position + ray.direction * HangingObjectDistance;
       _savedFlightPartModel.rotation = cameraTransform.rotation;
 
       //FIXME: position on screen
       return false;
     }
-    var newHitTransform = false;  // Only for the logging purpose.
-    if (_hitTransform == null) {
+    var needNewHitTransform = _hitTransform == null; // Will be used for logging.
+    if (needNewHitTransform) {
       _hitTransform = new GameObject("KISHitTarget").transform;
-      newHitTransform = true;
     }
     _hitTransform.position = hit.point;
 
@@ -181,16 +225,17 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
       // Align the model to the celestial body normal and rely on the game's logic on the vessel
       // positioning. It may (and, likely, will) not match to what we may have presented in GUI.
-      if (_hitTransform.parent != null || newHitTransform) {
-        DebugEx.Fine("Hit surface: at={0}, norm={1}", hit.point, hit.normal);
+      if (_hitTransform.parent != null || needNewHitTransform) {
+        DebugEx.Fine("Hit surface: collider={0}, celestialBody={1}",
+                     hit.collider.transform, FlightGlobals.ActiveVessel.mainBody);
         _hitTransform.SetParent(null);
       }
       var surfaceNorm = FlightGlobals.getUpAxis(FlightGlobals.ActiveVessel.mainBody, hit.point);
       _hitTransform.rotation = Quaternion.LookRotation(surfaceNorm);
     } else {
       // We've hit a part. Bind to this point!
-      if (_hitTransform.parent == null || newHitTransform) {
-        DebugEx.Fine("Hit part: part={0}, at={1}, norm={2}", hitPart, hit.point, hit.normal);
+      if (_hitTransform.parent != hitPart.transform || needNewHitTransform) {
+        DebugEx.Fine("Hit part: part={0}", hitPart);
         _hitTransform.SetParent(hitPart.transform);
       }
       //FIXME: choose "not-up" when hitting the up/down plane of the target part. 
