@@ -105,6 +105,7 @@
     <Compile Include="controllers\EditorItemDragController.cs" />
     <Compile Include="controllers\FlightItemDragController.cs" />
     <Compile Include="controllers\KisModLoadController.cs" />
+    <Compile Include="impl\EventsHandlerStateMachine.cs" />
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
     <Compile Include="KSPDev_candidates\EventChecker2.cs" />
