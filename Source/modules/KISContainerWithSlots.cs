@@ -66,7 +66,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeStackHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab whole stack",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab whole stack",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to take the whole slot from the inventory and add it into the currently"
       + " dragged pack.\n"
@@ -75,7 +75,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeOneItemHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>1</color> item",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab <color=#5a5>1</color> item",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add one item from the inventory slot into the currently dragged pack.\n"
       + " The <<1>> argument is a user friendly action name.");
@@ -83,7 +83,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeTenItemsHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to grab <color=#5a5>10</color> items",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab <color=#5a5>10</color> items",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add 10 items from the inventory slot into the currently dragged pack.\n"
       + " The <<1>> argument is a user friendly action name.");
@@ -91,32 +91,32 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> AddOneItemsHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add <color=#5a5>1</color> item",
-      description: "Hint text in the inventory slot tooltip that tells what action"
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Add <color=#5a5>1</color> item",
+      description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add one item to the target slot.\n"
       + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> AddTenItemsHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to add <color=#5a5>10</color> items",
-      description: "Hint text in the inventory slot tooltip that tells what action"
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Add <color=#5a5>10</color> items",
+      description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add 10 items to the target slot.\n"
       + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> RemoveOneItemsHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to remove <color=#5a5>1</color> item",
-      description: "Hint text in the inventory slot tooltip that tells what action"
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Remove <color=#5a5>1</color> item",
+      description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to remove one item from the target slot.\n"
       + " The <<1>> argument is a user friendly action name.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> RemoveTenItemsHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to remove <color=#5a5>10</color> items",
-      description: "Hint text in the inventory slot tooltip that tells what action"
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Remove <color=#5a5>10</color> items",
+      description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to remove 10 items from the target slot.\n"
       + " The <<1>> argument is a user friendly action name.");
 
