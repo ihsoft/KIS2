@@ -123,7 +123,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <inheritdoc/>
   bool IKisDragTarget.OnKisDrag(bool pointerMoved) {
-    return PositionModelInTheScene();
+    return _draggedModel != null && PositionModelInTheScene();
   }
 
   /// <inheritdoc/>
