@@ -153,6 +153,9 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   /// </remarks>
   /// <param name="newState"></param>
   public void SetState(T newState) {
+    if (!currentState.Equals(newState)) {
+      DebugEx.Fine("Switch to state: {0}", newState);
+    }
     List<HandlerDef> stateHandlers;
     if (_stateHandlers.TryGetValue(newState, out stateHandlers)) {
       _currentStateHandlers = stateHandlers
