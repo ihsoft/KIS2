@@ -25,11 +25,11 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> CancelDraggingTxt = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "[<<1>>]: to cancel dragging",
+      defaultTemplate: "[<<1>>]: Cancel dragging",
       description: "Help string that explains how to cancel the dragging mode. It is shown at the"
           + " top of the screen when a KIS item is being dragged.\n"
-          + " The <<1>> argument is the keyboard shortcut that cancels the mode.",
-      example: "[Escape]: to cancel dragging");
+          + "The <<1>> argument is the keyboard shortcut that cancels the mode.",
+      example: "[Escape]: Cancel dragging");
   #endregion
 
   #region Helper Unity component to track lock state
