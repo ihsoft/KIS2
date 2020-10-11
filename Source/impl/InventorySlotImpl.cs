@@ -497,7 +497,7 @@ internal sealed class InventorySlotImpl {
     string text;
     if (amountSlot == 0) {
       var defaultIsEmpty = slotItems[0].resources
-          .Any(r => r.resourceRef.amount < double.Epsilon); 
+          .Any(r => r.resourceRef != null && r.resourceRef.amount < double.Epsilon); 
       text = defaultIsEmpty ? null : "0%";
     } else if (amountSlot == 5) {
       text = "<5%";
@@ -507,7 +507,7 @@ internal sealed class InventorySlotImpl {
       text = ">95%";
     } else {
       var defaultIsFull = slotItems[0].resources
-          .Any(r => r.resourceRef.amount > double.Epsilon); 
+          .Any(r => r.resourceRef == null || r.resourceRef.amount > double.Epsilon); 
       text = defaultIsFull ? null : "100%";
     }
     return text;

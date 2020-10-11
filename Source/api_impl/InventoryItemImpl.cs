@@ -79,7 +79,7 @@ internal sealed class InventoryItemImpl : InventoryItem {
     resources = KisApi.PartNodeUtils.GetResources(itemConfig);
     foreach (var resource in resources) {
       resource.resourceRef = avPart.partPrefab.Resources
-          .First(x => x.resourceName == resource.resourceName);
+          .FirstOrDefault(x => x.resourceName == resource.resourceName);
     }
     science = KisApi.PartNodeUtils.GetScience(itemConfig);
   }
