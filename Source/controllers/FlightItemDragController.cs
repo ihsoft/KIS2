@@ -150,6 +150,9 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return; // Cannot be placed into the world.
     }
     DebugEx.Fine("Creating flight scene dragging model...");
+    if (KisApi.ItemDragController.isDragging) {
+      KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
+    }
     _draggedModel = new GameObject("KisDragModel").transform; //FIXME: make the model.
     _draggedModel.gameObject.SetActive(true); //FIXME: needed?
     var partItem = KisApi.ItemDragController.leasedItems[0];
@@ -175,6 +178,9 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return; // Nothing to do.
     }
     DebugEx.Fine("Destroying flight scene dragging model...");
+    if (KisApi.ItemDragController.isDragging) {
+      KisApi.ItemDragController.dragIconObj.gameObject.SetActive(true);
+    }
     Hierarchy.SafeDestory(_draggedModel);
     _draggedModel = null;
   }
