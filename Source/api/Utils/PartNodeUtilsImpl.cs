@@ -69,11 +69,12 @@ public class PartNodeUtilsImpl {
                    part, part.vessel);
     }
 
-    var snapshot = new ProtoPartSnapshot(part, null);
-    snapshot.attachNodes = new List<AttachNodeSnapshot>();
-    snapshot.srfAttachNode = new AttachNodeSnapshot("attach,-1");
-    snapshot.symLinks = new List<ProtoPartSnapshot>();
-    snapshot.symLinkIdxs = new List<int>();
+    var snapshot = new ProtoPartSnapshot(part, null) {
+        attachNodes = new List<AttachNodeSnapshot>(),
+        srfAttachNode = new AttachNodeSnapshot("attach,-1"),
+        symLinks = new List<ProtoPartSnapshot>(),
+        symLinkIdxs = new List<int>()
+    };
     var partNode = new ConfigNode("PART");
     snapshot.Save(partNode);
 
