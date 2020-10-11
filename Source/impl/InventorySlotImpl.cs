@@ -488,7 +488,7 @@ internal sealed class InventorySlotImpl {
   /// part resources.
   /// </remarks>
   string GetSlotResourceAmountStatus() {
-    if (_resourceSimilarityValues == null) {
+    if (_resourceSimilarityValues == null || slotItems[0].resources.Length == 0) {
       return null;
     }
     var slotPercent = _resourceSimilarityValues.Sum(x => (double) x.Value) / 100.0
@@ -507,7 +507,7 @@ internal sealed class InventorySlotImpl {
       text = ">95%";
     } else {
       var defaultIsFull = slotItems[0].resources
-          .Any(r => r.resourceRef == null || r.resourceRef.amount > double.Epsilon); 
+          .Any(r => r.resourceRef != null && r.resourceRef.amount > double.Epsilon); 
       text = defaultIsFull ? null : "100%";
     }
     return text;
