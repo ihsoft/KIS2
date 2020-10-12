@@ -229,6 +229,16 @@ public class PartModelUtilsImpl {
     return bounds.size;
   }
 
+  /// <summary>Returns a bounds box from the render models.</summary>
+  /// <param name="part">The part to get bounds for.</param>
+  /// <returns>The bounds.</returns>
+  public Bounds GetPartBounds(Part part) {
+    var partModel = GetSceneAssemblyModel(part).transform;
+    var bounds = GetMeshBounds(partModel);
+    UnityEngine.Object.DestroyImmediate(partModel.gameObject);
+    return bounds;
+  }
+
   /// <summary>Traverses thru the hierarchy and gathers all the meshes from it.</summary>
   /// <param name="model">The root model to start from.</param>
   /// <param name="meshCombines">The collection to accumulate the meshes.</param>
