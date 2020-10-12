@@ -21,8 +21,9 @@ namespace KIS2 {
 /// <remarks>
 /// It may be used when GUI actions depend on a definite set of states. Instead of coding a lot of
 /// if/then or switch statements, with this class it's possible to define the behavior once and
-/// simply react on the input actions from the callbacks. As convenience, this class also offers a
-/// way to quickly build a list of actions available in the current mode to show as a hint in GUI. 
+/// simply react on the input actions from the callbacks. As a convenience, this class also offers a
+/// way to quickly build a list of actions available in the current mode to show them as a hint in
+/// GUI. 
 /// </remarks>
 /// <typeparam name="T">The enum to use as the states set.</typeparam>
 public sealed class EventsHandlerStateMachine<T> where T : struct {
@@ -76,7 +77,9 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   #region API methods
   /// <summary>Defines an action for a state.</summary>
   /// <param name="state">The state to apply the action to.</param>
-  /// <param name="hintText">The event hint message.</param>
+  /// <param name="hintText">
+  /// The event hint message. It must refer the <paramref name="actionEvent"/>.
+  /// </param>
   /// <param name="actionEvent">The event to trigger the action on.</param>
   /// <param name="actionFn">The callback to call when the action is triggered.</param>
   /// <param name="checkIfAvailable">

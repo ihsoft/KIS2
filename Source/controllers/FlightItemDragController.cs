@@ -14,7 +14,7 @@ using UnityEngine;
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
 
-/// <summary>Controller that deals with dragged items in the editor scenes.</summary>
+/// <summary>Controller that deals with dragged items in the flight scenes.</summary>
 [KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
 internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region Event static configs
