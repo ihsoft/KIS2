@@ -131,4 +131,10 @@ IF EXIST "Q:\GameData\KIS" xcopy "$(TargetDir)KSPDev_Utils*.dll" "Q:\GameData\KI
 IF EXIST "Q:\GameData\KIS\Prefabs" xcopy "$(ProjectDir)KISUnity\Assets\StreamingAssets\ui_prefabs" "Q:\GameData\KIS\Prefabs\" /Y
 IF EXIST "Q:\GameData\KIS\Prefabs" xcopy "$(ProjectDir)KISUnity\Assets\Plugins\*.dll" "Q:\GameData\KIS\Plugins\" /Y</PostBuildEvent>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
 </Project>
