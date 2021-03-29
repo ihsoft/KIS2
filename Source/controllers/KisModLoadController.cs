@@ -41,7 +41,7 @@ public sealed class KisModLoadController : MonoBehaviour {
 
   static void LoadAsset(string assetFileName) {
     modIsInconsistent |= !PrefabLoader.LoadAllAssets(
-        KSPUtil.ApplicationRootPath + "GameData/KIS/Prefabs/" + assetFileName);
+        KSPUtil.ApplicationRootPath + "GameData/KIS2/Prefabs/" + assetFileName);
   }
   #endregion
 }

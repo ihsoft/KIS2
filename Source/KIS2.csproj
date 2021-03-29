@@ -126,10 +126,11 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>IF EXIST "Q:\GameData\KIS" xcopy "$(TargetPath)" "Q:\GameData\KIS\Plugins\" /Y
-IF EXIST "Q:\GameData\KIS" xcopy "$(TargetDir)KSPDev_Utils*.dll" "Q:\GameData\KIS\Plugins\" /Y
-IF EXIST "Q:\GameData\KIS\Prefabs" xcopy "$(ProjectDir)KISUnity\Assets\StreamingAssets\ui_prefabs" "Q:\GameData\KIS\Prefabs\" /Y
-IF EXIST "Q:\GameData\KIS\Prefabs" xcopy "$(ProjectDir)KISUnity\Assets\Plugins\*.dll" "Q:\GameData\KIS\Plugins\" /Y</PostBuildEvent>
+    <PostBuildEvent>xcopy "$(TargetPath)" "Q:\GameData\KIS2\Plugins\" /Y
+xcopy "$(TargetDir)KSPDev_Utils*.dll" "Q:\GameData\KIS2\Plugins\" /Y
+xcopy "$(ProjectDir)KISUnity\Assets\StreamingAssets\ui_prefabs" "Q:\GameData\KIS2\Prefabs\" /Y
+xcopy "$(ProjectDir)KISUnity\Assets\Plugins\*.dll" "Q:\GameData\KIS2\Plugins\" /Y
+xcopy "$(ProjectDir)..\Patches\*.*" "Q:\GameData\KIS2\Patches\" /Y</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
