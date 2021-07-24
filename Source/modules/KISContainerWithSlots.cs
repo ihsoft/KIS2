@@ -1288,7 +1288,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     UpdateTooltip();
   }
 
-  /// <summary>Takes items from teh focused slot and starts dragging operation.</summary>
+  /// <summary>Takes items from the focused slot and starts dragging operation.</summary>
   /// <param name="num">
   /// The number of items to take from the slot. It's OK to request more items than exist in the
   /// slot, all the items will be taken in this case.

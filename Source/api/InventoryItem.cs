@@ -9,12 +9,14 @@ using UnityEngine;
 namespace KISAPIv2 {
 
 /// <summary>Basic container for a single inventory item.</summary>
+// ReSharper disable once InconsistentNaming
+// ReSharper disable once IdentifierTypo
 public interface InventoryItem {
   /// <summary>The inventory that owns this item.</summary>
   /// <remarks>
-  /// This is the inventory at which the item was initially created. If it was deleted form that
-  /// inventory afterwards, the link still can point to the former parent. It's not allowed or
-  /// expected that an item changes inventory parent during its lifetime.
+  /// This is the inventory at which the item was initially created or loaded for. It's an immutable property that
+  /// doesn't change even if the item was deleted or moved from that inventory afterwards. If the owner of the instance
+  /// needs to ensure the item still belongs to the inventory, it should verify it by requesting the relevant inventory. 
   /// </remarks>
   IKisInventory inventory { get; }
 
@@ -36,7 +38,7 @@ public interface InventoryItem {
   /// <summary>Persisted state of the part.</summary>
   /// <remarks>
   /// This node can be updated by the external callers, but they must letting the item know that the
-  /// config has changed vai the <see cref="UpdateConfig"/> call. Otherwise, teh state of the item
+  /// config has changed via the <see cref="UpdateConfig"/> call. Otherwise, teh state of the item
   /// and the owning inventory will be inconsistent.
   /// </remarks>
   /// <seealso cref="UpdateConfig"/>
@@ -83,7 +85,7 @@ public interface InventoryItem {
   /// <summary>Tells if this item is currently equipped on the actor.</summary>
   bool isEquipped { get; }
 
-  /// <summary>Tells if this item must not by affected externally.</summary>
+  /// <summary>Tells if this item must not be affected externally.</summary>
   /// <remarks>
   /// The locked items are in a process of some complex, possibly multi-frame, operation. Only the
   /// executor of this process should deal with this item, the other actors should not interfere.

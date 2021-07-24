@@ -130,7 +130,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
 
   /// <inheritdoc/>
   public UiKisInventorySlotDragIcon dragIconObj {
-    get { return _dragIconObj; }
+    get => _dragIconObj;
     private set {
       Hierarchy.SafeDestory(_dragIconObj);
       _dragIconObj = value;

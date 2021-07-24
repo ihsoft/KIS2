@@ -20,16 +20,16 @@ namespace KIS2 {
 /// Base module to handle inventory items. It can only hold items, no GUI is offered.
 /// </summary>
 public class KisContainerBase : AbstractPartModule,
-    IKisInventory {
+                                IKisInventory {
   #region Localizable GUI strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> NotEnoughVolumeText = new Message<VolumeLType>(
       "",
       defaultTemplate: "Not enough volume: <color=#f88>-<<1>></color>",
       description: "Message to present to the user at the main status area when an item being"
-          + " placed into the inventory cannot fit it due to not enough free volume.\n"
-          + "The <<1>> parameter is the volume delta that would be needed for the item to fit of"
-          + " type VolumeLType.");
+      + " placed into the inventory cannot fit it due to not enough free volume.\n"
+      + "The <<1>> parameter is the volume delta that would be needed for the item to fit of"
+      + " type VolumeLType.");
   #endregion
 
   #region Part's config fields
