@@ -109,7 +109,7 @@ internal sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_savedEditorPart"/>
   bool EditorItemsConsumed() {
     if (_savedEditorPart != null) {
-      Hierarchy.SafeDestory(_savedEditorPart);
+      Hierarchy.SafeDestroy(_savedEditorPart);
       _savedEditorPart = null;
     }
     return true;

@@ -779,7 +779,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     openWindows.Remove(_unityWindow);
     ArrangeWindows();
-    Hierarchy.SafeDestory(_unityWindow);
+    Hierarchy.SafeDestroy(_unityWindow);
     _unityWindow = null;
     // Immediately make all slots invisible. Don't rely on Unity cleanup routines.  
     _inventorySlots.ForEach(x => x.BindTo(null));

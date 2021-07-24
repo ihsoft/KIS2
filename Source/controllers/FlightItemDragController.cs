@@ -98,7 +98,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return; // Only key/mouse event handlers are in this method. 
     }
     if (isActiveModelInScene) {
-      if (EventChecker2.CheckClickEvent(DropItemToScene)) {
+      if (EventChecker.CheckClickEvent(DropItemToScene)) {
         CreateVesselFromDraggedItem();
       }
     } else if (!KisApi.ItemDragController.isDragging) {
@@ -168,7 +168,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _touchPointTransform.position += -_draggedModel.up * dist;  
     _touchPointTransform.rotation = Quaternion.LookRotation(
         -_draggedModel.up, -_draggedModel.forward);
-    Hierarchy.SafeDestory(draggedPart);
+    Hierarchy.SafeDestroy(draggedPart);
   }
 
   /// <summary>Cleans up the dragged model.</summary>
@@ -181,7 +181,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     if (KisApi.ItemDragController.isDragging) {
       KisApi.ItemDragController.dragIconObj.gameObject.SetActive(true);
     }
-    Hierarchy.SafeDestory(_draggedModel);
+    Hierarchy.SafeDestroy(_draggedModel);
     _draggedModel = null;
   }
 
@@ -212,7 +212,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
     // If no surface or part is hit, then show the part being carried. 
     if (!colliderHit) {
-      Hierarchy.SafeDestory(_hitPointTransform);
+      Hierarchy.SafeDestroy(_hitPointTransform);
       _hitPointTransform = null;
       var cameraTransform = camera.transform;
       _draggedModel.position =

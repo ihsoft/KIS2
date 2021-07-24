@@ -58,9 +58,6 @@
     <Reference Include="KIS.Unity">
       <HintPath>KISUnity\Assets\Plugins\KIS.Unity.dll</HintPath>
     </Reference>
-    <Reference Include="KSPDev_Utils.2.0, Version=2.0.7231.38433, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\Binaries\KSPDev_Utils.2.0.dll</HintPath>
-    </Reference>
     <Reference Include="System">
       <HintPath>Q:\KSP_x64_Data\Managed\System.dll</HintPath>
     </Reference>
@@ -108,7 +105,6 @@
     <Compile Include="impl\EventsHandlerStateMachine.cs" />
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
-    <Compile Include="KSPDev_candidates\EventChecker2.cs" />
     <Compile Include="modules\KisContainerWithSlots.cs" />
     <Compile Include="modules\KisContainerBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -123,6 +119,12 @@
   <ItemGroup>
     <Content Include="KSPDevUtilsAPI_HelpIndex.xml" />
     <Content Include="SpecialDocTags.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\KSPDev_Utils\Source\KSPDev_Utils.csproj">
+      <Project>{01a7b80c-e283-4651-b879-3cc5efaaa1a4}</Project>
+      <Name>KSPDev_Utils</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

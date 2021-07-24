@@ -140,7 +140,7 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
     var handlersNum = _currentStateHandlers.Length;
     for (var i = 0; i < handlersNum; i++) {
       var handler = _currentStateHandlers[i];
-      if (EventChecker2.CheckClickEvent(handler.actionEvent)) {
+      if (EventChecker.CheckClickEvent(handler.actionEvent)) {
         DebugEx.Fine("Triggered action: {0}", KeyboardEventType.Format(handler.actionEvent));
         handler.actionFn();
         return true;

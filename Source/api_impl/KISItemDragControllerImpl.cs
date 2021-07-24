@@ -114,7 +114,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
       if (controller.isDragging) {
         controller.CancelItemsLease();
       }
-      Hierarchy.SafeDestory(gameObject);  // Ensure the tracking is over.
+      Hierarchy.SafeDestroy(gameObject);  // Ensure the tracking is over.
       DebugEx.Fine("KIS drag lock released");
     }
     #endregion
@@ -132,7 +132,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   public UiKisInventorySlotDragIcon dragIconObj {
     get => _dragIconObj;
     private set {
-      Hierarchy.SafeDestory(_dragIconObj);
+      Hierarchy.SafeDestroy(_dragIconObj);
       _dragIconObj = value;
     }
   }
