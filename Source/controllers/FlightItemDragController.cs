@@ -272,7 +272,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var orbit = new Orbit(actorVessel.orbit);
     var vesselName = avPart.title;
     var configNode = ProtoVessel.CreateVesselNode(
-        vesselName, VesselType.Debris, orbit, 0,
+        vesselName, VesselType.DroppedPart, orbit, 0,
         new[] {
             //FIXME: itemconfig
             CreatePartNode(avPart, null, actorVessel)
