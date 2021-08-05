@@ -2,23 +2,21 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System.Collections.Generic;
 using KSP.UI;
+using System.Collections.Generic;
 using System;
 using System.Collections;
 using System.Linq;
-using KSPDev.InputUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using KSPDev.PrefabUtils;
+using KSPDev.Unity;
 using KISAPIv2;
 using KIS2.UIKISInventorySlot;
 using KIS2.GUIUtils;
-using KSPDev.Unity;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // ReSharper disable once CheckNamespace
@@ -346,7 +344,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <summary>Inventory slots.</summary>
   /// <remarks>Some or all slots may not be represented in the UI.</remarks>
   /// <seealso cref="InventorySlotImpl.isVisible"/>
-  readonly List<InventorySlotImpl> _inventorySlots = new List<InventorySlotImpl>();
+  readonly List<InventorySlotImpl> _inventorySlots = new();
 
   /// <summary>Index that resolves item to the slot that contains it.</summary>
   readonly Dictionary<InventoryItem, InventorySlotImpl> _itemToSlotMap =
@@ -376,11 +374,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>All slots inventory windows opened till now.</summary>
   /// TODO(ihsoft): Move into some global location to support other GUI modules.
-  static readonly List<UiKisInventoryWindow> openWindows = new List<UiKisInventoryWindow>();
+  static readonly List<UiKisInventoryWindow> OpenWindows = new();
 
   /// <summary>Windows that are in a process of aligning.</summary>
-  static readonly Dictionary<UiWindowDragControllerScript, Coroutine> movingWindows =
-      new Dictionary<UiWindowDragControllerScript, Coroutine>();
+  static readonly Dictionary<UiWindowDragControllerScript, Coroutine> MovingWindows = new();
   #endregion
 
   #region IKisDragTarget implementation
@@ -759,7 +756,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.SendMessage(
         nameof(IKspDevUnityControlChanged.ControlUpdated), _unityWindow.gameObject,
         SendMessageOptions.DontRequireReceiver);
-    openWindows.Add(_unityWindow);
+    OpenWindows.Add(_unityWindow);
   }
 
   /// <summary>Destroys the inventory window.</summary>
@@ -777,7 +774,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       HostedDebugLog.Fine(this, "Cancel dragging items");
       KisApi.ItemDragController.CancelItemsLease();
     }
-    openWindows.Remove(_unityWindow);
+    OpenWindows.Remove(_unityWindow);
     ArrangeWindows();
     Hierarchy.SafeDestroy(_unityWindow);
     _unityWindow = null;
@@ -1152,9 +1149,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         _canAcceptDraggedItemsCheckResult =
             base.CheckCanAddParts(otherInvAvParts.ToArray(), otherInvPartConfigs.ToArray());
       }
-      if (_canAcceptDraggedItemsCheckResult == null) {
-        _canAcceptDraggedItemsCheckResult = _slotWithPointerFocus.CheckCanAddItems(checkItems);
-      }
+      _canAcceptDraggedItemsCheckResult ??= _slotWithPointerFocus.CheckCanAddItems(checkItems);
       _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
     } else {
       _canAcceptDraggedItemsCheckResult = null;
@@ -1185,7 +1180,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// </param>
   /// <returns>The position of the next new window.</returns>
   Vector3 ArrangeWindows(bool calculateOnly = false) {
-    var managedWindows = openWindows
+    var managedWindows = OpenWindows
         .Select(x => x.gameObject.GetComponent<UiWindowDragControllerScript>())
         .Where(x => !x.positionChanged)
         .ToList();
@@ -1201,11 +1196,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     foreach (var window in managedWindows) {
       LayoutRebuilder.ForceRebuildLayoutImmediate(window.mainRect);
       if (Vector3.SqrMagnitude(window.mainRect.position - basePos) > float.Epsilon) {
-        if (movingWindows.ContainsKey(window)) {
-          StopCoroutine(movingWindows[window]);
-          movingWindows.Remove(window);
+        if (MovingWindows.ContainsKey(window)) {
+          StopCoroutine(MovingWindows[window]);
+          MovingWindows.Remove(window);
         }
-        movingWindows.Add(window, StartCoroutine(AnimateMoveWindow(window, basePos)));
+        MovingWindows.Add(window, StartCoroutine(AnimateMoveWindow(window, basePos)));
       }
       basePos.x += window.mainRect.sizeDelta.x + WindowsGapSize;
     }
@@ -1269,7 +1264,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var addItemConfigsArray = addItemConfigs.ToArray();
       var checkResult = CheckCanAddParts(addAvPartsArray, addItemConfigsArray);
       if (checkResult == null) {
-        var newItems = base.AddParts(addAvPartsArray, addItemConfigsArray);
+        var newItems = AddParts(addAvPartsArray, addItemConfigsArray);
         UpdateSlotItems(_slotWithPointerFocus, addItems: newItems);
       } else {
         UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
@@ -1333,7 +1328,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           this, "Add items to slot: slot=#{0}, num={1}",
           _inventorySlots.IndexOf(_slotWithPointerFocus), consumedItems.Length);
       _slotEventsHandler.SetState(SlotActionMode.HoveringOverItemsSlot);
-      var newItems = base.AddItems(consumedItems);
+      var newItems = AddItems(consumedItems);
       UpdateSlotItems(_slotWithPointerFocus, addItems: newItems);
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     }
