@@ -347,8 +347,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   readonly List<InventorySlotImpl> _inventorySlots = new();
 
   /// <summary>Index that resolves item to the slot that contains it.</summary>
-  readonly Dictionary<InventoryItem, InventorySlotImpl> _itemToSlotMap =
-      new Dictionary<InventoryItem, InventorySlotImpl>();
+  readonly Dictionary<string, InventorySlotImpl> _itemToSlotMap = new();
 
   /// <summary>Slot that initiated a drag action from this inventory.</summary>
   InventorySlotImpl _dragSourceSlot;
@@ -502,7 +501,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       UpdateSlotItems(slot, addItems: items);
     }
     // Handle out of sync items to ensure every item is assigned to a slot.
-    var itemsWithNoSlot = inventoryItems.Where(x => !_itemToSlotMap.ContainsKey(x));
+    var itemsWithNoSlot = inventoryItems.Where(x => !_itemToSlotMap.ContainsKey(x.itemId));
     foreach (var item in itemsWithNoSlot) {
       HostedDebugLog.Warning(this, "Loading non-slot item: {0}", item.itemId);
       UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] { item });
@@ -1166,7 +1165,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     if (deleteItems != null) {
       slot.DeleteItems(deleteItems);
-      Array.ForEach(deleteItems, x => _itemToSlotMap.Remove(x));
+      Array.ForEach(deleteItems, x => _itemToSlotMap.Remove(x.itemId));
       ArrangeSlots(); // Make de-frag in case of there are invisible slots. 
     }
     if (slot == _slotWithPointerFocus) {
