@@ -38,7 +38,7 @@ public interface InventoryItem {
   /// <summary>Persisted state of the part.</summary>
   /// <remarks>
   /// This node can be updated by the external callers, but they must letting the item know that the
-  /// config has changed via the <see cref="UpdateConfig"/> call. Otherwise, teh state of the item
+  /// config has changed via the <see cref="UpdateConfig"/> call. Otherwise, the state of the item
   /// and the owning inventory will be inconsistent.
   /// </remarks>
   /// <seealso cref="UpdateConfig"/>

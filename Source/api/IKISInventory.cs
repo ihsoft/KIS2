@@ -54,12 +54,13 @@ public interface IKisInventory {
   /// <summary>Adds new parts into the inventory.</summary>
   /// <remarks>
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
-  /// responsibility of the caller.
+  /// responsibility of the caller. Some parts in the list may not get added. The caller must check the result and
+  /// ensure if all the parts were added. 
   /// </remarks>
   /// <param name="avParts">The part proto.</param>
   /// <param name="nodes">
   /// The part persisted states. An entry can be <c>null</c> if default state from prefab should be
-  /// used.
+  /// used. 
   /// </param>
   /// <returns>The newly created items.</returns>
   /// <seealso cref="CheckCanAddParts"/>
@@ -67,19 +68,22 @@ public interface IKisInventory {
   
   /// <summary>Adds items from another inventory.</summary>
   /// <remarks>
-  /// This method will make own copies of the source items, but the item ID will be persisted. It's
-  /// expected that the source items will be destroyed as soon as they are added into a new
-  /// inventory.
+  /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
+  /// responsibility of the caller. Some parts in the list may not get added. The caller must check the result and
+  /// ensure if all the parts were added.
   /// </remarks>
   /// <param name="items">The items to add.</param>
-  /// <returns>The added items that belong to this inventory.</returns>
+  /// <returns>
+  /// The added items that belong to this inventory. Their IDs will be different from the source items.
+  /// </returns>
   /// <seealso cref="InventoryItem.itemId"/>
   InventoryItem[] AddItems(InventoryItem[] items);
 
   /// <summary>Removes the specified items from inventory.</summary>
   /// <remarks>
   /// The delete action is atomic: it either succeeds in full or fails without changing the
-  /// inventory state.
+  /// inventory state. The overrides should consider that if the ancestor hs returned <c>true</c>, then there is no way
+  /// back and the overriden method must succeed too. 
   /// </remarks>
   /// <param name="deleteItems">The items to remove.</param>
   /// <returns>

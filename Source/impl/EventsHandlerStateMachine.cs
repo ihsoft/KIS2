@@ -80,7 +80,7 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   /// <param name="hintText">
   /// The event hint message. It must refer the <paramref name="actionEvent"/>.
   /// </param>
-  /// <param name="actionEvent">The event to trigger the action on.</param>
+  /// <param name="actionEvent">The <see cref="Event"/> that triggers the action.</param>
   /// <param name="actionFn">The callback to call when the action is triggered.</param>
   /// <param name="checkIfAvailable">
   /// The callback that tells if the action is available in the current game state. This function is

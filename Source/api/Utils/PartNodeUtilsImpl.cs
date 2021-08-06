@@ -52,9 +52,9 @@ public class PartNodeUtilsImpl {
   public ConfigNode PartSnapshot(Part part) {
     if (ReferenceEquals(part, part.partInfo.partPrefab)) {
       // HACK: Prefab may have fields initialized to "null". Such fields cannot be saved via
-      //   BaseFieldList when making a snapshot. So, go thru the persistent fields of all prefab
-      //   modules and replace nulls with a default value of the type. It's unlikely we break
-      //   something since by design such fields are not assumed to be used until loaded, and it's
+      //   BaseFieldList when making a snapshot. So, go through the persistent fields of all prefab
+      //   modules and replace nulls with a default value of the type. It'll unlikely break anything
+      //   since by design such fields are not assumed to be used until the part is loaded, and it's
       //   impossible to have "null" value read from a config.
       CleanupModuleFieldsInPart(part);
     }
