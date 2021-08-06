@@ -195,6 +195,12 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
+    if (avParts.Length != nodes.Length) {
+      throw new ArgumentException("Parts array doesn't match the cfg nodes: " + avParts.Length + " vs " + nodes.Length);
+    }
+    if (avParts.Length == 0) {
+      return new InventoryItem[0];
+    }
     var items = new InventoryItem[avParts.Length];
     for (var i = 0; i < avParts.Length; i++) {
       items[i] = new InventoryItemImpl(this, avParts[i], nodes[i]);
