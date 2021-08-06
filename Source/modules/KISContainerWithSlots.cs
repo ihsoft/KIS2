@@ -564,35 +564,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
-    var newItems = base.AddParts(avParts, nodes);
-    foreach (var item in newItems) {
-      UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] { item });
-    }
-    return newItems;
-  }
-
-  /// <inheritdoc/>
-  public override InventoryItem[] AddItems(InventoryItem[] items) {
-    var newItems = base.AddItems(items);
-    foreach (var item in newItems) {
-      UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] { item });
-    }
-    return newItems;
-  }
-
-  /// <inheritdoc/>
-  public override bool DeleteItems(InventoryItem[] deleteItems) {
-    if (!base.DeleteItems(deleteItems)) {
-      return false;
-    }
-    foreach (var item in deleteItems) {
-      UpdateSlotItems(_itemToSlotMap[item], deleteItems: new[] { item });
-    }
-    return true;
-  }
-
-  /// <inheritdoc/>
   public override ErrorReason[] CheckCanAddParts(
       AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false) {
     var res = base.CheckCanAddParts(avParts, nodes, logErrors);
@@ -619,6 +590,27 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public override void UpdateInventoryStats(InventoryItem[] changedItems) {
     base.UpdateInventoryStats(changedItems);
     UpdateInventoryWindow();
+  }
+
+  /// <inheritdoc/>
+  protected override void UpdateItemsCollection(
+      ICollection<InventoryItem> add = null, ICollection<InventoryItem> remove = null) {
+    base.UpdateItemsCollection(add, remove);
+    if (remove != null) {
+      foreach (var item in remove) {
+        UpdateSlotItems(_itemToSlotMap[item.itemId], deleteItems: new[] { item });
+      }
+    }
+    if (add != null) {
+      foreach (var item in add) {
+        if (!_itemToSlotMap.ContainsKey(item.itemId)) {
+          UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] {item});
+        } else {
+          //FIXME
+          HostedDebugLog.Warning(this, "*** skip update for existing mapping");
+        }
+      }
+    }
   }
   #endregion
 
