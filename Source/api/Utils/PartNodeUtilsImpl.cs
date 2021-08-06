@@ -220,6 +220,43 @@ public class PartNodeUtilsImpl {
                                        p => itemCost += p.GetModuleCosts(avPart.cost));
     return itemCost;
   }
+
+  /// <summary>Makes a part snapshot from the saved part state.</summary>
+  /// <param name="refInventory">The stock inventory module the part is being made for.</param>
+  /// <param name="node">The saved state.</param>
+  /// <returns>A snapshot for the given state.</returns>
+  /// <exception cref="ArgumentException">if the game scene or the reference inventory are not good.</exception>
+  public ProtoPartSnapshot GetProtoPartSnapshotFromNode(ModuleInventoryPart refInventory, ConfigNode node) {
+    ProtoPartSnapshot pPart = null;
+    if (refInventory.vessel != null) {
+      pPart = new ProtoPartSnapshot(node, refInventory.vessel.protoVessel, HighLogic.CurrentGame);
+    } else {
+      if (HighLogic.LoadedSceneIsEditor
+          || HighLogic.LoadedSceneIsMissionBuilder
+          || HighLogic.LoadedScene == GameScenes.MAINMENU
+          || refInventory.kerbalMode) {
+        pPart = new ProtoPartSnapshot(node, null, HighLogic.CurrentGame);
+      }
+    }
+    if (pPart == null) {
+      throw new ArgumentException("Cannot make snapshot in scene " + HighLogic.CurrentGame + " for node:\n" + node);
+    }
+
+    // Proto part adjusts persistentId to not conflict with the world, but we want it to be kept original.
+    pPart.persistentId = uint.Parse(node.GetValue("persistentId"));
+    return pPart;
+  }
+
+  /// <summary>Saves a proto part snapshot into the config node.</summary>
+  /// <param name="pPart">The proto part to store.</param>
+  /// <returns>The resulted config node.</returns>
+  public ConfigNode GetConfigNodeFromProtoPartSnapshot(ProtoPartSnapshot pPart) {
+    var state = new ConfigNode("PART");
+    pPart.Save(state);
+    // The ID gets adjusted to be unique in the game, but for the purpose of persistence we need it stay unchanged.
+    state.SetValue("persistentId", pPart.persistentId);
+    return state;
+  }
   #endregion
 
   #region Local utility methods
