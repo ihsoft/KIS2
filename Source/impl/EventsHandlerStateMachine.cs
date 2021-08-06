@@ -88,11 +88,9 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   /// a state refresh needs to be triggered via <see cref="SetState"/>.
   /// </param>
   public void DefineAction(
-      T state, Message<KeyboardEventType> hintText, Event actionEvent,
-      Action actionFn,
+      T state, Message<KeyboardEventType> hintText, Event actionEvent, Action actionFn,
       Func<bool> checkIfAvailable = null) {
-    List<HandlerDef> stateHandlers;
-    if (!_stateHandlers.TryGetValue(state, out stateHandlers)) {
+    if (!_stateHandlers.TryGetValue(state, out var stateHandlers)) {
       stateHandlers = new List<HandlerDef>();
       _stateHandlers[state] = stateHandlers;
     }
