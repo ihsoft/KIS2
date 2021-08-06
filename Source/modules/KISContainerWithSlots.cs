@@ -265,8 +265,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Persistent node names
-  const string PersistentConfigSlotNode = "SLOT";
-  const string PersistentConfigSlotItem = "item";
+  const string PersistentConfigKisStockSlotMapping = "itemToKisSlotMapping";
   #endregion
 
   /// <summary>Action states for the pointer, hovering over an inventory slot.</summary>
@@ -489,17 +488,34 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <inheritdoc/>
   public override void OnLoad(ConfigNode node) {
-    base.OnLoad(node);
-    var slotsNodes = node.GetNodes(PersistentConfigSlotNode);
-    foreach (var slotNode in slotsNodes) {
-      var slot = new InventorySlotImpl(null);
-      _inventorySlots.Add(slot);
-      var items = slotNode.GetValues(PersistentConfigSlotItem)
-          .Where(x => inventoryItemsMap.ContainsKey(x))
-          .Select(x => inventoryItemsMap[x])
-          .ToArray();
-      UpdateSlotItems(slot, addItems: items);
+    // First, make all the slots to allow the default allocation logic to work smoothly.
+    for (var i = 0; i < slotGridWidth * slotGridHeight; i++) {
+      _inventorySlots.Add(new InventorySlotImpl(null));
     }
+    var slotMapping = new Dictionary<string, int>();
+    var savedMappings = node.GetValues(PersistentConfigKisStockSlotMapping);
+    foreach (var savedMapping in savedMappings) {
+      var pair = savedMapping.Split(new[] {'-'}, 2);
+      var slotIndex = int.Parse(pair[0]);
+      slotMapping[pair[1]] = slotIndex;
+      if (slotIndex >= _inventorySlots.Count) {
+        HostedDebugLog.Warning(this, "Found slot beyond capacity: {0}", slotIndex);
+        while (_inventorySlots.Count <= slotIndex) {
+          _inventorySlots.Add(new InventorySlotImpl(null));
+        }
+      }
+    }
+    base.OnLoad(node);
+
+    // Reorganize slots allocation of all the items based on the save state.
+    RemoveItemsFromSlots(inventoryItems);
+    foreach (var mapping in slotMapping) {
+      var item = FindItem(mapping.Key);
+      if (item != null) {
+        UpdateSlotItems(_inventorySlots[mapping.Value], addItems: new[] { item });
+      }
+    }
+
     // Handle out of sync items to ensure every item is assigned to a slot.
     var itemsWithNoSlot = inventoryItems.Where(x => !_itemToSlotMap.ContainsKey(x.itemId));
     foreach (var item in itemsWithNoSlot) {
@@ -511,9 +527,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <inheritdoc/>
   public override void OnSave(ConfigNode node) {
     base.OnSave(node);
-    foreach (var slot in _inventorySlots) {
-      var slotsNode = node.AddNode(PersistentConfigSlotNode);
-      Array.ForEach(slot.slotItems, x => slotsNode.AddValue(PersistentConfigSlotItem, x.itemId));
+    for (var i = 0; i < _inventorySlots.Count; i++) {
+      Array.ForEach(
+          _inventorySlots[i].slotItems, x => node.AddValue(PersistentConfigKisStockSlotMapping, i + "-" + x.itemId));
     }
   }
   #endregion
@@ -1337,6 +1353,24 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           this, "Cannot store/stack dragged items to slot: draggedItems={0}",
           KisApi.ItemDragController.leasedItems.Length);
     }
+  }
+
+  /// <summary>Removes the items form their slots.</summary>
+  /// <param name="items">The items to remove.</param>
+  /// <returns>The items that were found and actually removed.</returns>
+  InventoryItem[] RemoveItemsFromSlots(InventoryItem[] items) {
+    var res = new List<InventoryItem>();
+    foreach (var item in items) {
+      if (!_itemToSlotMap.ContainsKey(item.itemId)) {
+        HostedDebugLog.Warning(this, "Cannot find slot for item: itemId={0}", item.itemId);
+        continue;
+      }
+      _itemToSlotMap[item.itemId].DeleteItems(new[] { item });
+      _itemToSlotMap.Remove(item.itemId);
+      res.Add(item);
+    }
+
+    return res.ToArray();
   }
   #endregion
 }
