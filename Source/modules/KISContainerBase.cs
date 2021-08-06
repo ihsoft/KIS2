@@ -163,6 +163,15 @@ public class KisContainerBase : AbstractPartModule,
       }
     }
   }
+
+  /// <inheritdoc/>
+  public override void OnStart(StartState state) {
+    base.OnStart(state);
+    if (!HighLogic.LoadedSceneIsFlight || stockInventoryModule == null) {
+      return;
+    }
+    RegisterGameEventListener(GameEvents.onModuleInventorySlotChanged, OnModuleInventorySlotChangedEvent);
+  }
   #endregion
 
   #region IKISInventory implementation
@@ -505,6 +514,44 @@ public class KisContainerBase : AbstractPartModule,
   void RemoveItemFromStockSlot_Kis(InventoryItem item) {
     //FIXME: IMPLEMENT!
     throw new NotImplementedException("KIS vision is yet to come");
+  }
+
+  /// <summary>Reacts on the stock inventory change and updates the KIS inventory accordingly.</summary>
+  void OnModuleInventorySlotChangedEvent(ModuleInventoryPart changedStockInventoryModule, int stockSlotIndex) {
+    if (!ReferenceEquals(changedStockInventoryModule, stockInventoryModule)) {
+      return;
+    }
+    var slotQuantity = _stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
+        ? _stockInventoryModule.storedParts[stockSlotIndex].quantity
+        : 0;
+    var indexedItems = _stockSlotToItemsMap.ContainsKey(stockSlotIndex)
+        ? _stockSlotToItemsMap[stockSlotIndex].Count
+        : 0;
+    var deleteItems = new List<InventoryItem>();
+    var addItems = new List<InventoryItem>();
+    if (slotQuantity < indexedItems) {
+      while (slotQuantity < _stockSlotToItemsMap[stockSlotIndex].Count) {
+        var item = _stockSlotToItemsMap[stockSlotIndex].Last();
+        HostedDebugLog.Info(
+            this, "Removing an item due to the stock slot change: slot={0}, itemId={1}", stockSlotIndex, item.itemId);
+        UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
+        deleteItems.Add(item);
+      }
+    }
+    if (slotQuantity > indexedItems) {
+      while (!_stockSlotToItemsMap.ContainsKey(stockSlotIndex)
+          || slotQuantity > _stockSlotToItemsMap[stockSlotIndex].Count) {
+        var item = MakeItemFromStockSlot(stockSlotIndex);
+        HostedDebugLog.Info(
+            this, "Adding an item due to the stock slot change: slot={0}, part={1}, itemId={2}",
+            stockSlotIndex, item.avPart.name, item.itemId);
+        addItems.Add(item);
+      }
+    }
+  
+    if (deleteItems.Count > 0 || addItems.Count > 0) {
+      UpdateItemsCollection(add: addItems, remove: deleteItems);
+    }
   }
   #endregion
 }
