@@ -2,12 +2,12 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System;
 using KSPDev.ConfigUtils;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace KISAPIv2 {
 
@@ -81,7 +81,7 @@ public class PartNodeUtilsImpl {
     // Rollback the part's proto state to the original settings.
     if (oldVessel != part.vessel) {
       DebugEx.Fine("Destroying the fake vessel: part={0}, vessel={1}", part, part.vessel);
-      Object.DestroyImmediate(part.vessel);
+      UnityEngine.Object.DestroyImmediate(part.vessel);
     }
     part.vessel = oldVessel;
     part.protoPartSnapshot = oldPartSnapshot;
