@@ -7,7 +7,6 @@ using KIS2.GUIUtils;
 using KSPDev.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
-using Smooth.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -171,7 +170,7 @@ public class KisContainerBase : AbstractPartModule,
   public virtual ErrorReason[] CheckCanAddParts(
       AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false) {
     var errors = new List<ErrorReason>();
-    nodes = nodes ?? new ConfigNode[avParts.Length];
+    nodes ??= new ConfigNode[avParts.Length];
     double partsVolume = 0;
     for (var i = 0; i < avParts.Length; ++i) {
       var avPart = avParts[i];
@@ -256,20 +255,19 @@ public class KisContainerBase : AbstractPartModule,
   public virtual void UpdateInventoryStats(InventoryItem[] changedItems) {
     if (changedItems == null) {
       HostedDebugLog.Fine(this, "Updating all items in the inventory...");
-      Array.ForEach(inventoryItems, i => i.UpdateConfig());
+      Array.ForEach(inventoryItems, item => item.UpdateConfig());
     } else if (changedItems.Length > 0) {
       HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Length);
-      Array.ForEach(changedItems, i => i.UpdateConfig());
+      Array.ForEach(changedItems, item => item.UpdateConfig());
     }
-    usedVolume = inventoryItems.Sum(i => i.volume);
-    contentMass = inventoryItems.Sum(i => i.fullMass);
-    contentCost = inventoryItems.Sum(i => i.fullCost);
+    usedVolume = inventoryItems.Sum(item => item.volume);
+    contentMass = inventoryItems.Sum(item => item.fullMass);
+    contentCost = inventoryItems.Sum(item => item.fullCost);
   }
 
   /// <inheritdoc/>
   public InventoryItem FindItem(string itemId) {
-    InventoryItem res = null;
-    inventoryItemsMap.TryGetValue(itemId, out res);
+    inventoryItemsMap.TryGetValue(itemId, out var res);
     return res;
   }
   #endregion

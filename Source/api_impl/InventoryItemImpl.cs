@@ -12,7 +12,7 @@ using UnityEngine;
 namespace KIS2 {
 
 /// <summary>Implementation for the inventory item.</summary>
-internal sealed class InventoryItemImpl : InventoryItem {
+sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
   public IKisInventory inventory { get; }
@@ -101,8 +101,8 @@ internal sealed class InventoryItemImpl : InventoryItem {
   }
 
   /// <summary>Makes a new item from the part definition.</summary>
-  public InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig,
-                           string itemGuid = null) {
+  public InventoryItemImpl(
+      IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig, string itemGuid = null) {
     this.inventory = inventory;
     this.avPart = avPart;
     this.itemConfig = itemConfig;
