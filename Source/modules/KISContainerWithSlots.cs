@@ -876,8 +876,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     // Finally, create a new invisible slot to fit the items.
     HostedDebugLog.Warning(this, "Adding an invisible slot: slotIdx={0}", _inventorySlots.Count);
-    _inventorySlots.Add(new InventorySlotImpl(null));
-    slot = _inventorySlots[_inventorySlots.Count - 1];
+    slot = new InventorySlotImpl(null);
+    _inventorySlots.Add(slot);
     return slot;
   }
 
