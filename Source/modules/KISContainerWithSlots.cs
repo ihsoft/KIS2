@@ -1175,14 +1175,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <summary>Updates items list in the slot and updates indexes.</summary>
   void UpdateSlotItems(InventorySlotImpl slot,
                        InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
-    if (addItems != null) {
-      slot.AddItems(addItems);
-      Array.ForEach(addItems, x => _itemToSlotMap.Add(x, slot));
-    }
     if (deleteItems != null) {
       slot.DeleteItems(deleteItems);
       Array.ForEach(deleteItems, x => _itemToSlotMap.Remove(x.itemId));
       ArrangeSlots(); // Make de-frag in case of there are invisible slots. 
+    }
+    if (addItems != null) {
+      slot.AddItems(addItems);
+      Array.ForEach(addItems, x => _itemToSlotMap.Add(x.itemId, slot));
     }
     if (slot == _slotWithPointerFocus) {
       UpdateTooltip();
