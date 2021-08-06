@@ -1344,7 +1344,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           _inventorySlots.IndexOf(_slotWithPointerFocus), consumedItems.Length);
       _slotEventsHandler.SetState(SlotActionMode.HoveringOverItemsSlot);
       var newItems = AddItems(consumedItems);
-      UpdateSlotItems(_slotWithPointerFocus, addItems: newItems);
+      UpdateSlotItems(_slotWithPointerFocus, addItems: RemoveItemsFromSlots(newItems));
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     }
     if (consumedItems == null) {
