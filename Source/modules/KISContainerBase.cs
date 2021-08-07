@@ -170,6 +170,16 @@ public class KisContainerBase : AbstractPartModule,
     if (!HighLogic.LoadedSceneIsFlight || stockInventoryModule == null) {
       return;
     }
+    var inventorySlotControl = stockInventoryModule.Fields[nameof(stockInventoryModule.InventorySlots)];
+    if (KisApi.CommonConfig.hideStockGui && inventorySlotControl != null) {
+      HostedDebugLog.Fine(this, "Disabling the stock inventory GUI settings");
+      if (!KisApi.CommonConfig.respectStockInventoryLayout && !KisApi.CommonConfig.respectStockStackingLogic) {
+        HostedDebugLog.Warning
+            (this, "Some of the compatibility settings are not active! The stock GUI may (and likely will) fail.");
+      }
+      inventorySlotControl.guiActive = false;
+      inventorySlotControl.guiActiveEditor = false;
+    }
     RegisterGameEventListener(GameEvents.onModuleInventorySlotChanged, OnModuleInventorySlotChangedEvent);
   }
   #endregion

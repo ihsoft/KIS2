@@ -33,6 +33,9 @@ public sealed class CommonConfigImpl {
   /// great backwards compatibility, but at the price of significant limiting of the KIS storage functionality.
   /// </remarks>
   public bool respectStockInventoryLayout => _respectStockInventoryLayout;
+
+  /// <summary>Tells if the stock inventory GUI must be hidden.</summary>
+  public bool hideStockGui => _hideStockGui;
   #endregion
 
   #region Local fields and properties
@@ -50,6 +53,9 @@ public sealed class CommonConfigImpl {
 
   [PersistentField("Compatibility/respectStockInventoryLayout")]
   bool _respectStockInventoryLayout = true;
+
+  [PersistentField("Compatibility/hideStockGui")]
+  bool _hideStockGui = false;
 
   // ReSharper enable FieldCanBeMadeReadOnly.Local
   // ReSharper enable ConvertToConstant.Local
