@@ -265,6 +265,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Persistent node names
+  /// <summary>
+  /// Name of the config value that holds a mapping between a slot and the KIS inventory item ID. 
+  /// </summary>
+  /// <remarks>The syntax is: &lt;slot-index&gt;-&lt;item-guid&gt;</remarks>
   const string PersistentConfigKisStockSlotMapping = "itemToKisSlotMapping";
   #endregion
 
@@ -810,8 +814,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     for (var i = 0; i < avParts.Count; ++i) {
       var avPart = avParts[i];
       var node = nodes[i] ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-      var slot = FindSlotForItem(
-          new InventoryItemImpl(this, avPart, node), preferredSlots: newSlots);
+      var slot = FindSlotForItem(new InventoryItemImpl(this, avPart, node), preferredSlots: newSlots);
       if (slot == null) {
         return false;
       }
@@ -1338,8 +1341,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var newItems = AddItems(consumedItems);
       UpdateSlotItems(_slotWithPointerFocus, addItems: RemoveItemsFromSlots(newItems));
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
-    }
-    if (consumedItems == null) {
+    } else {
       UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
       HostedDebugLog.Error(
           this, "Cannot store/stack dragged items to slot: draggedItems={0}",
