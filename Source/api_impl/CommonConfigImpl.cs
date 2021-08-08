@@ -9,7 +9,7 @@ using KSPDev.ConfigUtils;
 namespace KISAPIv2 {
 
 /// <summary>Container for the various global settings of the mod.</summary>
-[PersistentFieldsDatabase("KIS/settings2/KISConfig")]
+[PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 public sealed class CommonConfigImpl {
   #region Settings
   /// <summary>Path to the sound clip that plays "NOPE" sound.</summary>
