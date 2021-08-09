@@ -103,7 +103,7 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   }
 
   /// <summary>
-  /// Returns user friendly string that describes all the available events in the current state. 
+  /// Returns a user friendly string that describes all the available events in the current state.
   /// </summary>
   /// <param name="separator">The string to use to join hints for multiple events.</param>
   /// <returns>The event hints, joined with the separator.</returns>

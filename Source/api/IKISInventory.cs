@@ -53,9 +53,9 @@ public interface IKisInventory {
 
   /// <summary>Adds new parts into the inventory.</summary>
   /// <remarks>
-  /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
-  /// responsibility of the caller. Some parts in the list may not get added. The caller must check the result and
-  /// ensure if all the parts were added. 
+  /// This method does <i>not</i> verify if the parts can fit the inventory. Doing this check is
+  /// responsibility of the caller. Some parts in the list may not get added due to the internal
+  /// limits. The caller must check the result and ensure if all the parts were added. 
   /// </remarks>
   /// <param name="avParts">The part proto.</param>
   /// <param name="nodes">
@@ -68,29 +68,34 @@ public interface IKisInventory {
   
   /// <summary>Adds items from another inventory.</summary>
   /// <remarks>
-  /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is
-  /// responsibility of the caller. Some parts in the list may not get added. The caller must check the result and
-  /// ensure if all the parts were added.
+  /// This method does <i>not</i> verify if the items can fit the inventory. Doing this check is
+  /// responsibility of the caller. Some items in the list may not get added due to the internal
+  /// limits. The caller must check the result and ensure if all the parts were added.
   /// </remarks>
   /// <param name="items">The items to add.</param>
   /// <returns>
-  /// The added items that belong to this inventory. Their IDs will be different from the source items.
+  /// The added items that belong to this inventory. Their IDs will be different from the source
+  /// items.
   /// </returns>
+  /// <seealso cref="CheckCanAddParts"/>
   /// <seealso cref="InventoryItem.itemId"/>
   InventoryItem[] AddItems(InventoryItem[] items);
 
   /// <summary>Removes the specified items from inventory.</summary>
   /// <remarks>
   /// The delete action is atomic: it either succeeds in full or fails without changing the
-  /// inventory state. The overrides should consider that if the ancestor hs returned <c>true</c>, then there is no way
-  /// back and the overriden method must succeed too. 
+  /// inventory state. The overrides should consider that. If the ancestor has returned
+  /// <c>true</c>, then there is no way back and the overriden method must succeed too. 
   /// </remarks>
-  /// <param name="deleteItems">The items to remove.</param>
+  /// <param name="deleteItems">
+  /// The items to remove. They all must belong the this inventory.
+  /// </param>
   /// <returns>
   /// <c>true</c> if removal was successful or NO-OP. <c>false</c> if any of the items cannot be
   /// removed.
   /// </returns>
   /// <seealso cref="InventoryItem.isLocked"/>
+  /// <seealso cref="InventoryItem.inventory"/>
   bool DeleteItems(InventoryItem[] deleteItems);
 
   /// <summary>
