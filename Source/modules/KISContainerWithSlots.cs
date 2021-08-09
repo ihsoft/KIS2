@@ -1301,13 +1301,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <remarks>It's an action, invoked from the slot events state machine.</remarks>
   /// <seealso cref="_slotEventsHandler"/>
   void TakeItemsFromFocusedSlot(int num) {
-    HostedDebugLog.Fine(
-        this, "Take items from slot: slot=#{0}, num={1}",
-        _inventorySlots.IndexOf(_slotWithPointerFocus), num);
     var itemsToDrag = _slotWithPointerFocus.slotItems
         .Where(i => !i.isLocked)
         .Take(num)
         .ToArray();
+    HostedDebugLog.Fine(
+        this, "Take items from slot: slot=#{0}, requested={1}, got={2}",
+        _inventorySlots.IndexOf(_slotWithPointerFocus), num < int.MaxValue ? num : "<all>", itemsToDrag.Length);
     if (itemsToDrag.Length == 0) {
       return;
     }
@@ -1334,7 +1334,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   void AddDraggedItemsToFocusedSlot() {
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
     if (consumedItems != null) {
-      HostedDebugLog.Warning(
+      HostedDebugLog.Info(
           this, "Add items to slot: slot=#{0}, num={1}",
           _inventorySlots.IndexOf(_slotWithPointerFocus), consumedItems.Length);
       _slotEventsHandler.SetState(SlotActionMode.HoveringOverItemsSlot);
@@ -1344,8 +1344,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     } else {
       UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
       HostedDebugLog.Error(
-          this, "Cannot store/stack dragged items to slot: draggedItems={0}",
-          KisApi.ItemDragController.leasedItems.Length);
+          this, "Cannot store/stack dragged items to slot: slot=#{0}, draggedItems={1}",
+          _inventorySlots.IndexOf(_slotWithPointerFocus), KisApi.ItemDragController.leasedItems.Length);
     }
   }
 

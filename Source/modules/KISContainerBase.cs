@@ -238,7 +238,7 @@ public class KisContainerBase : AbstractPartModule,
       var item = items[i];
       var stockSlotIndex = FindStockSlotForItem(item);
       if (stockSlotIndex == -1) {
-        HostedDebugLog.Error(this, "Cannot add item to inventory: name={0}, itemIndex={1}", item.avPart, i);
+        HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
         continue;
       }
       var newItem = new InventoryItemImpl(this, item.avPart, item.itemConfig.CreateCopy());
