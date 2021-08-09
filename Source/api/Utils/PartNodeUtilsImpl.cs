@@ -242,8 +242,14 @@ public class PartNodeUtilsImpl {
       throw new ArgumentException("Cannot make snapshot in scene " + HighLogic.CurrentGame + " for node:\n" + node);
     }
 
-    // Proto part adjusts persistentId to not conflict with the world, but we want it to be kept original.
-    pPart.persistentId = uint.Parse(node.GetValue("persistentId"));
+    // The ID gets adjusted to be unique in the game, but for the purpose of persistence we need it to stay unchanged.
+    var originalPartId = uint.Parse(node.GetValue("persistentId"));
+    if (originalPartId != pPart.persistentId) {
+      pPart.persistentId = originalPartId;
+      DebugEx.Info("ProtoPartSnapshot persistentId changed back from {0} to {1}. It's a state snapshot action.",
+                   pPart.persistentId, originalPartId);
+    }
+
     return pPart;
   }
 
@@ -253,8 +259,6 @@ public class PartNodeUtilsImpl {
   public ConfigNode GetConfigNodeFromProtoPartSnapshot(ProtoPartSnapshot pPart) {
     var state = new ConfigNode("PART");
     pPart.Save(state);
-    // The ID gets adjusted to be unique in the game, but for the purpose of persistence we need it stay unchanged.
-    state.SetValue("persistentId", pPart.persistentId);
     return state;
   }
   #endregion
