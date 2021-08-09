@@ -308,8 +308,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// State machine that controls what input actions are active with regard to the slot drag/drop
   /// operations.
   /// </summary>
-  readonly EventsHandlerStateMachine<SlotActionMode> _slotEventsHandler =
-      new EventsHandlerStateMachine<SlotActionMode>();
+  readonly EventsHandlerStateMachine<SlotActionMode> _slotEventsHandler = new();
       
   #region Local fields, constants, and properties.
   /// <summary>The left side inventory window offset in the <i>FLIGHT</i> scene.</summary>
