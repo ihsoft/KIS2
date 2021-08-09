@@ -95,7 +95,7 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   /// <summary>Number of slots in the grid.</summary>
   /// <seealso cref="SetGridSize"/>
   public Vector2 gridSize {
-    get { return _gridSize; }
+    get => _gridSize;
     private set {
       _gridSize = value;
       slotsGrid.constraintCount = (int) value.x;
@@ -109,14 +109,14 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
 
   /// <summary>Inventory window title.</summary>
   public string title {
-    get { return headerText.text; }
-    set { headerText.text = value; }
+    get => headerText.text;
+    set => headerText.text = value;
   }
 
   /// <summary>Inventory window title.</summary>
   public string mainStats {
-    get { return mainStatsText.text; }
-    set { mainStatsText.text = value; }
+    get => mainStatsText.text;
+    set => mainStatsText.text = value;
   }
 
   /// <summary>Currently started tooltip.</summary>
@@ -131,7 +131,7 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   /// <summary>Slot that is currently being hovered over.</summary>
   /// <value><c>null</c> pointer doesn't hover over any slot of this inventory.</value>
   public Slot hoveredSlot {
-    get { return _hoveredSlot; }
+    get => _hoveredSlot;
     private set {
       if (_hoveredSlot != null && _hoveredSlot != value) {
         onSlotHover.ForEach(notify => notify(_hoveredSlot, false));
@@ -162,7 +162,7 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   /// <seealso cref="maxSize"/>
   /// <seealso cref="SetGridSize"/>
   public Vector2 minSize {
-    get { return new Vector2(sizeColumnsSlider.minValue, sizeRowsSlider.minValue); }
+    get => new Vector2(sizeColumnsSlider.minValue, sizeRowsSlider.minValue);
     set {
       sizeColumnsSlider.minValue = value.x;
       sizeRowsSlider.minValue = value.y;
@@ -177,7 +177,7 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   /// <seealso cref="minSize"/>
   /// <seealso cref="SetGridSize"/>
   public Vector2 maxSize {
-    get { return new Vector2(sizeColumnsSlider.maxValue, sizeRowsSlider.maxValue); }
+    get => new Vector2(sizeColumnsSlider.maxValue, sizeRowsSlider.maxValue);
     set {
       sizeColumnsSlider.maxValue = value.x;
       sizeRowsSlider.maxValue = value.y;
