@@ -34,6 +34,13 @@ public sealed class CommonConfigImpl {
   /// </remarks>
   public bool respectStockInventoryLayout => _respectStockInventoryLayout;
 
+  /// <summary>Tells if only the parts with the stock cargo module can be added into the inventory.</summary>
+  /// <remarks>
+  /// If this flag set, then only parts that have <see cref="ModuleCargoPart"/> module can be added into the inventory.
+  /// Additionally, this module must specify a non-zero volume. 
+  /// </remarks>
+  public bool addOnlyCargoParts => _addOnlyCargoParts;
+
   /// <summary>Tells if the stock inventory GUI must be hidden.</summary>
   public bool hideStockGui => _hideStockGui;
   #endregion
@@ -54,6 +61,9 @@ public sealed class CommonConfigImpl {
   [PersistentField("Compatibility/respectStockInventoryLayout")]
   bool _respectStockInventoryLayout = true;
 
+  [PersistentField("Compatibility/addOnlyCargoParts")]
+  bool _addOnlyCargoParts = true;
+  
   [PersistentField("Compatibility/hideStockGui")]
   bool _hideStockGui = false;
 
