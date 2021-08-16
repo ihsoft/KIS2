@@ -12,6 +12,8 @@ namespace KISAPIv2 {
 [PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 public sealed class CommonConfigImpl {
   #region Settings
+  // ReSharper disable ConvertToAutoProperty
+
   /// <summary>Path to the sound clip that plays "NOPE" sound.</summary>
   /// <remarks>Use this sound each time the user action cannot be performed.</remarks>
   public string sndPathBipWrong => _sndPathBipWrong;
@@ -43,6 +45,8 @@ public sealed class CommonConfigImpl {
 
   /// <summary>Tells if the stock inventory GUI must be hidden.</summary>
   public bool hideStockGui => _hideStockGui;
+
+  // ReSharper enable ConvertToAutoProperty
   #endregion
 
   #region Local fields and properties

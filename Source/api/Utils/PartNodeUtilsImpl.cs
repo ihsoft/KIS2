@@ -9,6 +9,7 @@ using KSPDev.PartUtils;
 using System.Collections.Generic;
 using System.Linq;
 
+// ReSharper disable once CheckNamespace
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the parts configs.</summary>
@@ -216,8 +217,7 @@ public class PartNodeUtilsImpl {
     if (variant == null && partNode != null) {
       variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
     }
-    VariantsUtils.ExecuteAtPartVariant(avPart, variant,
-                                       p => itemCost += p.GetModuleCosts(avPart.cost));
+    VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => itemCost += p.GetModuleCosts(avPart.cost));
     return itemCost;
   }
 
@@ -264,7 +264,7 @@ public class PartNodeUtilsImpl {
   #endregion
 
   #region Local utility methods
-  /// <summary>Walks thru all modules in the part and fixes null persistent fields.</summary>
+  /// <summary>Walks through all modules in the part and fixes null persistent fields.</summary>
   /// <remarks>Used to prevent NREs in methods that persist KSP fields.
   /// <para>
   /// Bad modules that cannot be fixed will be dropped which may make the part to be not behaving as
@@ -274,8 +274,7 @@ public class PartNodeUtilsImpl {
   /// <param name="part">The part to fix.</param>
   static void CleanupModuleFieldsInPart(Part part) {
     var badModules = new List<PartModule>();
-    foreach (var moduleObj in part.Modules) {
-      var module = moduleObj as PartModule;
+    foreach (var module in part.Modules) {
       try {
         CleanupFieldsInModule(module);
       } catch {
@@ -312,8 +311,7 @@ public class PartNodeUtilsImpl {
           "WORKAROUND. Module {0} on part prefab is not awaken. Call Awake on it", module);
       module.Awake();
     }
-    foreach (var field in module.Fields) {
-      var baseField = field as BaseField;
+    foreach (var baseField in module.Fields) {
       if (baseField.isPersistant && baseField.GetValue(module) == null) {
         var proto = new StandardOrdinaryTypesProto();
         var defValue = proto.ParseFromString("", baseField.FieldInfo.FieldType);
