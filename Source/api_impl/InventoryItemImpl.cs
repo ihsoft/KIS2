@@ -105,7 +105,7 @@ sealed class InventoryItemImpl : InventoryItem {
       IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig, string itemGuid = null) {
     this.inventory = inventory;
     this.avPart = avPart;
-    this.itemConfig = itemConfig;
+    this.itemConfig = itemConfig ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
     this.itemId = itemGuid ?? Guid.NewGuid().ToString();
     UpdateConfig();
   }
