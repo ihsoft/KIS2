@@ -222,11 +222,11 @@ public class PartNodeUtilsImpl {
   }
 
   /// <summary>Makes a part snapshot from the saved part state.</summary>
-  /// <param name="refInventory">The stock inventory module the part is being made for.</param>
+  /// <param name="refInventory">The inventory module the part is being made for.</param>
   /// <param name="node">The saved state.</param>
   /// <returns>A snapshot for the given state.</returns>
   /// <exception cref="ArgumentException">if the game scene or the reference inventory are not good.</exception>
-  public ProtoPartSnapshot GetProtoPartSnapshotFromNode(ModuleInventoryPart refInventory, ConfigNode node) {
+  public ProtoPartSnapshot GetProtoPartSnapshotFromNode(PartModule refInventory, ConfigNode node) {
     ProtoPartSnapshot pPart = null;
     if (refInventory.vessel != null) {
       pPart = new ProtoPartSnapshot(node, refInventory.vessel.protoVessel, HighLogic.CurrentGame);
@@ -234,7 +234,7 @@ public class PartNodeUtilsImpl {
       if (HighLogic.LoadedSceneIsEditor
           || HighLogic.LoadedSceneIsMissionBuilder
           || HighLogic.LoadedScene == GameScenes.MAINMENU
-          || refInventory.kerbalMode) {
+          || refInventory.vessel.isEVA) {
         pPart = new ProtoPartSnapshot(node, null, HighLogic.CurrentGame);
       }
     }
