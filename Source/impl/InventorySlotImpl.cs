@@ -24,7 +24,7 @@ namespace KIS2 {
 /// internal state, they cannot stack to the same slot.
 /// </remarks>
 /// <seealso cref="KisContainerWithSlots"/>
-internal sealed class InventorySlotImpl {
+sealed class InventorySlotImpl {
 
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -258,12 +258,13 @@ internal sealed class InventorySlotImpl {
   public InventoryItem[] slotItems { get; private set; } = new InventoryItem[0];
 
   /// <summary>Generalized icon of the slot.</summary>
+  /// <value>The texture that represents the slot.</value>
   public Texture iconImage =>
-      !isEmpty 
-      ? KisApi.PartIconUtils.MakeDefaultIcon(
-          avPart, 256,
-          VariantsUtils.GetCurrentPartVariant(slotItems[0].avPart, slotItems[0].itemConfig))
-      : null;
+      !isEmpty
+          ? KisApi.PartIconUtils.MakeDefaultIcon(
+              avPart, 256,
+              VariantsUtils.GetCurrentPartVariant(avPart, slotItems[0].itemConfig))
+          : null;
 
   /// <summary>Tells if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Length == 0;
