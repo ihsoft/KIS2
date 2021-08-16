@@ -27,29 +27,19 @@ public class PartModelUtilsImpl {
   /// <param name="partNode">
   /// The part's persistent state. It's used to extract the part's variant. It can be <c>null</c>.
   /// </param>
-  /// <param name="skipVariantsShader">
-  /// Tells if the variant shaders must not be applied to the model. For the purpose of making a
-  /// preview icon it's usually undesirable to have the shaders changed.
-  /// </param>
   /// <returns>The model of the part. Don't forget to destroy it when not needed.</returns>
-  public GameObject GetIconPrefab(
-      AvailablePart avPart,
-      PartVariant variant = null, ConfigNode partNode = null, bool skipVariantsShader = true) {
+  public GameObject GetIconPrefab(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
     var iconPrefab = UnityEngine.Object.Instantiate(avPart.iconPrefab);
     iconPrefab.SetActive(true);
     if (variant == null && partNode != null) {
       variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
     }
+    var materials = Shaders.CreateMaterialArray(iconPrefab);
     if (variant != null) {
-      DebugEx.Fine(
-          "Applying variant to the iconPrefab: part={0}, variant={1}", avPart.name, variant.Name);
-      ModulePartVariants.ApplyVariant(
-          null,
-          Hierarchy.FindTransformByPath(iconPrefab.transform, "**/model"),
-          variant,
-          KSP.UI.Screens.EditorPartIcon.CreateMaterialArray(iconPrefab),
-          skipVariantsShader);
+      DebugEx.Fine("Applying variant to the iconPrefab: part={0}, variant={1}", avPart.name, variant.Name);
+      ModulePartVariants.ApplyVariant(null, iconPrefab.transform, variant, materials, skipShader: false);
     }
+    Shaders.FixScreenSpaceShaders(materials, logDifferences: true);
     return iconPrefab;
   }
 
