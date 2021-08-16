@@ -344,9 +344,6 @@ public class KisContainerBase : AbstractPartModule,
   /// <returns></returns>
   /// <seealso cref="stockInventoryModule"/>
   InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
-    // var stockSlot = _stockInventoryModule.storedParts[stockSlotIndex];
-    // var slotConfig = KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(stockSlot.snapshot); 
-    // var item = InventoryItemImpl.FromConfigNode(this, slotConfig, itemId: itemId);
     var item = InventoryItemImpl.FromProtoPartSnapshot(
         this, stockInventoryModule.storedParts[stockSlotIndex].snapshot, itemId: itemId);
     UpdateStockSlotIndex(stockSlotIndex, item);
