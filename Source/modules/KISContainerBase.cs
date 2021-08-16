@@ -342,13 +342,13 @@ public class KisContainerBase : AbstractPartModule,
   /// An optional ID to assign to the new item. If omitted, then a new unique ID will be generated.
   /// </param>
   /// <returns></returns>
-  /// <seealso cref="_stockInventoryModule"/>
+  /// <seealso cref="stockInventoryModule"/>
   InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
     // var stockSlot = _stockInventoryModule.storedParts[stockSlotIndex];
     // var slotConfig = KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(stockSlot.snapshot); 
     // var item = InventoryItemImpl.FromConfigNode(this, slotConfig, itemId: itemId);
     var item = InventoryItemImpl.FromProtoPartSnapshot(
-        this, _stockInventoryModule.storedParts[stockSlotIndex].snapshot, itemId: itemId);
+        this, stockInventoryModule.storedParts[stockSlotIndex].snapshot, itemId: itemId);
     UpdateStockSlotIndex(stockSlotIndex, item);
     return item;
   }
@@ -397,14 +397,14 @@ public class KisContainerBase : AbstractPartModule,
     var maxSlotIndex = -1;
 
     // First, try to fit the item into an existing occupied slot to preserve the space.
-    foreach (var existingSlotIndex in _stockInventoryModule.storedParts.Keys) {
+    foreach (var existingSlotIndex in stockInventoryModule.storedParts.Keys) {
       maxSlotIndex = Math.Max(existingSlotIndex, maxSlotIndex);
-      var slot = _stockInventoryModule.storedParts[existingSlotIndex];
+      var slot = stockInventoryModule.storedParts[existingSlotIndex];
       if (!slot.partName.Equals(item.avPart.name)) {
         continue;
       }
       if (KisApi.CommonConfig.respectStockStackingLogic
-          && !_stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
+          && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
         continue;
       }
       // Verify that item has no differences in state with the slot.
@@ -439,7 +439,7 @@ public class KisContainerBase : AbstractPartModule,
     // Create a new slot beyond the stock addressing space. It won't be accessible via the stock UI. 
     slotIndex = maxSlotIndex + 1;
     HostedDebugLog.Info(this, "Creating an out of scope stock slot: slotIndex={0}, itemId={1}", slotIndex, item.itemId);
-    _stockInventoryModule.storedParts.Add(slotIndex, new StoredPart(item.avPart.name, slotIndex));
+    stockInventoryModule.storedParts.Add(slotIndex, new StoredPart(item.avPart.name, slotIndex));
     return slotIndex;
   }
 
@@ -469,14 +469,14 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Updates the stock inventory module using the stock methods.</summary>
   void AddItemToStockSlot_StockGame(InventoryItem item, int stockSlotIndex) {
     UpdateStockSlotIndex(stockSlotIndex, item);
-    if (!_stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
-        || _stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
-      _stockInventoryModule.StoreCargoPartAtSlot(
+    if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
+        || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
+      stockInventoryModule.StoreCargoPartAtSlot(
           KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(stockInventoryModule, item.itemConfig), stockSlotIndex);
       return;
     }
-    var slot = _stockInventoryModule.storedParts[stockSlotIndex];
-    _stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
+    var slot = stockInventoryModule.storedParts[stockSlotIndex];
+    stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
   }
 
   /// <summary>Updates the stock inventory using custom KIS logic.</summary>
@@ -503,7 +503,7 @@ public class KisContainerBase : AbstractPartModule,
   void RemoveItemFromStockSlot_StockGame(InventoryItem item) {
     var stockSlotIndex = _itemsToStockSlotMap[item.itemId];
     UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
-    var slot = _stockInventoryModule.storedParts[stockSlotIndex];
+    var slot = stockInventoryModule.storedParts[stockSlotIndex];
     var newStackQuantity = slot.quantity - 1;
     if (newStackQuantity > slot.stackCapacity) {
       HostedDebugLog.Warning(
@@ -514,9 +514,9 @@ public class KisContainerBase : AbstractPartModule,
       return;
     }
     if (newStackQuantity == 0) {
-      _stockInventoryModule.ClearPartAtSlot(stockSlotIndex);
+      stockInventoryModule.ClearPartAtSlot(stockSlotIndex);
     } else {
-      _stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, newStackQuantity, slot.variantName);
+      stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, newStackQuantity, slot.variantName);
     }
   }
 
@@ -531,8 +531,8 @@ public class KisContainerBase : AbstractPartModule,
     if (!ReferenceEquals(changedStockInventoryModule, stockInventoryModule)) {
       return;
     }
-    var slotQuantity = _stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
-        ? _stockInventoryModule.storedParts[stockSlotIndex].quantity
+    var slotQuantity = stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
+        ? stockInventoryModule.storedParts[stockSlotIndex].quantity
         : 0;
     var indexedItems = _stockSlotToItemsMap.ContainsKey(stockSlotIndex)
         ? _stockSlotToItemsMap[stockSlotIndex].Count
