@@ -6,6 +6,7 @@ using KISAPIv2;
 using System;
 using System.Linq;
 using KSPDev.LogUtils;
+using KSPDev.PartUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -28,6 +29,9 @@ sealed class InventoryItemImpl : InventoryItem {
   
   /// <inheritdoc/>
   public Part physicalPart { get; }
+
+  /// <inheritdoc/>
+  public PartVariant variant { get; private set; }
 
   /// <inheritdoc/>
   public double volume { get; private set; }
@@ -70,6 +74,7 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public void UpdateConfig() {
+    variant = VariantsUtils.GetCurrentPartVariant(avPart, itemConfig);
     volume = KisApi.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
     size = KisApi.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
     dryMass = KisApi.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);

@@ -30,6 +30,10 @@ public interface InventoryItem {
   /// <summary>Part proto.</summary>
   AvailablePart avPart { get; }
 
+  /// <summary>The variant applied to this item.</summary>
+  /// <value>The variant or <c>null</c> if the part doesn't have any.</value>
+  PartVariant variant { get; }
+
   /// <summary>Real part in the scene if there was one created.</summary>
   /// <remarks>A real part is only defined when the items is equipped in mode "Part".</remarks>
   /// <value>The part or <c>null</c>.</value>

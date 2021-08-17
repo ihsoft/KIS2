@@ -261,8 +261,7 @@ sealed class InventorySlotImpl {
   /// <value>The texture that represents the slot.</value>
   public Texture iconImage =>
       !isEmpty
-          ? KisApi.PartIconUtils.MakeDefaultIcon(
-              avPart, VariantsUtils.GetCurrentPartVariant(avPart, slotItems[0].itemConfig))
+          ? KisApi.PartIconUtils.MakeDefaultIcon(avPart, slotItems[0].variant)
           : null;
 
   /// <summary>Tells if this slot has any part item.</summary>
