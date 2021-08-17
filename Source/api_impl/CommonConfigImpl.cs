@@ -15,6 +15,10 @@ namespace KISAPIv2 {
 public sealed class CommonConfigImpl {
   #region Settings
   // ReSharper disable ConvertToAutoProperty
+  // ReSharper disable FieldCanBeMadeReadOnly.Global
+  // ReSharper disable ConvertToConstant.Global
+  // ReSharper disable CollectionNeverUpdated.Global
+  // ReSharper disable UnassignedField.Global
 
   /// <summary>Path to the sound clip that plays "NOPE" sound.</summary>
   /// <remarks>Use this sound each time the user action cannot be performed.</remarks>
@@ -22,9 +26,6 @@ public sealed class CommonConfigImpl {
 
   /// <summary>Tells if items in the inventories can be freely adjusted in flight.</summary>
   public bool builderModeEnabled => _builderModeEnabled;
-
-  // ReSharper disable FieldCanBeMadeReadOnly.Global
-  // ReSharper disable ConvertToConstant.Global
 
   /// <summary>Various settings tha affect how the inventory icons are made.</summary>
   /// <remarks>
@@ -97,8 +98,6 @@ public sealed class CommonConfigImpl {
     /// </remarks>
     public bool hideStockGui;
   }
-  // ReSharper enable FieldCanBeMadeReadOnly.Global
-  // ReSharper enable ConvertToConstant.Global
 
   /// <summary>Settings to make inventory part icons.</summary>
   public IconSnapshotSettings iconIconSnapshotSettings => _iconIconSnapshotSettings;
@@ -108,6 +107,10 @@ public sealed class CommonConfigImpl {
   public StockCompatibilitySettings compatibilitySettings = new();
 
   // ReSharper enable ConvertToAutoProperty
+  // ReSharper enable FieldCanBeMadeReadOnly.Global
+  // ReSharper enable ConvertToConstant.Global
+  // ReSharper enable CollectionNeverUpdated.Global
+  // ReSharper enable UnassignedField.Global
   #endregion
 
   #region Local fields and properties
