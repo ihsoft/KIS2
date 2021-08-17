@@ -245,9 +245,9 @@ public class PartNodeUtilsImpl {
     // The ID gets adjusted to be unique in the game, but for the purpose of persistence we need it to stay unchanged.
     var originalPartId = uint.Parse(node.GetValue("persistentId"));
     if (originalPartId != pPart.persistentId) {
-      pPart.persistentId = originalPartId;
       DebugEx.Info("ProtoPartSnapshot persistentId changed back from {0} to {1}. It's a state snapshot action.",
                    pPart.persistentId, originalPartId);
+      pPart.persistentId = originalPartId;
     }
 
     return pPart;
