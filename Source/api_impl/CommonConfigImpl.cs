@@ -54,8 +54,11 @@ public sealed class CommonConfigImpl {
   // ReSharper disable FieldCanBeMadeReadOnly.Global
   // ReSharper disable ConvertToConstant.Global
   public class IconSnapshotSettings {
-    [PersistentField("iconResolution")]
-    public int iconResolution = 256;
+    /// <summary>
+    /// Icon resolution to use when screen resolution is 1080p. It may get upscaled for the greater resolutions. 
+    /// </summary>
+    [PersistentField("baseIconResolution")]
+    public int baseIconResolution = 256;
 
     [PersistentField("cameraFov")]
     public float cameraFov = 540f; // From the stock inventory: 30 FOV x 18 boost

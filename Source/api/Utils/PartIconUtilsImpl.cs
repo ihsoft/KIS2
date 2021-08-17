@@ -27,13 +27,16 @@ public sealed class PartIconUtils {
   /// the editor when the part is not hovered.
   /// </summary>
   /// <param name="avPart">The part to make icon for.</param>
-  /// <param name="resolution">The size of the sprite. The part icon is always square.</param>
   /// <param name="variant">
   /// The variant to apply to the part before capturing an icon. It can be null if not variant needs
   /// to be applied.
   /// </param>
+  /// <param name="resolution">
+  /// The size of the sprite. The part icon is always square. If not set, then the best size will be
+  /// picked based on the screen resolution.
+  /// </param>
   /// <returns>The sprite of the icon.</returns>
-  public Texture MakeDefaultIcon(AvailablePart avPart, int resolution, PartVariant variant) {
+  public Texture MakeDefaultIcon(AvailablePart avPart, PartVariant variant, int? resolution = null) {
     var cacheKey = avPart.name + "-" + resolution + (variant == null ? "" : "-" + variant.Name);
     if (IconsCache.TryGetValue(cacheKey, out var result) && result != null) {
       return result;
@@ -47,6 +50,7 @@ public sealed class PartIconUtils {
     }
 
     var snapshotSettings = KisApi.CommonConfig.iconIconSnapshotSettings;
+    var iconSize = GetBestIconResolution(resolution);
     const int snapshotRenderLayer = (int) KspLayer2.DragRender;
     const int snapshotRenderMask = 1 << snapshotRenderLayer;
 
@@ -84,7 +88,7 @@ public sealed class PartIconUtils {
     var camDist = KSPCameraUtil.GetDistanceToFit(
         Mathf.Max(Mathf.Max(iconPrefabSize.x, iconPrefabSize.y), iconPrefabSize.z),
         snapshotSettings.cameraFov,
-        resolution);
+        iconSize);
     camera.transform.position =
         Quaternion.AngleAxis(snapshotSettings.cameraAzimuth, Vector3.up)
         * Quaternion.AngleAxis(snapshotSettings.cameraElevation, Vector3.right)
@@ -103,7 +107,7 @@ public sealed class PartIconUtils {
       RenderSettings.ambientSkyColor = snapshotSettings.ambientSkyColor;
       Shader.SetGlobalFloat(AmbientSettingsScope.AmbientBoostDiffuse, 0f);
       Shader.SetGlobalFloat(AmbientSettingsScope.AmbientBoostEmissive, GameSettings.AMBIENTLIGHT_BOOSTFACTOR_EDITONLY);
-      thumbTexture = RenderCamera(camera, resolution, resolution, 24);
+      thumbTexture = RenderCamera(camera, iconSize, iconSize, 24);
     }
 
     // Don't use GameObject.Destroy() method here!
@@ -126,9 +130,7 @@ public sealed class PartIconUtils {
   /// </param>
   /// <returns>The sprite of the icon.</returns>
   public Texture MakeDefaultIcon(Part part, int? resolution = null) {
-    return MakeDefaultIcon(
-        part.partInfo,
-        GetBestIconResolution(resolution), VariantsUtils.GetCurrentPartVariant(part));
+    return MakeDefaultIcon(part.partInfo, VariantsUtils.GetCurrentPartVariant(part), resolution: resolution);
   }
 
   #region Local utility methods
@@ -137,14 +139,13 @@ public sealed class PartIconUtils {
   /// This method have an ultimate power to override the caller's preference. It tries to give a
   /// best resolution given a number of factors. The screen resolution is one of them.
   /// </remarks>
-  /// <param name="requested">The caller's idea of the resolution.</param>
-  /// <returns></returns>
+  /// <param name="requested">
+  /// The caller's idea of the resolution. If not set, then KIS will choose the best one based on its settings.
+  /// </param>
+  /// <returns>The best resolution, given the current screen mode ands the settings.</returns>
   static int GetBestIconResolution(int? requested = null) {
-    var res = requested ?? KisApi.CommonConfig.iconIconSnapshotSettings.iconResolution;
-    if (Screen.currentResolution.height > 1080) {
-      res *= 2;
-    }
-    return res;
+    var res = requested ?? KisApi.CommonConfig.iconIconSnapshotSettings.baseIconResolution;
+    return Screen.currentResolution.height <= 1080 ? res : res * 2;
   }
 
   /// <summary>Renders the camera's output into a texture.</summary>
