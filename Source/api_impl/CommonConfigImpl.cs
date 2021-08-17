@@ -47,12 +47,14 @@ public sealed class CommonConfigImpl {
   /// <summary>Tells if the stock inventory GUI must be hidden.</summary>
   public bool hideStockGui => _hideStockGui;
 
+  // ReSharper disable FieldCanBeMadeReadOnly.Global
+  // ReSharper disable ConvertToConstant.Global
+
   /// <summary>Various settings tha affect how the inventory icons are made.</summary>
   /// <remarks>
   /// All the default values below give a nice look in KSP 1.12. It may not be the case in the future versions.
   /// </remarks>
-  // ReSharper disable FieldCanBeMadeReadOnly.Global
-  // ReSharper disable ConvertToConstant.Global
+  /// FIXME: It may not be the right place. Move it into PartIconUtils? 
   public class IconSnapshotSettings {
     /// <summary>
     /// Icon resolution to use when screen resolution is 1080p. It may get upscaled for the greater resolutions. 
@@ -84,10 +86,9 @@ public sealed class CommonConfigImpl {
     public Color ambientGroundColor = new(0.345f, 0.345f, 0.345f, 1.000f);
     [PersistentField("ambientSkyColor")]
     public Color ambientSkyColor = new(0.463f, 0.463f, 0.463f, 1.000f);
-
-    // ReSharper enable FieldCanBeMadeReadOnly.Global
-    // ReSharper enable ConvertToConstant.Global
   }
+  // ReSharper enable FieldCanBeMadeReadOnly.Global
+  // ReSharper enable ConvertToConstant.Global
 
   /// <summary>Settings to make inventory part icons.</summary>
   public IconSnapshotSettings iconIconSnapshotSettings => _iconIconSnapshotSettings;
