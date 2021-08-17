@@ -3,6 +3,7 @@
 // License: Public Domain
 
 using KSPDev.ConfigUtils;
+using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 // ReSharper disable once IdentifierTypo
@@ -46,6 +47,48 @@ public sealed class CommonConfigImpl {
   /// <summary>Tells if the stock inventory GUI must be hidden.</summary>
   public bool hideStockGui => _hideStockGui;
 
+  /// <summary>Various settings tha affect how the inventory icons are made.</summary>
+  /// <remarks>
+  /// All the default values below give a nice look in KSP 1.12. It may not be the case in the future versions.
+  /// </remarks>
+  // ReSharper disable FieldCanBeMadeReadOnly.Global
+  // ReSharper disable ConvertToConstant.Global
+  public class IconSnapshotSettings {
+    [PersistentField("iconResolution")]
+    public int iconResolution = 256;
+
+    [PersistentField("cameraFov")]
+    public float cameraFov = 540f; // From the stock inventory: 30 FOV x 18 boost
+    [PersistentField("cameraElevation")]
+    public float cameraElevation = 15f;
+    [PersistentField("cameraAzimuth")]
+    public float cameraAzimuth = 25f;
+    [PersistentField("cameraPitch")]
+    public float cameraPitch = 15f;
+    [PersistentField("cameraHeading")]
+    public float cameraHeading = 25f;
+
+    [PersistentField("lightRotation")]
+    public Vector3 lightRotation = new(45, -90, 0);
+    [PersistentField("lightIntensity")]
+    public float lightIntensity = 0.4f;
+
+    [PersistentField("ambientLightColor")]
+    public Color ambientLightColor = new(0.463f, 0.463f, 0.463f, 1.000f);
+    [PersistentField("ambientEquatorColor")]
+    public Color ambientEquatorColor = new(0.580f, 0.580f, 0.580f, 1.000f);
+    [PersistentField("ambientGroundColor")]
+    public Color ambientGroundColor = new(0.345f, 0.345f, 0.345f, 1.000f);
+    [PersistentField("ambientSkyColor")]
+    public Color ambientSkyColor = new(0.463f, 0.463f, 0.463f, 1.000f);
+
+    // ReSharper enable FieldCanBeMadeReadOnly.Global
+    // ReSharper enable ConvertToConstant.Global
+  }
+
+  /// <summary>Settings to make inventory part icons.</summary>
+  public IconSnapshotSettings iconIconSnapshotSettings => _iconIconSnapshotSettings;
+
   // ReSharper enable ConvertToAutoProperty
   #endregion
 
@@ -70,6 +113,9 @@ public sealed class CommonConfigImpl {
   
   [PersistentField("Compatibility/hideStockGui")]
   bool _hideStockGui = false;
+
+  [PersistentField("IconSnapshotSettings")]
+  IconSnapshotSettings _iconIconSnapshotSettings = new();
 
   // ReSharper enable FieldCanBeMadeReadOnly.Local
   // ReSharper enable ConvertToConstant.Local
