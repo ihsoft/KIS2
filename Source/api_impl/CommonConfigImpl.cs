@@ -2,6 +2,7 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System.Collections.Generic;
 using KSPDev.ConfigUtils;
 using UnityEngine;
 
@@ -21,31 +22,6 @@ public sealed class CommonConfigImpl {
 
   /// <summary>Tells if items in the inventories can be freely adjusted in flight.</summary>
   public bool builderModeEnabled => _builderModeEnabled;
-
-  /// <summary>Tells if all interactions with the stock inventory must follow the stacking rules.</summary>
-  /// <remarks>
-  /// If this flag set, then all operations on adding new parts into the inventory will use the stock inventory methods.
-  /// This also blocks adding non cargo module parts in to the inventory. This setting gives the best level of
-  /// compatibility, but significantly limits the KIS abilities.
-  /// </remarks>
-  public bool respectStockStackingLogic => _respectStockStackingLogic;
-
-  /// <summary>Tells if number of the slots must not be changed in the stock inventory.</summary>
-  /// <remarks>
-  /// If this flag set, then no new slots will be added when extra space is needed to accomodate a new item. It gives a
-  /// great backwards compatibility, but at the price of significant limiting of the KIS storage functionality.
-  /// </remarks>
-  public bool respectStockInventoryLayout => _respectStockInventoryLayout;
-
-  /// <summary>Tells if only the parts with the stock cargo module can be added into the inventory.</summary>
-  /// <remarks>
-  /// If this flag set, then only parts that have <see cref="ModuleCargoPart"/> module can be added into the inventory.
-  /// Additionally, this module must specify a non-zero volume. 
-  /// </remarks>
-  public bool addOnlyCargoParts => _addOnlyCargoParts;
-
-  /// <summary>Tells if the stock inventory GUI must be hidden.</summary>
-  public bool hideStockGui => _hideStockGui;
 
   // ReSharper disable FieldCanBeMadeReadOnly.Global
   // ReSharper disable ConvertToConstant.Global
@@ -87,11 +63,49 @@ public sealed class CommonConfigImpl {
     [PersistentField("ambientSkyColor")]
     public Color ambientSkyColor = new(0.463f, 0.463f, 0.463f, 1.000f);
   }
+
+  /// <summary>Various settings to control the compatibility with the stock inventory system.</summary>
+  public class StockCompatibilitySettings {
+    /// <summary>Tells if all interactions with the stock inventory must follow the stacking rules.</summary>
+    /// <remarks>
+    /// If this flag set, then all operations on adding new parts into the inventory will use the stock inventory methods.
+    /// This also blocks adding non cargo module parts in to the inventory. This setting gives the best level of
+    /// compatibility, but significantly limits the KIS abilities.
+    /// </remarks>
+    [PersistentField("respectStockStackingLogic")]
+    public bool respectStockStackingLogic;
+
+    /// <summary>Tells if number of the slots must not be changed in the stock inventory.</summary>
+    /// <remarks>
+    /// If this flag set, then no new slots will be added when extra space is needed to accomodate a new item. It gives a
+    /// great backwards compatibility, but at the price of significant limiting of the KIS storage functionality.
+    /// </remarks>
+    [PersistentField("respectStockInventoryLayout")]
+    public bool respectStockInventoryLayout;
+
+    /// <summary>Tells if only the parts with the stock cargo module can be added into the inventory.</summary>
+    /// <remarks>
+    /// If this flag set, then only parts that have <see cref="ModuleCargoPart"/> module can be added into the inventory.
+    /// Additionally, this module must specify a non-zero volume and stack size.
+    /// </remarks>
+    [PersistentField("addOnlyCargoParts")]
+    public bool addOnlyCargoParts = false;
+
+    /// <summary>Tells if the stock inventory GUI must be hidden.</summary>
+    /// <remarks>
+    /// A rule of thumb is to hide the stock GUI if there is <i>any</i> incompatibility with the stock system.
+    /// </remarks>
+    public bool hideStockGui;
+  }
   // ReSharper enable FieldCanBeMadeReadOnly.Global
   // ReSharper enable ConvertToConstant.Global
 
   /// <summary>Settings to make inventory part icons.</summary>
   public IconSnapshotSettings iconIconSnapshotSettings => _iconIconSnapshotSettings;
+
+  /// <summary>Settings to control compatibility aspects with teh stock system.</summary>
+  [PersistentField("Compatibility")]
+  public StockCompatibilitySettings compatibilitySettings = new();
 
   // ReSharper enable ConvertToAutoProperty
   #endregion
@@ -105,18 +119,6 @@ public sealed class CommonConfigImpl {
 
   [PersistentField("BuilderMode/enabled")]
   bool _builderModeEnabled = false;
-
-  [PersistentField("Compatibility/respectStockStackingLogic")]
-  bool _respectStockStackingLogic = true;
-
-  [PersistentField("Compatibility/respectStockInventoryLayout")]
-  bool _respectStockInventoryLayout = true;
-
-  [PersistentField("Compatibility/addOnlyCargoParts")]
-  bool _addOnlyCargoParts = true;
-  
-  [PersistentField("Compatibility/hideStockGui")]
-  bool _hideStockGui = false;
 
   [PersistentField("IconSnapshotSettings")]
   IconSnapshotSettings _iconIconSnapshotSettings = new();

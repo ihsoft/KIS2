@@ -171,9 +171,10 @@ public class KisContainerBase : AbstractPartModule,
       return;
     }
     var inventorySlotControl = stockInventoryModule.Fields[nameof(stockInventoryModule.InventorySlots)];
-    if (KisApi.CommonConfig.hideStockGui && inventorySlotControl != null) {
+    if (KisApi.CommonConfig.compatibilitySettings.hideStockGui && inventorySlotControl != null) {
       HostedDebugLog.Fine(this, "Disabling the stock inventory GUI settings");
-      if (!KisApi.CommonConfig.respectStockInventoryLayout && !KisApi.CommonConfig.respectStockStackingLogic) {
+      if (!KisApi.CommonConfig.compatibilitySettings.respectStockInventoryLayout
+          && !KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic) {
         HostedDebugLog.Warning
             (this, "Some of the compatibility settings are not active! The stock GUI may (and likely will) fail.");
       }
@@ -385,8 +386,8 @@ public class KisContainerBase : AbstractPartModule,
   /// <remarks>This method may modify the stock module state if an extra slot needs to be added.</remarks>
   /// <param name="item">The item to verify.</param>
   /// <returns>The stock slot index that can accept the item.</returns>
-  /// <seealso cref="KisApi.CommonConfig.respectStockStackingLogic"/>
-  /// <seealso cref="KisApi.CommonConfig.respectStockInventoryLayout"/>
+  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic"/>
+  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings.respectStockInventoryLayout"/>
   int FindStockSlotForItem(InventoryItem item) {
     var itemConfig = item.itemConfig;
     var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, itemConfig);
@@ -400,7 +401,7 @@ public class KisContainerBase : AbstractPartModule,
       if (!slot.partName.Equals(item.avPart.name)) {
         continue;
       }
-      if (KisApi.CommonConfig.respectStockStackingLogic
+      if (KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic
           && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
         continue;
       }
@@ -429,7 +430,7 @@ public class KisContainerBase : AbstractPartModule,
     if (slotIndex != -1) {
       return slotIndex;
     }
-    if (KisApi.CommonConfig.respectStockInventoryLayout) {
+    if (KisApi.CommonConfig.compatibilitySettings.respectStockInventoryLayout) {
       return -1;
     }
 
@@ -454,9 +455,9 @@ public class KisContainerBase : AbstractPartModule,
   /// <param name="item">The item to add.</param>
   /// <param name="stockSlotIndex">The stock slot index to add into.</param>
   /// <seealso cref="FindStockSlotForItem"/>
-  /// <seealso cref="KisApi.CommonConfig.respectStockStackingLogic"/>
+  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic"/>
   void AddItemToStockSlot(InventoryItem item, int stockSlotIndex) {
-    if (KisApi.CommonConfig.respectStockStackingLogic) {
+    if (KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic) {
       AddItemToStockSlot_StockGame(item, stockSlotIndex);
     } else {
       AddItemToStockSlot_Kis(item, stockSlotIndex);
@@ -485,7 +486,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Removes the item from a stock inventory slot.</summary>
   /// <param name="item">The item to remove.</param>
   void RemoveItemFromStockSlot(InventoryItem item) {
-    if (KisApi.CommonConfig.respectStockStackingLogic) {
+    if (KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic) {
       RemoveItemFromStockSlot_StockGame(item);
     } else {
       RemoveItemFromStockSlot_Kis(item);
