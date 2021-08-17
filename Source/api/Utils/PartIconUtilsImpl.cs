@@ -37,7 +37,8 @@ public sealed class PartIconUtils {
   /// </param>
   /// <returns>The sprite of the icon.</returns>
   public Texture MakeDefaultIcon(AvailablePart avPart, PartVariant variant, int? resolution = null) {
-    var cacheKey = avPart.name + "-" + resolution + (variant == null ? "" : "-" + variant.Name);
+    var iconSize = GetBestIconResolution(resolution);
+    var cacheKey = avPart.name + "-" + iconSize + (variant == null ? "" : "-" + variant.Name);
     if (IconsCache.TryGetValue(cacheKey, out var result) && result != null) {
       return result;
     }
@@ -50,7 +51,6 @@ public sealed class PartIconUtils {
     }
 
     var snapshotSettings = KisApi.CommonConfig.iconIconSnapshotSettings;
-    var iconSize = GetBestIconResolution(resolution);
     const int snapshotRenderLayer = (int) KspLayer2.DragRender;
     const int snapshotRenderMask = 1 << snapshotRenderLayer;
 
