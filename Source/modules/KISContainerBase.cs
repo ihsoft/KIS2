@@ -235,8 +235,7 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     var addedItems = new List<InventoryItem>();
-    for (var i = 0; i < items.Length; i++) {
-      var item = items[i];
+    foreach (var item in items) {
       var stockSlotIndex = FindStockSlotForItem(item);
       if (stockSlotIndex == -1) {
         HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);

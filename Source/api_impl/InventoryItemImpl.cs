@@ -5,7 +5,6 @@
 using KISAPIv2;
 using System;
 using System.Linq;
-using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using UnityEngine;
 

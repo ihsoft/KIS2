@@ -89,6 +89,7 @@ public class PartNodeUtilsImpl {
     part.protoModuleCrew = oldCrewSnapshot;
 
     // Prune unimportant data.
+    // ReSharper disable StringLiteralTypo
     partNode.RemoveValues("parent");
     partNode.RemoveValues("position");
     partNode.RemoveValues("rotation");
@@ -102,6 +103,7 @@ public class PartNodeUtilsImpl {
     partNode.RemoveValues("connected");
     partNode.RemoveValues("attached");
     partNode.RemoveValues("flag");
+    // ReSharper enable StringLiteralTypo
 
     partNode.RemoveNodes("ACTIONS");
     partNode.RemoveNodes("EVENTS");

@@ -10,11 +10,16 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the part model.</summary>
 public class PartModelUtilsImpl {
 
+  #region Local fields and properties
+  #endregion
+
+  #region API methods
   /// <summary>Returns the part's model, used to make the preview icon.</summary>
   /// <remarks>
   /// Note, that this is not the actual part appearance. It's an optimized version, specifically made for the icon
@@ -98,12 +103,11 @@ public class PartModelUtilsImpl {
   /// Tells if the parts down the hierarchy need to be captured too.
   /// </param>
   /// <returns>
-  /// The root game object of the new hirerarchy. This object must be explicitly disposed when not
+  /// The root game object of the new hierarchy. This object must be explicitly disposed when not
   /// needed anymore.
   /// </returns>
   public GameObject GetSceneAssemblyModel(Part rootPart, bool goThruChildren = true) {
-    var modelObj = UnityEngine.Object.Instantiate<GameObject>(
-        Hierarchy.GetPartModelTransform(rootPart).gameObject);
+    var modelObj = UnityEngine.Object.Instantiate(Hierarchy.GetPartModelTransform(rootPart).gameObject);
     modelObj.SetActive(true);
 
     // Drop stuff that is not intended to show up in flight.
@@ -176,7 +180,7 @@ public class PartModelUtilsImpl {
   /// <param name="variant">
   /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
   /// <paramref name="partNode"/>. If both the <paramref name="variant"/> and the
-  /// <paramref name="partNode"/> are sepcified, then varian argument will be considered.  
+  /// <paramref name="partNode"/> are specified, then the variant argument will be considered.  
   /// </param>
   /// <param name="partNode">
   /// The part's persistent config. It will be looked up for the variant and other volume modifiers.
@@ -228,7 +232,7 @@ public class PartModelUtilsImpl {
     return bounds;
   }
 
-  /// <summary>Traverses thru the hierarchy and gathers all the meshes from it.</summary>
+  /// <summary>Traverses through the hierarchy and gathers all the meshes from it.</summary>
   /// <param name="model">The root model to start from.</param>
   /// <param name="meshCombines">The collection to accumulate the meshes.</param>
   /// <param name="worldTransform">
@@ -250,9 +254,10 @@ public class PartModelUtilsImpl {
         .Where(mf => considerInactive || mf.gameObject.activeInHierarchy)
         .ToArray();
     Array.ForEach(meshFilters, meshFilter => {
-      var combine = new CombineInstance();
-      combine.mesh = meshFilter.sharedMesh;
-      combine.transform = rootWorldTransform * meshFilter.transform.localToWorldMatrix;
+      var combine = new CombineInstance {
+          mesh = meshFilter.sharedMesh,
+          transform = rootWorldTransform * meshFilter.transform.localToWorldMatrix
+      };
       meshCombines.Add(combine);
     });
 
@@ -260,8 +265,9 @@ public class PartModelUtilsImpl {
     var skinnedMeshRenderers = model.GetComponentsInChildren<SkinnedMeshRenderer>();
     if (skinnedMeshRenderers.Length > 0) {
       foreach (var skinnedMeshRenderer in skinnedMeshRenderers) {
-        var combine = new CombineInstance();
-        combine.mesh = new Mesh();
+        var combine = new CombineInstance {
+            mesh = new Mesh(),
+        };
         skinnedMeshRenderer.BakeMesh(combine.mesh);
         // BakeMesh() gives mesh in world scale, so don't apply it twice.
         var localToWorldMatrix = Matrix4x4.TRS(
@@ -273,12 +279,14 @@ public class PartModelUtilsImpl {
       }
     }
   }
+  #endregion
 
+  #region Local utility methods
   /// <summary>Calculates bounds from the actual meshes of the model.</summary>
   /// <remarks>Note that the result depends on the model orientation.</remarks>
   /// <param name="model">The model to find the bounds for.</param>
   /// <param name="considerInactive">Tells if inactive meshes should be considered.</param>
-  /// <returns></returns>
+  /// <returns>The estimated volume of the meshes.</returns>
   Bounds GetMeshBounds(Transform model, bool considerInactive = false) {
     var combines = new List<CombineInstance>();
     CollectMeshesFromModel(model, combines, considerInactive: considerInactive);
@@ -290,6 +298,7 @@ public class PartModelUtilsImpl {
     }
     return bounds;
   }
+  #endregion
 }
 
 }  // namespace
