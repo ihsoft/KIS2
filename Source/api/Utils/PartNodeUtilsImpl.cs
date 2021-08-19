@@ -121,10 +121,7 @@ public class PartNodeUtilsImpl {
   /// </param>
   /// <returns>The found resources.</returns>
   public ProtoPartResourceSnapshot[] GetResources(ConfigNode partNode) {
-    if (partNode.HasNode("PART")) {
-      partNode = partNode.GetNode("PART");
-    }
-    return partNode.GetNodes("RESOURCE")
+    return PartNodeUtils2.GetPartNode(partNode).GetNodes("RESOURCE")
         .Select(n => new ProtoPartResourceSnapshot(n))
         .ToArray();
   }
@@ -141,10 +138,7 @@ public class PartNodeUtilsImpl {
   /// <returns>The new amount or <c>null</c> if the resource was not found.</returns>
   public double? UpdateResource(ConfigNode partNode, string name, double amount,
                                 bool isAmountRelative = false) {
-    if (partNode.HasNode("PART")) {
-      partNode = partNode.GetNode("PART");
-    }
-    var node = partNode.GetNodes("RESOURCE")
+    var node = PartNodeUtils2.GetPartNode(partNode).GetNodes("RESOURCE")
         .FirstOrDefault(r => r.GetValue("name") == name);
     double? setAmount = null;
     if (node != null) {
