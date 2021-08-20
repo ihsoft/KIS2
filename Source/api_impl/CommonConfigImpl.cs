@@ -97,6 +97,18 @@ public sealed class CommonConfigImpl {
     /// A rule of thumb is to hide the stock GUI if there is <i>any</i> incompatibility with the stock system.
     /// </remarks>
     public bool hideStockGui;
+
+    /// <summary>
+    /// List of parts for which the volume must be calculated based on the model size, regardless to the cargo module
+    /// settings. 
+    /// </summary>
+    /// <remarks>
+    /// Cargo module settings are not subject to the variant override. And there are pats that may significantly change
+    /// their model (and volume) based on the variant selected. For such parts it's recommended to exclude them from the
+    /// regular logic and always use KIS geometric based calculation.
+    /// </remarks>
+    [PersistentField("stockVolumeExceptions", isCollection = true)]
+    public HashSet<string> stockVolumeExceptions = new();
   }
 
   /// <summary>Settings to make inventory part icons.</summary>

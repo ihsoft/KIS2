@@ -17,6 +17,12 @@ namespace KISAPIv2 {
 public class PartModelUtilsImpl {
 
   #region Local fields and properties
+  /// <summary>Cached volumes of the parts.</summary>
+  /// <remarks>
+  /// They are accumulated as the KIS containers are being used. The cache only lives during the game's session and dies
+  /// on the game restart.
+  /// </remarks>
+  readonly Dictionary<string, double> _partsVolumeCache = new();
   #endregion
 
   #region API methods
@@ -171,10 +177,10 @@ public class PartModelUtilsImpl {
     return GetPartVolume(part.partInfo, partNode: partNode);
   }
 
-  /// <summary>Returns part's volume basing on its geometrics.</summary>
+  /// <summary>Returns a part's volume.</summary>
   /// <remarks>
-  /// The volume is calculated basing on the smallest boundary box that encapsulates all the meshes
-  /// in the part. The deployable parts can take much more space in the deployed state.
+  /// The volume is either get from the <c>ModuleCargoPart</c> or from the smallest boundary box that encapsulates all
+  /// the meshes in the part. See <see cref="KisApi.CommonConfig.compatibilitySettings.stockVolumeExceptions"/>.
   /// </remarks>
   /// <param name="avPart">The part proto to get the models from.</param>
   /// <param name="variant">
@@ -186,10 +192,30 @@ public class PartModelUtilsImpl {
   /// The part's persistent config. It will be looked up for the variant and other volume modifiers.
   /// </param>
   /// <returns>The volume in liters.</returns>
-  public double GetPartVolume(
-      AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+  public double GetPartVolume(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+    if (variant != null && partNode != null) {
+      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
+    }
+    var cacheKey = avPart.name + (variant != null ? "-" + avPart.Variants.IndexOf(variant) : "");
+    if (_partsVolumeCache.TryGetValue(cacheKey, out var cachedVolume)) {
+      return cachedVolume;
+    }
+    if (!KisApi.CommonConfig.compatibilitySettings.stockVolumeExceptions.Contains(avPart.name)) {
+      var cargoModule = avPart.partPrefab.Modules.OfType<ModuleCargoPart>().FirstOrDefault();
+      if (cargoModule != null && cargoModule.packedVolume > 0) {
+        DebugEx.Info("Put cargo module volume into the cache: partName={0}, volume={1}, cacheKey={2}",
+                     avPart.name, cargoModule.packedVolume, cacheKey);
+        _partsVolumeCache.Add(cacheKey, cargoModule.packedVolume);
+        return cargoModule.packedVolume;
+      }
+    }
+
     var boundsSize = GetPartBounds(avPart, variant: variant, partNode: partNode);
-    return boundsSize.x * boundsSize.y * boundsSize.z * 1000f;
+    var volume = boundsSize.x * boundsSize.y * boundsSize.z * 1000f;
+    DebugEx.Info("No cargo module volume for the part, make a KIS one: partName={0}, kisVolume={1}, cacheKey={2}",
+                 avPart.name, volume, cacheKey);
+    _partsVolumeCache.Add(cacheKey, volume);
+    return volume;
   }
 
   /// <summary>Returns part's boundary box basing on its geometrics.</summary>
