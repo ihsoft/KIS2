@@ -165,9 +165,9 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public override void OnStart(StartState state) {
-    base.OnStart(state);
-    if (!HighLogic.LoadedSceneIsFlight || stockInventoryModule == null) {
+  public override void OnAwake() {
+    base.OnAwake();
+    if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) {
       return;
     }
     var inventorySlotControl = stockInventoryModule.Fields[nameof(stockInventoryModule.InventorySlots)];
