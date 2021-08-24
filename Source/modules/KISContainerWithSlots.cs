@@ -1277,7 +1277,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var checkResult = CheckCanAddParts(addAvPartsArray, addItemConfigsArray);
       if (checkResult == null) {
         var newItems = AddParts(addAvPartsArray, addItemConfigsArray);
-        UpdateSlotItems(_slotWithPointerFocus, addItems: newItems);
       } else {
         UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
         var errorMsg = checkResult
