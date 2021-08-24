@@ -414,6 +414,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <inheritdoc/>
   public override void OnAwake() {
     base.OnAwake();
+    if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) {
+      return; // Nothing to do.
+    }
+
     useGUILayout = false;
 
     // SlotActionMode.HoveringOverEmptySlot
