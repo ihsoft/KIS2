@@ -613,8 +613,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         if (!_itemToSlotMap.ContainsKey(item.itemId)) {
           UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] {item});
         } else {
-          //FIXME
-          HostedDebugLog.Warning(this, "*** skip update for existing mapping");
+          HostedDebugLog.Warning(this, "Skip update for existing mapping: itemId={0}", item.itemId);
         }
       }
     }
