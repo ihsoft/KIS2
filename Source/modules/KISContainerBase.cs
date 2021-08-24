@@ -384,14 +384,19 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Gets a stock inventory slot that can accept the given item.</summary>
   /// <remarks>This method may modify the stock module state if an extra slot needs to be added.</remarks>
   /// <param name="item">The item to verify.</param>
-  /// <returns>The stock slot index that can accept the item.</returns>
-  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic"/>
-  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings.respectStockInventoryLayout"/>
+  /// <returns>The stock slot index that can accept the item or <c>-1</c> if there are none.</returns>
+  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings"/>
   int FindStockSlotForItem(InventoryItem item) {
     var itemConfig = item.itemConfig;
     var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, itemConfig);
     var variantName = variant != null ? variant.Name : "";
     var maxSlotIndex = -1;
+    var compatibility = KisApi.CommonConfig.compatibilitySettings;
+
+    // Check if the stock compatibility mode is satisfied.
+    if (compatibility.addOnlyCargoParts && !KisApi.PartPrefabUtils.GetCargoModule(item.avPart)) {
+      return -1;
+    }
 
     // First, try to fit the item into an existing occupied slot to preserve the space.
     foreach (var existingSlotIndex in stockInventoryModule.storedParts.Keys) {
@@ -400,7 +405,7 @@ public class KisContainerBase : AbstractPartModule,
       if (!slot.partName.Equals(item.avPart.name)) {
         continue;
       }
-      if (KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic
+      if (compatibility.respectStockStackingLogic
           && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
         continue;
       }
@@ -429,7 +434,7 @@ public class KisContainerBase : AbstractPartModule,
     if (slotIndex != -1) {
       return slotIndex;
     }
-    if (KisApi.CommonConfig.compatibilitySettings.respectStockInventoryLayout) {
+    if (compatibility.respectStockInventoryLayout) {
       return -1;
     }
 
