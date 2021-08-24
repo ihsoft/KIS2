@@ -201,6 +201,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       defaultTemplate: "Cannot add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can"
           + " NOT be added into the slot. Only shown when the target slot is not empty.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message UpdateSlotStockContainerLimitErrorText = new Message(
+      "",
+      defaultTemplate: "Stock container limit reached",
+      description: "An error that is presented when a part cannot be added into a KIS container due to the stock"
+          + " container cannot accept any more items. It only makes sense in the stock compatibility mode.");
   #endregion
 
   #region Part's config fields
@@ -1271,13 +1278,18 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (removeItems.Count > 0) {
       DeleteItems(removeItems.ToArray());
     }
+
     if (addAvParts.Count > 0) {
       var addAvPartsArray = addAvParts.ToArray();
       var addItemConfigsArray = addItemConfigs.ToArray();
       var checkResult = CheckCanAddParts(addAvPartsArray, addItemConfigsArray);
       if (checkResult == null) {
         var newItems = AddParts(addAvPartsArray, addItemConfigsArray);
-      } else {
+        if (newItems.Length != addAvPartsArray.Length) {
+          checkResult = new[] { new ErrorReason() { guiString = UpdateSlotStockContainerLimitErrorText } };
+        }
+      }
+      if (checkResult?.Length > 0) {
         UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
         var errorMsg = checkResult
             .Select(x => x.guiString)
