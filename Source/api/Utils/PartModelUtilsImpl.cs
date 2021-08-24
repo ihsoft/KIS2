@@ -201,8 +201,8 @@ public class PartModelUtilsImpl {
       return cachedVolume;
     }
     if (!KisApi.CommonConfig.compatibilitySettings.stockVolumeExceptions.Contains(avPart.name)) {
-      var cargoModule = avPart.partPrefab.Modules.OfType<ModuleCargoPart>().FirstOrDefault();
-      if (cargoModule != null && cargoModule.packedVolume > 0) {
+      var cargoModule = KisApi.PartPrefabUtils.GetCargoModule(avPart);
+      if (cargoModule != null) {
         DebugEx.Info("Put cargo module volume into the cache: partName={0}, volume={1}, cacheKey={2}",
                      avPart.name, cargoModule.packedVolume, cacheKey);
         _partsVolumeCache.Add(cacheKey, cargoModule.packedVolume);

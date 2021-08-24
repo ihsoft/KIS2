@@ -29,6 +29,9 @@ public static class KisApi {
   /// <summary>Utils to deal with part config nodes.</summary>
   public static readonly PartNodeUtilsImpl PartNodeUtils = new PartNodeUtilsImpl();
 
+  /// <summary>Utils to deal with part prefabs.</summary>
+  public static readonly PartPrefabUtilsImpl PartPrefabUtils = new PartPrefabUtilsImpl();
+
   /// <summary>Utils to deal with part icons.</summary>
   public static readonly PartIconUtils PartIconUtils = new PartIconUtils();
 

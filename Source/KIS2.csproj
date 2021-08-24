@@ -94,6 +94,7 @@
     <Compile Include="api\IKisItemDragController.cs" />
     <Compile Include="api\InventoryItem.cs" />
     <Compile Include="api\KisApi.cs" />
+    <Compile Include="api\Utils\PartPrefabUtilsImpl.cs" />
     <Compile Include="api\Utils\PartIconUtilsImpl.cs" />
     <Compile Include="api\Utils\PartNodeUtilsImpl.cs" />
     <Compile Include="api\Utils\PartModelUtilsImpl.cs" />
