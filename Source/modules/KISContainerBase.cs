@@ -409,20 +409,10 @@ public class KisContainerBase : AbstractPartModule,
           && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
         continue;
       }
-      // Verify that item has no differences in state with the slot.
-      var checkNodes = new[] { "MODULE", "RESOURCE", "SCIENCE" };
-      var slotState = KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(slot.snapshot);
-      foreach (var node in slotState.nodes.GetNodes()) {
-        if (!checkNodes.Contains(node.name)) {
-          slotState.RemoveNodes(node.name);
-        }
-      }
-      var itemState = itemConfig.CreateCopy();
-      foreach (var node in itemState.nodes.GetNodes()) {
-        if (!checkNodes.Contains(node.name)) {
-          itemState.RemoveNodes(node.name);
-        }
-      }
+      var slotState =
+          KisApi.PartNodeUtils.MakeComparablePartNode(
+              KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(slot.snapshot));
+      var itemState = KisApi.PartNodeUtils.MakeComparablePartNode(itemConfig);
       if (slotState.ToString() != itemState.ToString()) {
         continue;
       }

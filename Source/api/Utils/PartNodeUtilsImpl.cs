@@ -257,6 +257,36 @@ public class PartNodeUtilsImpl {
     pPart.Save(state);
     return state;
   }
+
+  /// <summary>
+  /// Creates a copy of the parts persistent config node that only has the values and nodes that are important for
+  /// comparision.
+  /// </summary>
+  /// <remarks>
+  /// Use this method when two config nodes need to be compared for equality. This method only keeps the values and
+  /// nodes that make sense in this matter.
+  /// </remarks>
+  /// <param name="srcNode">The node to make a copy from.</param>
+  /// <returns>
+  /// The adjusted copy of the config node. It will intentionally have name "PART-SUBNODE". The caller must be sure that
+  /// the right values are being compared.
+  /// </returns>
+  public ConfigNode MakeComparablePartNode(ConfigNode srcNode) {
+    var res = new ConfigNode("PART-SUBNODE");
+    res.SetValue("name", srcNode.GetValue("name"), createIfNotFound: true);
+    var checkNodes = new[] { "MODULE", "RESOURCE", "SCIENCE" };
+    for (var i = 0; i < srcNode.nodes.Count; i++) {
+      var node = srcNode.nodes[i];
+      if (!checkNodes.Contains(node.name)) {
+        continue;
+      }
+      node = node.CreateCopy();
+      node.RemoveNodes("EVENTS");
+      node.RemoveNodes("ACTIONS");
+      res.AddNode(node);
+    }
+    return res;
+  }
   #endregion
 
   #region Local utility methods
