@@ -661,7 +661,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       nodes[i] = node;
     }
     //FIXME: check volume and size
-    AddParts(avParts, nodes);
+    var addedItems = AddParts(avParts, nodes);
+    if (addedItems.Length != avParts.Length) {
+      HostedDebugLog.Warning(this, "DEBUG: Requested to add {0}, added {1}", avParts.Length, addedItems.Length);
+    }
   }
 
   // ReSharper disable once UnusedMember.Local
