@@ -465,10 +465,10 @@ public class KisContainerBase : AbstractPartModule,
         || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
       stockInventoryModule.StoreCargoPartAtSlot(
           KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(stockInventoryModule, item.itemConfig), stockSlotIndex);
-      return;
+    } else {
+      var slot = stockInventoryModule.storedParts[stockSlotIndex];
+      stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
     }
-    var slot = stockInventoryModule.storedParts[stockSlotIndex];
-    stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
   }
 
   /// <summary>Updates the stock inventory using custom KIS logic.</summary>
