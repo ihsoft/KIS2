@@ -282,7 +282,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     configNode.SetValue("skipGroundPositioning", newValue: true, createIfNotFound: true);
     configNode.SetValue("vesselSpawning", newValue: true, createIfNotFound: true);
     configNode.SetValue("prst", newValue: true, createIfNotFound: true);
-    configNode.SetValue("sit", newValue: actorVessel.SituationString, createIfNotFound: true);
+    configNode.SetValue("sit", newValue: actorVessel.situation.ToString(), createIfNotFound: true);
     //FIXME: do it when placing on surface only? or relay on repositioning?
     configNode.SetValue("landed", newValue: actorVessel.Landed, createIfNotFound: true);
     configNode.SetValue("splashed", newValue: actorVessel.Splashed, createIfNotFound: true);
