@@ -10,6 +10,7 @@ using KSPDev.PartUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -430,8 +431,7 @@ public class KisContainerBase : AbstractPartModule,
 
     // Create a new slot beyond the stock addressing space. It won't be accessible via the stock UI. 
     slotIndex = maxSlotIndex + 1;
-    HostedDebugLog.Info(this, "Creating an out of scope stock slot: slotIndex={0}, itemId={1}", slotIndex, item.itemId);
-    stockInventoryModule.storedParts.Add(slotIndex, new StoredPart(item.avPart.name, slotIndex));
+    HostedDebugLog.Info(this, "Returning an out of scope stock slot: slotIndex={0}", slotIndex);
     return slotIndex;
   }
 
@@ -460,6 +460,13 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <summary>Updates the stock inventory module using the stock methods.</summary>
   void AddItemToStockSlot_StockGame(InventoryItem item, int stockSlotIndex) {
+    if (stockSlotIndex >= stockInventoryModule.InventorySlots) {
+      HostedDebugLog.Warning(
+          this, "Extra stock slots cannot be handled via the stock logic: stockSlot=#{0}, part={1}",
+          stockSlotIndex, item.avPart.name);
+      AddItemToStockSlot_Kis(item, stockSlotIndex);
+      return;
+    }
     UpdateStockSlotIndex(stockSlotIndex, item);
     if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
         || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
@@ -472,9 +479,33 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <summary>Updates the stock inventory using custom KIS logic.</summary>
+  /// <remarks>The caller must ensure that the item fits the slot!</remarks>
   void AddItemToStockSlot_Kis(InventoryItem item, int stockSlotIndex) {
-    //FIXME: IMPLEMENT!
-    throw new NotImplementedException("KIS vision is yet to come");
+    if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
+        || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
+      var pPart = KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(stockInventoryModule, item.itemConfig);
+      InvokePrivateStockModuleMethod("RefillEVAPropellantOnStoring", pPart); //FIXME: make a constant?
+      var storedPart = new StoredPart(pPart.partName, stockSlotIndex) {
+          slotIndex = stockSlotIndex,
+          snapshot = pPart,
+          variantName = pPart.moduleVariantName,
+          quantity = 1,
+          stackCapacity = pPart.moduleCargoStackableQuantity
+      };
+      stockInventoryModule.storedParts.Add(stockSlotIndex, storedPart);
+      InvokePrivateStockModuleMethod("ResetInventoryPartsByName");
+    } else {
+      stockInventoryModule.storedParts[stockSlotIndex].quantity += 1;
+    }
+    UpdateStockSlotIndex(stockSlotIndex, item);
+
+    if (stockSlotIndex < stockInventoryModule.InventorySlots) {
+      GameEvents.onModuleInventorySlotChanged.Fire(stockInventoryModule, stockSlotIndex);
+    } else {
+      HostedDebugLog.Fine(
+          this, "Not sending 'onModuleInventorySlotChanged' for the extra slots: stockSlot=#{0}", stockSlotIndex);
+    }
+    GameEvents.onModuleInventoryChanged.Fire(stockInventoryModule);
   }
 
   /// <summary>Removes the item from a stock inventory slot.</summary>
@@ -494,10 +525,17 @@ public class KisContainerBase : AbstractPartModule,
   /// </remarks>
   void RemoveItemFromStockSlot_StockGame(InventoryItem item) {
     var stockSlotIndex = _itemsToStockSlotMap[item.itemId];
+    if (stockSlotIndex >= stockInventoryModule.InventorySlots) {
+      HostedDebugLog.Warning(
+          this, "Extra stock slots cannot be handled via the stock logic: stockSlot=#{0}", stockSlotIndex);
+      RemoveItemFromStockSlot_Kis(item);
+      return;
+    }
     UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
     var slot = stockInventoryModule.storedParts[stockSlotIndex];
     var newStackQuantity = slot.quantity - 1;
     if (newStackQuantity > slot.stackCapacity) {
+      // This can happen if the slot was previously made with a different compatibility setting. 
       HostedDebugLog.Warning(
           this,
           "Stack size is bigger than capacity, use KIS update method: slotIndex={0}, quantity={1}, capacity={2}",
@@ -514,8 +552,24 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <summary>Updates the stock inventory using custom KIS logic.</summary>
   void RemoveItemFromStockSlot_Kis(InventoryItem item) {
-    //FIXME: IMPLEMENT!
-    throw new NotImplementedException("KIS vision is yet to come");
+    var stockSlotIndex = _itemsToStockSlotMap[item.itemId];
+    var slot = stockInventoryModule.storedParts[stockSlotIndex];
+    var newStackQuantity = slot.quantity - 1;
+    if (newStackQuantity == 0) {
+      stockInventoryModule.storedParts.Remove(stockSlotIndex);
+      InvokePrivateStockModuleMethod("ResetInventoryPartsByName");
+    } else {
+      slot.quantity = newStackQuantity;
+    }
+    UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
+
+    if (stockSlotIndex < stockInventoryModule.InventorySlots) {
+      GameEvents.onModuleInventorySlotChanged.Fire(stockInventoryModule, stockSlotIndex);
+    } else {
+      HostedDebugLog.Fine(
+          this, "Not sending 'onModuleInventorySlotChanged' for the extra slots: stockSlot=#{0}", stockSlotIndex);
+    }
+    GameEvents.onModuleInventoryChanged.Fire(stockInventoryModule);
   }
 
   /// <summary>Reacts on the stock inventory change and updates the KIS inventory accordingly.</summary>
@@ -554,6 +608,30 @@ public class KisContainerBase : AbstractPartModule,
     if (deleteItems.Count > 0 || addItems.Count > 0) {
       UpdateItemsCollection(add: addItems, remove: deleteItems);
     }
+  }
+
+  /// <summary>Calls a protected/private method on the stock cargo inventory module.</summary>
+  /// <remarks>
+  /// It's a very bad practice to call the non-public members via a reflection. However, copy/pasting the logic from the
+  /// stock game is another bad practice due to the implementation can get changed easily. The chances that a
+  /// private/protected method gets removed are much less than the implementation logic change. So, until the stock
+  /// inventory module is refactored for inheritance, this is the only solution we have.  
+  /// </remarks>
+  /// <param name="methodName">
+  /// The non-public method name to call on the <see cref="stockInventoryModule"/> module.
+  /// </param>
+  /// <param name="args">Optional arguments to pass.</param>
+  /// <returns>
+  /// The return result of the method. If the method declares the return result as <c>void</c>, then it won't be
+  /// possible to distinguish a <c>null</c> result from the "no result" output.
+  /// </returns>
+  object InvokePrivateStockModuleMethod(string methodName, params object[] args) {
+    var method = stockInventoryModule.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+    if (method == null) {
+      HostedDebugLog.Error(this, "Cannot find stock cargo module method: name={0}", methodName);
+      return null;
+    }
+    return method.Invoke(stockInventoryModule, args);
   }
   #endregion
 }
