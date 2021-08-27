@@ -141,12 +141,13 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region Local utility methods
   /// <summary>Creates a part model, given there is only one item is being dragged.</summary>
   /// <remarks>
-  /// The model will immediately become, so it should be either disabled or positioned in teh same
-  /// frame.
+  /// The model will immediately become active, so it should be either disabled or positioned in the same frame.
   /// </remarks>
   void MakeDraggedModelFromItem() {
     DestroyDraggedModel();
     if (KisApi.ItemDragController.leasedItems.Length != 1) {
+      DebugEx.Warning("Cannot make dragged model for multiple parts: leasedCount={0}",
+                      KisApi.ItemDragController.leasedItems.Length);
       return; // Cannot be placed into the world.
     }
     DebugEx.Fine("Creating flight scene dragging model...");
@@ -166,8 +167,7 @@ internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var bounds = KisApi.PartModelUtils.GetPartBounds(draggedPart);
     var dist = bounds.center.y + bounds.extents.y;
     _touchPointTransform.position += -_draggedModel.up * dist;  
-    _touchPointTransform.rotation = Quaternion.LookRotation(
-        -_draggedModel.up, -_draggedModel.forward);
+    _touchPointTransform.rotation = Quaternion.LookRotation(-_draggedModel.up, -_draggedModel.forward);
     Hierarchy.SafeDestroy(draggedPart);
   }
 
