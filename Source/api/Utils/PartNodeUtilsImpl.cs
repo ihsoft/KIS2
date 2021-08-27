@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 // ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the parts configs.</summary>
