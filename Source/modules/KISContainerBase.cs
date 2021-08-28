@@ -420,7 +420,7 @@ public class KisContainerBase : AbstractPartModule,
       return existingSlotIndex;  // Found a candidate.
     }
 
-    // No suitable stock slot found.
+    // No suitable stock slot found. Get a first empty slot.
     var slotIndex = stockInventoryModule.FirstEmptySlot();
     if (slotIndex != -1) {
       return slotIndex;
@@ -429,8 +429,11 @@ public class KisContainerBase : AbstractPartModule,
       return -1;
     }
 
-    // Create a new slot beyond the stock addressing space. It won't be accessible via the stock UI. 
-    slotIndex = maxSlotIndex + 1;
+    // Find any unused stock slot index, even if it's beyond the stock logic address space.
+    slotIndex = 0;
+    while (stockInventoryModule.storedParts.TryGetValue(slotIndex, out var storedPart) && !storedPart.IsEmpty) {
+      slotIndex++;
+    }
     HostedDebugLog.Info(this, "Returning an out of scope stock slot: slotIndex={0}", slotIndex);
     return slotIndex;
   }
