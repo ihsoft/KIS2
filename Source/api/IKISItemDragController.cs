@@ -48,18 +48,16 @@ public interface IKisItemDragController {
   GameObject focusedTarget { get; }
 
   /// <summary>Offers items for the dragging.</summary>
-  /// <remarks>
-  /// Items can belong to different inventories. The items can only be consumed all or none.
-  /// </remarks>
+  /// <remarks>Items can belong to different inventories. The items can only be consumed all or none.</remarks>
   /// <param name="dragIcon">The icon that will be representing this operation.</param>
   /// <param name="items">
-  /// The items being offered. The caller must ensure these items won't change their state between
-  /// the start and the end of the drag operation. If this is not possible, the consume method must
-  /// do verification and deny the operation if the change has occured.
+  /// The items being offered. The caller must ensure these items won't change their state between the start and the end
+  /// of the drag operation. If this is not possible, the consume method must do verification and deny the operation if
+  /// the change has occured.
   /// </param>
   /// <param name="consumeItemsFn">
-  /// The function that will be called before consuming the items by the target. This function can
-  /// cancel the operation, but it will be treated as an error by the target.
+  /// The function that will be called before consuming the items by the target. This function can cancel the operation,
+  /// but it will be treated as an error by the target.
   /// </param>
   /// <param name="cancelItemsLeaseFn">
   /// The cleanup action that is called when the drag operation is cancelled. It's called before the
@@ -70,17 +68,16 @@ public interface IKisItemDragController {
   /// <seealso cref="ConsumeItems"/>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="IKisDragTarget.OnKisDragStart"/>
-  bool LeaseItems(Texture dragIcon, InventoryItem[] items,
-                  Func<bool> consumeItemsFn, Action cancelItemsLeaseFn);
+  bool LeaseItems(Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn);
 
   /// <summary>Indicates that the target is willing to consume the dragged items.</summary>
   /// <remarks>
-  /// By calling this method the caller is stating that it's ready to take ownership to the
-  /// <see cref="leasedItems"/>. If this method returns success, then the dragging mode ends.
+  /// By calling this method the caller is stating that it's ready to take ownership to the <see cref="leasedItems"/>.
+  /// If this method returns success, then the dragging mode ends.
   /// </remarks>
   /// <returns>
-  /// The items to consume, or <c>null</c> if the provider refused the complete the deal. In the
-  /// latter case the dragging operation stays running and unchanged.
+  /// The items to consume, or <c>null</c> if the provider refused the complete the deal. In the latter case the
+  /// dragging operation stays running and unchanged.
   /// </returns>
   /// <seealso cref="leasedItems"/>
   /// <seealso cref="IKisDragTarget.OnKisDragEnd"/>
@@ -94,29 +91,26 @@ public interface IKisItemDragController {
   /// <summary>Sets the target GUI object that is currently owns the dragging focus.</summary>
   /// <remarks>
   /// <p>
-  /// Even though any caller can set the value, only the actual UI handlers should be doing it.
-  /// Exactly one GameObject can be a focus target at the moment. In a normal case, it's the dialog
-  /// that has the pointer focus.
+  /// Even though any caller can set the value, only the actual UI handlers should be doing it. Exactly one GameObject
+  /// can be a focus target at the moment. In a normal case, it's the dialog that has the pointer focus.
   /// </p>
   /// <p>
-  /// When the focused control looses focus, it must call this method with <c>null</c> to indicate
-  /// that the focus has been released.
+  /// When the focused control looses focus, it must call this method with <c>null</c> to indicate that the focus has
+  /// been released.
   /// </p>
   /// </remarks>
   /// <param name="newTarget">The object that claims ownership on the focus.</param>
   /// <seealso cref="focusedTarget"/>
   void SetFocusedTarget(GameObject newTarget);
 
-  /// <summary>
-  /// Registers a drag target that will be notified about the dragged items status.
-  /// </summary>
+  /// <summary>Registers a drag target that will be notified about the dragged items status.</summary>
   /// <remarks>
-  /// The drag controller will ask all the registered targets about the currently dragged items. If
-  /// none of them can accept the drop, then UI will make it clear to the user.
-  /// <para>
+  /// The drag controller will ask all the registered targets about the currently dragged items. If none of them can
+  /// accept the drop, then UI will make it clear to the user.
+  /// <p>
   /// If a target is registered when the dragging state is ON, then this target will immediately get
   /// <see cref="IKisDragTarget.OnKisDragStart"/>.
-  /// </para>
+  /// </p>
   /// </remarks>
   /// <param name="target">The target to register.</param>
   /// <seealso cref="IKisDragTarget.OnKisDrag"/>
@@ -124,8 +118,8 @@ public interface IKisItemDragController {
 
   /// <summary>Unregisters the drag target.</summary>
   /// <remarks>
-  /// If a target is unregistered when the dragging state is ON, then this target will immediately
-  /// get <see cref="IKisDragTarget.OnKisDragEnd"/>.
+  /// If a target is unregistered when the dragging state is ON, then this target will immediately get
+  /// <see cref="IKisDragTarget.OnKisDragEnd"/>.
   /// </remarks>
   /// <param name="target">The target to unregister.</param>
   void UnregisterTarget(IKisDragTarget target);

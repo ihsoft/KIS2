@@ -183,8 +183,8 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
 
   #region KISItemDragController implementation
   /// <inheritdoc/>
-  public bool LeaseItems(Texture dragIcon, InventoryItem[] items,
-                         Func<bool> consumeItemsFn, Action cancelItemsLeaseFn) {
+  public bool LeaseItems(
+      Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn) {
     ArgumentGuard.NotNull(dragIcon, nameof(dragIcon));
     ArgumentGuard.HasElements(items, nameof(items));
     ArgumentGuard.NotNull(consumeItemsFn, nameof(consumeItemsFn));

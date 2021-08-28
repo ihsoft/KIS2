@@ -22,8 +22,8 @@ public interface InventoryItem {
 
   /// <summary>Unique string ID that identifies the item within the inventory.</summary>
   /// <remarks>
-  /// The ID is generated when the part is first time added into inventory. This ID stays persistent
-  /// as the item is being moved between the inventories.
+  /// The ID is generated when the part is first time added into inventory. This ID stays persistent as the item is
+  /// being moved between the inventories.
   /// </remarks>
   string itemId { get; }
 
@@ -41,17 +41,16 @@ public interface InventoryItem {
 
   /// <summary>Persisted state of the part.</summary>
   /// <remarks>
-  /// This node can be updated by the external callers, but they must letting the item know that the
-  /// config has changed via the <see cref="UpdateConfig"/> call. Otherwise, the state of the item
-  /// and the owning inventory will be inconsistent.
+  /// This node can be updated by the external callers, but they must letting the item know that the config has changed
+  /// via the <see cref="UpdateConfig"/> call. Otherwise, the state of the item and the owning inventory will be
+  /// inconsistent.
   /// </remarks>
   /// <seealso cref="UpdateConfig"/>
   ConfigNode itemConfig { get; }
 
   /// <summary>Cached volume that part would take in its current state.</summary>
   /// <remarks>
-  /// The persisted state can greatly affect the volume. E.g. most part take several times more
-  /// volume when deployed.
+  /// The persisted state can greatly affect the volume. E.g. most part take several times more volume when deployed.
   /// </remarks>
   /// <value>The volume in <c>litres</c>.</value>
   /// <seealso cref="UpdateConfig"/>
@@ -91,16 +90,16 @@ public interface InventoryItem {
 
   /// <summary>Tells if this item must not be affected externally.</summary>
   /// <remarks>
-  /// The locked items are in a process of some complex, possibly multi-frame, operation. Only the
-  /// executor of this process should deal with this item, the other actors should not interfere.
+  /// The locked items are in a process of some complex, possibly multi-frame, operation. Only the executor of this
+  /// process should deal with this item, the other actors should not interfere.
   /// </remarks>
   /// <seealso cref="SetLocked"/>
   bool isLocked { get; }
 
   /// <summary>Sets locked state.</summary>
   /// <remarks>
-  /// The inventory may need to know if the item's lock stat has updated. The actor, that changes
-  /// the state, is responsible to notify the inventory via the
+  /// The inventory may need to know if the item's lock stat has updated. The actor, that changes the state, is
+  /// responsible to notify the inventory via the
   /// <see cref="IKisInventory.UpdateInventoryStats"/> method.
   /// </remarks>
   /// <seealso cref="isLocked"/>
@@ -108,9 +107,9 @@ public interface InventoryItem {
 
   /// <summary>Updates all cached values from the part's config node.</summary>
   /// <remarks>
-  /// This method must always be called when the node is changed. Note, that this method doesn't
-  /// notify the owner inventory about the updates. The actor, that changes the item, is responsible
-  /// to do that via the <see cref="IKisInventory.UpdateInventoryStats"/> method.
+  /// This method must always be called when the node is changed. Note, that this method doesn't notify the owner
+  /// inventory about the updates. The actor, that changes the item, is responsible to do that via the
+  /// <see cref="IKisInventory.UpdateInventoryStats"/> method.
   /// </remarks>
   /// <seealso cref="itemConfig"/>
   /// <seealso cref="inventory"/>

@@ -98,37 +98,33 @@ public interface IKisInventory {
   /// <seealso cref="InventoryItem.inventory"/>
   bool DeleteItems(InventoryItem[] deleteItems);
 
-  /// <summary>
-  /// Forces the container to refresh its state according to the new state of the items.
-  /// </summary>
+  /// <summary>Forces the container to refresh its state according to the new state of the items.</summary>
   /// <remarks>
-  /// Every change to any item in the inventory must result in calling of this method. It relates to
-  /// <i>any</i> state change, which can be a config node, or lock state, or whatever. The items
-  /// do <i>not</i> send updates to the owner inventory automatically.
-  /// <para>
-  /// Before updating own state, the inventory will update every single item config. An exception
-  /// will be made if parameter <paramref name="changedItems"/> is provided. In this case only the
-  /// specified items will be updated. Callers can use this ability to optimize their calls and
-  /// save CPU.
-  /// </para>
-  /// <para>
-  /// This method will be called internally when the item number changes. In this case
-  /// <paramref name="changedItems"/> is an empty collection. Normally, the external callers don't
-  /// need to do that, since each implementation should keep control on the items number change.
-  /// </para>
+  /// Every change to any item in the inventory must result in calling of this method. It relates to <i>any</i> state
+  /// change, which can be a config node, or lock state, or whatever. The items do <i>not</i> send updates to the owner
+  /// inventory automatically.
+  /// <p>
+  /// Before updating the own state, the inventory will update every single item config. An exception will be made if
+  /// parameter <paramref name="changedItems"/> is provided. In this case only the specified items will be updated.
+  /// Callers can use this ability to optimize their calls and save CPU.
+  /// </p>
+  /// <p>
+  /// This method will be called internally when the item number changes. In this case <paramref name="changedItems"/>
+  /// is an empty collection. Normally, the external callers don't need to do that, since each implementation should
+  /// keep control on the items number change.
+  /// </p>
   /// </remarks>
   /// <param name="changedItems">
-  /// The items, which changed state was the reason of the inventory update. If <c>null</c>, then
-  /// all the items in the inventory will be updated. It can also be an empty array, in which case
-  /// the inventory will refresh its own state, but not the items configs. 
+  /// The items, which changed state was the reason of the inventory update. If <c>null</c>, then all the items in the
+  /// inventory will be updated. It can also be an empty array, in which case the inventory will refresh its own state,
+  /// but not the items configs.
   /// </param>
   /// <seealso cref="InventoryItem.itemConfig"/>
   void UpdateInventoryStats(InventoryItem[] changedItems);
 
   /// <summary>Finds an item by its unique ID.</summary>
   /// <remarks>
-  /// This method is expected to be efficient. So, it can be called from the performance demanding
-  /// applications.
+  /// This method is expected to be efficient. So, it can be called from the performance demanding applications.
   /// </remarks>
   /// <param name="itemId">The item ID to find.</param>
   /// <returns>The item or <c>null</c> if not found.</returns>

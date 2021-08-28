@@ -16,7 +16,7 @@ namespace KIS2 {
 
 /// <summary>Controller that deals with dragged items in the flight scenes.</summary>
 [KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
-internal sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
+sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region Event static configs
   static readonly Event DropItemToScene = Event.KeyboardEvent("mouse0");
   #endregion
