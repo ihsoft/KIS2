@@ -233,7 +233,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region GUI menu action handlers
-  [KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveEditor = true)]
+  [KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveUncommand = true, guiActiveEditor = true)]
   [LocalizableItem(
       tag = "#01",
       defaultTemplate = "KISv2: Inventory",
