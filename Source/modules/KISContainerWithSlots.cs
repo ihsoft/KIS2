@@ -1258,6 +1258,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     HostedDebugLog.Fine(this, "Update items count in slot: slot=#{0}, delta={1}",
                         _inventorySlots.IndexOf(_slotWithPointerFocus), delta);
     if (delta > 0) {
+      var checkResult = new List<ErrorReason>();
       for (var i = 0; i < delta; i++) {
         var avPart = _slotWithPointerFocus.slotItems[0].avPart;
         var itemConfig = _slotWithPointerFocus.slotItems[0].itemConfig;
