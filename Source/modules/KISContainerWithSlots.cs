@@ -1102,8 +1102,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       case SlotActionMode.DraggingOverEmptyTargetSlot:
         if (_canAcceptDraggedItems) {
           currentTooltip.title = StoreIntoSlotActionTooltip;
-          currentTooltip.baseInfo.text =
-              StoreIntoSlotCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
+          currentTooltip.baseInfo.text = StoreIntoSlotCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
         } else {
           currentTooltip.title = CannotStoreIntoSlotTooltipText;
           currentTooltip.baseInfo.text = cannotAddReasonText;
@@ -1112,8 +1111,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       case SlotActionMode.DraggingOverItemsTargetSlot:
         if (_canAcceptDraggedItems) {
           currentTooltip.title = AddToStackActionTooltip;
-          currentTooltip.baseInfo.text =
-              AddToStackCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
+          currentTooltip.baseInfo.text = AddToStackCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
         } else {
           currentTooltip.title = CannotAddToStackTooltipText;
           currentTooltip.baseInfo.text = cannotAddReasonText;
@@ -1128,9 +1126,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         || !string.IsNullOrEmpty(currentTooltip.baseInfo.text));
   }
 
-  /// <summary>
-  /// Verifies if the currently dragged items can be stored into the hovered slot.
-  /// </summary>
+  /// <summary>Verifies if the currently dragged items can be stored into the hovered slot.</summary>
   /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
   /// <seealso cref="_canAcceptDraggedItems"/>
   void CheckCanAcceptDrops() {
