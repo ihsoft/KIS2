@@ -259,8 +259,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var pos = _draggedModel.position;
     var rot = _draggedModel.rotation;
     var partItem = KisApi.ItemDragController.leasedItems[0];
-    //FIXME: cancel for debug, must be consume in prod
-    KisApi.ItemDragController.CancelItemsLease();
+    KisApi.ItemDragController.ConsumeItems();
     //FIXME vessel.heightFromPartOffsetLocal = -vessel.HeightFromPartOffsetGlobal
     var protoVesselNode = GetProtoVesselNode(FlightGlobals.ActiveVessel, partItem.avPart, pos, rot);
     HighLogic.CurrentGame.AddVessel(protoVesselNode);
