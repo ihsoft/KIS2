@@ -355,44 +355,19 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// the actor's vessel modifiers will be applied.
   /// </remarks>
   /// <param name="avPart">The part info.</param>
-  /// <param name="partNode">The optional part's config.</param>
+  /// <param name="partNode">The optional part's saved state. If not set, then the prefab state will be used.</param>
   /// <param name="actorVessel">The actor vessel to get modifiers and flag from.</param>
   /// <returns>The part's config node.</returns>
   static ConfigNode CreatePartNode(AvailablePart avPart, ConfigNode partNode, Vessel actorVessel) {
     var flightId = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
     var configNode = ProtoVessel.CreatePartNode(avPart.name, flightId, null);
     configNode.SetValue("flag", actorVessel.rootPart.flagURL, createIfNotFound: true);
-    var prefabNodes = avPart.partConfig.GetNodes("MODULE");
-    partNode = partNode ?? avPart.partConfig;
-    var itemNodes = partNode.GetNodes("MODULE");
-    var itemNodeIndex = 0;
-    for (var i = 0; i < prefabNodes.Length; i++) {
-      var prefabNode = prefabNodes[i];
-      while (itemNodeIndex < itemNodes.Length
-          && prefabNode.GetValue("name") != itemNodes[itemNodeIndex].GetValue("name")) {
-        DebugEx.Warning(
-            "Skip item module CFG due to it doesn't match the prefab:"
-            + " part={0}, prefabModule={1}, itemModule={2}",
-            avPart.name, i, itemNodeIndex);
-        ++itemNodeIndex;
-      }
-      var moduleNode = itemNodeIndex < itemNodes.Length
-          ? itemNodes[itemNodeIndex].CreateCopy()
-          : new ConfigNode("MODULE");
-      var moduleName = moduleNode.GetValue("name");
-      if (moduleName == nameof(ModuleGroundSciencePart)) {
-        // Adjust power production to the EVA kerbal skill.
-        var powerUnits = ConfigAccessor.GetValueByPath<float>(moduleNode, "powerUnitsProduced")
-            ?? 0;
-        powerUnits += GetExperimentPartPowerProductionModifier(avPart, actorVessel);
-        moduleNode.SetValue("powerUnitsProduced", powerUnits);
-      } else if (moduleName == nameof(ModuleGroundSciencePart)) {
-        // Adjust science modifier to the EVA kerbal skill.
-        var scienceModifier = GetExperimentPartScienceModifier(avPart, actorVessel);
-        moduleNode.SetValue("ScienceModifierRate", scienceModifier, createIfNotFound: true);
-      }
-      configNode.AddNode(moduleNode);
-    }
+    // TODO(ihsoft): Copy/create uid/mid values.
+    configNode.SetValue("state", 0);
+    partNode ??= avPart.partConfig;
+    partNode.GetNodes("MODULE")
+        .ToList()
+        .ForEach(x => configNode.AddNode(x.CreateCopy()));
     return configNode;
   }
 
