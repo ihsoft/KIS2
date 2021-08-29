@@ -59,7 +59,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       "",
       defaultTemplate: "No enough compatible slots",
       description: "Error message that is presented when parts cannot be added into the inventory"
-          + " due to there are not enough compatible/empty slots available.");
+          + " due to there are not enough compatible/empty STOCK slots available.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeStackHint = new Message<KeyboardEventType>(
