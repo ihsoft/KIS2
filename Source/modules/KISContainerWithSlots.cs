@@ -257,8 +257,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Event static configs
-  static readonly Event TakeSlotEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event TakeOneItemEvent = Event.KeyboardEvent("&mouse0");
+  static readonly Event TakeSlotEvent = Event.KeyboardEvent("&mouse0");
+  static readonly Event TakeOneItemEvent = Event.KeyboardEvent("mouse0");
   static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
   static readonly Event AddToStackEvent = Event.KeyboardEvent("mouse0");
   static readonly Event StoreIntoSlotEvent = Event.KeyboardEvent("mouse0");
@@ -436,12 +436,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
 
     // SlotActionMode.HoveringOverItemsSlot
-    _slotEventsHandler.DefineAction(
-        SlotActionMode.HoveringOverItemsSlot,
-        TakeStackHint, TakeSlotEvent, () => TakeItemsFromFocusedSlot(int.MaxValue));
+    // The order of actions definition defines how the hints will be ordered.
+    // FIXME: Add a sorting parameter to workaround it.
     _slotEventsHandler.DefineAction(
         SlotActionMode.HoveringOverItemsSlot,
         TakeOneItemHint, TakeOneItemEvent, () => TakeItemsFromFocusedSlot(1));
+    _slotEventsHandler.DefineAction(
+        SlotActionMode.HoveringOverItemsSlot,
+        TakeStackHint, TakeSlotEvent, () => TakeItemsFromFocusedSlot(int.MaxValue));
     if (HighLogic.LoadedSceneIsFlight) {
       _slotEventsHandler.DefineAction(
           SlotActionMode.HoveringOverItemsSlot,
