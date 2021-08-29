@@ -4,7 +4,6 @@
 
 using Experience.Effects;
 using KISAPIv2;
-using KSPDev.ConfigUtils;
 using KSPDev.InputUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
@@ -102,7 +101,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         CreateVesselFromDraggedItem();
       }
     } else if (!KisApi.ItemDragController.isDragging) {
-      //FIXME: implement
+      //FIXME: implement picking up parts.
     }
   }
   #endregion
