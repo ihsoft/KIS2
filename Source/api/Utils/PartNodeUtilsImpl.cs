@@ -219,19 +219,22 @@ public class PartNodeUtilsImpl {
   }
 
   /// <summary>Makes a part snapshot from the saved part state.</summary>
-  /// <param name="refInventory">The inventory module the part is being made for.</param>
+  /// <param name="refVessel">
+  /// The vessel that is an actor. Depending on how this snapshot will be used, the meaning of this argument may be
+  /// different. It could be a part "creator" (e.g. a kerbal) or a part "owner" (e.g. an inventory).
+  /// </param>
   /// <param name="node">The saved state.</param>
   /// <returns>A snapshot for the given state.</returns>
   /// <exception cref="ArgumentException">if the game scene or the reference inventory are not good.</exception>
-  public ProtoPartSnapshot GetProtoPartSnapshotFromNode(PartModule refInventory, ConfigNode node) {
+  public ProtoPartSnapshot GetProtoPartSnapshotFromNode(Vessel refVessel, ConfigNode node) {
     ProtoPartSnapshot pPart = null;
-    if (refInventory.vessel != null) {
-      pPart = new ProtoPartSnapshot(node, refInventory.vessel.protoVessel, HighLogic.CurrentGame);
+    if (refVessel != null) {
+      pPart = new ProtoPartSnapshot(node, refVessel.protoVessel, HighLogic.CurrentGame);
     } else {
       if (HighLogic.LoadedSceneIsEditor
           || HighLogic.LoadedSceneIsMissionBuilder
           || HighLogic.LoadedScene == GameScenes.MAINMENU
-          || refInventory.vessel.isEVA) {
+          || refVessel.isEVA) {
         pPart = new ProtoPartSnapshot(node, null, HighLogic.CurrentGame);
       }
     }

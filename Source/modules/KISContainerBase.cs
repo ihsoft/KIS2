@@ -474,7 +474,7 @@ public class KisContainerBase : AbstractPartModule,
     if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
         || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
       stockInventoryModule.StoreCargoPartAtSlot(
-          KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(stockInventoryModule, item.itemConfig), stockSlotIndex);
+          KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(vessel, item.itemConfig), stockSlotIndex);
     } else {
       var slot = stockInventoryModule.storedParts[stockSlotIndex];
       stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
@@ -486,7 +486,7 @@ public class KisContainerBase : AbstractPartModule,
   void AddItemToStockSlot_Kis(InventoryItem item, int stockSlotIndex) {
     if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
         || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
-      var pPart = KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(stockInventoryModule, item.itemConfig);
+      var pPart = KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(vessel, item.itemConfig);
       InvokePrivateStockModuleMethod("RefillEVAPropellantOnStoring", pPart); //FIXME: make a constant?
       var storedPart = new StoredPart(pPart.partName, stockSlotIndex) {
           slotIndex = stockSlotIndex,
