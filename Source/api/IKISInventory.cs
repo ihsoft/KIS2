@@ -35,68 +35,68 @@ public interface IKisInventory {
   double contentCost { get; }
 
   /// <summary>Verifies if the part can be added into the inventory.</summary>
-  /// <remarks>This method verifies if <i>all</i> the parts can fit the inventory.</remarks>
-  /// <param name="avParts">The part proto.</param>
-  /// <param name="nodes">
-  /// The part's persisted state. If <c>null</c>, then a default state will be created from the
-  /// prefab. If an array is provided, then it can have <c>null</c> elements for the parts that have
-  /// a default config.
+  /// <remarks>
+  /// If this method replied "yes", then the <see cref="AddPart"/> method cannot fail. It is an exhaustive check for the
+  /// part addition conditions.
+  /// </remarks>
+  /// <param name="avPart">The part proto.</param>
+  /// <param name="node">
+  /// The part's persisted state. If <c>null</c>, then a default state will be created from the prefab.
   /// </param>
   /// <param name="logErrors">
-  /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a
-  /// precondition.
+  /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
   /// </param>
   /// <returns><c>null</c> if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddParts"/>
-  ErrorReason[] CheckCanAddParts(
-      AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false);
+  /// FIXME: why bothering about AV? pass the names!
+  /// FIXME: Exhausted???
+  ErrorReason[] CheckCanAddPart(AvailablePart avPart, ConfigNode node = null, bool logErrors = false);
 
-  /// <summary>Adds new parts into the inventory.</summary>
+  /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>
-  /// This method does <i>not</i> verify if the parts can fit the inventory. Doing this check is
-  /// responsibility of the caller. Some parts in the list may not get added due to the internal
-  /// limits. The caller must check the result and ensure if all the parts were added. 
+  /// This method does <i>not</i> verify if the part can fit the inventory. Doing this check is responsibility of the
+  /// caller. If any compatibility setting is enabled, the add action can fail. The caller must check the output before
+  /// assuming that the action has succeeded.
   /// </remarks>
-  /// <param name="avParts">The part proto.</param>
-  /// <param name="nodes">
-  /// The part persisted states. An entry can be <c>null</c> if default state from prefab should be
-  /// used. 
+  /// <param name="avPart">The part proto.</param>
+  /// <param name="node">
+  /// The part persisted state. An entry can be <c>null</c> if default state from prefab should be used.
   /// </param>
-  /// <returns>The newly created items.</returns>
-  /// <seealso cref="CheckCanAddParts"/>
-  InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes);
+  /// <returns>The newly created item or <c>null</c> if action failed.</returns>
+  /// <seealso cref="CheckCanAddPart"/>
+  /// FIXME: why bothering about AV? pass the names!
+  InventoryItem AddPart(AvailablePart avPart, ConfigNode node = null);
+
+  //FIXME: add variant?
+  //FIXME: drop bulk methods altogether?
+  //InventoryItem[] AddPart(string partName, int variantIndex = -1);
+  //InventoryItem[] AddPart(string partName, ConfigNode node);
   
-  /// <summary>Adds items from another inventory.</summary>
+  /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>
-  /// This method does <i>not</i> verify if the items can fit the inventory. Doing this check is
-  /// responsibility of the caller. Some items in the list may not get added due to the internal
-  /// limits. The caller must check the result and ensure if all the parts were added.
+  /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is responsibility of the
+  /// caller. If any compatibility setting is enabled, the add action can fail. The caller must check the output before
+  /// assuming that the action has succeeded.
   /// </remarks>
-  /// <param name="items">The items to add.</param>
+  /// <param name="item">The item to add.</param>
   /// <returns>
-  /// The added items that belong to this inventory. Their IDs will be different from the source
-  /// items.
+  /// The new item from the inventory or <c>null</c> if action failed. The ID of the new item will be different from
+  /// the source item.
   /// </returns>
-  /// <seealso cref="CheckCanAddParts"/>
+  /// <seealso cref="CheckCanAddPart"/>
   /// <seealso cref="InventoryItem.itemId"/>
-  InventoryItem[] AddItems(InventoryItem[] items);
+  InventoryItem AddItem(InventoryItem item);
 
-  /// <summary>Removes the specified items from inventory.</summary>
+  /// <summary>Removes the specified item from the inventory.</summary>
   /// <remarks>
-  /// The delete action is atomic: it either succeeds in full or fails without changing the
-  /// inventory state. The overrides should consider that. If the ancestor has returned
-  /// <c>true</c>, then there is no way back and the overriden method must succeed too. 
+  /// The action can fail if the item is locked, doesn't exist or there are other conditions that prevent the logic to
+  /// work.
   /// </remarks>
-  /// <param name="deleteItems">
-  /// The items to remove. They all must belong the this inventory.
-  /// </param>
-  /// <returns>
-  /// <c>true</c> if removal was successful or NO-OP. <c>false</c> if any of the items cannot be
-  /// removed.
-  /// </returns>
+  /// <param name="item">The item to remove. It must belong to this inventory.</param>
+  /// <returns><c>true</c> if removal was successfulOP. <c>false</c> if any of the item cannot be removed.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="InventoryItem.inventory"/>
-  bool DeleteItems(InventoryItem[] deleteItems);
+  bool DeleteItem(InventoryItem item);
 
   /// <summary>Forces the container to refresh its state according to the new state of the items.</summary>
   /// <remarks>

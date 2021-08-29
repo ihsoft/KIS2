@@ -149,10 +149,9 @@ public class KisContainerBase : AbstractPartModule,
       }
       // Make items and update the stock slot indexes.
       for (var i = 0; i < stockSlot.quantity; i++) {
-        restoredItems.Add(MakeItemFromStockSlot(slotIndex, itemId: stockSlotItemIds[i]));
+        AddInventoryItem(MakeItemFromStockSlot(slotIndex, itemId: stockSlotItemIds[i]));
       }
     }
-    UpdateItemsCollection(add: restoredItems);
   }
 
   /// <inheritdoc/>
@@ -188,92 +187,63 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public virtual ErrorReason[] CheckCanAddParts(
-      AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false) {
+  public virtual ErrorReason[] CheckCanAddPart(AvailablePart avPart, ConfigNode node = null, bool logErrors = false) {
     var errors = new List<ErrorReason>();
-    nodes ??= new ConfigNode[avParts.Length];
-    double partsVolume = 0;
-    for (var i = 0; i < avParts.Length; ++i) {
-      var avPart = avParts[i];
-      var node = nodes[i] ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-      partsVolume += KisApi.PartModelUtils.GetPartVolume(avPart, partNode: node);
-      //FIXME: Check part size.
-    }
-    if (usedVolume + partsVolume > maxVolume) {
+    var partVolume = KisApi.PartModelUtils.GetPartVolume(
+        avPart,
+        partNode: node ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab));
+    if (usedVolume + partVolume > maxVolume) {
       // Normalize the used volume in case of the inventory is already overloaded. 
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
           shortString = "VolumeTooLarge",
-          guiString = NotEnoughVolumeText.Format(partsVolume - freeVolume),
+          guiString = NotEnoughVolumeText.Format(partVolume - freeVolume),
       });
     }
     if (logErrors && errors.Count > 0) {
-      HostedDebugLog.Error(this, "Cannot add {0} part(s):\n{1}",
-                           avParts.Length, DbgFormatter.C2S(errors, separator: "\n"));
+      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
     }
     return errors.Count > 0 ? errors.ToArray() : null;
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem[] AddParts(AvailablePart[] avParts, ConfigNode[] nodes) {
-    if (avParts.Length != nodes.Length) {
-      throw new ArgumentException("Parts array doesn't match the cfg nodes: " + avParts.Length + " vs " + nodes.Length);
-    }
-    if (avParts.Length == 0) {
-      return new InventoryItem[0];
-    }
-    var items = new InventoryItem[avParts.Length];
-    for (var i = 0; i < avParts.Length; i++) {
-      items[i] = new InventoryItemImpl(this, avParts[i], nodes[i]);
-    }
-    return AddItems(items);
+  public virtual InventoryItem AddPart(AvailablePart avPart, ConfigNode node = null) {
+    return AddItem(new InventoryItemImpl(this, avPart, node));
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem[] AddItems(InventoryItem[] items) {
-    if (items.Length == 0) {
-      return new InventoryItem[0];
+  public virtual InventoryItem AddItem(InventoryItem item) {
+    var stockSlotIndex = FindStockSlotForItem(item);
+    if (stockSlotIndex == -1) {
+      HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
+      return null;
     }
-
-    var addedItems = new List<InventoryItem>();
-    foreach (var item in items) {
-      var stockSlotIndex = FindStockSlotForItem(item);
-      if (stockSlotIndex == -1) {
-        HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
-        continue;
-      }
-      var newItem = new InventoryItemImpl(this, item.avPart, item.itemConfig.CreateCopy());
-      AddItemToStockSlot(newItem, stockSlotIndex);
-      addedItems.Add(newItem);
-    }
-    UpdateItemsCollection(add: addedItems);
-    HostedDebugLog.Fine(this, "Added {0} items of {1}", addedItems.Count, items.Length); 
-    return addedItems.ToArray();
+    var newItem = new InventoryItemImpl(this, item.avPart, item.itemConfig.CreateCopy());
+    AddItemToStockSlot(newItem, stockSlotIndex);
+    AddInventoryItem(newItem);
+    HostedDebugLog.Fine(
+        this, "Added item: part={0}, sourceId={1}, newItemId={2}", item.avPart.name, item.itemId, newItem.itemId);
+    return newItem;
   }
 
   /// <inheritdoc/>
-  public virtual bool DeleteItems(InventoryItem[] deleteItems) {
-    if (deleteItems.Length == 0) {
-      return true;
+  public virtual bool DeleteItem(InventoryItem item) {
+    if (!ReferenceEquals(item.inventory, this)) {
+      HostedDebugLog.Error(this, "Item doesn't belong to this inventory: name={0}, id={1}, owner={2}",
+                           item.avPart.name, item.itemId, item.inventory as PartModule);
+      return false;
     }
-    foreach (var item in deleteItems) {
-      if (item.isLocked) {
-        HostedDebugLog.Error(this, "Cannot delete locked item(s): name={0}, id={1}", item.avPart.name, item.itemId);
-        return false;
-      }
-      if (!ReferenceEquals(item.inventory, this)) {
-        HostedDebugLog.Error(this, "Item doesn't belong to this inventory: name={0}, id={1}, owner={2}",
-                             item.avPart.name, item.itemId, item.inventory as PartModule);
-        return false;
-      }
-      if (!inventoryItemsMap.ContainsKey(item.itemId)) {
-        HostedDebugLog.Error(this, "Item not found: name={0}, id={1}", item.avPart.name, item.itemId);
-        return false;
-      }
+    if (!inventoryItemsMap.ContainsKey(item.itemId)) {
+      HostedDebugLog.Error(this, "Item not found: name={0}, id={1}", item.avPart.name, item.itemId);
+      return false;
     }
-    UpdateItemsCollection(remove: deleteItems);
-    deleteItems.ToList().ForEach(RemoveItemFromStockSlot);
-    HostedDebugLog.Fine(this, "Removed {0} items", deleteItems.Length);
+    if (item.isLocked) {
+      HostedDebugLog.Error(this, "Cannot delete locked item(s): name={0}, id={1}", item.avPart.name, item.itemId);
+      return false;
+    }
+    RemoveInventoryItem(item);
+    RemoveItemFromStockSlot(item);
+    HostedDebugLog.Fine(this, "Removed item: part={0}, itemId={1}", item.avPart.name, item.itemId);
     return true;
   }
 
@@ -299,37 +269,35 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Inheritable methods
-  /// <summary>Modifies <see cref="inventoryItems"/> collection.</summary>
+  /// <summary>Adds the item into <see cref="inventoryItems"/> collection.</summary>
   /// <remarks>
   /// This method doesn't deal with the stock inventory update and only serves the purpose of the internal KIS state
-  /// update. The descendants can use it to react to the changes on the KIS inventory. It's highly discouraged to call
-  /// this method from the descendants. When possible, all the items updates must be done via the public interface. 
+  /// update. The descendants can use it to react to the changes on the KIS inventory.
   /// </remarks>
-  /// <param name="add">The items to add.</param>
-  /// <param name="remove">The items to delete.</param>
-  protected virtual void UpdateItemsCollection(
-      ICollection<InventoryItem> add = null, ICollection<InventoryItem> remove = null) {
-    if (add != null) {
-      foreach (var item in add) {
-        inventoryItemsMap[item.itemId] = item;
-      }
-    }
-    var removeIds = new HashSet<string>();
-    if (remove != null) {
-      foreach (var item in remove) {
-        if (inventoryItemsMap.Remove(item.itemId)) {
-          removeIds.Add(item.itemId);
-        } else {
-          HostedDebugLog.Error(this, "Cannot delete item, not in the index: itemId={0}", item.itemId);
-        } 
-      }
-    }
+  /// <param name="item">The item to add.</param>
+  protected virtual void AddInventoryItem(InventoryItem item) {
+    inventoryItemsMap[item.itemId] = item;
+    var itemsList = inventoryItems.ToList();
+    itemsList.Add(item);
+    inventoryItems = itemsList.ToArray();
+    UpdateInventoryStats(new InventoryItem[0]);
+  }
+
+  /// <summary>Removes the item from the <see cref="inventoryItems"/> collection.</summary>
+  /// <remarks>
+  /// This method doesn't deal with the stock inventory update and only serves the purpose of the internal KIS state
+  /// update. The descendants can use it to react to the changes on the KIS inventory. 
+  /// </remarks>
+  /// <param name="item">The item to remove.</param>
+  protected virtual void RemoveInventoryItem(InventoryItem item) {
+    if (!inventoryItemsMap.Remove(item.itemId)) {
+      HostedDebugLog.Error(this, "Cannot delete item, not in the index: itemId={0}", item.itemId);
+    } 
     inventoryItems = inventoryItems
-        .Where(id => !removeIds.Contains(id.itemId))
-        .Concat(add ?? new List<InventoryItem>())
+        .Where(x => x.itemId != item.itemId)
         .ToArray(); 
     UpdateInventoryStats(new InventoryItem[0]);
-  } 
+  }
   #endregion
 
   #region Local utility methods
@@ -587,15 +555,13 @@ public class KisContainerBase : AbstractPartModule,
     var indexedItems = _stockSlotToItemsMap.ContainsKey(stockSlotIndex)
         ? _stockSlotToItemsMap[stockSlotIndex].Count
         : 0;
-    var deleteItems = new List<InventoryItem>();
-    var addItems = new List<InventoryItem>();
     if (slotQuantity < indexedItems) {
       while (slotQuantity < _stockSlotToItemsMap[stockSlotIndex].Count) {
         var item = _stockSlotToItemsMap[stockSlotIndex].Last();
         HostedDebugLog.Info(
             this, "Removing an item due to the stock slot change: slot={0}, itemId={1}", stockSlotIndex, item.itemId);
         UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
-        deleteItems.Add(item);
+        RemoveInventoryItem(item);
       }
     }
     if (slotQuantity > indexedItems) {
@@ -605,12 +571,8 @@ public class KisContainerBase : AbstractPartModule,
         HostedDebugLog.Info(
             this, "Adding an item due to the stock slot change: slot={0}, part={1}, itemId={2}",
             stockSlotIndex, item.avPart.name, item.itemId);
-        addItems.Add(item);
+        AddInventoryItem(item);
       }
-    }
-  
-    if (deleteItems.Count > 0 || addItems.Count > 0) {
-      UpdateItemsCollection(add: addItems, remove: deleteItems);
     }
   }
 

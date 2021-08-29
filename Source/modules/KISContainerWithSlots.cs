@@ -573,20 +573,20 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     if (Event.current.Equals(Event.KeyboardEvent("6")) && _unityWindow != null
         && _inventorySlots.Count > 0 && _inventorySlots[0].slotItems.Length > 0) {
-      DeleteItems(_inventorySlots[0].slotItems);
+      _inventorySlots[0].slotItems.ToList().ForEach(x => DeleteItem(x));
     }
   }
   #endregion
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override ErrorReason[] CheckCanAddParts(
-      AvailablePart[] avParts, ConfigNode[] nodes = null, bool logErrors = false) {
-    var res = base.CheckCanAddParts(avParts, nodes, logErrors);
+  public override ErrorReason[] CheckCanAddPart(AvailablePart avPart, ConfigNode node = null, bool logErrors = false) {
+    var res = base.CheckCanAddPart(avPart, node, logErrors);
     if (res != null) {
-      return res;  // Don't go deeper when the volume constraints are not satisfied.
+      return res;  // Don't go deeper, it's already failed.
     }
-    if (CheckHasVisibleSlots(avParts, nodes ?? new ConfigNode[avParts.Length])) {
+    var slot = FindSlotForItem(new InventoryItemImpl(this, avPart, node));
+    if (slot != null) {
       return null;
     }
     var errors = new[] {
@@ -596,8 +596,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
     };
     if (logErrors) {
-      HostedDebugLog.Error(this, "Cannot add {0} part(s):\n{1}",
-                           avParts.Length, DbgFormatter.C2S(errors, separator: "\n"));
+      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
     }
     return errors;
   }
@@ -609,23 +608,19 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <inheritdoc/>
-  protected override void UpdateItemsCollection(
-      ICollection<InventoryItem> add = null, ICollection<InventoryItem> remove = null) {
-    base.UpdateItemsCollection(add, remove);
-    if (remove != null) {
-      foreach (var item in remove) {
-        UpdateSlotItems(_itemToSlotMap[item.itemId], deleteItems: new[] { item });
-      }
+  protected override void AddInventoryItem(InventoryItem item) {
+    base.AddInventoryItem(item);
+    if (!_itemToSlotMap.ContainsKey(item.itemId)) {
+      UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] { item });
+    } else {
+      HostedDebugLog.Warning(this, "Skip update for existing mapping: itemId={0}", item.itemId);
     }
-    if (add != null) {
-      foreach (var item in add) {
-        if (!_itemToSlotMap.ContainsKey(item.itemId)) {
-          UpdateSlotItems(FindSlotForItem(item, addInvisibleSlot: true), addItems: new[] {item});
-        } else {
-          HostedDebugLog.Warning(this, "Skip update for existing mapping: itemId={0}", item.itemId);
-        }
-      }
-    }
+  }
+
+  /// <inheritdoc/>
+  protected override void RemoveInventoryItem(InventoryItem removeItem) {
+    base.RemoveInventoryItem(removeItem);
+    UpdateSlotItems(_itemToSlotMap[removeItem.itemId], deleteItems: new[] { removeItem });
   }
   #endregion
 
@@ -646,26 +641,21 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   };
 
   void AddFuelParts(float minPct, float maxPct, int num = 1, bool same = false) {
-    var avParts = new AvailablePart[num];
-    var nodes = new ConfigNode[num];
     AvailablePart avPart = null;
     for (var i = 0; i < num; ++i) {
       if (avPart == null || !same) {
         var avPartIndex = (int) (UnityEngine.Random.value * _fuelParts.Length);
         avPart = PartLoader.getPartInfoByName(_fuelParts[avPartIndex]);
       }
-      avParts[i] = avPart;
       var node = KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
       foreach (var res in KisApi.PartNodeUtils.GetResources(node)) {
         var amount = UnityEngine.Random.Range(minPct, maxPct) * res.maxAmount;
         KisApi.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
       }
-      nodes[i] = node;
-    }
-    //FIXME: check volume and size
-    var addedItems = AddParts(avParts, nodes);
-    if (addedItems.Length != avParts.Length) {
-      HostedDebugLog.Warning(this, "DEBUG: Requested to add {0}, added {1}", avParts.Length, addedItems.Length);
+      //FIXME: check volume and size
+      if (AddPart(avPart, node) == null) {
+        HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}':\n:{1}, ", avPart.name, node);
+      }
     }
   }
 
@@ -676,7 +666,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       DebugEx.Error("*** bummer: no part {0}", partName);
       return;
     }
-    AddParts(new[] {avPart}, new ConfigNode[1]);
+    AddPart(avPart);
   }
   #endregion
 
@@ -822,24 +812,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.mainStats = string.Join("\n", text);
   }
 
-  /// <summary>Check if inventory has enough visible slots to accomodate the items.</summary>
-  bool CheckHasVisibleSlots(IReadOnlyList<AvailablePart> avParts, IReadOnlyList<ConfigNode> nodes) {
-    var newSlots = new HashSet<InventorySlotImpl>();
-    for (var i = 0; i < avParts.Count; ++i) {
-      var avPart = avParts[i];
-      var node = nodes[i] ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-      var slot = FindSlotForItem(new InventoryItemImpl(this, avPart, node), preferredSlots: newSlots);
-      if (slot == null) {
-        return false;
-      }
-      if (slot.isEmpty) {
-        newSlots.Add(new InventorySlotImpl(null));
-      }
-    }
-    var emptySlots = _inventorySlots.Count(s => s.isEmpty);
-    return emptySlots > newSlots.Count;
-  }
-
   /// <summary>Returns a slot where the item can be stored.</summary>
   /// <remarks>
   /// This method tries to find a best slot, so that the inventory is kept as dense as possible.
@@ -897,12 +869,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="_dragSourceSlot"/>
   bool ConsumeSlotItems() {
     var leasedItems = KisApi.ItemDragController.leasedItems;
-    Array.ForEach(leasedItems, i => i.SetLocked(false));
-    var res = DeleteItems(KisApi.ItemDragController.leasedItems);
-    if (!res) {
-      // Something went wrong! Rollback.
-      Array.ForEach(leasedItems, i => i.SetLocked(true));
-      return false;
+    // Here we don't expect failures. The caller has to ensure the items can be consumed.
+    foreach (var item in leasedItems) {
+      item.SetLocked(false);
+      //FIXME
+      HostedDebugLog.Warning(this, "*** consuming item");
+      if (!DeleteItem(item)) {
+        HostedDebugLog.Error(this, "Cannot consume item: part={0}, itemId={1}", item.avPart.name, item.itemId);
+        item.SetLocked(true); // Just to restore its original state.
+      }
     }
     SetDraggedSlot(null);
     return true;
@@ -1161,19 +1136,20 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   void CheckCanAcceptDrops() {
     if (KisApi.ItemDragController.isDragging && _slotWithPointerFocus != null) {
       // For the items from other inventories also check the basic constraints.
-      var checkItems = KisApi.ItemDragController.leasedItems;
-      var otherInvAvParts = new List<AvailablePart>();
-      var otherInvPartConfigs = new List<ConfigNode>();
-      foreach (var checkItem in checkItems.Where(x => !ReferenceEquals(x.inventory, this))) {
-        otherInvAvParts.Add(checkItem.avPart);
-        otherInvPartConfigs.Add(checkItem.itemConfig);
+      var otherInventoryItems = KisApi.ItemDragController.leasedItems
+          .Where(x => !ReferenceEquals(x.inventory, this)).ToArray();
+      var checkResult = new List<ErrorReason>();
+      foreach (var item in otherInventoryItems) {
+        checkResult.AddRange(CheckCanAddPart(item.avPart, node: item.itemConfig) ?? new ErrorReason[0]);
       }
-      _canAcceptDraggedItemsCheckResult = null;
-      if (otherInvAvParts.Count > 0) {
-        _canAcceptDraggedItemsCheckResult =
-            base.CheckCanAddParts(otherInvAvParts.ToArray(), otherInvPartConfigs.ToArray());
-      }
-      _canAcceptDraggedItemsCheckResult ??= _slotWithPointerFocus.CheckCanAddItems(checkItems);
+      checkResult.AddRange(_slotWithPointerFocus.CheckCanAddItems(otherInventoryItems) ?? new ErrorReason[0]);
+      _canAcceptDraggedItemsCheckResult = checkResult.Count > 0
+          ? checkResult
+              .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
+              .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
+              .Values
+              .ToArray()
+          : null;
       _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
     } else {
       _canAcceptDraggedItemsCheckResult = null;
@@ -1252,49 +1228,41 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     DebugEx.Warning("*** spawn new item2");
   }
 
-  /// <summary>
-  /// Adds or removes items to the hovered slot. All new items will have the config from the first
-  /// item in the slot.
-  /// </summary>
+  /// <summary>Adds or removes items to the hovered slot in the edit or constructor mode.</summary>
+  /// <remarks>All new items will have the config from the first item in the slot.</remarks>
   /// <param name="delta">
-  /// The delta value to add. If it's negative, then the items are removed. It's OK to request
-  /// removal of more items than exist in the slot. In this case, all the items will be removed and
-  /// the slot released.
+  /// The delta value to add. If it's negative, then the items are removed. It's OK to request removal of more items
+  /// than exist in the slot. In this case, all the items will be removed and the slot released.
   /// </param>
-  /// <remarks>It's an action, invoked from the slot events state machine.</remarks>
   /// <seealso cref="_slotEventsHandler"/>
   void UpdateItemsCountInFocusedSlot(int delta) {
-    HostedDebugLog.Fine(
-        this, "Update items count in slot: slot=#{0}, delta={1}",
-        _inventorySlots.IndexOf(_slotWithPointerFocus), delta);
-    var addAvParts = new List<AvailablePart>();
-    var addItemConfigs = new List<ConfigNode>();
-    var removeItems = new List<InventoryItem>();
+    HostedDebugLog.Fine(this, "Update items count in slot: slot=#{0}, delta={1}",
+                        _inventorySlots.IndexOf(_slotWithPointerFocus), delta);
     if (delta > 0) {
       for (var i = 0; i < delta; i++) {
-        addAvParts.Add(_slotWithPointerFocus.slotItems[0].avPart);
-        addItemConfigs.Add(_slotWithPointerFocus.slotItems[0].itemConfig);
-      }
-    } else {
-      for (var i = 0; i < -delta && i < _slotWithPointerFocus.slotItems.Length; i++) {
-        removeItems.Add(_slotWithPointerFocus.slotItems[i]);
-      }
-    }
-    if (removeItems.Count > 0) {
-      DeleteItems(removeItems.ToArray());
-    }
-
-    if (addAvParts.Count > 0) {
-      var addAvPartsArray = addAvParts.ToArray();
-      var addItemConfigsArray = addItemConfigs.ToArray();
-      var checkResult = CheckCanAddParts(addAvPartsArray, addItemConfigsArray);
-      if (checkResult == null) {
-        var newItems = AddParts(addAvPartsArray, addItemConfigsArray);
-        if (newItems.Length != addAvPartsArray.Length) {
-          checkResult = new[] { new ErrorReason() { guiString = UpdateSlotStockContainerLimitErrorText } };
+        var avPart = _slotWithPointerFocus.slotItems[0].avPart;
+        var itemConfig = _slotWithPointerFocus.slotItems[0].itemConfig;
+        var itemErrors = CheckCanAddPart(avPart, itemConfig);
+        if (itemErrors == null) {
+          var newItem = AddPart(avPart, itemConfig); // It will get added to a random slot.
+          if (newItem != null) {
+            // Move the item to the the specific slot.
+            UpdateSlotItems(_slotWithPointerFocus, addItems: RemoveItemsFromSlots(new[] {newItem}));
+          } else {
+            checkResult.Add(new ErrorReason() {
+                shortString = "StockInventoryLimit",
+                guiString = UpdateSlotStockContainerLimitErrorText,
+            });
+          }
+        } else {
+          checkResult.AddRange(itemErrors);
         }
       }
-      if (checkResult?.Length > 0) {
+      checkResult = checkResult
+          .GroupBy(p => p.guiString, StringComparer.OrdinalIgnoreCase)
+          .Select(g => g.First())
+          .ToList();
+      if (checkResult.Count > 0) {
         UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
         var errorMsg = checkResult
             .Select(x => x.guiString)
@@ -1302,9 +1270,18 @@ public sealed class KisContainerWithSlots : KisContainerBase,
             .ToArray();
         if (errorMsg.Length > 0) {
           ScreenMessaging.ShowPriorityScreenMessage(
-              ScreenMessaging.SetColorToRichText(
-                  string.Join("\n", errorMsg),
-                  ScreenMessaging.ErrorColor));
+              ScreenMessaging.SetColorToRichText(string.Join("\n", errorMsg), ScreenMessaging.ErrorColor));
+        }
+      }
+    } else {
+      for (var i = _slotWithPointerFocus.slotItems.Length - 1; i >= 0 && delta < 0; i--) {
+        var item = _slotWithPointerFocus.slotItems[i];
+        if (!item.isLocked) {
+          if (DeleteItem(item)) {
+            ++delta;
+          } else {
+            HostedDebugLog.Error(this, "Cannot delete item: itemPart={0}, itemId={1}", item.avPart.name, item.itemId);
+          }
         }
       }
     }
@@ -1352,12 +1329,20 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   void AddDraggedItemsToFocusedSlot() {
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
     if (consumedItems != null) {
-      HostedDebugLog.Info(
-          this, "Add items to slot: slot=#{0}, num={1}",
-          _inventorySlots.IndexOf(_slotWithPointerFocus), consumedItems.Length);
+      HostedDebugLog.Info(this, "Add items to slot: slot=#{0}, num={1}",
+                          _inventorySlots.IndexOf(_slotWithPointerFocus), consumedItems.Length);
       _slotEventsHandler.SetState(SlotActionMode.HoveringOverItemsSlot);
-      var newItems = AddItems(consumedItems);
-      UpdateSlotItems(_slotWithPointerFocus, addItems: RemoveItemsFromSlots(newItems));
+      var newItems = new List<InventoryItem>();
+      foreach (var consumedItem in consumedItems) {
+        var item = AddItem(consumedItem);
+        if (item != null) {
+          newItems.Add(item);
+        } else {
+          HostedDebugLog.Error(
+              this, "Cannot add dragged item: part={0}, itemId={1}", consumedItem.avPart.name, consumedItem.itemId);
+        }
+      }
+      UpdateSlotItems(_slotWithPointerFocus, addItems: RemoveItemsFromSlots(newItems.ToArray()));
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     } else {
       UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
