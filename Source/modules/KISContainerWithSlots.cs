@@ -1135,14 +1135,20 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="_canAcceptDraggedItems"/>
   void CheckCanAcceptDrops() {
     if (KisApi.ItemDragController.isDragging && _slotWithPointerFocus != null) {
-      // For the items from other inventories also check the basic constraints.
-      var otherInventoryItems = KisApi.ItemDragController.leasedItems
-          .Where(x => !ReferenceEquals(x.inventory, this)).ToArray();
+      var allItems = KisApi.ItemDragController.leasedItems;
       var checkResult = new List<ErrorReason>();
-      foreach (var item in otherInventoryItems) {
-        checkResult.AddRange(CheckCanAddPart(item.avPart, node: item.itemConfig) ?? new ErrorReason[0]);
+      checkResult.AddRange(_slotWithPointerFocus.CheckCanAddItems(allItems) ?? new ErrorReason[0]);
+      if (checkResult.Count == 0) {
+        // For the items from other inventories also check the basic constraints.
+        var otherInventoryItems = allItems.Where(x => !ReferenceEquals(x.inventory, this));
+        foreach (var item in allItems) {
+          if (!ReferenceEquals(item.inventory, this)) {
+            checkResult.AddRange(CheckCanAddPart(item.avPart, node: item.itemConfig) ?? new ErrorReason[0]);
+          } 
+        }
       }
-      checkResult.AddRange(_slotWithPointerFocus.CheckCanAddItems(otherInventoryItems) ?? new ErrorReason[0]);
+
+      // Dedup the errors by the short string to not spam on multiple items.
       _canAcceptDraggedItemsCheckResult = checkResult.Count > 0
           ? checkResult
               .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
