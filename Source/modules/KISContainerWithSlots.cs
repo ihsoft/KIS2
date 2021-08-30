@@ -1232,8 +1232,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         && Vector3.SqrMagnitude(window.mainRect.position - tgtPos) > float.Epsilon) {
       yield return null;
       animationTime += Time.deltaTime;
-      window.mainRect.position =
-          Vector3.Lerp(srcPos, tgtPos, animationTime / WindowMoveAnimationDuration);
+      window.mainRect.position = Vector3.Lerp(srcPos, tgtPos, animationTime / WindowMoveAnimationDuration);
     }
   }
 
@@ -1327,6 +1326,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     // Either add or set the grabbed items.
     if (KisApi.ItemDragController.isDragging) {
+      HostedDebugLog.Warning(
+          this, "Cancel existing dragging action of {0} items", KisApi.ItemDragController.leasedItems.Length);
       itemsToDrag = KisApi.ItemDragController.leasedItems.Concat(itemsToDrag).ToArray();
       KisApi.ItemDragController.CancelItemsLease();
     }
