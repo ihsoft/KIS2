@@ -709,20 +709,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region Local utility methods
   /// <summary>Gives a staring position for the inventory dialogs, depending on teh scene.</summary>
-  /// <remarks>
-  /// The <c>X</c> boundary should be treated as indentation for the multi-row collections.
-  /// </remarks>
   static Vector3 GetDefaultDlgPos() {
     if (HighLogic.LoadedSceneIsFlight) {
       return new Vector3(
-          -Screen.width / 2.0f + DlgFlightSceneXOffset,
-          Screen.height / 2.0f - DlgFlightSceneYOffset,
+          -Screen.width / 2.0f + DlgFlightSceneXOffset * GameSettings.UI_SCALE,
+          Screen.height / 2.0f - DlgFlightSceneYOffset * GameSettings.UI_SCALE,
           0);
     }
     if (HighLogic.LoadedSceneIsEditor) {
       return new Vector3(
-          -Screen.width / 2.0f + DlgEditorSceneXOffset,
-          Screen.height / 2.0f - DlgEditorSceneYOffset,
+          -Screen.width / 2.0f + DlgEditorSceneXOffset * GameSettings.UI_SCALE,
+          Screen.height / 2.0f - DlgEditorSceneYOffset * GameSettings.UI_SCALE,
           0);
     }
     return Vector3.zero; // Fallback.
@@ -758,9 +755,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     UpdateInventoryWindow();
 
     if (_screenPosition == null) {
-      var basePos = ArrangeWindows(calculateOnly: true);
+      var basePos = ArrangeWindows();
       HostedDebugLog.Fine(this, "Set calculated window position: {0}", basePos);
-      _unityWindow.mainRect.localPosition = basePos;
+      _unityWindow.mainRect.position = basePos;
     } else {
       HostedDebugLog.Fine(this, "Restore window position: {0}", _screenPosition);
       _unityWindow.mainRect.localPosition = _screenPosition.Value;
@@ -1199,12 +1196,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         .ForEach(x => AddSlotItem(targetSlot, x));
   }
 
-  /// <summary>Arranges the unpinned inventory windows so that they are not overlapping.</summary>
-  /// <param name="calculateOnly">
-  /// Tells if only the next new window location need to be calculated.
-  /// </param>
+  /// <summary>
+  /// Arranges the unpinned inventory windows so that they are not overlapping and returns a next good spot for a new
+  /// window.
+  /// </summary>
   /// <returns>The position of the next new window.</returns>
-  Vector3 ArrangeWindows(bool calculateOnly = false) {
+  Vector3 ArrangeWindows() {
     var managedWindows = OpenWindows
         .Select(x => x.gameObject.GetComponent<UiWindowDragControllerScript>())
         .Where(x => !x.positionChanged)
@@ -1212,11 +1209,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var basePos = GetDefaultDlgPos();
     if (managedWindows.Count == 0) {
       return basePos; // Nothing to do.
-    }
-    if (calculateOnly) {
-      var lastWindow = managedWindows[managedWindows.Count - 1];
-      return lastWindow.mainRect.position
-          + new Vector3(lastWindow.mainRect.sizeDelta.x + WindowsGapSize, 0, 0);
     }
     foreach (var window in managedWindows) {
       LayoutRebuilder.ForceRebuildLayoutImmediate(window.mainRect);
@@ -1227,7 +1219,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
         MovingWindows.Add(window, StartCoroutine(AnimateMoveWindow(window, basePos)));
       }
-      basePos.x += window.mainRect.sizeDelta.x + WindowsGapSize;
+      basePos.x += (window.mainRect.sizeDelta.x + WindowsGapSize) * GameSettings.UI_SCALE;
     }
     return basePos;
   }
