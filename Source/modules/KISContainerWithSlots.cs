@@ -753,7 +753,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.title = DialogTitle.Format(part.partInfo.title);
     _unityWindow.minSize = minGridSize;
     _unityWindow.maxSize = maxGridSize;
-    _unityWindow.SetGridSize(new Vector3(slotGridWidth, slotGridHeight, 0)); 
+    _unityWindow.SetGridSize(new Vector3(slotGridWidth, slotGridHeight, 0));
+    ArrangeSlots(); // Ensure all slots have UI binding.
     UpdateInventoryWindow();
 
     if (_screenPosition == null) {
@@ -900,6 +901,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// the  slots so that the least number of the visible slots change their positions.
   /// </remarks>
   void ArrangeSlots() {
+    if (_unityWindow == null) {
+      return; // This method is UI bound. It needs a dialog instance.
+    }
     var newSlotGridWidth = (int) _unityWindow.gridSize.x;
     var newSlotGridHeight = (int) _unityWindow.gridSize.y;
 
