@@ -108,6 +108,7 @@
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
     <Compile Include="KSPDev_candidates\AmbientSettingsScope.cs" />
+    <Compile Include="KSPDev_candidates\UIDialogsGridController.cs" />
     <Compile Include="KSPDev_candidates\KspLayer.cs" />
     <Compile Include="KSPDev_candidates\KspLayerMask.cs" />
     <Compile Include="KSPDev_candidates\PartNodeUtils.cs" />
