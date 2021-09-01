@@ -5,7 +5,6 @@
 using KSP.UI;
 using System.Collections.Generic;
 using System;
-using System.Collections;
 using System.Linq;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
@@ -17,7 +16,6 @@ using KISAPIv2;
 using KIS2.UIKISInventorySlot;
 using KIS2.GUIUtils;
 using UnityEngine;
-using UnityEngine.UI;
 
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
@@ -318,35 +316,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   readonly EventsHandlerStateMachine<SlotActionMode> _slotEventsHandler = new();
       
   #region Local fields, constants, and properties.
-  /// <summary>The left side inventory window offset in the <i>FLIGHT</i> scene.</summary>
-  /// <seealso cref="GetDefaultDlgPos"/>
-  const float DlgFlightSceneXOffset = 10.0f;
-
-  /// <summary>The top side inventory window offset in the <i>FLIGHT</i> scene.</summary>
-  /// <remarks>Must not be overlapping with the flight controls.</remarks>
-  /// <seealso cref="GetDefaultDlgPos"/>
-  const float DlgFlightSceneYOffset = 40.0f;
-
-  /// <summary>The left side inventory window offset in the <i>EDIT</i> scene.</summary>
-  /// <remarks>Must not be overlapping the parts selection side panel.</remarks>
-  /// <seealso cref="GetDefaultDlgPos"/>
-  const float DlgEditorSceneXOffset = 280.0f;
-
-  /// <summary>The top side inventory window offset in the <i>EDIT</i> scene.</summary>
-  /// <remarks>Must not be overlapping the editor controls at the top.</remarks>
-  /// <seealso cref="GetDefaultDlgPos"/>
-  const float DlgEditorSceneYOffset = 40.0f;
-
-  /// <summary>Distance between auto-arranged windows.</summary>
-  /// <seealso cref="ArrangeWindows"/>
-  const float WindowsGapSize = 5;
-
-  /// <summary>
-  /// Duration for the inventory windows to move on the screen to fit to the new layout. 
-  /// </summary>
-  /// <see cref="ArrangeWindows"/>
-  const float WindowMoveAnimationDuration = 0.2f; // Seconds.
-
   /// <summary>Inventory window that is opened at the moment.</summary>
   UiKisInventoryWindow _unityWindow;
 
@@ -379,13 +348,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Last known position at the dialog close. It will be restored at open.</summary>
   Vector3? _screenPosition;
-
-  /// <summary>All slots inventory windows opened till now.</summary>
-  /// TODO(ihsoft): Move into some global location to support other GUI modules.
-  static readonly List<UiKisInventoryWindow> OpenWindows = new();
-
-  /// <summary>Windows that are in a process of aligning.</summary>
-  static readonly Dictionary<UiWindowDragControllerScript, Coroutine> MovingWindows = new();
   #endregion
 
   #region IKisDragTarget implementation
@@ -698,7 +660,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <summary>Callback when the slots grid size has changed.</summary>
   void OnGridSizeChanged() {
     ArrangeSlots();  // Trigger compaction if there are invisible items.
-    ArrangeWindows();
+    UIDialogsGridController.ArrangeDialogs();
   }
 
   /// <summary>Callback when pointers enters or leaves the dialog.</summary>
@@ -708,23 +670,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Local utility methods
-  /// <summary>Gives a staring position for the inventory dialogs, depending on teh scene.</summary>
-  static Vector3 GetDefaultDlgPos() {
-    if (HighLogic.LoadedSceneIsFlight) {
-      return new Vector3(
-          -Screen.width / 2.0f + DlgFlightSceneXOffset * GameSettings.UI_SCALE,
-          Screen.height / 2.0f - DlgFlightSceneYOffset * GameSettings.UI_SCALE,
-          0);
-    }
-    if (HighLogic.LoadedSceneIsEditor) {
-      return new Vector3(
-          -Screen.width / 2.0f + DlgEditorSceneXOffset * GameSettings.UI_SCALE,
-          Screen.height / 2.0f - DlgEditorSceneYOffset * GameSettings.UI_SCALE,
-          0);
-    }
-    return Vector3.zero; // Fallback.
-  }
-
   /// <summary>Opens the inventory window.</summary>
   void OpenInventoryWindow() {
     if (_unityWindow != null) {
@@ -754,13 +699,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     ArrangeSlots(); // Ensure all slots have UI binding.
     UpdateInventoryWindow();
 
+    UIDialogsGridController.AddDialog(_unityWindow);
     if (_screenPosition == null) {
-      var basePos = ArrangeWindows();
-      HostedDebugLog.Fine(this, "Set calculated window position: {0}", basePos);
-      _unityWindow.mainRect.position = basePos;
+      HostedDebugLog.Fine(this, "Set calculated window position: {0}", _unityWindow.mainRect.position);
     } else {
       HostedDebugLog.Fine(this, "Restore window position: {0}", _screenPosition);
       _unityWindow.mainRect.localPosition = _screenPosition.Value;
+      // TODO(ihsoft): Listen for "ControlUpdated" message to detect state change in flights/editor.
       var dragWindow = _unityWindow.gameObject.GetComponent<UiWindowDragControllerScript>();
       if (dragWindow != null) {
         dragWindow.positionChanged = true;
@@ -769,7 +714,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.SendMessage(
         nameof(IKspDevUnityControlChanged.ControlUpdated), _unityWindow.gameObject,
         SendMessageOptions.DontRequireReceiver);
-    OpenWindows.Add(_unityWindow);
   }
 
   /// <summary>Destroys the inventory window.</summary>
@@ -787,8 +731,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       HostedDebugLog.Fine(this, "Cancel dragging items");
       KisApi.ItemDragController.CancelItemsLease();
     }
-    OpenWindows.Remove(_unityWindow);
-    ArrangeWindows();
+    UIDialogsGridController.RemoveDialog(_unityWindow);
+
     Hierarchy.SafeDestroy(_unityWindow);
     _unityWindow = null;
     // Immediately make all slots invisible. Don't rely on Unity cleanup routines.  
@@ -1194,46 +1138,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     RemoveItemsFromSlots(items)
         .ToList()
         .ForEach(x => AddSlotItem(targetSlot, x));
-  }
-
-  /// <summary>
-  /// Arranges the unpinned inventory windows so that they are not overlapping and returns a next good spot for a new
-  /// window.
-  /// </summary>
-  /// <returns>The position of the next new window.</returns>
-  Vector3 ArrangeWindows() {
-    var managedWindows = OpenWindows
-        .Select(x => x.gameObject.GetComponent<UiWindowDragControllerScript>())
-        .Where(x => !x.positionChanged)
-        .ToList();
-    var basePos = GetDefaultDlgPos();
-    if (managedWindows.Count == 0) {
-      return basePos; // Nothing to do.
-    }
-    foreach (var window in managedWindows) {
-      LayoutRebuilder.ForceRebuildLayoutImmediate(window.mainRect);
-      if (Vector3.SqrMagnitude(window.mainRect.position - basePos) > float.Epsilon) {
-        if (MovingWindows.ContainsKey(window)) {
-          StopCoroutine(MovingWindows[window]);
-          MovingWindows.Remove(window);
-        }
-        MovingWindows.Add(window, StartCoroutine(AnimateMoveWindow(window, basePos)));
-      }
-      basePos.x += (window.mainRect.sizeDelta.x + WindowsGapSize) * GameSettings.UI_SCALE;
-    }
-    return basePos;
-  }
-
-  /// <summary>Animates setting window's position.</summary>
-  IEnumerator AnimateMoveWindow(UiWindowDragControllerScript window, Vector3 tgtPos) {
-    var srcPos = window.mainRect.position;
-    var animationTime = 0.0f;
-    while (window.gameObject.activeInHierarchy
-        && Vector3.SqrMagnitude(window.mainRect.position - tgtPos) > float.Epsilon) {
-      yield return null;
-      animationTime += Time.deltaTime;
-      window.mainRect.position = Vector3.Lerp(srcPos, tgtPos, animationTime / WindowMoveAnimationDuration);
-    }
   }
 
   /// <summary>Invokes a GUI dialog that allows choosing a part to be spawned in the slot.</summary>
