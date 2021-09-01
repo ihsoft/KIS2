@@ -47,9 +47,7 @@ public interface IKisInventory {
   /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
   /// </param>
   /// <returns><c>null</c> if the part can be added, or a list of reasons why not.</returns>
-  /// <seealso cref="AddParts"/>
-  /// FIXME: why bothering about AV? pass the names!
-  /// FIXME: Exhausted???
+  /// <seealso cref="AddPart"/>
   ErrorReason[] CheckCanAddPart(AvailablePart avPart, ConfigNode node = null, bool logErrors = false);
 
   /// <summary>Adds a new part into the inventory.</summary>
@@ -64,14 +62,8 @@ public interface IKisInventory {
   /// </param>
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
   /// <seealso cref="CheckCanAddPart"/>
-  /// FIXME: why bothering about AV? pass the names!
   InventoryItem AddPart(AvailablePart avPart, ConfigNode node = null);
 
-  //FIXME: add variant?
-  //FIXME: drop bulk methods altogether?
-  //InventoryItem[] AddPart(string partName, int variantIndex = -1);
-  //InventoryItem[] AddPart(string partName, ConfigNode node);
-  
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is responsibility of the
