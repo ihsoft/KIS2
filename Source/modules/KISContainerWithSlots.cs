@@ -1081,7 +1081,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       checkResult.AddRange(_slotWithPointerFocus.CheckCanAddItems(allItems) ?? new ErrorReason[0]);
       if (checkResult.Count == 0) {
         // For the items from other inventories also check the basic constraints.
-        var otherInventoryItems = allItems.Where(x => !ReferenceEquals(x.inventory, this));
         foreach (var item in allItems) {
           if (!ReferenceEquals(item.inventory, this)) {
             checkResult.AddRange(CheckCanAddPart(item.avPart, node: item.itemConfig) ?? new ErrorReason[0]);
