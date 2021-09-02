@@ -102,23 +102,24 @@ sealed class InventoryItemImpl : InventoryItem {
         inventory,
         snapshot.partInfo.name,
         KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(snapshot),
-        itemGuid: itemId);
+        itemId: itemId);
   }
 
   /// <summary>Makes a new item from the part name.</summary>
-  public InventoryItemImpl(IKisInventory inventory, string partName, ConfigNode itemConfig, string itemGuid = null) {
+  /// TODO(ihsoft): make it private. others should use factory methods
+  public InventoryItemImpl(IKisInventory inventory, string partName, ConfigNode itemConfig, string itemId = null) {
     var partInfo = PartLoader.getPartInfoByName(partName);
     Preconditions.NotNull(partInfo, message: "Part name not found: " + partName, context: inventory);
     this.inventory = inventory;
     this.avPart = partInfo;
     this.itemConfig = itemConfig ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-    this.itemId = itemGuid ?? Guid.NewGuid().ToString();
+    this.itemId = itemId ?? Guid.NewGuid().ToString();
     UpdateConfig();
   }
 
   /// <inheritdoc cref="InventoryItemImpl(IKisInventory,string,ConfigNode,string)"/>
-  public InventoryItemImpl(IKisInventory inventory, Part part, string itemGuid = null)
-      : this(inventory, part.partInfo.name, KisApi.PartNodeUtils.PartSnapshot(part), itemGuid) {
+  public InventoryItemImpl(IKisInventory inventory, Part part, string itemId = null)
+      : this(inventory, part.partInfo.name, KisApi.PartNodeUtils.PartSnapshot(part), itemId) {
   }
   #endregion
 
