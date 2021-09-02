@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -188,6 +189,7 @@ public class KisContainerBase : AbstractPartModule,
   #region IKISInventory implementation
   /// <inheritdoc/>
   public virtual ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
+    ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
     var item = new InventoryItemImpl(this, partName, itemConfig: node); 
     var errors = new List<ErrorReason>();
     var partVolume = item.volume;
@@ -207,11 +209,13 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual InventoryItem AddPart(string partName, ConfigNode node = null) {
+    ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
     return AddItem(new InventoryItemImpl(this, partName, node));
   }
 
   /// <inheritdoc/>
   public virtual InventoryItem AddItem(InventoryItem item) {
+    ArgumentGuard.NotNull(item, nameof(item), context: this);
     var stockSlotIndex = FindStockSlotForItem(item);
     if (stockSlotIndex == -1) {
       HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
@@ -227,6 +231,7 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual bool DeleteItem(InventoryItem item) {
+    ArgumentGuard.NotNull(item, nameof(item), context: this);
     if (!ReferenceEquals(item.inventory, this)) {
       HostedDebugLog.Error(this, "Item doesn't belong to this inventory: name={0}, id={1}, owner={2}",
                            item.avPart.name, item.itemId, item.inventory as PartModule);
@@ -248,6 +253,7 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual void UpdateInventoryStats(InventoryItem[] changedItems) {
+    ArgumentGuard.NotNull(changedItems, nameof(changedItems), context: this);
     if (changedItems == null) {
       HostedDebugLog.Fine(this, "Updating all items in the inventory...");
       Array.ForEach(inventoryItems, item => item.UpdateConfig());
@@ -262,6 +268,7 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public InventoryItem FindItem(string itemId) {
+    ArgumentGuard.NotNullOrEmpty(itemId, nameof(itemId), context: this);
     inventoryItemsMap.TryGetValue(itemId, out var res);
     return res;
   }
