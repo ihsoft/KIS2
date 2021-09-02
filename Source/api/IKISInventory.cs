@@ -39,7 +39,7 @@ public interface IKisInventory {
   /// If this method replied "yes", then the <see cref="AddPart"/> method cannot fail. It is an exhaustive check for the
   /// part addition conditions.
   /// </remarks>
-  /// <param name="avPart">The part proto.</param>
+  /// <param name="partName">The part name to check.</param>
   /// <param name="node">
   /// The part's persisted state. If <c>null</c>, then a default state will be created from the prefab.
   /// </param>
@@ -48,7 +48,7 @@ public interface IKisInventory {
   /// </param>
   /// <returns><c>null</c> if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddPart"/>
-  ErrorReason[] CheckCanAddPart(AvailablePart avPart, ConfigNode node = null, bool logErrors = false);
+  ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false);
 
   /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>
@@ -56,13 +56,13 @@ public interface IKisInventory {
   /// caller. If any compatibility setting is enabled, the add action can fail. The caller must check the output before
   /// assuming that the action has succeeded.
   /// </remarks>
-  /// <param name="avPart">The part proto.</param>
+  /// <param name="partName">The part name to add.</param>
   /// <param name="node">
   /// The part persisted state. An entry can be <c>null</c> if default state from prefab should be used.
   /// </param>
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
   /// <seealso cref="CheckCanAddPart"/>
-  InventoryItem AddPart(AvailablePart avPart, ConfigNode node = null);
+  InventoryItem AddPart(string partName, ConfigNode node = null);
 
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>

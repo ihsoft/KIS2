@@ -187,7 +187,8 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public virtual ErrorReason[] CheckCanAddPart(AvailablePart avPart, ConfigNode node = null, bool logErrors = false) {
+  public virtual ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
+    var avPart = PartLoader.getPartInfoByName(partName);
     var errors = new List<ErrorReason>();
     var partVolume = KisApi.PartModelUtils.GetPartVolume(
         avPart,
@@ -207,8 +208,8 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem AddPart(AvailablePart avPart, ConfigNode node = null) {
-    return AddItem(new InventoryItemImpl(this, avPart, node));
+  public virtual InventoryItem AddPart(string partName, ConfigNode node = null) {
+    return AddItem(new InventoryItemImpl(this, partName, node));
   }
 
   /// <inheritdoc/>
@@ -218,7 +219,7 @@ public class KisContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
       return null;
     }
-    var newItem = new InventoryItemImpl(this, item.avPart, item.itemConfig.CreateCopy());
+    var newItem = new InventoryItemImpl(this, item.avPart.name, item.itemConfig.CreateCopy());
     AddItemToStockSlot(newItem, stockSlotIndex);
     AddInventoryItem(newItem);
     HostedDebugLog.Fine(

@@ -6,6 +6,7 @@ using KISAPIv2;
 using System;
 using System.Linq;
 using KSPDev.PartUtils;
+using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -99,24 +100,25 @@ sealed class InventoryItemImpl : InventoryItem {
       IKisInventory inventory, ProtoPartSnapshot snapshot, string itemId = null) {
     return new(
         inventory,
-        snapshot.partInfo,
+        snapshot.partInfo.name,
         KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(snapshot),
         itemGuid: itemId);
   }
 
-  /// <summary>Makes a new item from the part definition.</summary>
-  public InventoryItemImpl(
-      IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig, string itemGuid = null) {
+  /// <summary>Makes a new item from the part name.</summary>
+  public InventoryItemImpl(IKisInventory inventory, string partName, ConfigNode itemConfig, string itemGuid = null) {
+    var partInfo = PartLoader.getPartInfoByName(partName);
+    Preconditions.NotNull(partInfo, message: "Part name not found: " + partName, context: inventory);
     this.inventory = inventory;
-    this.avPart = avPart;
+    this.avPart = partInfo;
     this.itemConfig = itemConfig ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
     this.itemId = itemGuid ?? Guid.NewGuid().ToString();
     UpdateConfig();
   }
 
-  /// <inheritdoc cref="InventoryItemImpl(IKisInventory,AvailablePart,ConfigNode,string)"/>
+  /// <inheritdoc cref="InventoryItemImpl(IKisInventory,string,ConfigNode,string)"/>
   public InventoryItemImpl(IKisInventory inventory, Part part, string itemGuid = null)
-      : this(inventory, part.partInfo, KisApi.PartNodeUtils.PartSnapshot(part), itemGuid) {
+      : this(inventory, part.partInfo.name, KisApi.PartNodeUtils.PartSnapshot(part), itemGuid) {
   }
   #endregion
 

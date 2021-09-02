@@ -542,12 +542,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override ErrorReason[] CheckCanAddPart(AvailablePart avPart, ConfigNode node = null, bool logErrors = false) {
-    var res = base.CheckCanAddPart(avPart, node, logErrors);
+  public override ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
+    var res = base.CheckCanAddPart(partName, node, logErrors);
     if (res != null) {
       return res;  // Don't go deeper, it's already failed.
     }
-    var slot = FindSlotForItem(new InventoryItemImpl(this, avPart, node));
+    var slot = FindSlotForItem(new InventoryItemImpl(this, partName, node));
     if (slot != null) {
       return null;
     }
@@ -558,7 +558,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
     };
     if (logErrors) {
-      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
+      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", partName, DbgFormatter.C2S(errors, separator: "\n"));
     }
     return errors;
   }
@@ -615,7 +615,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         KisApi.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
       }
       //FIXME: check volume and size
-      if (AddPart(avPart, node) == null) {
+      if (AddPart(avPart.name, node) == null) {
         HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}':\n:{1}, ", avPart.name, node);
       }
     }
@@ -1083,7 +1083,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         // For the items from other inventories also check the basic constraints.
         foreach (var item in allItems) {
           if (!ReferenceEquals(item.inventory, this)) {
-            checkResult.AddRange(CheckCanAddPart(item.avPart, node: item.itemConfig) ?? new ErrorReason[0]);
+            checkResult.AddRange(CheckCanAddPart(item.avPart.name, node: item.itemConfig) ?? new ErrorReason[0]);
           } 
         }
       }
@@ -1162,9 +1162,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       for (var i = 0; i < delta; i++) {
         var avPart = _slotWithPointerFocus.slotItems[0].avPart;
         var itemConfig = _slotWithPointerFocus.slotItems[0].itemConfig;
-        var itemErrors = CheckCanAddPart(avPart, itemConfig);
+        var itemErrors = CheckCanAddPart(avPart.name, itemConfig);
         if (itemErrors == null) {
-          var newItem = AddPart(avPart, itemConfig); // It will get added to a random slot.
+          var newItem = AddPart(avPart.name, itemConfig); // It will get added to a random slot.
           if (newItem != null) {
             // Move the item to the the specific slot.
             MoveItemsToSlot(_slotWithPointerFocus, newItem);
