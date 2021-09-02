@@ -620,16 +620,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
     }
   }
-
-  // ReSharper disable once UnusedMember.Local
-  void AddPartByName(string partName) {
-    var avPart = PartLoader.getPartInfoByName(partName);
-    if (avPart == null) {
-      DebugEx.Error("*** bummer: no part {0}", partName);
-      return;
-    }
-    AddPart(avPart);
-  }
   #endregion
 
   #region Unity window callbacks
