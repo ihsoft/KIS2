@@ -119,10 +119,8 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="api" />
-    <Folder Include="api\Utils" />
     <Folder Include="api_impl" />
     <Folder Include="modules" />
-    <Folder Include="impl" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="KSPDevUtilsAPI_HelpIndex.xml" />

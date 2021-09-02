@@ -91,7 +91,6 @@
     <Compile Include="Scripts\UiKisInventoryWindowDecorator.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Scripts\KSPDev.Unity" />
     <Folder Include="Scripts\UIKISInventorySlot" />
     <Folder Include="Scripts\UIKISInventoryTooltip" />
   </ItemGroup>
