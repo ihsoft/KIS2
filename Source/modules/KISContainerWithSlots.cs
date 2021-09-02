@@ -547,7 +547,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (res != null) {
       return res;  // Don't go deeper, it's already failed.
     }
-    var slot = FindSlotForItem(new InventoryItemImpl(this, partName, node));
+    var slot = FindSlotForItem(InventoryItemImpl.ForPartName(this, partName, node));
     if (slot != null) {
       return null;
     }

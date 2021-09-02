@@ -190,7 +190,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    var item = new InventoryItemImpl(this, partName, itemConfig: node); 
+    var item = InventoryItemImpl.ForPartName(this, partName, itemConfig: node);
     var errors = new List<ErrorReason>();
     var partVolume = item.volume;
     if (usedVolume + partVolume > maxVolume) {
@@ -210,7 +210,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual InventoryItem AddPart(string partName, ConfigNode node = null) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return AddItem(new InventoryItemImpl(this, partName, node));
+    return AddItem(InventoryItemImpl.ForPartName(this, partName, node));
   }
 
   /// <inheritdoc/>
@@ -221,7 +221,7 @@ public class KisContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
       return null;
     }
-    var newItem = new InventoryItemImpl(this, item.avPart.name, item.itemConfig.CreateCopy());
+    var newItem = InventoryItemImpl.ForPartName(this, item.avPart.name, item.itemConfig.CreateCopy());
     AddItemToStockSlot(newItem, stockSlotIndex);
     AddInventoryItem(newItem);
     HostedDebugLog.Fine(
