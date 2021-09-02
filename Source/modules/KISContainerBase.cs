@@ -188,11 +188,9 @@ public class KisContainerBase : AbstractPartModule,
   #region IKISInventory implementation
   /// <inheritdoc/>
   public virtual ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
-    var avPart = PartLoader.getPartInfoByName(partName);
+    var item = new InventoryItemImpl(this, partName, itemConfig: node); 
     var errors = new List<ErrorReason>();
-    var partVolume = KisApi.PartModelUtils.GetPartVolume(
-        avPart,
-        partNode: node ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab));
+    var partVolume = item.volume;
     if (usedVolume + partVolume > maxVolume) {
       // Normalize the used volume in case of the inventory is already overloaded. 
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
@@ -202,7 +200,7 @@ public class KisContainerBase : AbstractPartModule,
       });
     }
     if (logErrors && errors.Count > 0) {
-      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
+      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", partName, DbgFormatter.C2S(errors, separator: "\n"));
     }
     return errors.Count > 0 ? errors.ToArray() : null;
   }
