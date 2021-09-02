@@ -70,10 +70,10 @@ public class KisContainerBase : AbstractPartModule,
   /// Reflection of <see cref="inventoryItems"/> in a form of map for quick lookup operations. 
   /// </summary>
   /// <remarks>
-  /// Do not modify this map directly! Descendants must use he interface methods or call
-  /// <see cref="UpdateItemsCollection"/>.
+  /// Do not modify this map directly! Descendants must use the interface methods or call the inherited methods.
   /// </remarks>
-  /// <seealso cref="UpdateItemsCollection"/>
+  /// <seealso cref="AddItem"/>
+  /// <seealso cref="DeleteItem"/>
   /// <seealso cref="InventoryItem.itemId"/>
   protected readonly Dictionary<string, InventoryItem> inventoryItemsMap = new();
 
@@ -310,7 +310,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Creates an item from a non-empty stock slot and updates stock related indexes.</summary>
   /// <remarks>
   /// The new item is not added to <see cref="inventoryItems"/>, but it's expected that it will be added there by the
-  /// calling code. A normal way of doing it is calling <see cref="UpdateItemsCollection"/>.
+  /// calling code. A normal way of doing it is calling <see cref="AddItem"/> or <see cref="DeleteItem"/>.
   /// </remarks>
   /// <param name="stockSlotIndex">The slot index in teh stock inventory module.</param>
   /// <param name="itemId">
