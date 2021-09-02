@@ -135,7 +135,6 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // Restore the inventory items. Ensure every item has a unique ID and is assigned to a stock slot. 
-    var restoredItems = new List<InventoryItem>();
     foreach (var stockSlot in stockInventoryModule.storedParts.Values) {
       var slotIndex = stockSlot.slotIndex;
       var stockSlotItemIds = stockSlotToItemIdsMap.ContainsKey(slotIndex)
