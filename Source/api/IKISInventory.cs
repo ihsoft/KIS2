@@ -58,7 +58,7 @@ public interface IKisInventory {
   /// </remarks>
   /// <param name="partName">The part name to add.</param>
   /// <param name="node">
-  /// The part persisted state. An entry can be <c>null</c> if default state from prefab should be used.
+  /// The part persisted state. An entry can be <c>null</c> if the default state from prefab should be used.
   /// </param>
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
   /// <seealso cref="CheckCanAddPart"/>
@@ -72,8 +72,8 @@ public interface IKisInventory {
   /// </remarks>
   /// <param name="item">The item to add.</param>
   /// <returns>
-  /// The new item from the inventory or <c>null</c> if action failed. The ID of the new item will be different from
-  /// the source item.
+  /// The new item from the inventory or <c>null</c> if the action has failed. The ID of the new item will be different
+  /// from the source item.
   /// </returns>
   /// <seealso cref="CheckCanAddPart"/>
   /// <seealso cref="InventoryItem.itemId"/>
@@ -85,7 +85,7 @@ public interface IKisInventory {
   /// work.
   /// </remarks>
   /// <param name="item">The item to remove. It must belong to this inventory.</param>
-  /// <returns><c>true</c> if removal was successfulOP. <c>false</c> if any of the item cannot be removed.</returns>
+  /// <returns><c>true</c> if removal was successful.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="InventoryItem.inventory"/>
   bool DeleteItem(InventoryItem item);
