@@ -55,7 +55,7 @@ public sealed class Tooltip : UiPrefabBaseScript {
   /// <summary>Main highlighted text.</summary>
   /// <remarks>Can be set to empty string to hide the control.</remarks>
   public string title {
-    get { return titleText.text; }
+    get => titleText.text;
     set {
       titleText.text = value;
       titleText.gameObject.SetActive(!string.IsNullOrEmpty(value));
@@ -66,7 +66,7 @@ public sealed class Tooltip : UiPrefabBaseScript {
   /// <remarks>Can be set to empty string to hide the control.</remarks>
   /// <seealso cref="showHints"/>
   public string hints {
-    get { return hintsText.text; }
+    get => hintsText.text;
     set {
       hintsText.text = value;
       hintsText.gameObject.SetActive(showHints && !string.IsNullOrEmpty(value));
