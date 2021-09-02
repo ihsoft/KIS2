@@ -121,8 +121,7 @@ internal sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
     var part = Instantiate(partInfo.partPrefab);
     part.gameObject.SetActive(true);
     part.name = partInfo.name;
-    part.persistentId =
-        FlightGlobals.CheckPartpersistentId(part.persistentId, part, false, true,0U);
+    part.persistentId = FlightGlobals.CheckPartpersistentId(part.persistentId, part, false, true);
     var actions = item.itemConfig.GetNode("ACTIONS");
     if (actions != null) {
       part.Actions.OnLoad(actions);
@@ -135,6 +134,7 @@ internal sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
     if (effects != null) {
       part.Effects.OnLoad(effects);
     }
+    // ReSharper disable once StringLiteralTypo
     var partData = item.itemConfig.GetNode("PARTDATA");
     if (partData != null) {
       part.OnLoad(partData);
