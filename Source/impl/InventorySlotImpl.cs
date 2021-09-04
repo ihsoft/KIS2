@@ -172,12 +172,13 @@ sealed class InventorySlotImpl {
   #endregion
 
   #region API properties and fields
+  // ReSharper disable MemberCanBePrivate.Global
+
   /// <summary>
   /// Short name of the checking error for the case when parts with different signature are being
   /// added to the slot.
   /// </summary>
   /// <seealso cref="DifferentPartsReasonText"/>
-  // ReSharper disable once MemberCanBePrivate.Global
   public const string DifferentPartReason = "DifferentPart";
 
   /// <summary>
@@ -185,7 +186,6 @@ sealed class InventorySlotImpl {
   /// </summary>
   /// <seealso cref="DifferentResourcesReasonText"/>
   /// <seealso cref="CheckIfSimilar"/>
-  // ReSharper disable once MemberCanBePrivate.Global
   public const string DifferentResourcesReason = "DifferentResources";
 
   /// <summary>
@@ -194,7 +194,6 @@ sealed class InventorySlotImpl {
   /// </summary>
   /// <seealso cref="DifferentResourcesReasonText"/>
   /// <seealso cref="CheckIfSimilar"/>
-  // ReSharper disable once MemberCanBePrivate.Global
   public const string DifferentResourceAmountsReason = "DifferentResourcesAmounts";
 
   /// <summary>
@@ -202,7 +201,6 @@ sealed class InventorySlotImpl {
   /// added to the slot.
   /// </summary>
   /// <seealso cref="DifferentVariantReasonText"/>
-  // ReSharper disable once MemberCanBePrivate.Global
   public const string DifferentVariantReason = "DifferentVariant";
 
   /// <summary>Tells if this slot is visible in the inventory dialog.</summary>
@@ -221,7 +219,7 @@ sealed class InventorySlotImpl {
   /// </remarks>
   public bool isLocked {
     // ReSharper disable once UnusedMember.Global
-    get { return _isLocked; }
+    get => _isLocked;
     set {
       _isLocked = value;
       if (_unitySlot != null) {
@@ -246,7 +244,7 @@ sealed class InventorySlotImpl {
   /// </summary>
   /// <remarks>The items are always reserved starting from item 0.</remarks>
   public int reservedItems {
-    get { return _reservedItems; }
+    get => _reservedItems;
     set {
       _reservedItems = value;
       UpdateUnitySlot();
@@ -266,6 +264,8 @@ sealed class InventorySlotImpl {
 
   /// <summary>Tells if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Length == 0;
+
+  // ReSharper enable MemberCanBePrivate.Global
   #endregion
 
   #region Local fields and properties
@@ -492,8 +492,7 @@ sealed class InventorySlotImpl {
     var amountSlot = GetResourceAmountSlot(slotPercent);
     string text;
     if (amountSlot == 0) {
-      var defaultIsEmpty = slotItems[0].resources
-          .Any(r => r.resourceRef != null && r.resourceRef.amount < double.Epsilon); 
+      var defaultIsEmpty = slotItems[0].resources.Any(r => r.resourceRef?.amount < double.Epsilon); 
       text = defaultIsEmpty ? null : "0%";
     } else if (amountSlot == 5) {
       text = "<5%";
@@ -502,8 +501,7 @@ sealed class InventorySlotImpl {
     } else if (amountSlot != 100) {
       text = ">95%";
     } else {
-      var defaultIsFull = slotItems[0].resources
-          .Any(r => r.resourceRef != null && r.resourceRef.amount > double.Epsilon); 
+      var defaultIsFull = slotItems[0].resources.Any(r => r.resourceRef?.amount > double.Epsilon); 
       text = defaultIsFull ? null : "100%";
     }
     return text;
@@ -528,13 +526,13 @@ sealed class InventorySlotImpl {
 
   /// <summary>Adds or deletes items to/from the slot.</summary>
   void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
-    if (addItems != null && addItems.Length > 0) {
+    if (addItems?.Length > 0) {
       if (_itemsSet.Count == 0) {
         _resourceSimilarityValues = CalculateSimilarityValues(addItems[0]);
       }
       _itemsSet.AddAll(addItems);
     }
-    if (deleteItems != null && deleteItems.Length > 0) {
+    if (deleteItems?.Length > 0) {
       Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
       if (_itemsSet.Count == 0) {
         _resourceSimilarityValues = null;
@@ -593,7 +591,7 @@ sealed class InventorySlotImpl {
 
   /// <summary>
   /// Returns a standard error reason response.</summary>
-  ErrorReason[] ReturnErrorReasons(bool logErrors, string reasonCode, string reasonText) {
+  static ErrorReason[] ReturnErrorReasons(bool logErrors, string reasonCode, string reasonText) {
     var reason = new ErrorReason() {
         shortString = reasonCode,
         guiString = reasonText,
