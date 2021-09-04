@@ -46,7 +46,7 @@ public interface IKisInventory {
   /// <param name="logErrors">
   /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
   /// </param>
-  /// <returns><c>null</c> if the part can be added, or a list of reasons why not.</returns>
+  /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddPart"/>
   ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false);
 

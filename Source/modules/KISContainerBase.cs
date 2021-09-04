@@ -231,7 +231,7 @@ public class KisContainerBase : AbstractPartModule,
     if (logErrors && errors.Count > 0) {
       HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", partName, DbgFormatter.C2S(errors, separator: "\n"));
     }
-    return errors.Count > 0 ? errors.ToArray() : null;
+    return errors.ToArray();
   }
 
   /// <inheritdoc/>

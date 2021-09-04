@@ -521,12 +521,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <inheritdoc/>
   public override ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
     var res = base.CheckCanAddPart(partName, node, logErrors);
-    if (res != null) {
+    if (res.Length> 0) {
       return res;  // Don't go deeper, it's already failed.
     }
     var slot = FindSlotForItem(InventoryItemImpl.ForPartName(this, partName, node));
     if (slot != null) {
-      return null;
+      return new ErrorReason[0];
     }
     var errors = new[] {
         new ErrorReason() {
@@ -1051,7 +1051,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         // For the items from other inventories also check the basic constraints.
         foreach (var item in allItems) {
           if (!ReferenceEquals(item.inventory, this)) {
-            checkResult.AddRange(CheckCanAddPart(item.avPart.name, node: item.itemConfig) ?? new ErrorReason[0]);
+            checkResult.AddRange(CheckCanAddPart(item.avPart.name, node: item.itemConfig));
           } 
         }
       }
@@ -1131,7 +1131,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         var avPart = _slotWithPointerFocus.slotItems[0].avPart;
         var itemConfig = _slotWithPointerFocus.slotItems[0].itemConfig;
         var itemErrors = CheckCanAddPart(avPart.name, itemConfig);
-        if (itemErrors == null) {
+        if (itemErrors.Length == 0) {
           var newItem = AddPart(avPart.name, itemConfig); // It will get added to a random slot.
           if (newItem != null) {
             // Move the item to the the specific slot.
