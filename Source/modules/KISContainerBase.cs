@@ -76,16 +76,20 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Check reasons
+  // ReSharper disable MemberCanBeProtected.Global
+
   /// <summary>Any of the stock storage settings prevent the action.</summary>
   /// <remarks>
   /// It depends on the compatibility settings. When all the settings are disabled, this error reason is not expected to
   /// be seen. The actual error text reason can differ for this type.
   /// </remarks>
   /// <seealso cref="StockContainerLimitReachedErrorText"/>
-  protected const string StockInventoryLimitReason = "StockInventoryLimit";
+  public const string StockInventoryLimitReason = "StockInventoryLimit";
 
   /// <summary>The part is too large to be added into the inventory.</summary>
-  protected const string VolumeTooLargeReason = "VolumeTooLarge";
+  public const string VolumeTooLargeReason = "VolumeTooLarge";
+
+  // ReSharper enable MemberCanBeProtected.Global
   #endregion
 
   #region Inhertitable fields and properties
