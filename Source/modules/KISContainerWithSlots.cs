@@ -825,7 +825,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         Math.Max(newSlotGridHeight, slotGridHeight)];
     for (var i = 0; i < slotGrid.GetLength(0); i++) {
       for (var j = 0; j < slotGrid.GetLength(1); j++) {
-        if (i >= slotGridWidth || j >= slotGridHeight) {
+        if (i >= slotGridWidth || j >= slotGridHeight || j * slotGridWidth + i >= _inventorySlots.Count) {
           slotGrid[i, j] = new InventorySlotImpl(null);
         } else {
           slotGrid[i, j] = _inventorySlots[j * slotGridWidth + i];
