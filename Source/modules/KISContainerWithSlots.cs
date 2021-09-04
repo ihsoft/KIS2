@@ -52,13 +52,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       "",
       defaultTemplate: "Maximum volume: <color=#58F6AE><<1>></color>");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message NoSlotsErrorReason = new Message(
-      "",
-      defaultTemplate: "No enough compatible slots",
-      description: "Error message that is presented when parts cannot be added into the inventory"
-          + " due to there are not enough compatible/empty STOCK slots available.");
-
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeStackHint = new Message<KeyboardEventType>(
       "",
@@ -197,15 +190,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   static readonly Message CannotAddToStackTooltipText = new Message(
       "",
       defaultTemplate: "Cannot add items to stack",
-      description: "The text to show in the title of the slot tooltip when the dragged items can"
-          + " NOT be added into the slot. Only shown when the target slot is not empty.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message UpdateSlotStockContainerLimitErrorText = new Message(
-      "",
-      defaultTemplate: "Stock container limit reached",
-      description: "An error that is presented when a part cannot be added into a KIS container due to the stock"
-          + " container cannot accept any more items. It only makes sense in the stock compatibility mode.");
+      description: "The title to show in the slot tooltip when the dragged items ca NOT be added into the slot. Only"
+      + " shown when the target slot is not empty.");
   #endregion
 
   #region Part's config fields
@@ -243,15 +229,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       CloseInventoryWindow();
     }
   }
-  #endregion
-
-  #region API fields and properties
-  /// <summary>
-  /// Short name of the checking error for the case when parts cannot fit to the existing slots.
-  /// </summary>
-  /// <seealso cref="NoSlotsErrorReason"/>
-  // ReSharper disable once MemberCanBePrivate.Global
-  public const string NoSlotsReason = "NoSlots";
   #endregion
 
   #region Event static configs
@@ -553,12 +530,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     var errors = new[] {
         new ErrorReason() {
-            shortString = NoSlotsReason,
-            guiString = NoSlotsErrorReason,
+            shortString = StockInventoryLimitReason,
+            guiString = StockContainerLimitReachedErrorText,
         }
     };
     if (logErrors) {
-      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", partName, DbgFormatter.C2S(errors, separator: "\n"));
+      HostedDebugLog.Error(this, "Cannot add '{0}' part.\nERRORS:{1}\nPART NODE:\n{2}",
+                           partName, DbgFormatter.C2S(errors, separator: "\n"), node);
     }
     return errors;
   }
@@ -1160,8 +1138,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
             MoveItemsToSlot(_slotWithPointerFocus, newItem);
           } else {
             checkResult.Add(new ErrorReason() {
-                shortString = "StockInventoryLimit",
-                guiString = UpdateSlotStockContainerLimitErrorText,
+                shortString = StockInventoryLimitReason,
+                guiString = StockContainerLimitReachedErrorText,
             });
           }
         } else {

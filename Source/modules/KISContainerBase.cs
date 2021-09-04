@@ -23,14 +23,24 @@ namespace KIS2 {
 public class KisContainerBase : AbstractPartModule,
                                 IKisInventory {
   #region Localizable GUI strings
+  // ReSharper disable MemberCanBePrivate.Global
+
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<VolumeLType> NotEnoughVolumeText = new Message<VolumeLType>(
+  protected static readonly Message<VolumeLType> NotEnoughVolumeText = new Message<VolumeLType>(
       "",
       defaultTemplate: "Not enough volume: <color=#f88>-<<1>></color>",
-      description: "Message to present to the user at the main status area when an item being"
-      + " placed into the inventory cannot fit it due to not enough free volume.\n"
-      + "The <<1>> parameter is the volume delta that would be needed for the item to fit of"
-      + " type VolumeLType.");
+      description: "Message to present to the user at the main status area when an item being placed into the inventory"
+      + " cannot fit it due to not enough free volume.\n"
+      + "The <<1>> parameter is the volume delta that would be needed for the item to fit of type VolumeLType.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message StockContainerLimitReachedErrorText = new Message(
+      "",
+      defaultTemplate: "Stock container limit reached",
+      description: "An error that is presented when the part cannot be added into a KIS container due to the stock"
+      + " container limitations (any). It only makes sense in the stock compatibility mode.");
+
+  // ReSharper enable MemberCanBePrivate.Global
   #endregion
 
   #region Part's config fields
@@ -63,6 +73,19 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public double contentCost { get; private set; }
+  #endregion
+
+  #region Check reasons
+  /// <summary>Any of the stock storage settings prevent the action.</summary>
+  /// <remarks>
+  /// It depends on the compatibility settings. When all the settings are disabled, this error reason is not expected to
+  /// be seen. The actual error text reason can differ for this type.
+  /// </remarks>
+  /// <seealso cref="StockContainerLimitReachedErrorText"/>
+  protected const string StockInventoryLimitReason = "StockInventoryLimit";
+
+  /// <summary>The part is too large to be added into the inventory.</summary>
+  protected const string VolumeTooLargeReason = "VolumeTooLarge";
   #endregion
 
   #region Inhertitable fields and properties
@@ -189,14 +212,19 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    var item = InventoryItemImpl.ForPartName(this, partName, itemConfig: node);
     var errors = new List<ErrorReason>();
+    var item = InventoryItemImpl.ForPartName(this, partName, itemConfig: node);
+    if (FindStockSlotForItem(item) == -1) {
+      errors.Add(new ErrorReason() {
+          shortString = StockInventoryLimitReason,
+          guiString = StockContainerLimitReachedErrorText,
+      });
+    }
     var partVolume = item.volume;
     if (usedVolume + partVolume > maxVolume) {
-      // Normalize the used volume in case of the inventory is already overloaded. 
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
-          shortString = "VolumeTooLarge",
+          shortString = VolumeTooLargeReason,
           guiString = NotEnoughVolumeText.Format(partVolume - freeVolume),
       });
     }
