@@ -214,7 +214,7 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public virtual ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
+  public virtual List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
     var errors = new List<ErrorReason>();
     var item = InventoryItemImpl.ForPartName(this, partName, itemConfig: node);
@@ -235,7 +235,7 @@ public class KisContainerBase : AbstractPartModule,
     if (logErrors && errors.Count > 0) {
       HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", partName, DbgFormatter.C2S(errors, separator: "\n"));
     }
-    return errors.ToArray();
+    return errors;
   }
 
   /// <inheritdoc/>

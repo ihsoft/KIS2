@@ -48,7 +48,7 @@ public interface IKisInventory {
   /// </param>
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddPart"/>
-  ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false);
+  List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false);
 
   /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>

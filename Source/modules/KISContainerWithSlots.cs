@@ -519,22 +519,19 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override ErrorReason[] CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
-    var res = base.CheckCanAddPart(partName, node, logErrors);
-    if (res.Length> 0) {
-      return res;  // Don't go deeper, it's already failed.
+  public override List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
+    var errors = base.CheckCanAddPart(partName, node, logErrors);
+    if (errors.Count> 0) {
+      return errors;  // Don't go deeper, it's already failed.
     }
     var slot = FindSlotForItem(InventoryItemImpl.ForPartName(this, partName, node));
-    if (slot != null) {
-      return new ErrorReason[0];
+    if (slot == null) {
+      errors.Add(new ErrorReason() {
+          shortString = StockInventoryLimitReason,
+          guiString = StockContainerLimitReachedErrorText,
+      });
     }
-    var errors = new[] {
-        new ErrorReason() {
-            shortString = StockInventoryLimitReason,
-            guiString = StockContainerLimitReachedErrorText,
-        }
-    };
-    if (logErrors) {
+    if (logErrors && errors.Count > 0) {
       HostedDebugLog.Error(this, "Cannot add '{0}' part.\nERRORS:{1}\nPART NODE:\n{2}",
                            partName, DbgFormatter.C2S(errors, separator: "\n"), node);
     }
@@ -1131,7 +1128,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         var avPart = _slotWithPointerFocus.slotItems[0].avPart;
         var itemConfig = _slotWithPointerFocus.slotItems[0].itemConfig;
         var itemErrors = CheckCanAddPart(avPart.name, itemConfig);
-        if (itemErrors.Length == 0) {
+        if (itemErrors.Count == 0) {
           var newItem = AddPart(avPart.name, itemConfig); // It will get added to a random slot.
           if (newItem != null) {
             // Move the item to the the specific slot.
