@@ -1128,20 +1128,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         var avPart = _slotWithPointerFocus.slotItems[0].avPart;
         var itemConfig = _slotWithPointerFocus.slotItems[0].itemConfig;
         var itemErrors = CheckCanAddPart(avPart.name, itemConfig);
-        if (itemErrors.Count == 0) {
-          var newItem = AddPart(avPart.name, itemConfig); // It will get added to a random slot.
-          if (newItem != null) {
-            // Move the item to the the specific slot.
-            MoveItemsToSlot(_slotWithPointerFocus, newItem);
-          } else {
-            checkResult.Add(new ErrorReason() {
-                shortString = StockInventoryLimitReason,
-                guiString = StockContainerLimitReachedErrorText,
-            });
-          }
-        } else {
+        if (itemErrors.Count > 0) {
           checkResult.AddRange(itemErrors);
+          continue;
         }
+        var newItem = AddPart(avPart.name, itemConfig); // It will get added to a random slot.
+        MoveItemsToSlot(_slotWithPointerFocus, newItem); // Move the item to the the specific slot.
       }
       checkResult = checkResult
           .GroupBy(p => p.guiString, StringComparer.OrdinalIgnoreCase)
