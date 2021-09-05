@@ -1181,8 +1181,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     // Either add or set the grabbed items.
     if (KisApi.ItemDragController.isDragging) {
-      HostedDebugLog.Warning(
-          this, "Cancel existing dragging action of {0} items", KisApi.ItemDragController.leasedItems.Length);
       itemsToDrag = KisApi.ItemDragController.leasedItems.Concat(itemsToDrag).ToArray();
       KisApi.ItemDragController.CancelItemsLease();
     }
