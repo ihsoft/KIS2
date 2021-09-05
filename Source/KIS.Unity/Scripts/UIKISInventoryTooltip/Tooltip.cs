@@ -59,6 +59,9 @@ public sealed class Tooltip : UiPrefabBaseScript {
     set {
       titleText.text = value;
       titleText.gameObject.SetActive(!string.IsNullOrEmpty(value));
+      if (titleText.gameObject.activeSelf) {
+        gameObject.SetActive(true);
+      }
     }
   }
 
@@ -70,6 +73,9 @@ public sealed class Tooltip : UiPrefabBaseScript {
     set {
       hintsText.text = value;
       hintsText.gameObject.SetActive(showHints && !string.IsNullOrEmpty(value));
+      if (hintsText.gameObject.activeSelf) {
+        gameObject.SetActive(true);
+      }
     }
   }
 
