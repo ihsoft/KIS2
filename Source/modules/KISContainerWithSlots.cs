@@ -778,8 +778,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     // Here we don't expect failures. The caller has to ensure the items can be consumed.
     foreach (var item in leasedItems) {
       item.SetLocked(false);
-      //FIXME
-      HostedDebugLog.Warning(this, "*** consuming item");
       if (!DeleteItem(item)) {
         HostedDebugLog.Error(this, "Cannot consume item: part={0}, itemId={1}", item.avPart.name, item.itemId);
         item.SetLocked(true); // Just to restore its original state.
