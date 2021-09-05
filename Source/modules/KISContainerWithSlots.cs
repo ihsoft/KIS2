@@ -1050,7 +1050,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
       }
 
-      // Dedup the errors by the short string to not spam on multiple items.
+      // De-dup the errors by the short string to not spam on multiple items.
       _canAcceptDraggedItemsCheckResult = checkResult.Count > 0
           ? checkResult
               .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
