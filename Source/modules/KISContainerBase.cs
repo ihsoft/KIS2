@@ -247,7 +247,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual InventoryItem AddItem(InventoryItem item) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
-    var stockSlotIndex = FindStockSlotForItem(item);
+    var stockSlotIndex = FindStockSlotForItem(item, logChecks: true);
     if (stockSlotIndex == -1) {
       HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
       return null;
@@ -390,9 +390,10 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Gets a stock inventory slot that can accept the given item.</summary>
   /// <remarks>This method may modify the stock module state if an extra slot needs to be added.</remarks>
   /// <param name="item">The item to verify.</param>
+  /// <param name="logChecks">Tells if the stock compatibility related errors or limitations should be logged.</param>
   /// <returns>The stock slot index that can accept the item or <c>-1</c> if there are none.</returns>
   /// <seealso cref="KisApi.CommonConfig.compatibilitySettings"/>
-  int FindStockSlotForItem(InventoryItem item) {
+  int FindStockSlotForItem(InventoryItem item, bool logChecks = false) {
     var itemConfig = item.itemConfig;
     var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, itemConfig);
     var variantName = variant != null ? variant.Name : "";
@@ -401,10 +402,14 @@ public class KisContainerBase : AbstractPartModule,
 
     // Check if the stock compatibility mode is satisfied.
     if (compatibility.addOnlyCargoParts && !KisApi.PartPrefabUtils.GetCargoModule(item.avPart)) {
+      if (logChecks) {
+        HostedDebugLog.Error(this, "The item is not stock cargo compatible: partName={0}", item.avPart.name);
+      }
       return -1;
     }
 
     // First, try to fit the item into an existing occupied slot to preserve the space.
+    var skippedGoodSlots = new List<int>();
     foreach (var existingSlotIndex in stockInventoryModule.storedParts.Keys) {
       maxSlotIndex = Math.Max(existingSlotIndex, maxSlotIndex);
       var slot = stockInventoryModule.storedParts[existingSlotIndex];
@@ -413,6 +418,7 @@ public class KisContainerBase : AbstractPartModule,
       }
       if (compatibility.respectStockStackingLogic
           && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
+        skippedGoodSlots.Add(existingSlotIndex);
         continue;
       }
       var slotState =
@@ -424,6 +430,11 @@ public class KisContainerBase : AbstractPartModule,
       }
       return existingSlotIndex;  // Found a candidate.
     }
+    if (skippedGoodSlots.Count > 0 && logChecks) {
+      HostedDebugLog.Warning(
+          this, "Skipping good stock stacks due to the compatibility settings: candidateSlots={0}, partName={1}",
+          DbgFormatter.C2S(skippedGoodSlots), item.avPart.name);
+    }
 
     // No suitable stock slot found. Get a first empty slot.
     var slotIndex = stockInventoryModule.FirstEmptySlot();
@@ -431,6 +442,10 @@ public class KisContainerBase : AbstractPartModule,
       return slotIndex;
     }
     if (compatibility.respectStockInventoryLayout) {
+      if (logChecks) {
+        HostedDebugLog.Error(
+            this, "Cannot add an extra stock slot in the compatibility mode: partName={0}", item.avPart.name);
+      }
       return -1;
     }
 
