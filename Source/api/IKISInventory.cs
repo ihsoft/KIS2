@@ -2,6 +2,7 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System.Collections.Generic;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
