@@ -743,14 +743,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var matchItems = new[] { item };
     // First, try to store the item into one of the preferred slots.
     if (preferredSlots != null) {
-      slot = preferredSlots.FirstOrDefault(x => x.CheckCanAddItems(matchItems) == null);
+      slot = preferredSlots.FirstOrDefault(x => x.CheckCanAddItems(matchItems).Count == 0);
       if (slot != null) {
         return slot;
       }
     }
     // Then, try to store the item into an existing slot to save slots space.
-    slot = _inventorySlots
-        .FirstOrDefault(x => !x.isEmpty && x.CheckCanAddItems(matchItems) == null);
+    slot = _inventorySlots.FirstOrDefault(x => !x.isEmpty && x.CheckCanAddItems(matchItems).Count == 0);
     if (slot != null) {
       return slot;
     }
@@ -1041,8 +1040,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   void CheckCanAcceptDrops() {
     if (KisApi.ItemDragController.isDragging && _slotWithPointerFocus != null) {
       var allItems = KisApi.ItemDragController.leasedItems;
-      var checkResult = new List<ErrorReason>();
-      checkResult.AddRange(_slotWithPointerFocus.CheckCanAddItems(allItems) ?? new ErrorReason[0]);
+      var checkResult = _slotWithPointerFocus.CheckCanAddItems(allItems);
       if (checkResult.Count == 0) {
         // For the items from other inventories also check the basic constraints.
         foreach (var item in allItems) {

@@ -350,11 +350,11 @@ sealed class InventorySlotImpl {
   /// this option when they don't normally expect any errors.
   /// </param>
   /// <returns>
-  /// <c>null</c> if the item can be added to the slot, or a list of human readable errors.
+  /// An empty list if the item can be added to the slot, or a list of human readable errors otherwise.
   /// </returns>
-  public ErrorReason[] CheckCanAddItems(InventoryItem[] checkItems, bool logErrors = false) {
+  public List<ErrorReason> CheckCanAddItems(InventoryItem[] checkItems, bool logErrors = false) {
     if (checkItems.Length == 0) {
-      return null;
+      return new List<ErrorReason>();
     }
     var refItem = isEmpty ? checkItems[0] : slotItems[0];
 
@@ -362,12 +362,10 @@ sealed class InventorySlotImpl {
     if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
       return ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
     }
-
     var slotVariant = VariantsUtils.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
     if (checkItems.Any(x => VariantsUtils.GetCurrentPartVariant(x.avPart, x.itemConfig) != slotVariant)) {
       return ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
     }
-
     var checkSimilarityValues = _resourceSimilarityValues ?? CalculateSimilarityValues(refItem);
     if (checkItems.Any(x => !CheckIfSameResources(x, checkSimilarityValues))) {
       return ReturnErrorReasons(logErrors, DifferentResourcesReason, DifferentResourcesReasonText);
@@ -376,7 +374,7 @@ sealed class InventorySlotImpl {
       return ReturnErrorReasons(logErrors, DifferentResourceAmountsReason, DifferentResourceAmountsReasonText);
     }
 
-    return null;
+    return new List<ErrorReason>();
   }
 
   /// <summary>Fills tooltip with the slot info.</summary>
@@ -589,9 +587,8 @@ sealed class InventorySlotImpl {
         && !similarityValues.Keys.Except(checkSimilarityValues.Keys).Any();
   }
 
-  /// <summary>
-  /// Returns a standard error reason response.</summary>
-  static ErrorReason[] ReturnErrorReasons(bool logErrors, string reasonCode, string reasonText) {
+  /// <summary>Returns a standard error reason response.</summary>
+  static List<ErrorReason> ReturnErrorReasons(bool logErrors, string reasonCode, string reasonText) {
     var reason = new ErrorReason() {
         shortString = reasonCode,
         guiString = reasonText,
@@ -599,7 +596,7 @@ sealed class InventorySlotImpl {
     if (logErrors) {
       DebugEx.Error("Cannot add items to slot:\n{0}", reason);
     }
-    return new[] { reason };
+    return new List<ErrorReason> { reason };
   }
   #endregion
 }
