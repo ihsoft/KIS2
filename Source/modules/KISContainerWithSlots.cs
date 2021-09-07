@@ -223,7 +223,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       defaultTemplate = "KISv2: Inventory",
       description = "A context menu event that opens GUI for the inventory.")]
   public void ShowInventory() {
-    if (_unityWindow == null) {
+    if (!isGuiOpen) {
       OpenInventoryWindow();
     } else {
       CloseInventoryWindow();
@@ -252,6 +252,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// </summary>
   /// <remarks>The syntax is: &lt;slot-index&gt;-&lt;item-guid&gt;</remarks>
   const string PersistentConfigKisStockSlotMapping = "itemToKisSlotMapping";
+  #endregion
+
+  #region APi fileds and properties
+  /// <summary>Tells if there is a GUI opened for this inventory.</summary>
+  /// <value><c>true</c> if the dialog is opened.</value>
+  public bool isGuiOpen => _unityWindow != null;
   #endregion
 
   /// <summary>Action states for the pointer, hovering over an inventory slot.</summary>
@@ -350,7 +356,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region Unity events
   void Update() {
-    if (_unityWindow != null && Input.anyKeyDown && Time.timeScale > float.Epsilon) {
+    if (isGuiOpen && Input.anyKeyDown && Time.timeScale > float.Epsilon) {
       _slotEventsHandler.HandleActions();
     }
   }
@@ -492,7 +498,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #region DEBUG: IHasGUI implementation
   public void OnGUI() {
     // TODO(ihsoft): Drop this debug code.
-    if (_unityWindow == null || !KisApi.CommonConfig.alphaFlagEnableSamples) {
+    if (!isGuiOpen || !KisApi.CommonConfig.alphaFlagEnableSamples) {
       return;
     }
     if (Event.current.Equals(Event.KeyboardEvent("&1"))) {
@@ -633,7 +639,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #region Local utility methods
   /// <summary>Opens the inventory window.</summary>
   void OpenInventoryWindow() {
-    if (_unityWindow != null) {
+    if (isGuiOpen) {
       return; // Nothing to do.
     }
     HostedDebugLog.Fine(this, "Creating inventory window");
@@ -679,7 +685,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Destroys the inventory window.</summary>
   void CloseInventoryWindow() {
-    if (_unityWindow == null) {
+    if (!isGuiOpen) {
       return;
     }
     HostedDebugLog.Fine(this, "Destroying inventory window");
@@ -703,7 +709,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <summary>Updates stats in the open inventory window.</summary>
   /// <remarks>It's safe to call it when the inventory window is not open.</remarks>
   void UpdateInventoryWindow() {
-    if (_unityWindow == null) {
+    if (!isGuiOpen) {
       return;
     }
     var text = new List<string> {
@@ -800,7 +806,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// the  slots so that the least number of the visible slots change their positions.
   /// </remarks>
   void ArrangeSlots() {
-    if (_unityWindow == null) {
+    if (!isGuiOpen) {
       return; // This method is UI bound. It needs a dialog instance.
     }
     var newSlotGridWidth = (int) _unityWindow.gridSize.x;
