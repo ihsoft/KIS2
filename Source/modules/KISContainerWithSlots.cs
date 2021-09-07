@@ -260,6 +260,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public bool isGuiOpen => _unityWindow != null;
   #endregion
 
+  #region Local fields, constants, and properties.
   /// <summary>Action states for the pointer, hovering over an inventory slot.</summary>
   /// <remarks>Used in the action state machine to simplify actions/hints handling.</remarks>
   /// <seealso cref="_slotEventsHandler"/>
@@ -297,8 +298,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// operations.
   /// </summary>
   readonly EventsHandlerStateMachine<SlotActionMode> _slotEventsHandler = new();
-      
-  #region Local fields, constants, and properties.
+
   /// <summary>Inventory window that is opened at the moment.</summary>
   UiKisInventoryWindow _unityWindow;
 
@@ -539,7 +539,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     return errors;
   }
-  
+
   /// <inheritdoc/>
   public override void UpdateInventoryStats(InventoryItem[] changedItems) {
     base.UpdateInventoryStats(changedItems);
