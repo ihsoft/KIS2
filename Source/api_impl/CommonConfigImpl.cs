@@ -27,6 +27,9 @@ public sealed class CommonConfigImpl {
   /// <summary>Tells if items in the inventories can be freely adjusted in flight.</summary>
   public bool builderModeEnabled => _builderModeEnabled;
 
+  /// <summary>Tells if the "sample parts" hotkey should be active.</summary>
+  [PersistentField("AlphaFlags/enableInventorySamples")]
+  public bool alphaFlagEnableSamples = false;
   /// <summary>Various settings tha affect how the inventory icons are made.</summary>
   /// <remarks>
   /// All the default values below give a nice look in KSP 1.12. It may not be the case in the future versions.

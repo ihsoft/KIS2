@@ -491,28 +491,24 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region DEBUG: IHasGUI implementation
   public void OnGUI() {
-    if (_unityWindow == null) {
+    // TODO(ihsoft): Drop this debug code.
+    if (_unityWindow == null || !KisApi.CommonConfig.alphaFlagEnableSamples) {
       return;
     }
-    // FIXME: drop this debug code.
-    if (Event.current.Equals(Event.KeyboardEvent("1")) && _unityWindow != null) {
-      AddFuelParts(1, 1, 3);
+    if (Event.current.Equals(Event.KeyboardEvent("&1"))) {
+      AddFuelParts(1, 1, num: 3);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("2")) && _unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("&2"))) {
       AddFuelParts(0.1f, 0.5f);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("3")) && _unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("&3"))) {
       AddFuelParts(0.5f, 0.5f);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("4")) && _unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("&4"))) {
       AddFuelParts(1, 1);
     }
-    if (Event.current.Equals(Event.KeyboardEvent("5")) && _unityWindow != null) {
+    if (Event.current.Equals(Event.KeyboardEvent("&5"))) {
       AddFuelParts(0.1f, 0.5f, num: 3, same: true);
-    }
-    if (Event.current.Equals(Event.KeyboardEvent("6")) && _unityWindow != null
-        && _inventorySlots.Count > 0 && _inventorySlots[0].slotItems.Length > 0) {
-      _inventorySlots[0].slotItems.ToList().ForEach(x => DeleteItem(x));
     }
   }
   #endregion
