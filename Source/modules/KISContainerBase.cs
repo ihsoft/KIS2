@@ -221,13 +221,11 @@ public class KisContainerBase : AbstractPartModule,
           shortString = StockInventoryLimitReason,
           guiString = StockContainerLimitReachedErrorText,
       });
-    }
-    var partVolume = item.volume;
-    if (usedVolume + partVolume > maxVolume) {
+    } else if (usedVolume + item.volume > maxVolume) {
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
           shortString = VolumeTooLargeReason,
-          guiString = NotEnoughVolumeText.Format(partVolume - freeVolume),
+          guiString = NotEnoughVolumeText.Format(item.volume - freeVolume),
       });
     }
     if (logErrors && errors.Count > 0) {
