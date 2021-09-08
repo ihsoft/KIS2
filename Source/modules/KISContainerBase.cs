@@ -44,11 +44,6 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Part's config fields
-  /// <summary>Maximum volume that this container can contain.</summary>
-  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
-  [KSPField]
-  public double maxContainerVolume;
-
   /// <summary>Maximum size of the item that can fit the container.</summary>
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
@@ -63,10 +58,10 @@ public class KisContainerBase : AbstractPartModule,
   public Vector3 maxInnerSize => maxItemSize;
 
   /// <inheritdoc/>
-  public double maxVolume => maxContainerVolume;
+  public double maxVolume => stockInventoryModule.packedVolumeLimit;
 
   /// <inheritdoc/>
-  public double usedVolume { get; private set; }
+  public double usedVolume => stockInventoryModule.volumeCapacity;
 
   /// <inheritdoc/>
   public double contentMass { get; private set; }
@@ -288,7 +283,6 @@ public class KisContainerBase : AbstractPartModule,
       HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Length);
       Array.ForEach(changedItems, item => item.UpdateConfig());
     }
-    usedVolume = inventoryItems.Sum(item => item.volume);
     contentMass = inventoryItems.Sum(item => item.fullMass);
     contentCost = inventoryItems.Sum(item => item.fullCost);
   }
