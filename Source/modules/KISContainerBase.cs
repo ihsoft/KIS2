@@ -125,19 +125,17 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Local fields and properties
-  /// <summary>Index to lookup stock slot index to the items it holds.</summary>
-  readonly Dictionary<int, HashSet<InventoryItem>> _stockSlotToItemsMap = new();
-
-  /// <summary>Index to lookup item Id to the stock slot index that holds it.</summary>
-  readonly Dictionary<string, int> _itemsToStockSlotMap = new();
-  #endregion
-
-  #region Persistent node names
   /// <summary>
   /// Name of the config value that holds a mapping between a stock inventory slot and the KIS inventory item ID. 
   /// </summary>
   /// <remarks>The syntax is: &lt;slot-index&gt;-&lt;item-guid&gt;</remarks>
   const string PersistentConfigStockSlotMapping = "itemToStockSlotMapping";
+
+  /// <summary>Index to lookup stock slot index to the items it holds.</summary>
+  readonly Dictionary<int, HashSet<InventoryItem>> _stockSlotToItemsMap = new();
+
+  /// <summary>Index to lookup item Id to the stock slot index that holds it.</summary>
+  readonly Dictionary<string, int> _itemsToStockSlotMap = new();
   #endregion
 
   #region AbstractPartModule overrides
