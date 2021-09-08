@@ -71,7 +71,7 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
     var dialog = new GameObject("KisBuilder-ItemSpawnDialog-" + inventory.part.flightID);
     _currentDialog = dialog.AddComponent<SpawnItemDialogController>();
     _currentDialog._tgtInventory = inventory;
-    DebugEx.Info("Spawn a new part dialog for inventory: dlg={0}, inventory={1}", _currentDialog, inventory);
+    DebugEx.Info("Spawn a new part dialog: dlg={0}, inventory={1}", _currentDialog, inventory);
   }
 
   /// <summary>Closes the currently open dialog if any.</summary>
@@ -79,8 +79,7 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
     if (_currentDialog == null) {
       return;
     }
-    DebugEx.Info(
-        "Spawn a new part dialog for inventory: dlg={0}, inventory={1}", _currentDialog, _currentDialog._tgtInventory);
+    DebugEx.Info("Close a new part dialog: dlg={0}, inventory={1}", _currentDialog, _currentDialog._tgtInventory);
     Hierarchy.SafeDestroy(_currentDialog);
     _currentDialog = null;
   }
