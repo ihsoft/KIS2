@@ -1105,8 +1105,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <remarks>It's an action, invoked from the slot events state machine.</remarks>
   /// <seealso cref="_slotEventsHandler"/>
   void SpawnNewItemInFocusedSlot() {
-    //FIXME
-    DebugEx.Warning("*** spawn new item2");
+    SpawnItemDialogController.ShowDialog(this);
   }
 
   /// <summary>Adds or removes items to the hovered slot in the edit or constructor mode.</summary>

@@ -104,6 +104,7 @@
     <Compile Include="controllers\EditorItemDragController.cs" />
     <Compile Include="controllers\FlightItemDragController.cs" />
     <Compile Include="controllers\KisModLoadController.cs" />
+    <Compile Include="controllers\SpawnItemDialogController.cs" />
     <Compile Include="impl\EventsHandlerStateMachine.cs" />
     <Compile Include="impl\InventorySlotImpl.cs" />
     <Compile Include="impl\VolumeLType.cs" />
