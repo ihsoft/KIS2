@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using KSP.UI.Screens;
 using KSPDev.ProcessingUtils;
 using UnityEngine;
 
@@ -117,6 +118,24 @@ public class KisContainerBase : AbstractPartModule,
     }
   }
   ModuleInventoryPart _stockInventoryModule;
+
+  /// <summary>Returns the stock UI inventory action.</summary>
+  /// <remarks>It controls the GUI behavior of the stock inventory PAW.</remarks>
+  /// <value>The UI action inventory. It's never <c>null</c>.</value>
+  protected UIPartActionInventory stockInventoryUiAction {
+    get {
+      if (_stockInventoryUiAction == null) {
+        _stockInventoryUiAction = stockInventoryModule.Fields
+            .OfType<BaseField>()
+            .SelectMany(f => new[] { f.uiControlFlight, f.uiControlEditor })
+            .OfType<UI_Grid>()
+            .Select(x => x.pawInventory)
+            .First(x => x != null);
+      }
+      return _stockInventoryUiAction;
+    }
+  }
+  UIPartActionInventory _stockInventoryUiAction;
   #endregion
 
   #region Local fields and properties
@@ -131,6 +150,64 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <summary>Index to lookup item Id to the stock slot index that holds it.</summary>
   readonly Dictionary<string, int> _itemsToStockSlotMap = new();
+  #endregion
+
+  #region Helper scope class
+  /// <summary>Helper scope class that temporarily increases the stock inventory slot stack capacity.</summary>
+  /// <remarks>Use it in the non-compatible modes to pack more items into the stock inventory.</remarks>
+  class StackCapacityScope : IDisposable {
+    readonly KisContainerBase _kisBaseModule;
+    readonly StoredPart _storedPart;
+    readonly int _originalStackCapacity;
+    readonly int _originalQuantity;
+
+    /// <summary>The maximum size of the stock inventory slot stack.</summary>
+    const int MaxStackCapacity = 99; // Keep it two-digits for better UI experience.
+
+    /// <summary>Temporarily increases the stack capacity and restores it back on the disposal.</summary>
+    /// <remarks>
+    /// The stack capacity will be set to a high (but limited) value to let the stock logic accommodating more items. On
+    /// the scope exit, either the original setting will be restored or a new, bigger value, will be set.
+    /// </remarks>
+    /// <param name="kisBaseModule">The KIS module on which behalf the action is being performed.</param>
+    /// <param name="storedPart">The stock slot to modify.</param>
+    /// <seealso cref="MaxStackCapacity"/>
+    public StackCapacityScope(KisContainerBase kisBaseModule, StoredPart storedPart) {
+      _kisBaseModule = kisBaseModule;
+      _storedPart = storedPart;
+      _originalStackCapacity = storedPart.stackCapacity;
+      _originalQuantity = storedPart.quantity;
+      storedPart.stackCapacity = MaxStackCapacity;
+      storedPart.snapshot.moduleCargoStackableQuantity = MaxStackCapacity;
+    }
+
+    /// <summary>Restores the original stack capacity or sets a new one.</summary>
+    /// <remarks>
+    /// The original capacity is restored if the slot quantity is below or equal to it. Otherwise, the stack capacity is
+    /// set to the current quantity.
+    /// </remarks>
+    public void Dispose() {
+      if (_storedPart.quantity == _originalQuantity) {
+        _storedPart.stackCapacity = _originalStackCapacity;
+        _storedPart.snapshot.moduleCargoStackableQuantity = _originalStackCapacity;
+        return; // Nothing has changed, no need to send updates.
+      }
+      var newStackCapacity = Math.Max(_storedPart.quantity, _originalStackCapacity);
+      if (newStackCapacity > _originalStackCapacity) {
+        HostedDebugLog.Fine(
+            _kisBaseModule,
+            "Increasing stock slot stacking capacity: old={0}, new={1}", _originalStackCapacity, newStackCapacity);
+        _storedPart.stackCapacity = newStackCapacity;
+        _storedPart.snapshot.moduleCargoStackableQuantity = newStackCapacity;
+      } else {
+        _storedPart.stackCapacity = _originalStackCapacity;
+        _storedPart.snapshot.moduleCargoStackableQuantity = _originalStackCapacity;
+      }
+      // The downstream listeners had a notification with the slot size modified. Let them know it's now restored.
+      GameEvents.onModuleInventorySlotChanged.Fire(_kisBaseModule.stockInventoryModule, _storedPart.slotIndex);
+      GameEvents.onModuleInventoryChanged.Fire(_kisBaseModule.stockInventoryModule);
+    }
+  }
   #endregion
 
   #region AbstractPartModule overrides
@@ -396,18 +473,27 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // First, try to fit the item into an existing occupied slot to preserve the space.
-    var skippedGoodSlots = new List<int>();
     foreach (var existingSlotIndex in stockInventoryModule.storedParts.Keys) {
       maxSlotIndex = Math.Max(existingSlotIndex, maxSlotIndex);
       var slot = stockInventoryModule.storedParts[existingSlotIndex];
       if (!slot.partName.Equals(item.avPart.name)) {
         continue;
       }
+
+      // Verify if the item must not be added due to the stock inventory limit.
       if (compatibility.respectStockStackingLogic
           && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
-        skippedGoodSlots.Add(existingSlotIndex);
         continue;
       }
+
+      // Verify if we can go above the stock limit.
+      using (new StackCapacityScope(this, slot)) {
+        if (!stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
+          continue;
+        }
+      }
+
+      // In the stock inventory the part states in the slot must be exactly the same.
       var slotState =
           KisApi.PartNodeUtils.MakeComparablePartNode(
               KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(slot.snapshot));
@@ -416,11 +502,6 @@ public class KisContainerBase : AbstractPartModule,
         continue;
       }
       return existingSlotIndex;  // Found a candidate.
-    }
-    if (skippedGoodSlots.Count > 0 && logChecks) {
-      HostedDebugLog.Warning(
-          this, "Skipping good stock stacks due to the compatibility settings: candidateSlots={0}, partName={1}",
-          DbgFormatter.C2S(skippedGoodSlots), item.avPart.name);
     }
 
     // No suitable stock slot found. Get a first empty slot.
@@ -451,33 +532,16 @@ public class KisContainerBase : AbstractPartModule,
   /// The caller must ensure the item can be added into the slot. It includes (but is not limited to) the check for the
   /// variant or resources on the part.</p>
   /// <p>
-  /// This method has a compatibility setting. When set to be compatible with the KSP stock logic, it's (mostly) using
-  /// the stock module methods. In the non-compatible mode a completely custom logic is executed. This gives more
-  /// flexibility, but the cost is less compatibility.
+  /// This method <i>always</i> fit the item into the slot. If the slot is not stock compatible for the item, then the
+  /// needed adjustments are made to the inventory.
   /// </p> 
   /// </remarks>
   /// <param name="item">The item to add.</param>
   /// <param name="stockSlotIndex">The stock slot index to add into.</param>
   /// <seealso cref="FindStockSlotForItem"/>
-  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic"/>
   void AddItemToStockSlot(InventoryItem item, int stockSlotIndex) {
-    if (KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic) {
-      AddItemToStockSlot_StockGame(item, stockSlotIndex);
-    } else {
-      AddItemToStockSlot_Kis(item, stockSlotIndex);
-    }
-  }
-
-  /// <summary>Updates the stock inventory module using the stock methods.</summary>
-  void AddItemToStockSlot_StockGame(InventoryItem item, int stockSlotIndex) {
-    if (stockSlotIndex >= stockInventoryModule.InventorySlots) {
-      HostedDebugLog.Warning(
-          this, "Extra stock slots cannot be handled via the stock logic: stockSlot=#{0}, part={1}",
-          stockSlotIndex, item.avPart.name);
-      AddItemToStockSlot_Kis(item, stockSlotIndex);
-      return;
-    }
-    UpdateStockSlotIndex(stockSlotIndex, item);
+    UpdateStockSlotIndex(stockSlotIndex, item); // This must go before the stock inventory change.
+    SyncStockSlots(stockSlotIndex);
     if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
         || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
       stockInventoryModule.StoreCargoPartAtSlot(
@@ -485,102 +549,25 @@ public class KisContainerBase : AbstractPartModule,
               vessel, item.itemConfig, keepPersistentId: true), stockSlotIndex);
     } else {
       var slot = stockInventoryModule.storedParts[stockSlotIndex];
-      stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
+      using (new StackCapacityScope(this, slot)) {
+        stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
+      }
     }
-  }
-
-  /// <summary>Updates the stock inventory using custom KIS logic.</summary>
-  /// <remarks>The caller must ensure that the item fits the slot!</remarks>
-  void AddItemToStockSlot_Kis(InventoryItem item, int stockSlotIndex) {
-    if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
-        || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
-      var pPart = KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(vessel, item.itemConfig, keepPersistentId: true);
-      InvokePrivateStockModuleMethod("RefillEVAPropellantOnStoring", pPart); //FIXME: make a constant?
-      var storedPart = new StoredPart(pPart.partName, stockSlotIndex) {
-          slotIndex = stockSlotIndex,
-          snapshot = pPart,
-          variantName = pPart.moduleVariantName,
-          quantity = 1,
-          stackCapacity = pPart.moduleCargoStackableQuantity
-      };
-      stockInventoryModule.storedParts.Add(stockSlotIndex, storedPart);
-      InvokePrivateStockModuleMethod("ResetInventoryPartsByName");
-    } else {
-      stockInventoryModule.storedParts[stockSlotIndex].quantity += 1;
-    }
-    UpdateStockSlotIndex(stockSlotIndex, item);
-
-    if (stockSlotIndex < stockInventoryModule.InventorySlots) {
-      GameEvents.onModuleInventorySlotChanged.Fire(stockInventoryModule, stockSlotIndex);
-    } else {
-      HostedDebugLog.Fine(
-          this, "Not sending 'onModuleInventorySlotChanged' for the extra slots: stockSlot=#{0}", stockSlotIndex);
-    }
-    GameEvents.onModuleInventoryChanged.Fire(stockInventoryModule);
   }
 
   /// <summary>Removes the item from a stock inventory slot.</summary>
   /// <param name="item">The item to remove.</param>
   void RemoveItemFromStockSlot(InventoryItem item) {
-    if (KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic) {
-      RemoveItemFromStockSlot_StockGame(item);
-    } else {
-      RemoveItemFromStockSlot_Kis(item);
-    }
-  }
-
-  /// <summary>Updates the stock inventory module using (mostly) the stock methods.</summary>
-  /// <remarks>
-  /// It falls back to the KIS method when the stock slot have more items than allowed by ste stock logic. It's done to
-  /// let the mod working when the compatibility settings set to <c>true</c>. 
-  /// </remarks>
-  void RemoveItemFromStockSlot_StockGame(InventoryItem item) {
     var stockSlotIndex = _itemsToStockSlotMap[item.itemId];
-    if (stockSlotIndex >= stockInventoryModule.InventorySlots) {
-      HostedDebugLog.Warning(
-          this, "Extra stock slots cannot be handled via the stock logic: stockSlot=#{0}", stockSlotIndex);
-      RemoveItemFromStockSlot_Kis(item);
-      return;
-    }
     UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
+    SyncStockSlots(stockSlotIndex);
     var slot = stockInventoryModule.storedParts[stockSlotIndex];
     var newStackQuantity = slot.quantity - 1;
-    if (newStackQuantity > slot.stackCapacity) {
-      // This can happen if the slot was previously made with a different compatibility setting. 
-      HostedDebugLog.Warning(
-          this,
-          "Stack size is bigger than capacity, use KIS update method: slotIndex={0}, quantity={1}, capacity={2}",
-          stockSlotIndex, newStackQuantity, slot.stackCapacity);
-      RemoveItemFromStockSlot_Kis(item);
-      return;
-    }
     if (newStackQuantity == 0) {
       stockInventoryModule.ClearPartAtSlot(stockSlotIndex);
     } else {
       stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, newStackQuantity, slot.variantName);
     }
-  }
-
-  /// <summary>Updates the stock inventory using custom KIS logic.</summary>
-  void RemoveItemFromStockSlot_Kis(InventoryItem item) {
-    var stockSlotIndex = _itemsToStockSlotMap[item.itemId];
-    var slot = stockInventoryModule.storedParts[stockSlotIndex];
-    var newStackQuantity = slot.quantity - 1;
-    if (newStackQuantity == 0) {
-      stockInventoryModule.storedParts.Remove(stockSlotIndex);
-      InvokePrivateStockModuleMethod("ResetInventoryPartsByName");
-    } else {
-      slot.quantity = newStackQuantity;
-    }
-    UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
-
-    if (stockSlotIndex < stockInventoryModule.InventorySlots) {
-      GameEvents.onModuleInventorySlotChanged.Fire(stockInventoryModule, stockSlotIndex);
-    } else {
-      HostedDebugLog.Fine(
-          this, "Not sending 'onModuleInventorySlotChanged' for the extra slots: stockSlot=#{0}", stockSlotIndex);
-    }
-    GameEvents.onModuleInventoryChanged.Fire(stockInventoryModule);
   }
 
   /// <summary>Reacts on the stock inventory change and updates the KIS inventory accordingly.</summary>
@@ -637,6 +624,43 @@ public class KisContainerBase : AbstractPartModule,
       return null;
     }
     return method.Invoke(stockInventoryModule, args);
+  }
+
+  /// <summary>Ensures that the stock inventory GUI is in sync with the extended inventory slots.</summary>
+  /// <remarks>
+  /// The stock logic only handles the slots within the part settings. This method ensures that the stock logic is ready
+  /// to receive updates to the slots that are <i>beyond</i> the part config. Such slots may be created by KIS when it
+  /// cannot fit a new item into any of the existing stock slots. They are not visible in the stock GUI.
+  /// </remarks>
+  /// <param name="maxSlotIndex">
+  /// The slot index up to which the stock logic should be fine in handling the updates.
+  /// </param>
+  /// <seealso cref="FindStockSlotForItem"/>
+  /// <seealso cref="AddItemToStockSlot"/>
+  void SyncStockSlots(int maxSlotIndex) {
+    var elementsAddded = 0;
+    while (stockInventoryUiAction.slotPartIcon.Count <= maxSlotIndex) {
+      var newStockSlotUi = MakeStockSlotUiObject(stockInventoryUiAction.slotPartIcon.Count);
+      stockInventoryUiAction.slotPartIcon.Add(newStockSlotUi.GetComponent<EditorPartIcon>());
+      stockInventoryUiAction.slotButton.Add(newStockSlotUi.GetComponent<UIPartActionInventorySlot>());
+      elementsAddded++;
+    }
+    if (elementsAddded > 0) {
+      HostedDebugLog.Fine(
+          this, "Added extra stock inventory GUI elements: elements={0}, refSlot=#{1}", elementsAddded, maxSlotIndex);
+    }
+  }
+
+  /// <summary>Creates a fake stock slot UI element.</summary>
+  /// <remarks>This element will not be visible anywhere. It's only made to keep the stock logic consistent.</remarks>
+  /// <param name="stockSlotIndex"></param>
+  /// <returns>An inactive GUI element object.</returns>
+  GameObject MakeStockSlotUiObject(int stockSlotIndex) {
+    var slotObject = Instantiate(stockInventoryUiAction.slotPrefab, stockInventoryUiAction.contentTransform);
+    slotObject.SetActive(false); // It's not a real GUI element!
+    var slotUi = slotObject.AddComponent<UIPartActionInventorySlot>();
+    slotUi.Setup(stockInventoryUiAction, stockSlotIndex);
+    return slotObject;
   }
   #endregion
 }
