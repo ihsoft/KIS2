@@ -185,18 +185,15 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public override void OnAwake() {
-    base.OnAwake();
-    if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) {
-      return;
-    }
+  public override void OnStart(StartState state) {
+    base.OnStart(state);
     var inventorySlotControl = stockInventoryModule.Fields[nameof(stockInventoryModule.InventorySlots)];
-    if (KisApi.CommonConfig.compatibilitySettings.hideStockGui && inventorySlotControl != null) {
+    var compatibilitySettings = KisApi.CommonConfig.compatibilitySettings;
+    if (compatibilitySettings.hideStockGui && inventorySlotControl != null) {
       HostedDebugLog.Fine(this, "Disabling the stock inventory GUI settings");
-      if (!KisApi.CommonConfig.compatibilitySettings.respectStockInventoryLayout
-          && !KisApi.CommonConfig.compatibilitySettings.respectStockStackingLogic) {
-        HostedDebugLog.Warning
-            (this, "Some of the compatibility settings are not active! The stock GUI may (and likely will) fail.");
+      if (!compatibilitySettings.respectStockInventoryLayout || !compatibilitySettings.respectStockStackingLogic) {
+        HostedDebugLog.Warning(
+            this, "Some of the compatibility settings are not active! The stock GUI may (and likely will) fail.");
       }
       inventorySlotControl.guiActive = false;
       inventorySlotControl.guiActiveEditor = false;
