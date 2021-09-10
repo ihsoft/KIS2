@@ -100,7 +100,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <seealso cref="InventoryItem.itemId"/>
   protected readonly Dictionary<string, InventoryItem> inventoryItemsMap = new();
 
-  /// <summary>The stock inventory module on this part, which KIS is being shadowing.</summary>
+  /// <summary>Returns the stock inventory module on this part, which KIS is being shadowing.</summary>
   /// <remarks>
   /// The modules that depend on the stock inventory must verify if this property is <c>null</c>, and if it is, then the
   /// dependent module logic must be completely disabled to avoid the errors down the line.
@@ -518,6 +518,7 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // Find any unused stock slot index, even if it's beyond the stock logic address space.
+    // Note that the index of a slot that does not exist may be returned!
     slotIndex = 0;
     while (stockInventoryModule.storedParts.TryGetValue(slotIndex, out var storedPart) && !storedPart.IsEmpty) {
       slotIndex++;
@@ -530,7 +531,8 @@ public class KisContainerBase : AbstractPartModule,
   /// <remarks>
   /// <p>
   /// The caller must ensure the item can be added into the slot. It includes (but is not limited to) the check for the
-  /// variant or resources on the part.</p>
+  /// variant or resources on the part.
+  /// </p>
   /// <p>
   /// This method <i>always</i> fit the item into the slot. If the slot is not stock compatible for the item, then the
   /// needed adjustments are made to the inventory.
@@ -566,6 +568,7 @@ public class KisContainerBase : AbstractPartModule,
     if (newStackQuantity == 0) {
       stockInventoryModule.ClearPartAtSlot(stockSlotIndex);
     } else {
+      // Assuming the slot was properly updated to correct the capacity.
       stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, newStackQuantity, slot.variantName);
     }
   }

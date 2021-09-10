@@ -254,7 +254,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   const string PersistentConfigKisStockSlotMapping = "itemToKisSlotMapping";
   #endregion
 
-  #region APi fileds and properties
+  #region API fileds and properties
   /// <summary>Tells if there is a GUI opened for this inventory.</summary>
   /// <value><c>true</c> if the dialog is opened.</value>
   public bool isGuiOpen => _unityWindow != null;
