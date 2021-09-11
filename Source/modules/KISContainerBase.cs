@@ -605,30 +605,6 @@ public class KisContainerBase : AbstractPartModule,
     }
   }
 
-  /// <summary>Calls a protected/private method on the stock cargo inventory module.</summary>
-  /// <remarks>
-  /// It's a very bad practice to call the non-public members via a reflection. However, copy/pasting the logic from the
-  /// stock game is another bad practice due to the implementation can get changed easily. The chances that a
-  /// private/protected method gets removed are much less than the implementation logic change. So, until the stock
-  /// inventory module is refactored for inheritance, this is the only solution we have.  
-  /// </remarks>
-  /// <param name="methodName">
-  /// The non-public method name to call on the <see cref="stockInventoryModule"/> module.
-  /// </param>
-  /// <param name="args">Optional arguments to pass.</param>
-  /// <returns>
-  /// The return result of the method. If the method declares the return result as <c>void</c>, then it won't be
-  /// possible to distinguish a <c>null</c> result from the "no result" output.
-  /// </returns>
-  object InvokePrivateStockModuleMethod(string methodName, params object[] args) {
-    var method = stockInventoryModule.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
-    if (method == null) {
-      HostedDebugLog.Error(this, "Cannot find stock cargo module method: name={0}", methodName);
-      return null;
-    }
-    return method.Invoke(stockInventoryModule, args);
-  }
-
   /// <summary>Ensures that the stock inventory GUI is in sync with the extended inventory slots.</summary>
   /// <remarks>
   /// The stock logic only handles the slots within the part settings. This method ensures that the stock logic is ready
