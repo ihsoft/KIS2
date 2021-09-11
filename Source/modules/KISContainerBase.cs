@@ -617,16 +617,16 @@ public class KisContainerBase : AbstractPartModule,
   /// <seealso cref="FindStockSlotForItem"/>
   /// <seealso cref="AddItemToStockSlot"/>
   void SyncStockSlots(int maxSlotIndex) {
-    var elementsAddded = 0;
+    var elementsAdded = 0;
     while (stockInventoryUiAction.slotPartIcon.Count <= maxSlotIndex) {
       var newStockSlotUi = MakeStockSlotUiObject(stockInventoryUiAction.slotPartIcon.Count);
       stockInventoryUiAction.slotPartIcon.Add(newStockSlotUi.GetComponent<EditorPartIcon>());
       stockInventoryUiAction.slotButton.Add(newStockSlotUi.GetComponent<UIPartActionInventorySlot>());
-      elementsAddded++;
+      elementsAdded++;
     }
-    if (elementsAddded > 0) {
+    if (elementsAdded > 0) {
       HostedDebugLog.Fine(
-          this, "Added extra stock inventory GUI elements: elements={0}, refSlot=#{1}", elementsAddded, maxSlotIndex);
+          this, "Added extra stock inventory GUI elements: elements={0}, refSlot=#{1}", elementsAdded, maxSlotIndex);
     }
   }
 
