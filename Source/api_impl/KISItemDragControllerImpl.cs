@@ -237,7 +237,6 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     if (_dragTracker.isInCallbackCycle) {
       throw new InvalidOperationException("Cannot cancel dragging from a drag callback!");
     }
-    DebugEx.Info("Cancel dragged items: count={0}", leasedItems.Length);
     SafeCallbacks.Action(_cancelItemsLeaseFn);
     ClearLease(isCancelled: true);
   }
