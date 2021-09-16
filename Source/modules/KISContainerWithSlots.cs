@@ -917,7 +917,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     // Anything that rest, adds at the tail. It's a bad condition.
     foreach (var invisibleSlot in invisibleSlots) {
       HostedDebugLog.Warning(this, "Hidden slot in inventory: part={0}, count={1}",
-                             invisibleSlot.slotItems[0].avPart.name, invisibleSlot.slotItems.Length);
+                             invisibleSlot.slotItems[0].avPart.name, invisibleSlot.slotItems.Count);
       _inventorySlots.Add(invisibleSlot);
     }
 
@@ -952,7 +952,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     KisApi.ItemDragController.RegisterTarget(this);
     var isDragging = KisApi.ItemDragController.isDragging;
     var isSourceSlotFocused = _dragSourceSlot != null && _dragSourceSlot == _slotWithPointerFocus;
-    var isEmptySlotFocused = _slotWithPointerFocus.slotItems.Length == 0;
+    var isEmptySlotFocused = _slotWithPointerFocus.slotItems.Count == 0;
     if (isDragging && isSourceSlotFocused) {
       _slotEventsHandler.SetState(SlotActionMode.DraggingOverSourceSlot);
     } else if (isDragging) {

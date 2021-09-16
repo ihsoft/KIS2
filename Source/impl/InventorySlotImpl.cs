@@ -253,7 +253,7 @@ sealed class InventorySlotImpl {
   int _reservedItems;
 
   /// <summary>Inventory items in the slot.</summary>
-  public InventoryItem[] slotItems { get; private set; } = new InventoryItem[0];
+  public List<InventoryItem> slotItems { get; private set; } = new();
 
   /// <summary>Generalized icon of the slot.</summary>
   /// <value>The texture that represents the slot.</value>
@@ -263,7 +263,7 @@ sealed class InventorySlotImpl {
           : null;
 
   /// <summary>Tells if this slot has any part item.</summary>
-  public bool isEmpty => slotItems.Length == 0;
+  public bool isEmpty => slotItems.Count == 0;
 
   // ReSharper enable MemberCanBePrivate.Global
   #endregion
@@ -385,7 +385,7 @@ sealed class InventorySlotImpl {
       return;
     }
     //FIXME: consider reservedItems or better the take one modifier
-    if (slotItems.Length == 1) {
+    if (slotItems.Count == 1) {
       UpdateSingleItemTooltip(tooltip);
     } else {
       UpdateMultipleItemsTooltip(tooltip);
@@ -515,7 +515,7 @@ sealed class InventorySlotImpl {
       return;
     }
     _unitySlot.slotImage = iconImage;
-    _unitySlot.stackSize = "x" + (slotItems.Length - reservedItems);
+    _unitySlot.stackSize = "x" + (slotItems.Count - reservedItems);
     _unitySlot.resourceStatus = GetSlotResourceAmountStatus();
 
     // Slot science data.
