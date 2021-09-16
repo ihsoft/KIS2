@@ -48,6 +48,14 @@ public interface InventoryItem {
   /// <seealso cref="UpdateConfig"/>
   ConfigNode itemConfig { get; }
 
+  /// <summary>The part's snapshot.</summary>
+  /// <remarks>
+  /// This instance must NOT be changed. The changes will not be propagated to the item config, but they may affect the
+  /// downstream logic. In case of the item state needs to be changed, use <see cref="itemConfig"/>.
+  /// </remarks>
+  /// <seealso cref="UpdateConfig"/>
+  ProtoPartSnapshot snapshot { get; }
+
   /// <summary>Cached volume that part would take in its current state.</summary>
   /// <remarks>
   /// The persisted state can greatly affect the volume. E.g. most part take several times more volume when deployed.

@@ -26,6 +26,12 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public ConfigNode itemConfig { get; }
+
+  /// <inheritdoc/>
+  public ProtoPartSnapshot snapshot =>
+      _snapshot ??= KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(
+          inventory?.ownerVessel, itemConfig, keepPersistentId: true);
+  ProtoPartSnapshot _snapshot;
   
   /// <inheritdoc/>
   public Part physicalPart { get; }
@@ -74,6 +80,7 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public void UpdateConfig() {
+    _snapshot = null; // Force refresh on access.
     variant = VariantsUtils.GetCurrentPartVariant(avPart, itemConfig);
     volume = KisApi.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
     size = KisApi.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
