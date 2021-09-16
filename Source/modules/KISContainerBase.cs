@@ -351,17 +351,19 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual void UpdateInventoryStats(InventoryItem[] changedItems) {
-    ArgumentGuard.NotNull(changedItems, nameof(changedItems), context: this);
-    if (changedItems == null) {
-      HostedDebugLog.Fine(this, "Updating all items in the inventory...");
-      Array.ForEach(inventoryItems, item => item.UpdateConfig());
-    } else if (changedItems.Length > 0) {
-      HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Length);
-      Array.ForEach(changedItems, item => item.UpdateConfig());
+  public virtual void UpdateInventoryStats(ICollection<InventoryItem> changedItems) {
+    if (changedItems != null) {
+      HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Count);
+      foreach (var changedItem in changedItems) {
+        changedItem.UpdateConfig();
+      }
     }
-    contentMass = inventoryItems.Sum(item => item.fullMass);
-    contentCost = inventoryItems.Sum(item => item.fullCost);
+    contentMass = 0.0;
+    contentCost = 0.0;
+    foreach (var inventoryItem in inventoryItems.Values) {
+      contentMass += inventoryItem.fullMass;
+      contentCost += inventoryItem.fullCost;
+    }
   }
 
   /// <inheritdoc/>

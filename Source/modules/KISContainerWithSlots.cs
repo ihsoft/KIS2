@@ -541,7 +541,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <inheritdoc/>
-  public override void UpdateInventoryStats(InventoryItem[] changedItems) {
+  public override void UpdateInventoryStats(ICollection<InventoryItem> changedItems) {
     base.UpdateInventoryStats(changedItems);
     UpdateInventoryWindow();
   }
