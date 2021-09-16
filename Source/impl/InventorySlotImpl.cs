@@ -315,27 +315,35 @@ sealed class InventorySlotImpl {
     return isVisible && _unitySlot == checkUnitySlot;
   }
 
-  /// <summary>Adds items to the slot.</summary>
+  /// <summary>Adds an item into the slot.</summary>
   /// <remarks>
-  /// This method doesn't check preconditions. The items will be added even if it breaks the slot's
-  /// logic. The caller is responsible to verify if the item(s) can be added via the
-  /// <see cref="CheckCanAddItems"/> before attempting to add anything.
+  /// This method doesn't check preconditions. The item will be added even if it breaks the slot's
+  /// logic. The caller is responsible to verify if the item can be added before attempting to add anything.
   /// </remarks>
-  /// <param name="items">
-  /// The items to add. They are not copied, they are added as the references. These items must be
-  /// already added to the inventory.
+  /// <param name="item">
+  /// An item to add. The item is not copied, it's added as a reference. It must be already added into the inventory.
   /// </param>
   /// <seealso cref="UpdateTooltip"/>
   /// <seealso cref="CheckCanAddItems"/>
-  public void AddItems(InventoryItem[] items) {
-    UpdateItems(addItems: items);
+  public void AddItem(InventoryItem item) {
+    if (_itemsSet.Count == 0) {
+      _resourceSimilarityValues = CalculateSimilarityValues(item);
+    }
+    _itemsSet.Add(item);
+    slotItems.Add(item);
+    UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats 
   }
 
-  /// <summary>Deletes items from the slot.</summary>
-  /// <remarks>The items won't be removed from the inventory.</remarks>
-  /// <param name="items">The items to delete.</param>
-  public void DeleteItems(InventoryItem[] items) {
-    UpdateItems(deleteItems: items);
+  /// <summary>Deletes the item from the slot.</summary>
+  /// <remarks>The item won't be removed from the inventory.</remarks>
+  /// <param name="item">An item to delete.</param>
+  public void DeleteItem(InventoryItem item) {
+    _itemsSet.Remove(item);
+    slotItems.Remove(item); // FIXME: This won't be fast on large sets.
+    if (_itemsSet.Count == 0) {
+      _resourceSimilarityValues = null;
+    }
+    UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats 
   }
 
   /// <summary>Verifies if the items can be added to the slot.</summary>
@@ -520,30 +528,6 @@ sealed class InventorySlotImpl {
 
     // Slot science data.
     // FIXME: implement
-  }
-
-  /// <summary>Adds or deletes items to/from the slot.</summary>
-  void UpdateItems(InventoryItem[] addItems = null, InventoryItem[] deleteItems = null) {
-    if (addItems?.Length > 0) {
-      if (_itemsSet.Count == 0) {
-        _resourceSimilarityValues = CalculateSimilarityValues(addItems[0]);
-      }
-      _itemsSet.AddAll(addItems);
-    }
-    if (deleteItems?.Length > 0) {
-      Array.ForEach(deleteItems, x => _itemsSet.Remove(x));
-      if (_itemsSet.Count == 0) {
-        _resourceSimilarityValues = null;
-      }
-    }
-    // Reconstruct the items array so that the existing items keep their original order, and the new
-    // items (if any) are added at the tail.
-    var newItems = slotItems.Where(x => _itemsSet.Contains(x));
-    if (addItems != null) {
-      newItems = newItems.Concat(addItems);
-    }
-    slotItems = newItems.ToArray();
-    UpdateUnitySlot();
   }
 
   /// <summary>Allocates the percentile into one of the 13 fixed slots.</summary>
