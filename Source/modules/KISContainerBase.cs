@@ -56,7 +56,7 @@ public class KisContainerBase : AbstractPartModule,
   public Vessel ownerVessel => vessel;
 
   /// <inheritdoc/>
-  public InventoryItem[] inventoryItems { get; private set; } = new InventoryItem[0];
+  public Dictionary<string, InventoryItem> inventoryItems { get; } = new();
 
   /// <inheritdoc/>
   public Vector3 maxInnerSize => maxItemSize;
@@ -92,17 +92,6 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Inhertitable fields and properties
-  /// <summary>
-  /// Reflection of <see cref="inventoryItems"/> in a form of map for quick lookup operations. 
-  /// </summary>
-  /// <remarks>
-  /// Do not modify this map directly! Descendants must use the interface methods or call the inherited methods.
-  /// </remarks>
-  /// <seealso cref="AddItem"/>
-  /// <seealso cref="DeleteItem"/>
-  /// <seealso cref="InventoryItem.itemId"/>
-  protected readonly Dictionary<string, InventoryItem> inventoryItemsMap = new();
-
   /// <summary>Returns the stock inventory module on this part, which KIS is being shadowing.</summary>
   /// <remarks>
   /// The modules that depend on the stock inventory must verify if this property is <c>null</c>, and if it is, then the
@@ -284,8 +273,14 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public virtual List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
+  public List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
+    return CheckCanAddItem(InventoryItemImpl.ForPartName(this, partName, itemConfig: node), logErrors: logErrors);
+  }
+
+  /// <inheritdoc/>
+  public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
+    ArgumentGuard.NotNull(item, nameof(item), context: this);
     var errors = new List<ErrorReason>();
     var item = InventoryItemImpl.ForPartName(this, partName, itemConfig: node);
     if (FindStockSlotForItem(item) == -1) {
@@ -336,7 +331,7 @@ public class KisContainerBase : AbstractPartModule,
                            item.avPart.name, item.itemId, item.inventory as PartModule);
       return false;
     }
-    if (!inventoryItemsMap.ContainsKey(item.itemId)) {
+    if (!inventoryItems.ContainsKey(item.itemId)) {
       HostedDebugLog.Error(this, "Item not found: name={0}, id={1}", item.avPart.name, item.itemId);
       return false;
     }
@@ -369,7 +364,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public InventoryItem FindItem(string itemId) {
     ArgumentGuard.NotNullOrEmpty(itemId, nameof(itemId), context: this);
-    inventoryItemsMap.TryGetValue(itemId, out var res);
+    inventoryItems.TryGetValue(itemId, out var res);
     return res;
   }
   #endregion
@@ -382,11 +377,7 @@ public class KisContainerBase : AbstractPartModule,
   /// </remarks>
   /// <param name="item">The item to add.</param>
   protected virtual void AddInventoryItem(InventoryItem item) {
-    inventoryItemsMap[item.itemId] = item;
-    var itemsList = inventoryItems.ToList();
-    itemsList.Add(item);
-    inventoryItems = itemsList.ToArray();
-    UpdateInventoryStats(new InventoryItem[0]);
+    inventoryItems.Add(item.itemId, item);
   }
 
   /// <summary>Removes the item from the <see cref="inventoryItems"/> collection.</summary>
@@ -396,13 +387,9 @@ public class KisContainerBase : AbstractPartModule,
   /// </remarks>
   /// <param name="item">The item to remove.</param>
   protected virtual void RemoveInventoryItem(InventoryItem item) {
-    if (!inventoryItemsMap.Remove(item.itemId)) {
+    if (!inventoryItems.Remove(item.itemId)) {
       HostedDebugLog.Error(this, "Cannot delete item, not in the index: itemId={0}", item.itemId);
-    } 
-    inventoryItems = inventoryItems
-        .Where(x => x.itemId != item.itemId)
-        .ToArray(); 
-    UpdateInventoryStats(new InventoryItem[0]);
+    }
   }
   #endregion
 

@@ -15,7 +15,7 @@ public interface IKisInventory {
   Vessel ownerVessel { get; }
 
   /// <summary>Items in the inventory.</summary>
-  InventoryItem[] inventoryItems { get; }
+  Dictionary<string, InventoryItem> inventoryItems { get; }
 
   /// <summary>Maximum dimensions of the inner inventory space.</summary>
   /// <remarks>Objects that are larger in any of the dimensions cannot fit the inventory.</remarks>
@@ -53,6 +53,19 @@ public interface IKisInventory {
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddPart"/>
   List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false);
+
+  /// <summary>Verifies if the item can be added into the inventory.</summary>
+  /// <remarks>
+  /// If this method replied "yes", then the <see cref="AddItem"/> method cannot fail. It is an exhaustive check for the
+  /// part addition conditions.
+  /// </remarks>
+  /// <param name="item">The item to check.</param>
+  /// <param name="logErrors">
+  /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
+  /// </param>
+  /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
+  /// <seealso cref="AddItem"/>
+  List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false);
 
   /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>
