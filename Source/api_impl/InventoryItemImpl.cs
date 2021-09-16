@@ -105,8 +105,17 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <returns>A new item.</returns>
   public static InventoryItemImpl FromProtoPartSnapshot(
       IKisInventory inventory, ProtoPartSnapshot snapshot, string itemId = null) {
-    var itemConfig = KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(snapshot);
-    return new(inventory, snapshot.partInfo.name, itemConfig, itemId);
+    return new InventoryItemImpl(inventory, snapshot: snapshot, newItemId: itemId);
+  }
+
+  /// <summary>Creates an item from another item.</summary>
+  /// <remarks>It may apply some performance tweaks if the items if the same type.</remarks>
+  /// <param name="inventory">The inventory to bind the item to.</param>
+  /// <param name="item">The item to copy from.</param>
+  /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
+  /// <returns>A new item.</returns>
+  public static InventoryItemImpl FromItem(IKisInventory inventory, InventoryItem item, string itemId = null) {
+    return new InventoryItemImpl(inventory, item, newItemId: itemId);
   }
 
   /// <summary>Creates an item from an active part.</summary>
@@ -118,7 +127,8 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
   public static InventoryItemImpl FromPart(Part part, string itemId = null) {
-    return new(null, part.partInfo.name, KisApi.PartNodeUtils.PartSnapshot(part), itemId);
+    return new InventoryItemImpl(
+        null, part.partInfo.name, itemConfig: KisApi.PartNodeUtils.PartSnapshot(part), newItemId: itemId);
   }
 
   /// <summary>Creates an item from a proto part snapshot.</summary>
@@ -131,8 +141,8 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <returns>A new item.</returns>
   /// <exception cref="InvalidOperationException">If the part name cannot be found.</exception>
   public static InventoryItemImpl ForPartName(
-      IKisInventory inventory, string partName, ConfigNode itemConfig, string itemId = null) {
-    return new(inventory, partName, itemConfig, itemId);
+      IKisInventory inventory, string partName, ConfigNode itemConfig = null, string itemId = null) {
+    return new InventoryItemImpl(inventory, partName, newItemId: itemId);
   }
   #endregion
 
@@ -154,19 +164,54 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="itemConfig">
   /// An optional part state node. If not provided, the default state from the prefab will be used.
   /// </param>
-  /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
-  /// <seealso cref="FromProtoPartSnapshot"/>
-  /// <seealso cref="FromPart"/>
-  /// <seealso cref="ForPartName"/>
+  /// <param name="newItemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <exception cref="InvalidOperationException">If the part name cannot be found.</exception>
-  InventoryItemImpl(IKisInventory inventory, string partName, ConfigNode itemConfig, string itemId) {
+  InventoryItemImpl(IKisInventory inventory, string partName, ConfigNode itemConfig = null, string newItemId = null) {
     var partInfo = PartLoader.getPartInfoByName(partName);
     Preconditions.NotNull(partInfo, message: "Part name found: " + partName, context: inventory);
     this.inventory = inventory;
     this.avPart = partInfo;
-    this.itemConfig = itemConfig ?? KisApi.PartNodeUtils.PartSnapshot(avPart.partPrefab);
-    this.itemId = itemId ?? Guid.NewGuid().ToString();
+    this.itemConfig = itemConfig ?? KisApi.PartNodeUtils.PartSnapshot(partInfo.partPrefab);
+    this.itemId = newItemId ?? Guid.NewGuid().ToString();
     UpdateConfig();
+  }
+
+  /// <summary>Makes a new item from the part snapshot.</summary>
+  /// <remarks>It must not be called directly. The clients must use the factory methods.</remarks>
+  /// <param name="inventory">
+  /// The inventory to bind the item to. It can be <c>null</c>, which means "no inventory". Such items only make sense
+  /// in the intermediate state.
+  /// </param>
+  /// <param name="snapshot">The part snapshot.</param>
+  /// <param name="newItemId">An optional item ID. If not set, a new unique value will be generated.</param>
+  InventoryItemImpl(IKisInventory inventory, ProtoPartSnapshot snapshot, string newItemId = null) {
+    this.inventory = inventory;
+    this.avPart = snapshot.partInfo;
+    this.itemConfig = new ConfigNode("PART");
+    snapshot.Save(this.itemConfig);
+    this.itemId = newItemId ?? Guid.NewGuid().ToString();
+    UpdateConfig();
+    _snapshot = snapshot; // Use the cached value.
+  }
+
+  /// <summary>Makes a new item from another item.</summary>
+  /// <remarks>If the source item is of the same type, then a performance optimization may be mad.e</remarks>
+  /// <param name="inventory">
+  /// The inventory to bind the item to. It can be <c>null</c>, which means "no inventory". Such items only make sense
+  /// in the intermediate state.
+  /// </param>
+  /// <param name="srcItem">The item to copy the data from.</param>
+  /// <param name="newItemId">An optional item ID. If not set, a new unique value will be generated.</param>
+  InventoryItemImpl(IKisInventory inventory, InventoryItem srcItem, string newItemId = null) {
+    this.inventory = inventory;
+    this.avPart = srcItem.avPart;
+    this.itemConfig = srcItem.itemConfig;
+    this.itemId = newItemId ?? Guid.NewGuid().ToString();
+    UpdateConfig();
+    // Light optimization for the KIS implemented items.
+    if (srcItem is InventoryItemImpl internalItem) {
+      this._snapshot = internalItem._snapshot;
+    }
   }
   #endregion
 }
