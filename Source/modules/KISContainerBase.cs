@@ -53,6 +53,9 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory properties
   /// <inheritdoc/>
+  public Vessel ownerVessel => vessel;
+
+  /// <inheritdoc/>
   public InventoryItem[] inventoryItems { get; private set; } = new InventoryItem[0];
 
   /// <inheritdoc/>

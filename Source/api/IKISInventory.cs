@@ -11,6 +11,9 @@ namespace KISAPIv2 {
 
 /// <summary>Basic interface that every inventory must implement to work with KIS.</summary>
 public interface IKisInventory {
+  /// <summary>The vessel that holds this inventory.</summary>
+  Vessel ownerVessel { get; }
+
   /// <summary>Items in the inventory.</summary>
   InventoryItem[] inventoryItems { get; }
 
