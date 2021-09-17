@@ -229,8 +229,7 @@ public class PartModelUtilsImpl {
   /// The part's persistent config. It will be looked up for the variant if it's not specified.
   /// </param>
   /// <returns>The volume in liters.</returns>
-  public Vector3 GetPartBounds(
-      AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+  public Vector3 GetPartBounds(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
 //    var itemModule = avPart.partPrefab.Modules.OfType<KIS.ModuleKISItem>().FirstOrDefault();
 //    if (itemModule != null && itemModule.volumeOverride > 0) {
 //      return itemModule.volumeOverride  // Ignore geometry.

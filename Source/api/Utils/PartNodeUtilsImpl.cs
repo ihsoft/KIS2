@@ -146,8 +146,7 @@ public class PartNodeUtilsImpl {
   /// Tells if the amount must be added to the current item's amount instead of simply replacing it.
   /// </param>
   /// <returns>The new amount or <c>null</c> if the resource was not found.</returns>
-  public double? UpdateResource(ConfigNode partNode, string name, double amount,
-                                bool isAmountRelative = false) {
+  public double? UpdateResource(ConfigNode partNode, string name, double amount, bool isAmountRelative = false) {
     var node = PartNodeUtils2.GetPartNode(partNode).GetNodes("RESOURCE")
         .FirstOrDefault(r => r.GetValue("name") == name);
     double? setAmount = null;
@@ -185,8 +184,7 @@ public class PartNodeUtilsImpl {
   /// The part's persistent config. It will be looked up for the variant if it's not specified.
   /// </param>
   /// <returns>The dry cost of the part.</returns>
-  public double GetPartDryMass(
-      AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+  public double GetPartDryMass(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
     var itemMass = avPart.partPrefab.mass;
     if (variant == null && partNode != null) {
       variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
@@ -205,8 +203,7 @@ public class PartNodeUtilsImpl {
   /// The part's persistent config. It will be looked up for the various cost modifiers.
   /// </param>
   /// <returns>The dry cost of the part.</returns>
-  public double GetPartDryCost(
-      AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+  public double GetPartDryCost(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
     // TweakScale compatibility
     if (partNode != null) {
       var tweakScale = KisApi.PartNodeUtils.GetTweakScaleModule(partNode);
@@ -259,7 +256,7 @@ public class PartNodeUtilsImpl {
     if (keepPersistentId) {
       var originalPartId = uint.Parse(node.GetValue("persistentId"));
       if (originalPartId != pPart.persistentId) {
-        DebugEx.Info("ProtoPartSnapshot persistentId changed back from {0} to {1}. It's a state snapshot action.",
+        DebugEx.Fine("ProtoPartSnapshot persistentId changed back from {0} to {1}. It's a state snapshot action.",
                      pPart.persistentId, originalPartId);
         pPart.persistentId = originalPartId;
       }

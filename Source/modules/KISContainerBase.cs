@@ -10,7 +10,6 @@ using KSPDev.PartUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using KSP.UI.Screens;
 using KSPDev.ProcessingUtils;
 using UnityEngine;
@@ -282,7 +281,6 @@ public class KisContainerBase : AbstractPartModule,
   public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
     var errors = new List<ErrorReason>();
-    var item = InventoryItemImpl.ForPartName(this, partName, itemConfig: node);
     if (FindStockSlotForItem(item) == -1) {
       errors.Add(new ErrorReason() {
           shortString = StockInventoryLimitReason,
@@ -296,7 +294,8 @@ public class KisContainerBase : AbstractPartModule,
       });
     }
     if (logErrors && errors.Count > 0) {
-      HostedDebugLog.Error(this, "Cannot add '{0}' part:\n{1}", partName, DbgFormatter.C2S(errors, separator: "\n"));
+      HostedDebugLog.Error(
+          this, "Cannot add '{0}' part:\n{1}", item.avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
     }
     return errors;
   }
@@ -318,8 +317,6 @@ public class KisContainerBase : AbstractPartModule,
     var newItem = InventoryItemImpl.FromItem(this, item);
     AddItemToStockSlot(newItem, stockSlotIndex);
     AddInventoryItem(newItem);
-    HostedDebugLog.Fine(
-        this, "Added item: part={0}, sourceId={1}, newItemId={2}", item.avPart.name, item.itemId, newItem.itemId);
     return newItem;
   }
 
@@ -341,7 +338,6 @@ public class KisContainerBase : AbstractPartModule,
     }
     RemoveInventoryItem(item);
     RemoveItemFromStockSlot(item);
-    HostedDebugLog.Fine(this, "Removed item: part={0}, itemId={1}", item.avPart.name, item.itemId);
     return true;
   }
 
@@ -514,7 +510,6 @@ public class KisContainerBase : AbstractPartModule,
     while (stockInventoryModule.storedParts.TryGetValue(slotIndex, out var storedPart) && !storedPart.IsEmpty) {
       slotIndex++;
     }
-    HostedDebugLog.Info(this, "Returning an out of scope stock slot: slotIndex={0}", slotIndex);
     return slotIndex;
   }
 
