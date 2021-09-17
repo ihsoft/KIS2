@@ -403,7 +403,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <param name="itemId">
   /// An optional ID to assign to the new item. If omitted, then a new unique ID will be generated.
   /// </param>
-  /// <returns></returns>
+  /// <returns>A new item that was created.</returns>
   /// <seealso cref="stockInventoryModule"/>
   InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
     var item = InventoryItemImpl.FromProtoPartSnapshot(

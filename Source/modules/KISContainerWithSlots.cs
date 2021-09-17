@@ -248,7 +248,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region Persistent node names
   /// <summary>
-  /// Name of the config value that holds a mapping between a slot and the KIS inventory item ID. 
+  /// Name of the config value that holds a mapping between a KIS slot and the KIS inventory item ID. 
   /// </summary>
   /// <remarks>The syntax is: &lt;slot-index&gt;-&lt;item-guid&gt;</remarks>
   const string PersistentConfigKisSlotMapping = "itemToKisSlotMapping";
@@ -1085,7 +1085,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _itemToSlotMap.Remove(item.itemId);
   }
 
-  /// <summary>Moves a set of items to teh specified slot.</summary>
+  /// <summary>Moves a set of items to the specified slot.</summary>
   /// <remarks>
   /// All items must belong to this inventory. There will be no checking done to figure if the items can be placed into
   /// the same slot, the caller is responsible to do this check.
@@ -1197,7 +1197,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>Consumes the dragged items and adds them into the hovered slot.</summary>
-  /// <remarks>It's an action, invoked from the slot events state machine.</remarks>
+  /// <remarks>
+  /// It's an action, invoked from the slot events state machine. Keep this method performance efficient since the stack
+  /// size can be really big, like 200 or 500 items. At such sizes even a 2ms per item cost will be well noticeable in
+  /// GUI. 
+  /// </remarks>
   /// <seealso cref="_slotEventsHandler"/>
   void AddDraggedItemsToFocusedSlot() {
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
