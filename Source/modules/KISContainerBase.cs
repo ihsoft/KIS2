@@ -275,7 +275,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return CheckCanAddItem(InventoryItemImpl.ForPartName(this, partName, itemConfig: node), logErrors: logErrors);
+    return CheckCanAddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node), logErrors: logErrors);
   }
 
   /// <inheritdoc/>
@@ -304,7 +304,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual InventoryItem AddPart(string partName, ConfigNode node = null) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return AddItem(InventoryItemImpl.ForPartName(this, partName, node));
+    return AddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node));
   }
 
   /// <inheritdoc/>
@@ -315,7 +315,7 @@ public class KisContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
       return null;
     }
-    var newItem = InventoryItemImpl.ForPartName(this, item.avPart.name, item.itemConfig.CreateCopy());
+    var newItem = InventoryItemImpl.FromItem(this, item);
     AddItemToStockSlot(newItem, stockSlotIndex);
     AddInventoryItem(newItem);
     HostedDebugLog.Fine(
@@ -346,7 +346,7 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual void UpdateInventoryStats(ICollection<InventoryItem> changedItems) {
+  public virtual void UpdateInventoryStats(ICollection<InventoryItem> changedItems = null) {
     if (changedItems != null) {
       HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Count);
       foreach (var changedItem in changedItems) {
@@ -450,8 +450,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <returns>The stock slot index that can accept the item or <c>-1</c> if there are none.</returns>
   /// <seealso cref="KisApi.CommonConfig.compatibilitySettings"/>
   int FindStockSlotForItem(InventoryItem item, bool logChecks = false) {
-    var itemConfig = item.itemConfig;
-    var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, itemConfig);
+    var variant = item.variant;
     var variantName = variant != null ? variant.Name : "";
     var maxSlotIndex = -1;
     var compatibility = KisApi.CommonConfig.compatibilitySettings;
@@ -489,7 +488,7 @@ public class KisContainerBase : AbstractPartModule,
       var slotState =
           KisApi.PartNodeUtils.MakeComparablePartNode(
               KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(slot.snapshot));
-      var itemState = KisApi.PartNodeUtils.MakeComparablePartNode(itemConfig);
+      var itemState = KisApi.PartNodeUtils.MakeComparablePartNode(item.itemConfig);
       if (slotState.ToString() != itemState.ToString()) {
         continue;
       }
@@ -538,9 +537,7 @@ public class KisContainerBase : AbstractPartModule,
     SyncStockSlots(stockSlotIndex);
     if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
         || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
-      stockInventoryModule.StoreCargoPartAtSlot(
-          KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(
-              vessel, item.itemConfig, keepPersistentId: true), stockSlotIndex);
+      stockInventoryModule.StoreCargoPartAtSlot(item.snapshot, stockSlotIndex);
     } else {
       var slot = stockInventoryModule.storedParts[stockSlotIndex];
       using (new StackCapacityScope(this, slot)) {

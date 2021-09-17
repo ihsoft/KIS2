@@ -58,7 +58,7 @@ internal sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       _savedEditorPart = EditorLogic.SelectedPart;
       KisApi.ItemDragController.LeaseItems(
           KisApi.PartIconUtils.MakeDefaultIcon(_savedEditorPart),
-          new InventoryItem[] { InventoryItemImpl.FromPart(_savedEditorPart) },
+          new InventoryItem[] { InventoryItemImpl.FromPart(null, _savedEditorPart) },
           EditorItemsConsumed, EditorItemsCancelled);
       UIPartActionController.Instance.partInventory.editorPartDroppedBlockSfx = true;
       EditorLogic.fetch.ReleasePartToIcon();

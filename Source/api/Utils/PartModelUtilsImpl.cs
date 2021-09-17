@@ -173,7 +173,7 @@ public class PartModelUtilsImpl {
   /// <returns>The volume in liters.</returns>
   /// FIXME: This method should capture real part bounds/volume
   public double GetPartVolume(Part part) {
-    var partNode = KisApi.PartNodeUtils.PartSnapshot(part);
+    var partNode = KisApi.PartNodeUtils.GetConfigNode(part);
     return GetPartVolume(part.partInfo, partNode: partNode);
   }
 

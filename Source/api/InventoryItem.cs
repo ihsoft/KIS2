@@ -115,9 +115,9 @@ public interface InventoryItem {
 
   /// <summary>Updates all cached values from the part's config node.</summary>
   /// <remarks>
-  /// This method must always be called when the node is changed. Note, that this method doesn't notify the owner
-  /// inventory about the updates. The actor, that changes the item, is responsible to do that via the
-  /// <see cref="IKisInventory.UpdateInventoryStats"/> method.
+  /// This method only updates a single item. It will not update the inventory. Avoid calling this method directly.
+  /// Instead, call the <see cref="IKisInventory.UpdateInventoryStats"/> on the owner inventory to ensure all the
+  /// changes are accounted.
   /// </remarks>
   /// <seealso cref="itemConfig"/>
   /// <seealso cref="inventory"/>

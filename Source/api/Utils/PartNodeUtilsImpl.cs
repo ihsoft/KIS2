@@ -44,50 +44,17 @@ public class PartNodeUtilsImpl {
     return partNode != null ? PartNodeUtils.GetModuleNode(partNode, "TweakScale") : null;
   }
 
-  /// <summary>Creates a simplified snapshot of the part's persistent state.</summary>
+  /// <summary>Captures the part state into a config node and returns it.</summary>
   /// <remarks>
   /// This is not the same as a complete part persistent state. This state only captures the key
-  /// module settings.
+  /// module settings. The unimportant settings are dropped altogether.
   /// </remarks>
   /// <param name="part">The part to snapshot. It must be a fully activated part.</param>
-  /// <returns>The part's snapshot.</returns>
-  public ConfigNode PartSnapshot(Part part) {
-    if (ReferenceEquals(part, part.partInfo.partPrefab)) {
-      // HACK: Prefab may have fields initialized to "null". Such fields cannot be saved via
-      //   BaseFieldList when making a snapshot. So, go through the persistent fields of all prefab
-      //   modules and replace nulls with a default value of the type. It'll unlikely break anything
-      //   since by design such fields are not assumed to be used until the part is loaded, and it's
-      //   impossible to have "null" value read from a config.
-      CleanupModuleFieldsInPart(part);
-    }
-
-    // Persist the old part's proto state to not affect it after the snapshot.
-    var oldVessel = part.vessel;
-    var oldPartSnapshot = part.protoPartSnapshot;
-    var oldCrewSnapshot = part.protoModuleCrew;
-    if (oldVessel == null) {
-      part.vessel = part.gameObject.AddComponent<Vessel>();
-      DebugEx.Fine("Making a fake vessel for the part to make a snapshot: part={0}, vessel={1}",
-                   part, part.vessel);
-    }
-
-    var snapshot = new ProtoPartSnapshot(part, null) {
-        attachNodes = new List<AttachNodeSnapshot>(),
-        srfAttachNode = new AttachNodeSnapshot("attach,-1"),
-        symLinks = new List<ProtoPartSnapshot>(),
-        symLinkIdxs = new List<int>()
-    };
+  /// <returns>The part's persistent state.</returns>
+  public ConfigNode GetConfigNode(Part part) {
+    var snapshot = GetProtoPartSnapshot(part);
     var partNode = new ConfigNode("PART");
     snapshot.Save(partNode);
-
-    // Rollback the part's proto state to the original settings.
-    if (oldVessel != part.vessel) {
-      DebugEx.Fine("Destroying the fake vessel: part={0}, vessel={1}", part, part.vessel);
-      UnityEngine.Object.DestroyImmediate(part.vessel);
-    }
-    part.vessel = oldVessel;
-    part.protoPartSnapshot = oldPartSnapshot;
-    part.protoModuleCrew = oldCrewSnapshot;
 
     // Prune unimportant data.
     // ReSharper disable StringLiteralTypo
@@ -114,6 +81,48 @@ public class PartNodeUtilsImpl {
     }
 
     return partNode;
+  }
+
+  /// <summary>
+  /// Makes a proto part snapshot from the part.
+  /// </summary>
+  /// <param name="part">The part to capture.</param>
+  /// <returns>A snapshot fo the part's current state.</returns>
+  public ProtoPartSnapshot GetProtoPartSnapshot(Part part) {
+    if (part.protoPartSnapshot != null) {
+      return part.protoPartSnapshot; // Piece of cake!
+    }
+
+    DebugEx.Fine("Make a proto part snapshot for: {0}", part);
+    MaybeFixPrefabPart(part);
+
+    // Persist the old part's proto state to not affect it after the snapshot.
+    var oldVessel = part.vessel;
+    var oldPartSnapshot = part.protoPartSnapshot;
+    var oldCrewSnapshot = part.protoModuleCrew;
+    if (oldVessel == null) {
+      part.vessel = part.gameObject.AddComponent<Vessel>();
+      DebugEx.Fine("Making a fake vessel for the part to make a snapshot: part={0}, vessel={1}",
+                   part, part.vessel);
+    }
+
+    var snapshot = new ProtoPartSnapshot(part, null) {
+        attachNodes = new List<AttachNodeSnapshot>(),
+        srfAttachNode = new AttachNodeSnapshot("attach,-1"),
+        symLinks = new List<ProtoPartSnapshot>(),
+        symLinkIdxs = new List<int>()
+    };
+
+    // Rollback the part's proto state to the original settings.
+    if (oldVessel != part.vessel) {
+      DebugEx.Fine("Destroying the fake vessel: part={0}, vessel={1}", part, part.vessel);
+      UnityEngine.Object.DestroyImmediate(part.vessel);
+    }
+    part.vessel = oldVessel;
+    part.protoPartSnapshot = oldPartSnapshot;
+    part.protoModuleCrew = oldCrewSnapshot;
+
+    return snapshot;
   }
 
   /// <summary>Returns all the resource on the part.</summary>
@@ -300,6 +309,21 @@ public class PartNodeUtilsImpl {
   #endregion
 
   #region Local utility methods
+  /// <summary>Fixes the prefab fields.</summary>
+  /// <remarks>
+  /// Prefab may have fields initialized to "null". Such fields cannot be saved via <c>BaseFieldList</c> when making a
+  /// snapshot. So, this method goes through the persistent fields of all the prefab modules and replaces <c>null</c>'s
+  /// with a default value of the related type. It'll unlikely break anything since by design such fields are not
+  /// assumed to be used until the part is loaded, and it's impossible to have <c>null</c> value read from a config.
+  /// </remarks>
+  /// <param name="part">The part to cleanup. If it's not a prefab, then the call is NOOP.</param>
+  /// FIXME: merge with the one below.
+  static void MaybeFixPrefabPart(Part part) {
+    if (ReferenceEquals(part, part.partInfo.partPrefab)) {
+      CleanupModuleFieldsInPart(part);
+    }
+  }
+
   /// <summary>Walks through all modules in the part and fixes null persistent fields.</summary>
   /// <remarks>Used to prevent NREs in methods that persist KSP fields.
   /// <para>
