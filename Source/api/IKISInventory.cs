@@ -15,6 +15,12 @@ public interface IKisInventory {
   Vessel ownerVessel { get; }
 
   /// <summary>Items in the inventory.</summary>
+  /// <remarks>
+  /// The returned dictionary must not be updated! The implementation is encouraged to make the result readonly.
+  /// </remarks> 
+  /// <value>A dictionary of itemId=>item.</value>
+  /// <seealso cref="InventoryItem.itemId"/>
+  /// FIXME: return a readonly dictionary
   Dictionary<string, InventoryItem> inventoryItems { get; }
 
   /// <summary>Maximum dimensions of the inner inventory space.</summary>
@@ -69,9 +75,16 @@ public interface IKisInventory {
 
   /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>
+  /// <p>
   /// This method does <i>not</i> verify if the part can fit the inventory. Doing this check is responsibility of the
   /// caller. If any compatibility setting is enabled, the add action can fail. The caller must check the output before
   /// assuming that the action has succeeded.
+  /// </p>
+  /// <p>
+  /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
+  /// explicitly call the <see cref="UpdateInventoryStats"/> method at the end of the update sequence to let the
+  /// inventory state synced to the new items list. And it must be done on every inventory update!
+  /// </p>
   /// </remarks>
   /// <param name="partName">The part name to add.</param>
   /// <param name="node">
@@ -79,32 +92,49 @@ public interface IKisInventory {
   /// </param>
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
   /// <seealso cref="CheckCanAddPart"/>
+  /// <seealso cref="UpdateInventoryStats"/>
   InventoryItem AddPart(string partName, ConfigNode node = null);
 
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>
+  /// <p>
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is responsibility of the
   /// caller. If any compatibility setting is enabled, the add action can fail. The caller must check the output before
   /// assuming that the action has succeeded.
+  /// </p>
+  /// <p>
+  /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
+  /// explicitly call the <see cref="UpdateInventoryStats"/> method at the end of the update sequence to let the
+  /// inventory state synced to the new items list. And it must be done on every inventory update!
+  /// </p>
   /// </remarks>
   /// <param name="item">The item to add.</param>
   /// <returns>
   /// The new item from the inventory or <c>null</c> if the action has failed. The ID of the new item will be different
   /// from the source item.
   /// </returns>
-  /// <seealso cref="CheckCanAddPart"/>
+  /// <seealso cref="CheckCanAddItem"/>
+  /// <seealso cref="UpdateInventoryStats"/>
   /// <seealso cref="InventoryItem.itemId"/>
   InventoryItem AddItem(InventoryItem item);
 
   /// <summary>Removes the specified item from the inventory.</summary>
   /// <remarks>
+  /// <p>
   /// The action can fail if the item is locked, doesn't exist or there are other conditions that prevent the logic to
   /// work.
+  /// </p>
+  /// <p>
+  /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
+  /// explicitly call the <see cref="UpdateInventoryStats"/> method at the end of the update sequence to let the
+  /// inventory state synced to the new items list. And it must be done on every inventory update!
+  /// </p>
   /// </remarks>
   /// <param name="item">The item to remove. It must belong to this inventory.</param>
   /// <returns><c>true</c> if removal was successful.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="InventoryItem.inventory"/>
+  /// <seealso cref="UpdateInventoryStats"/>
   bool DeleteItem(InventoryItem item);
 
   /// <summary>Forces the container to refresh its state according to the new state of the items.</summary>
@@ -114,11 +144,11 @@ public interface IKisInventory {
   /// </remarks>
   /// <param name="changedItems">
   /// An optional collection of the items that state has to be updated before updating the inventory's state. If set to
-  /// <c>null</c>, then only the inventory state will be updated.
+  /// <c>null</c>, then only the inventory state will be updated. Note, that if any existing item has changed its state,
+  /// it must either be updated via <see cref="InventoryItem.UpdateConfig"/> before calling this method, or this item
+  /// must be passed in this argument.
   /// </param>
   /// <seealso cref="InventoryItem.UpdateConfig"/>
-  /// FIXME: handle ahdnling hahaha
-  /// LOH!
   void UpdateInventoryStats(ICollection<InventoryItem> changedItems = null);
 
   /// <summary>Finds an item by its unique ID.</summary>
