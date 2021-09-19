@@ -289,7 +289,7 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem AddPart(string partName, ConfigNode node = null) {
+  public InventoryItem AddPart(string partName, ConfigNode node = null) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
     return AddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node));
   }
