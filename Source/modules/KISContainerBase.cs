@@ -92,22 +92,10 @@ public class KisContainerBase : AbstractPartModule,
 
   #region Inhertitable fields and properties
   /// <summary>Returns the stock inventory module on this part, which KIS is being shadowing.</summary>
-  /// <remarks>
-  /// The modules that depend on the stock inventory must verify if this property is <c>null</c>, and if it is, then the
-  /// dependent module logic must be completely disabled to avoid the errors down the line.
-  /// </remarks>
-  /// <value>The stock module or <c>null</c> if none found.</value>
-  protected ModuleInventoryPart stockInventoryModule {
-    get {
-      if (_stockInventoryModule == null) {
-        _stockInventoryModule = part.Modules.OfType<ModuleInventoryPart>().FirstOrDefault();
-      }
-      if (_stockInventoryModule == null) {
-        HostedDebugLog.Error(this, "Part doesn't have a stock inventory module");
-      }
-      return _stockInventoryModule;
-    }
-  }
+  /// <value>The stock module instance.</value>
+  /// <exception cref="InvalidOperationException"> if no stock module found.</exception>
+  protected ModuleInventoryPart stockInventoryModule =>
+      _stockInventoryModule ??= part.Modules.OfType<ModuleInventoryPart>().First();
   ModuleInventoryPart _stockInventoryModule;
 
   /// <summary>Returns the stock UI inventory action.</summary>
