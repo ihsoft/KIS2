@@ -1047,10 +1047,18 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var checkResult = _slotWithPointerFocus.CheckCanAddItems(allItems);
       if (checkResult.Count == 0) {
         // For the items from other inventories also check the basic constraints.
+        var extraVolumeNeeded = 0.0;
         foreach (var item in allItems) {
           if (!ReferenceEquals(item.inventory, this)) {
-            checkResult.AddRange(CheckCanAddPart(item.avPart.name, node: item.itemConfig));
+            extraVolumeNeeded += item.volume;
+            checkResult.AddRange(CheckCanAddItem(item));
           } 
+        }
+        if (extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
+          checkResult.Add(new ErrorReason() {
+              shortString = VolumeTooLargeReason,
+              guiString = NotEnoughVolumeText.Format(usedVolume + extraVolumeNeeded - maxVolume),
+          });
         }
       }
 
