@@ -21,10 +21,7 @@ public interface InventoryItem {
   IKisInventory inventory { get; }
 
   /// <summary>Unique string ID that identifies the item within the inventory.</summary>
-  /// <remarks>
-  /// The ID is generated when the part is first time added into inventory. This ID stays persistent as the item is
-  /// being moved between the inventories.
-  /// </remarks>
+  /// <remarks>The ID is generated when the part is first time added into inventory. It's an immutable value.</remarks>
   string itemId { get; }
 
   /// <summary>Part proto.</summary>
@@ -107,10 +104,10 @@ public interface InventoryItem {
   /// <summary>Sets locked state.</summary>
   /// <remarks>
   /// The inventory may need to know if the item's lock stat has updated. The actor, that changes the state, is
-  /// responsible to notify the inventory via the
-  /// <see cref="IKisInventory.UpdateInventoryStats"/> method.
+  /// responsible to notify the inventory via the <see cref="IKisInventory.UpdateInventoryStats"/> method.
   /// </remarks>
   /// <seealso cref="isLocked"/>
+  /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
   void SetLocked(bool newState);
 
   /// <summary>Updates all cached values from the part's config node.</summary>

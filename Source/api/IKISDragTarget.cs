@@ -53,7 +53,7 @@ public interface IKisDragTarget {
 
   /// <summary>Notifies that a focus target is about to change.</summary>
   /// <remarks>The callback is called <i>before</i> the target is changed.</remarks>
-  /// <param name="newTarget">The target that takes the focus.</param>
+  /// <param name="newTarget">The new UI object that takes the focus. It's <c>null</c> on focus blur.</param>
   /// <seealso cref="IKisItemDragController.focusedTarget"/>
   void OnFocusTarget(GameObject newTarget);
 }

@@ -13,7 +13,7 @@ namespace KIS2 {
 
 /// <summary>Controller that deals with dragged items in the editor scenes.</summary>
 [KSPAddon(KSPAddon.Startup.EditorAny, false /*once*/)]
-internal sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
+sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region Local fields and properties
   /// <summary>
