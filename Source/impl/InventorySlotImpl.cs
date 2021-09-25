@@ -365,6 +365,8 @@ sealed class InventorySlotImpl {
     }
     var refItem = isEmpty ? checkItems[0] : slotItems[0];
 
+    // The checking algo below is not performance efficient. However, it's stable!
+    // The errors are reported based on their severity vs reporting any random error detected.
     var slotPartName = isEmpty ? refItem.avPart.name : avPart.name;
     if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
       return ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
