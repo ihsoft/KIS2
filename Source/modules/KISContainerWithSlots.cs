@@ -356,8 +356,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region Unity events
   void Update() {
-    if (isGuiOpen && Input.anyKeyDown && Time.timeScale > float.Epsilon) {
-      _slotEventsHandler.HandleActions();
+    if (isGuiOpen && Time.timeScale > float.Epsilon) {
+      _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
     }
   }
   #endregion
