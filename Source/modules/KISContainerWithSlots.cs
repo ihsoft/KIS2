@@ -642,7 +642,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     HostedDebugLog.Fine(this, "Creating inventory window");
     _unityWindow = UnityPrefabController.CreateInstance<UiKisInventoryWindow>(
-        "KISInventoryDialog", UIMasterController.Instance.actionCanvas.transform);
+        "KISInventoryDialog-" + part.persistentId, UIMasterController.Instance.actionCanvas.transform);
 
     // TODO(ihsoft): Fix it in the prefab via TMPro.
     if (!UIMasterController.Instance.actionCanvas.pixelPerfect) {
