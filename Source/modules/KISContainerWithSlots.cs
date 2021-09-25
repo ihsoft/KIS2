@@ -550,11 +550,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <inheritdoc/>
   protected override void AddInventoryItem(InventoryItem item) {
     base.AddInventoryItem(item);
-    if (!_itemToSlotMap.ContainsKey(item.itemId)) {
-      AddSlotItem(FindSlotForItem(item, addInvisibleSlot: true), item);
-    } else {
-      HostedDebugLog.Warning(this, "Skip update for existing mapping: itemId={0}", item.itemId);
-    }
+    AddSlotItem(FindSlotForItem(item, addInvisibleSlot: true), item);
   }
 
   /// <inheritdoc/>
