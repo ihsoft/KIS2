@@ -8,7 +8,6 @@ using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
-using Smooth.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -269,17 +268,17 @@ sealed class InventorySlotImpl {
   #endregion
 
   #region Local fields and properties
-  /// <summary>Part proto of this slot.</summary>
+  /// <summary>Part info of this slot.</summary>
+  /// <value>The part info or <c>null</c> if the slot is empty.</value>
   AvailablePart avPart => !isEmpty ? slotItems[0].avPart : null;
 
   /// <summary>Unity object that represents the slot.</summary>
   /// <remarks>It can be <c>null</c> if the slot is not shown in the inventory window.</remarks>
   UIKISInventorySlot.Slot _unitySlot;
 
-  /// <summary>
-  /// Reflection of <see cref="slotItems"/> in a form of hash set for quick lookup operations. 
-  /// </summary>
-  /// <seealso cref="UpdateItems"/>
+  /// <summary>Reflection of <see cref="slotItems"/> in a form of hash set for quick lookup operations.</summary>
+  /// <seealso cref="AddItem"/>
+  /// <seealso cref="DeleteItem"/>
   readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
 
   /// <summary>Rounded similarity values per resource name.</summary>
