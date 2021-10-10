@@ -317,7 +317,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     set {
       _slotWithPointerFocus = value;
       UpdateEventsHandlerState();
-      CheckCanAcceptDrops();
+      _canAcceptDraggedItemsCheckResult = null;
       if (value != null) {
         _unityWindow.StartSlotTooltip();
         UpdateTooltip();
@@ -330,10 +330,19 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Tells if currently dragging items can fit into the currently hovered slot of this inventory.</summary>
   /// <seealso cref="slotWithPointerFocus"/>
-  /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
-  bool canAcceptDraggedItems => _canAcceptDraggedItemsCheckResult == null;
+  /// <seealso cref="canAcceptDraggedItemsCheckResult"/>
+  bool canAcceptDraggedItems => canAcceptDraggedItemsCheckResult.Length == 0;
 
   /// <summary>The errors from the last hovered slot check.</summary>
+  /// <seealso cref="canAcceptDraggedItems"/>
+  ErrorReason[] canAcceptDraggedItemsCheckResult {
+    get {
+      if (_canAcceptDraggedItemsCheckResult == null) {
+        CheckCanAcceptDrops();
+      }
+      return _canAcceptDraggedItemsCheckResult;
+    }
+  }
   ErrorReason[] _canAcceptDraggedItemsCheckResult;
 
   /// <summary>Shortcut to get the current tooltip.</summary>
@@ -1023,14 +1032,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       return;
     }
     currentTooltip.ClearInfoFields();
-    var cannotAddReasonText = "";
-    if (_canAcceptDraggedItemsCheckResult != null) {
-      cannotAddReasonText = string.Join(
-          "\n",
-          _canAcceptDraggedItemsCheckResult
-              .Where(r => r.guiString != null)
-              .Select(r => r.guiString));
-    }
     switch (_slotEventsHandler.currentState) {
       case SlotActionMode.HoveringOverItemsSlot:
         slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
@@ -1041,7 +1042,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           currentTooltip.baseInfo.text = StoreIntoSlotCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
         } else {
           currentTooltip.title = CannotStoreIntoSlotTooltipText;
-          currentTooltip.baseInfo.text = cannotAddReasonText;
+          currentTooltip.baseInfo.text = MakeErrorReasonText();
         }
         break;
       case SlotActionMode.DraggingOverItemsTargetSlot:
@@ -1050,7 +1051,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           currentTooltip.baseInfo.text = AddToStackCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
         } else {
           currentTooltip.title = CannotAddToStackTooltipText;
-          currentTooltip.baseInfo.text = cannotAddReasonText;
+          currentTooltip.baseInfo.text = MakeErrorReasonText();
         }
         break;
     }
@@ -1062,12 +1063,22 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         || !string.IsNullOrEmpty(currentTooltip.baseInfo.text));
   }
 
+  /// <summary>Builds a string that describes why the items cannot be accepted by this inventory.</summary>
+  /// <returns>A friendly "\n" separated string, or empty value if items can be accepted.</returns>
+  string MakeErrorReasonText() {
+    return string.Join(
+        "\n",
+        canAcceptDraggedItemsCheckResult
+            .Where(r => r.guiString != null)
+            .Select(r => r.guiString));
+  }
+
   /// <summary>Verifies if the currently dragged items can be stored into the hovered slot.</summary>
-  /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
+  /// <seealso cref="canAcceptDraggedItemsCheckResult"/>
   /// <seealso cref="canAcceptDraggedItems"/>
   void CheckCanAcceptDrops() {
     if (!KisApi.ItemDragController.isDragging || slotWithPointerFocus == null) {
-      _canAcceptDraggedItemsCheckResult = null;
+      _canAcceptDraggedItemsCheckResult = new ErrorReason[0];
       return;
     }
 
@@ -1092,13 +1103,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
 
     // De-dup the errors by the short string to not spam on multiple items.
-    _canAcceptDraggedItemsCheckResult = checkResult.Count > 0
-        ? checkResult
-            .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
-            .Values
-            .ToArray()
-        : null;
+    _canAcceptDraggedItemsCheckResult = checkResult
+        .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
+        .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
+        .Values
+        .ToArray();
   }
 
   /// <summary>Adds the item into the slot.</summary>
