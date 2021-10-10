@@ -265,9 +265,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <remarks>Used in the action state machine to simplify actions/hints handling.</remarks>
   /// <seealso cref="_slotEventsHandler"/>
   enum SlotActionMode {
-    /// <summary>No slots focused.</summary>
-    NothingFocused,
-
     /// <summary>
     /// Dragging mode is in action and the pointer hovers over an empty, and it's not the slot that
     /// started the dragging action.
@@ -310,18 +307,31 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <summary>Index that resolves item to the slot that contains it.</summary>
   readonly Dictionary<string, InventorySlotImpl> _itemToSlotMap = new();
 
-  /// <summary>Slot that initiated a drag action from this inventory.</summary>
+  /// <summary>Slot that has initiated a drag action from this inventory.</summary>
   InventorySlotImpl _dragSourceSlot;
 
   /// <summary>A slot of this inventory that is currently has pointer focus.</summary>
   /// <remarks>This slot is the target for the pointer actions.</remarks>
+  InventorySlotImpl slotWithPointerFocus {
+    get => _slotWithPointerFocus;
+    set {
+      _slotWithPointerFocus = value;
+      UpdateEventsHandlerState();
+      CheckCanAcceptDrops();
+      if (value != null) {
+        _unityWindow.StartSlotTooltip();
+        UpdateTooltip();
+      } else {
+        _unityWindow.DestroySlotTooltip();
+      }
+    }
+  }
   InventorySlotImpl _slotWithPointerFocus;
 
-  /// <summary>
-  /// Tells if currently dragging items can fit into the currently hovered slot of this inventory.
-  /// </summary>
-  /// <seealso cref="_slotWithPointerFocus"/>
-  bool _canAcceptDraggedItems;
+  /// <summary>Tells if currently dragging items can fit into the currently hovered slot of this inventory.</summary>
+  /// <seealso cref="slotWithPointerFocus"/>
+  /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
+  bool canAcceptDraggedItems => _canAcceptDraggedItemsCheckResult == null;
 
   /// <summary>The errors from the last hovered slot check.</summary>
   ErrorReason[] _canAcceptDraggedItemsCheckResult;
@@ -336,17 +346,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #region IKisDragTarget implementation
   /// <inheritdoc/>
   public void OnKisDragStart() {
-    UpdateTooltip();
+    UpdateEventsHandlerState();
   }
 
   /// <inheritdoc/>
   public void OnKisDragEnd(bool isCancelled) {
-    UpdateTooltip();
+    UpdateEventsHandlerState();
   }
 
   /// <inheritdoc/>
   public bool OnKisDrag(bool pointerMoved) {
-    return _canAcceptDraggedItems;
+    return canAcceptDraggedItems;
   }
 
   /// <inheritdoc/>
@@ -371,6 +381,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
 
     useGUILayout = false;
+    _slotEventsHandler.ONAfterTransition += (oldState, newState) => {
+      UpdateTooltip();
+    }; 
 
     // SlotActionMode.HoveringOverEmptySlot
     if (HighLogic.LoadedSceneIsFlight) {
@@ -420,13 +433,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _slotEventsHandler.DefineAction(
         SlotActionMode.DraggingOverEmptyTargetSlot,
         StoreIntoSlotActionHint, StoreIntoSlotEvent, AddDraggedItemsToFocusedSlot,
-        checkIfAvailable: () => _canAcceptDraggedItems);
+        checkIfAvailable: () => canAcceptDraggedItems);
 
     // SlotActionMode.DraggingOverItemsTargetSlot
     _slotEventsHandler.DefineAction(
         SlotActionMode.DraggingOverItemsTargetSlot,
         AddToStackActionHint, AddToStackEvent, AddDraggedItemsToFocusedSlot,
-        checkIfAvailable: () => _canAcceptDraggedItems);
+        checkIfAvailable: () => canAcceptDraggedItems);
 
     // Dragging mode is in action and pointer hovers over a slot with items, and it's the slot
     // that started the dragging action.
@@ -603,6 +616,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <param name="isHover">Tells if pointer enters or leaves the UI element.</param>
   void OnSlotHover(Slot hoveredSlot, bool isHover) {
     if (isHover) {
+      // The slot can receive the event before the owner dialog had. So, ensure the target is properly set.
+      KisApi.ItemDragController.SetFocusedTarget(_unityWindow.gameObject);
       RegisterSlotHoverCallback();
     } else {
       UnregisterSlotHoverCallback();
@@ -717,7 +732,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         AvailableVolumeStat.Format(Math.Max(maxVolume - usedVolume, 0))
     };
     _unityWindow.mainStats = string.Join("\n", text);
-    UpdateTooltip();
+    UpdateEventsHandlerState();
   }
 
   /// <summary>Returns a slot where the item can be stored.</summary>
@@ -813,7 +828,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var newSlotGridHeight = (int) _unityWindow.gridSize.y;
 
     // Visible slots order may change, it would invalidate the tooltip.
-    if (_slotWithPointerFocus != null) {
+    if (slotWithPointerFocus != null) {
       UnregisterSlotHoverCallback();
     }
 
@@ -935,38 +950,51 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <summary>Destroys tooltip and stops any active logic on the UI slot.</summary>
   void UnregisterSlotHoverCallback() {
     KisApi.ItemDragController.UnregisterTarget(this);
-    _unityWindow.DestroySlotTooltip();
-    _slotWithPointerFocus = null;
-    _slotEventsHandler.SetState(SlotActionMode.NothingFocused);
+    slotWithPointerFocus = null;
   }
 
   /// <summary>Establishes a tooltip and starts the active logic on a UI slot.</summary>
   void RegisterSlotHoverCallback() {
-    _slotWithPointerFocus =
-        _inventorySlots.FirstOrDefault(x => x.IsBoundTo(_unityWindow.hoveredSlot));
-    if (_slotWithPointerFocus == null) {
-      HostedDebugLog.Error(this, "Expected to get a hovered slot, but none was found");
+    slotWithPointerFocus = _inventorySlots.FirstOrDefault(x => x.IsBoundTo(_unityWindow.hoveredSlot));
+    if (slotWithPointerFocus == null) {
+      HostedDebugLog.Error(
+          this, "Expected to get a KIS hovered slot, but none was found: unitySlot={0}", _unityWindow.hoveredSlot);
       return;
     }
-    _unityWindow.StartSlotTooltip();
     KisApi.ItemDragController.RegisterTarget(this);
-    var isDragging = KisApi.ItemDragController.isDragging;
-    var isSourceSlotFocused = _dragSourceSlot != null && _dragSourceSlot == _slotWithPointerFocus;
-    var isEmptySlotFocused = _slotWithPointerFocus.slotItems.Count == 0;
-    if (isDragging && isSourceSlotFocused) {
-      _slotEventsHandler.SetState(SlotActionMode.DraggingOverSourceSlot);
-    } else if (isDragging) {
-      _slotEventsHandler.SetState(
-          isEmptySlotFocused
-              ? SlotActionMode.DraggingOverEmptyTargetSlot
-              : SlotActionMode.DraggingOverItemsTargetSlot);
-    } else {
-      _slotEventsHandler.SetState(
-          isEmptySlotFocused
-              ? SlotActionMode.HoveringOverEmptySlot
-              : SlotActionMode.HoveringOverItemsSlot);
+  }
+
+  /// <summary>
+  /// Verifies the current conditions and sets the appropriate state of the events handler state machine.</summary>
+  /// <remarks>
+  /// <p>
+  /// This method only sets the state of the machine, which is a cheap operation if the state was the same. Than being
+  /// said, it can be called as frequently as needed. Call it in any case that affects the inventory state.
+  /// </p>
+  /// <p>This method can be called at any time of the part's life. It has to handle all the cases.</p>
+  /// </remarks>
+  /// <seealso cref="_slotEventsHandler"/>
+  void UpdateEventsHandlerState() {
+    if (slotWithPointerFocus == null) {
+      _slotEventsHandler.currentState = null;
+      return;
     }
-    UpdateTooltip();
+    var isDragging = KisApi.ItemDragController.isDragging;
+    var isSourceSlotFocused = _dragSourceSlot == slotWithPointerFocus;
+    var isEmptySlotFocused = slotWithPointerFocus.slotItems.Count == 0;
+    SlotActionMode newState;
+    if (isDragging) {
+      if (isSourceSlotFocused) {
+        newState = SlotActionMode.DraggingOverSourceSlot;
+      } else {
+        newState = isEmptySlotFocused
+            ? SlotActionMode.DraggingOverEmptyTargetSlot
+            : SlotActionMode.DraggingOverItemsTargetSlot;
+      }
+    } else {
+      newState = isEmptySlotFocused ? SlotActionMode.HoveringOverEmptySlot : SlotActionMode.HoveringOverItemsSlot;
+    }
+    _slotEventsHandler.currentState = newState;
   }
 
   /// <summary>(Re)sets the current drag operation source.</summary>
@@ -981,6 +1009,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       _dragSourceSlot.isLocked = true;
       _dragSourceSlot.reservedItems = draggedItemsNum;
     }
+    UpdateEventsHandlerState();
   }
 
   /// <summary>Updates the currently focused slot (if any) with the relevant tooltip info.</summary>
@@ -990,8 +1019,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// advised to be invoked in every frame update.
   /// </remarks>
   void UpdateTooltip() {
-    CheckCanAcceptDrops();
-    if (_slotWithPointerFocus == null || currentTooltip == null) {
+    if (slotWithPointerFocus == null || currentTooltip == null) {
       return;
     }
     currentTooltip.ClearInfoFields();
@@ -1005,10 +1033,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     switch (_slotEventsHandler.currentState) {
       case SlotActionMode.HoveringOverItemsSlot:
-        _slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
+        slotWithPointerFocus.UpdateTooltip(_unityWindow.currentTooltip);
         break;
       case SlotActionMode.DraggingOverEmptyTargetSlot:
-        if (_canAcceptDraggedItems) {
+        if (canAcceptDraggedItems) {
           currentTooltip.title = StoreIntoSlotActionTooltip;
           currentTooltip.baseInfo.text = StoreIntoSlotCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
         } else {
@@ -1017,7 +1045,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
         break;
       case SlotActionMode.DraggingOverItemsTargetSlot:
-        if (_canAcceptDraggedItems) {
+        if (canAcceptDraggedItems) {
           currentTooltip.title = AddToStackActionTooltip;
           currentTooltip.baseInfo.text = AddToStackCountHint.Format(KisApi.ItemDragController.leasedItems.Length);
         } else {
@@ -1036,11 +1064,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Verifies if the currently dragged items can be stored into the hovered slot.</summary>
   /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
-  /// <seealso cref="_canAcceptDraggedItems"/>
+  /// <seealso cref="canAcceptDraggedItems"/>
   void CheckCanAcceptDrops() {
-    if (KisApi.ItemDragController.isDragging && _slotWithPointerFocus != null) {
+    if (KisApi.ItemDragController.isDragging && slotWithPointerFocus != null) {
       var allItems = KisApi.ItemDragController.leasedItems;
-      var checkResult = _slotWithPointerFocus.CheckCanAddItems(allItems);
+      var checkResult = slotWithPointerFocus.CheckCanAddItems(allItems);
       if (checkResult.Count == 0) {
         // For the items from other inventories also check the basic constraints.
         var extraVolumeNeeded = 0.0;
@@ -1066,10 +1094,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
               .Values
               .ToArray()
           : null;
-      _canAcceptDraggedItems = _canAcceptDraggedItemsCheckResult == null;
     } else {
       _canAcceptDraggedItemsCheckResult = null;
-      _canAcceptDraggedItems = false;
     }
   }
 
@@ -1114,7 +1140,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     SpawnItemDialogController.ShowDialog(this);
   }
 
-  /// <summary>Adds or removes items to the hovered slot in the edit or constructor mode.</summary>
+  /// <summary>Adds or removes items to the hovered slot in the editor or constructor mode.</summary>
   /// <remarks>All new items will have the config from the first item in the slot.</remarks>
   /// <param name="delta">
   /// The delta value to add. If it's negative, then the items are removed. It's OK to request removal of more items
@@ -1123,17 +1149,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="_slotEventsHandler"/>
   void UpdateItemsCountInFocusedSlot(int delta) {
     HostedDebugLog.Fine(this, "Update items count in slot: slot=#{0}, delta={1}",
-                        _inventorySlots.IndexOf(_slotWithPointerFocus), delta);
+                        _inventorySlots.IndexOf(slotWithPointerFocus), delta);
     if (delta > 0) {
       var checkResult = new List<ErrorReason>();
       for (var i = 0; i < delta; i++) {
-        var itemErrors = CheckCanAddItem(_slotWithPointerFocus.slotItems[0]);
+        var itemErrors = CheckCanAddItem(slotWithPointerFocus.slotItems[0]);
         if (itemErrors.Count > 0) {
           checkResult.AddRange(itemErrors);
           continue;
         }
-        var newItem = AddItem(_slotWithPointerFocus.slotItems[0]); // It will get added to a random slot.
-        MoveItemsToSlot(_slotWithPointerFocus, new []{ newItem }); // Move the item to the the specific slot.
+        var newItem = AddItem(slotWithPointerFocus.slotItems[0]); // It will get added to a random slot.
+        MoveItemsToSlot(slotWithPointerFocus, new []{ newItem }); // Move the item to the the specific slot.
       }
       checkResult = checkResult
           .GroupBy(p => p.guiString, StringComparer.OrdinalIgnoreCase)
@@ -1151,8 +1177,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
       }
     } else {
-      for (var i = _slotWithPointerFocus.slotItems.Count - 1; i >= 0 && delta < 0; i--) {
-        var item = _slotWithPointerFocus.slotItems[i];
+      for (var i = slotWithPointerFocus.slotItems.Count - 1; i >= 0 && delta < 0; i--) {
+        var item = slotWithPointerFocus.slotItems[i];
         if (!item.isLocked) {
           if (DeleteItem(item)) {
             ++delta;
@@ -1173,13 +1199,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <remarks>It's an action, invoked from the slot events state machine.</remarks>
   /// <seealso cref="_slotEventsHandler"/>
   void TakeItemsFromFocusedSlot(int num) {
-    var itemsToDrag = _slotWithPointerFocus.slotItems
+    var itemsToDrag = slotWithPointerFocus.slotItems
         .Where(i => !i.isLocked)
         .Take(num)
         .ToArray();
     HostedDebugLog.Fine(
         this, "Take items from slot: slot=#{0}, requested={1}, got={2}",
-        _inventorySlots.IndexOf(_slotWithPointerFocus), num < int.MaxValue ? num : "<all>", itemsToDrag.Length);
+        _inventorySlots.IndexOf(slotWithPointerFocus), num < int.MaxValue ? num : "<all>", itemsToDrag.Length);
     if (itemsToDrag.Length == 0) {
       return;
     }
@@ -1190,14 +1216,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       KisApi.ItemDragController.CancelItemsLease();
     }
     Array.ForEach(itemsToDrag, i => i.SetLocked(true));
-    SetDraggedSlot(_slotWithPointerFocus, itemsToDrag.Length);
+    SetDraggedSlot(slotWithPointerFocus, itemsToDrag.Length);
     KisApi.ItemDragController.LeaseItems(
-        _slotWithPointerFocus.iconImage, itemsToDrag, ConsumeSlotItems, CancelSlotLeasedItems);
+        slotWithPointerFocus.iconImage, itemsToDrag, ConsumeSlotItems, CancelSlotLeasedItems);
     var dragIconObj = KisApi.ItemDragController.dragIconObj;
-    dragIconObj.hasScience = _slotWithPointerFocus.hasScience;
+    dragIconObj.hasScience = slotWithPointerFocus.hasScience;
     dragIconObj.stackSize = KisApi.ItemDragController.leasedItems.Length;
-    dragIconObj.resourceStatus = _slotWithPointerFocus.resourceStatus;
+    dragIconObj.resourceStatus = slotWithPointerFocus.resourceStatus;
     UIPartActionController.Instance.partInventory.PlayPartSelectedSFX();
+    UpdateInventoryStats();
   }
 
   /// <summary>Consumes the dragged items and adds them into the hovered slot.</summary>
@@ -1211,8 +1238,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
     if (consumedItems != null) {
       HostedDebugLog.Info(this, "Add items to slot: slot=#{0}, num={1}",
-                          _inventorySlots.IndexOf(_slotWithPointerFocus), consumedItems.Length);
-      _slotEventsHandler.SetState(SlotActionMode.HoveringOverItemsSlot);
+                          _inventorySlots.IndexOf(slotWithPointerFocus), consumedItems.Length);
       var newItems = new List<InventoryItem>(consumedItems.Length);
       foreach (var consumedItem in consumedItems) {
         var item = AddItem(consumedItem);
@@ -1223,14 +1249,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
               this, "Cannot add dragged item: part={0}, itemId={1}", consumedItem.avPart.name, consumedItem.itemId);
         }
       }
-      MoveItemsToSlot(_slotWithPointerFocus, newItems);
+      MoveItemsToSlot(slotWithPointerFocus, newItems);
       UpdateInventoryStats();
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     } else {
       UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
       HostedDebugLog.Error(
           this, "Cannot store/stack dragged items to slot: slot=#{0}, draggedItems={1}",
-          _inventorySlots.IndexOf(_slotWithPointerFocus), KisApi.ItemDragController.leasedItems.Length);
+          _inventorySlots.IndexOf(slotWithPointerFocus), KisApi.ItemDragController.leasedItems.Length);
     }
   }
   #endregion
