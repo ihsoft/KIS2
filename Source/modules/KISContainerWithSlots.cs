@@ -383,11 +383,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region AbstractPartModule overrides
   /// <inheritdoc/>
-  public override void OnAwake() {
-    base.OnAwake();
-    if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight) {
-      return; // Nothing to do.
-    }
+  public override void OnStart(StartState state) {
+    base.OnStart(state);
 
     useGUILayout = false;
     _slotEventsHandler.ONAfterTransition += (oldState, newState) => {
