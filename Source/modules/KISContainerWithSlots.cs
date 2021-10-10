@@ -1066,37 +1066,39 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="_canAcceptDraggedItemsCheckResult"/>
   /// <seealso cref="canAcceptDraggedItems"/>
   void CheckCanAcceptDrops() {
-    if (KisApi.ItemDragController.isDragging && slotWithPointerFocus != null) {
-      var allItems = KisApi.ItemDragController.leasedItems;
-      var checkResult = slotWithPointerFocus.CheckCanAddItems(allItems);
-      if (checkResult.Count == 0) {
-        // For the items from other inventories also check the basic constraints.
-        var extraVolumeNeeded = 0.0;
-        foreach (var item in allItems) {
-          if (!ReferenceEquals(item.inventory, this)) {
-            extraVolumeNeeded += item.volume;
-            checkResult.AddRange(CheckCanAddItem(item));
-          } 
-        }
-        if (extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
-          checkResult.Add(new ErrorReason() {
-              shortString = VolumeTooLargeReason,
-              guiString = NotEnoughVolumeText.Format(usedVolume + extraVolumeNeeded - maxVolume),
-          });
+    if (!KisApi.ItemDragController.isDragging || slotWithPointerFocus == null) {
+      _canAcceptDraggedItemsCheckResult = null;
+      return;
+    }
+
+    var allItems = KisApi.ItemDragController.leasedItems;
+    var checkResult = slotWithPointerFocus.CheckCanAddItems(allItems);
+    if (checkResult.Count == 0) {
+      // For the items from other inventories also check the basic constraints.
+      var extraVolumeNeeded = 0.0;
+      foreach (var item in allItems) {
+        if (!ReferenceEquals(item.inventory, this)) {
+          extraVolumeNeeded += item.volume;
+          checkResult.AddRange(CheckCanAddItem(item));
         }
       }
 
-      // De-dup the errors by the short string to not spam on multiple items.
-      _canAcceptDraggedItemsCheckResult = checkResult.Count > 0
-          ? checkResult
-              .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
-              .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
-              .Values
-              .ToArray()
-          : null;
-    } else {
-      _canAcceptDraggedItemsCheckResult = null;
+      if (extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
+        checkResult.Add(new ErrorReason() {
+            shortString = VolumeTooLargeReason,
+            guiString = NotEnoughVolumeText.Format(usedVolume + extraVolumeNeeded - maxVolume),
+        });
+      }
     }
+
+    // De-dup the errors by the short string to not spam on multiple items.
+    _canAcceptDraggedItemsCheckResult = checkResult.Count > 0
+        ? checkResult
+            .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
+            .Values
+            .ToArray()
+        : null;
   }
 
   /// <summary>Adds the item into the slot.</summary>
