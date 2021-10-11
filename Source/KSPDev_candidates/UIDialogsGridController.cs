@@ -26,7 +26,7 @@ public static class UIDialogsGridController {
   /// <summary>A collection of the currently managed dialogs.</summary>
   /// <remarks>It's a copy of the actual collection, so any changes to it won't make sense.</remarks>
   /// <value>The full list of the dialogs under the grid's control.</value>
-  public static MonoBehaviour[] managedDialogs => OpenDialogs.ToArray();
+  public static GameObject[] managedDialogs => OpenDialogs.ToArray();
 
   /// <summary>Duration for a dialog to move from its original position to the right layout position.</summary>
   /// <see cref="ArrangeDialogs"/>
@@ -62,7 +62,7 @@ public static class UIDialogsGridController {
   const float WindowsGapSize = 5;
 
   /// <summary>All opened dialogs.</summary>
-  static readonly List<MonoBehaviour> OpenDialogs = new();
+  static readonly List<GameObject> OpenDialogs = new();
 
   /// <summary>Dialogs that are in a process of aligning.</summary>
   static readonly Dictionary<int, Coroutine> MovingDialogs = new();
@@ -80,7 +80,7 @@ public static class UIDialogsGridController {
   /// </param>
   /// <seealso cref="ArrangeDialogs"/>
   /// <seealso cref="managedDialogs"/>
-  public static void AddDialog(MonoBehaviour dialogObject) {
+  public static void AddDialog(GameObject dialogObject) {
     if (dialogObject.transform as RectTransform == null) {
       DebugEx.Error("Dialog doesn't have RectTransform: {0}", dialogObject);
       return;
@@ -97,7 +97,7 @@ public static class UIDialogsGridController {
   /// </returns>
   /// <seealso cref="ArrangeDialogs"/>
   /// <seealso cref="managedDialogs"/>
-  public static bool RemoveDialog(MonoBehaviour dialogObject) {
+  public static bool RemoveDialog(GameObject dialogObject) {
     if (!OpenDialogs.Remove(dialogObject)) {
       return false; // The dialog is not in the grid.
     }
@@ -215,11 +215,14 @@ public static class UIDialogsGridController {
       if (Vector3.SqrMagnitude(dlgMainRect.position - dlgPos) > float.Epsilon) {
         var dlgId = dialog.GetInstanceID();
         if (MovingDialogs.ContainsKey(dlgId)) {
-          dialog.StopCoroutine(MovingDialogs[dlgId]);
+          // It's not known who was actually running the coroutine, so try deleting it from all the components.
+          dialog.GetComponents<MonoBehaviour>().ToList().ForEach(x => x.StopCoroutine(MovingDialogs[dlgId]));
           MovingDialogs.Remove(dlgId);
         }
         if (dialog != noAnimationDialog) {
-          MovingDialogs.Add(dlgId, dialog.StartCoroutine(AnimateMoveWindow(dlgMainRect, dlgPos)));
+          // We don't care which component will be running the coroutine. As long as the object is active, we're fine.
+          var coroutine = dialog.GetComponent<MonoBehaviour>().StartCoroutine(AnimateMoveWindow(dlgMainRect, dlgPos));
+          MovingDialogs.Add(dlgId, coroutine);
         } else {
           dlgMainRect.position = dlgPos;
         }

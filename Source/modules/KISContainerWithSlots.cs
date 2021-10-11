@@ -207,7 +207,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
       var dragCtrl = gameObject.GetComponent<UiWindowDragControllerScript>();
       if (dragCtrl != null && dragCtrl.positionChanged) {
-        UIDialogsGridController.RemoveDialog(gameObject.GetComponent<UiKisInventoryWindow>());
+        UIDialogsGridController.RemoveDialog(gameObject);
         _isInTheGrid = false;
       }
     }
@@ -702,7 +702,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     ArrangeSlots(); // Ensure all slots have UI binding.
     UpdateInventoryWindow();
 
-    UIDialogsGridController.AddDialog(_unityWindow);
+    UIDialogsGridController.AddDialog(_unityWindow.gameObject);
     _unityWindow.SendMessage(
         nameof(IKspDevUnityControlChanged.ControlUpdated), _unityWindow.gameObject,
         SendMessageOptions.DontRequireReceiver);
@@ -719,7 +719,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       HostedDebugLog.Fine(this, "Cancel dragging items");
       KisApi.ItemDragController.CancelItemsLease();
     }
-    UIDialogsGridController.RemoveDialog(_unityWindow);
+    UIDialogsGridController.RemoveDialog(_unityWindow.gameObject);
 
     Hierarchy.SafeDestroy(_unityWindow);
     _unityWindow = null;
