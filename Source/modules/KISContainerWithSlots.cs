@@ -14,7 +14,6 @@ using KSPDev.PrefabUtils;
 using KSPDev.Unity;
 using KISAPIv2;
 using KIS2.UIKISInventorySlot;
-using KIS2.GUIUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace

@@ -107,7 +107,6 @@
     <Compile Include="controllers\SpawnItemDialogController.cs" />
     <Compile Include="impl\EventsHandlerStateMachine.cs" />
     <Compile Include="impl\InventorySlotImpl.cs" />
-    <Compile Include="impl\VolumeLType.cs" />
     <Compile Include="KSPDev_candidates\AmbientSettingsScope.cs" />
     <Compile Include="KSPDev_candidates\ProfilerScope.cs" />
     <Compile Include="KSPDev_candidates\UIDialogsGridController.cs" />
@@ -115,6 +114,7 @@
     <Compile Include="KSPDev_candidates\KspLayerMask.cs" />
     <Compile Include="KSPDev_candidates\PartNodeUtils.cs" />
     <Compile Include="KSPDev_candidates\Shaders.cs" />
+    <Compile Include="KSPDev_candidates\VolumeLType.cs" />
     <Compile Include="modules\KisContainerWithSlots.cs" />
     <Compile Include="modules\KisContainerBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -3,7 +3,6 @@
 // License: Public Domain
 
 using KISAPIv2;
-using KIS2.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using KSPDev.GUIUtils;

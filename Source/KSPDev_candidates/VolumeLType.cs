@@ -1,15 +1,14 @@
-﻿// Kerbal Inventory System
+﻿// Kerbal Development tools.
 // Author: igor.zavoychinskiy@gmail.com
-// License: Public Domain
+// This software is distributed under Public domain license.
 
 using System;
 using KSP.Localization;
-using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
 
 // ReSharper disable once CheckNamespace
-namespace KIS2.GUIUtils {
+namespace KSPDev.GUIUtils {
 
 /// <summary>
 /// Localized message formatting class for a numeric value that represents a <i>volume</i> in
