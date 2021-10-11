@@ -35,14 +35,15 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   #region Helper Unity component to track lock state
   /// <summary>Locks all game's keyboard events and starts updating the drag targets.</summary>
   /// <remarks>
-  /// Once this object is created, all the normal game keys will be locked. Including the key that
-  /// calls system menu (ESC). The auto save ability will also be blocked. To exit this mode user
-  /// either need to press <c>ESC</c> or the code needs to cancel the drag mode via
-  /// <see cref="CancelItemsLease"/>.
-  /// <para>
-  /// When this object is active, a GUI message will be shown at the top of the screen, explaining
-  /// how the user can cancel the mode. It's imperative to not block this ability!
-  /// </para>
+  /// <p>
+  /// Once this object is created, all the normal game keys will be locked. Including the key that calls system menu
+  /// (ESC). The auto save ability will also be blocked. To exit this mode user either need to press <c>ESC</c> or the
+  /// code needs to cancel the drag mode via <see cref="CancelItemsLease"/>.
+  /// </p>
+  /// <p>
+  /// When this object is active, a GUI message will be shown at the top of the screen, explaining how the user can
+  /// cancel the mode. It's imperative to not block this ability!
+  /// </p>
   /// </remarks>
   /// <seealso cref="LeaseItems"/>
   /// <seealso cref="IKisDragTarget"/>
@@ -56,8 +57,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   
     #region Local fields
     const string TotalControlLock = "KISDragControllerUberLock";
-    readonly ScreenMessage _statusScreenMessage =
-        new ScreenMessage("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
+    readonly ScreenMessage _statusScreenMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
     bool _oldCanAutoSaveState;
     bool _controlsLocked;
     Vector3 _lastPointerPosition = -Vector2.one;
@@ -94,7 +94,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
       }
       controller.dragIconObj.showNoGo = !canConsume;
       if (Input.GetKeyUp(CancelEvent.keyCode)) {
-        // Delay release to not leak ESC key release to the game.
+        // Delay the lock handling to not leak the ESC key release to the game.
         AsyncCall.CallOnEndOfFrame(this, CancelLock);
       }
       isInCallbackCycle = false;
