@@ -372,14 +372,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
   #endregion
 
-  #region Unity events
-  void Update() {
-    if (isGuiOpen && Time.timeScale > float.Epsilon) {
-      _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
-    }
-  }
-  #endregion
-
   #region AbstractPartModule overrides
   /// <inheritdoc/>
   public override void OnStart(StartState state) {
@@ -509,6 +501,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     base.OnSave(node);
     for (var i = 0; i < _inventorySlots.Count; i++) {
       _inventorySlots[i].slotItems.ForEach(x => node.AddValue(PersistentConfigKisSlotMapping, i + "-" + x.itemId));
+    }
+  }
+
+  /// <inheritdoc/>
+  public override void OnUpdate() {
+    if (isGuiOpen && Time.timeScale > float.Epsilon) {
+      _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
     }
   }
   #endregion
