@@ -185,19 +185,20 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   /// <inheritdoc/>
   public bool LeaseItems(
       Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn) {
-    ArgumentGuard.NotNull(dragIcon, nameof(dragIcon));
     ArgumentGuard.HasElements(items, nameof(items));
-    ArgumentGuard.NotNull(consumeItemsFn, nameof(consumeItemsFn));
-    ArgumentGuard.NotNull(cancelItemsLeaseFn, nameof(cancelItemsLeaseFn));
     if (isDragging) {
       DebugEx.Error("Cannot start a new dragging: oldLeasedItems={0}, newLeasedItems={1}",
                     leasedItems.Length, items.Length);
       return false;
     }
+    ArgumentGuard.NotNull(dragIcon, nameof(dragIcon));
+    ArgumentGuard.NotNull(consumeItemsFn, nameof(consumeItemsFn));
+    ArgumentGuard.NotNull(cancelItemsLeaseFn, nameof(cancelItemsLeaseFn));
     if (items.Length == 0) {
       DebugEx.Error("Cannot start dragging for an empty items list");
       return false;
     }
+    DebugEx.Info("Leasing items: count={0}", items.Length);
     leasedItems = items;
     _consumeItemsFn = consumeItemsFn;
     _cancelItemsLeaseFn = cancelItemsLeaseFn;
@@ -219,7 +220,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     }
     var consumed = _consumeItemsFn();
     if (!consumed) {
-      DebugEx.Fine("Items not consumed: provider refused the deal");
+      DebugEx.Warning("Items not consumed: provider refused the deal");
       return null;
     }
     var consumedItems = leasedItems;
