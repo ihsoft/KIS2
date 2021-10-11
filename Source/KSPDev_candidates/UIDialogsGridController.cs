@@ -194,7 +194,7 @@ public static class UIDialogsGridController {
   /// If set, then this dialog will get positioned <i>INSTANTLY</i>, without using the animated logic.
   /// </param>
   static void ArrangeDialogs_Impl(Object noAnimationDialog = null) {
-    // The mono objects can die at any moment.
+    // The mono objects can die at any moment. Cleanup such entries.
     for (var i = OpenDialogs.Count - 1; i >= 0; i--) {
       var dlg = OpenDialogs[i];
       if (dlg == null || !dlg.gameObject.activeInHierarchy) {
@@ -226,7 +226,7 @@ public static class UIDialogsGridController {
         }
       }
       // TODO(ihsoft): Check for overflow and create rows.
-      dlgPos.x += (dlgMainRect.sizeDelta.x + WindowsGapSize) * GameSettings.UI_SCALE;
+      dlgPos.x += dlgMainRect.sizeDelta.x * dlgMainRect.lossyScale.x + WindowsGapSize * GameSettings.UI_SCALE;
     }
   }
   #endregion
