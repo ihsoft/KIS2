@@ -99,8 +99,7 @@ public static class UIDialogsGridController {
   /// <seealso cref="managedDialogs"/>
   public static bool RemoveDialog(MonoBehaviour dialogObject) {
     if (!OpenDialogs.Remove(dialogObject)) {
-      DebugEx.Error("Dialog not found: {0}", dialogObject);
-      return false;
+      return false; // The dialog is not in the grid.
     }
     MovingDialogs.Remove(dialogObject.GetInstanceID());
     DebugEx.Fine("Removed dialog from grid: {0}, id={1}", dialogObject, dialogObject.GetInstanceID());
