@@ -193,6 +193,27 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       + " shown when the target slot is not empty.");
   #endregion
 
+  #region Helper classes
+  /// <summary>Helper Unity module to detect if the inventory dialog position has been changed by the user.</summary>
+  /// <remarks>
+  /// By default the dialogs are getting added to the "dialogs grid", which automatically manages the dialog positions.
+  /// When user intentionally changes the dialog position, it gets removed from the grid control.  
+  /// </remarks>
+  sealed class UIWindowMoveTracker : MonoBehaviour, IKspDevUnityControlChanged {
+    bool _isInTheGrid = true;
+    public void ControlUpdated() {
+      if (!_isInTheGrid) {
+        return;
+      }
+      var dragCtrl = gameObject.GetComponent<UiWindowDragControllerScript>();
+      if (dragCtrl != null && dragCtrl.positionChanged) {
+        UIDialogsGridController.RemoveDialog(gameObject.GetComponent<UiKisInventoryWindow>());
+        _isInTheGrid = false;
+      }
+    }
+  }
+  #endregion
+
   #region Part's config fields
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
@@ -346,9 +367,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Shortcut to get the current tooltip.</summary>
   UIKISInventoryTooltip.Tooltip currentTooltip => _unityWindow.currentTooltip;
-
-  /// <summary>Last known position at the dialog close. It will be restored at open.</summary>
-  Vector3? _screenPosition;
   #endregion
 
   #region IKisDragTarget implementation
@@ -670,6 +688,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
 
     _unityWindow.gameObject.AddComponent<UIScalableWindowController2>(); // Respect the game's UI scale settings.
+    _unityWindow.gameObject.AddComponent<UIWindowMoveTracker>(); // Remove from the grid if the dialog has moved.
     _unityWindow.onSlotHover.Add(OnSlotHover);
     _unityWindow.onNewGridSize.Add(OnNewGridSize);
     _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
@@ -684,17 +703,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     UpdateInventoryWindow();
 
     UIDialogsGridController.AddDialog(_unityWindow);
-    if (_screenPosition == null) {
-      HostedDebugLog.Fine(this, "Set calculated window position: {0}", _unityWindow.mainRect.position);
-    } else {
-      HostedDebugLog.Fine(this, "Restore window position: {0}", _screenPosition);
-      _unityWindow.mainRect.localPosition = _screenPosition.Value;
-      // TODO(ihsoft): Listen for "ControlUpdated" message to detect state change in flights/editor.
-      var dragWindow = _unityWindow.gameObject.GetComponent<UiWindowDragControllerScript>();
-      if (dragWindow != null) {
-        dragWindow.positionChanged = true;
-      }
-    }
     _unityWindow.SendMessage(
         nameof(IKspDevUnityControlChanged.ControlUpdated), _unityWindow.gameObject,
         SendMessageOptions.DontRequireReceiver);
@@ -706,10 +714,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       return;
     }
     HostedDebugLog.Fine(this, "Destroying inventory window");
-    var dragWindow = _unityWindow.gameObject.GetComponent<UiWindowDragControllerScript>();
-    if (dragWindow == null || dragWindow.positionChanged) {
-      _screenPosition = _unityWindow.mainRect.localPosition;
-    }
     if (_dragSourceSlot != null) {
       // TODO(ihsoft): Better, disable the close button when there are items in the dragging state.
       HostedDebugLog.Fine(this, "Cancel dragging items");
