@@ -669,7 +669,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       UIMasterController.Instance.actionCanvas.pixelPerfect = true;
     }
 
-    _unityWindow.gameObject.AddComponent<UIScalableWindowController>();
+    _unityWindow.gameObject.AddComponent<UIScalableWindowController2>(); // Respect the game's UI scale settings.
     _unityWindow.onSlotHover.Add(OnSlotHover);
     _unityWindow.onNewGridSize.Add(OnNewGridSize);
     _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
