@@ -114,6 +114,7 @@
     <Compile Include="KSPDev_candidates\KspLayerMask.cs" />
     <Compile Include="KSPDev_candidates\PartNodeUtils.cs" />
     <Compile Include="KSPDev_candidates\Shaders.cs" />
+    <Compile Include="KSPDev_candidates\UIScalableWindowController.cs" />
     <Compile Include="KSPDev_candidates\VolumeLType.cs" />
     <Compile Include="modules\KisContainerWithSlots.cs" />
     <Compile Include="modules\KisContainerBase.cs" />
