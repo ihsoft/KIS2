@@ -56,10 +56,13 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
     // Take the editors dragged part and start KIS dragging for it. Hide the part in the editor.
     if (newTarget != null && EditorLogic.SelectedPart != null) {
       _savedEditorPart = EditorLogic.SelectedPart;
+      // We cannot nicely handle the cancel action when the pointer is hovering over an inventory dialog.
+      // So, restrict the user action. The API action is the problem of the caller.
       KisApi.ItemDragController.LeaseItems(
           KisApi.PartIconUtils.MakeDefaultIcon(_savedEditorPart),
           new InventoryItem[] { InventoryItemImpl.FromPart(null, _savedEditorPart) },
-          EditorItemsConsumed, EditorItemsCancelled);
+          EditorItemsConsumed, EditorItemsCancelled,
+          allowInteractiveCancel: false);
       UIPartActionController.Instance.partInventory.editorPartDroppedBlockSfx = true;
       EditorLogic.fetch.ReleasePartToIcon();
       _savedEditorPart.gameObject.SetLayerRecursive(LayerMask.NameToLayer("UIAdditional"));

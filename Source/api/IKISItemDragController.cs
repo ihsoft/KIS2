@@ -63,12 +63,17 @@ public interface IKisItemDragController {
   /// The cleanup action that is called when the drag operation is cancelled. It's called before the
   /// <see cref="leasedItems"/> are cleaned up. This action must never fail.
   /// </param>
+  /// <param name="allowInteractiveCancel">
+  /// Indicates if user can cancel the drag operation from the keyboard. By default, the user MAY do this. If the
+  /// provider that leases the items cannot allow it, it has to implement its own interactive approach.
+  /// </param>
   /// <returns><c>true</c> if dragging has successfully started.</returns>
   /// <seealso cref="leasedItems"/>
   /// <seealso cref="ConsumeItems"/>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="IKisDragTarget.OnKisDragStart"/>
-  bool LeaseItems(Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn);
+  bool LeaseItems(Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn,
+                  bool allowInteractiveCancel = true);
 
   /// <summary>Indicates that the target is willing to consume the dragged items.</summary>
   /// <remarks>

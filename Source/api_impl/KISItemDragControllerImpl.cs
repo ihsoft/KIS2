@@ -51,6 +51,12 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     /// <summary>The controller object to notify.</summary>
     public KisItemDragControllerImpl controller;
 
+    /// <summary>Indicates if user can cancel the dragged operation.</summary>
+    /// <remarks>
+    /// It affects the offered hints in GUI, as well as handling the appropriate action from the keyboard.
+    /// </remarks>
+    public bool canCancelInteractively;
+
     /// <summary>Tells if callbacks are being handling.</summary>
     /// <remarks>Not all actions with the controller are allowed in this mode.</remarks>
     public bool isInCallbackCycle { get; private set; }
@@ -81,23 +87,28 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
       if (!_controlsLocked) {
         return;
       }
-      isInCallbackCycle = true;
-      ScreenMessages.PostScreenMessage(_statusScreenMessage);
+      if (canCancelInteractively) {
+        ScreenMessages.PostScreenMessage(_statusScreenMessage);
+        // Delay the lock handling to not leak the ESC key release to the game.
+        if (Input.GetKeyUp(CancelEvent.keyCode)) {
+          AsyncCall.CallOnEndOfFrame(this, CancelLock);
+        }
+      }
+
       var pointerMoved = false;
       if (_lastPointerPosition != Input.mousePosition) {
         _lastPointerPosition = Input.mousePosition;
         pointerMoved = true;
       }
+
+      // Update the pointer state.
       var canConsume = false;
+      isInCallbackCycle = true;
       foreach (var target in controller._dragTargets) {
         canConsume |= SafeCallbacks.Func(() => target.OnKisDrag(pointerMoved), false);
       }
-      controller.dragIconObj.showNoGo = !canConsume;
-      if (Input.GetKeyUp(CancelEvent.keyCode)) {
-        // Delay the lock handling to not leak the ESC key release to the game.
-        AsyncCall.CallOnEndOfFrame(this, CancelLock);
-      }
       isInCallbackCycle = false;
+      controller.dragIconObj.showNoGo = !canConsume;
     }
     #endregion
 
@@ -184,7 +195,8 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   #region KISItemDragController implementation
   /// <inheritdoc/>
   public bool LeaseItems(
-      Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn) {
+      Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn,
+      bool allowInteractiveCancel = true) {
     ArgumentGuard.HasElements(items, nameof(items));
     if (isDragging) {
       DebugEx.Error("Cannot start a new dragging: oldLeasedItems={0}, newLeasedItems={1}",
@@ -206,6 +218,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     Array.ForEach(_dragTargets, t => SafeCallbacks.Action(t.OnKisDragStart));
     _dragTracker = new GameObject().AddComponent<DragModeTracker>();
     _dragTracker.controller = this;
+    _dragTracker.canCancelInteractively = allowInteractiveCancel;
     return true;
   }
 
