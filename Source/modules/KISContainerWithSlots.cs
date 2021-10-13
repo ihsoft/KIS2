@@ -521,9 +521,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       _inventorySlots[i].slotItems.ForEach(x => node.AddValue(PersistentConfigKisSlotMapping, i + "-" + x.itemId));
     }
   }
+  #endregion
 
-  /// <inheritdoc/>
-  public override void OnUpdate() {
+  #region MonoBehaviour events
+  /// <summary>Detects mouse clicks.</summary>
+  /// <remarks>Don't use module's <c>OnUpdate</c> due to it's not called in the editor.</remarks>
+  void Update() {
     if (isGuiOpen && Time.timeScale > float.Epsilon) {
       _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
     }
