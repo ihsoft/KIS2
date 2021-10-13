@@ -76,7 +76,6 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
 
     #region MonoBehaviour callbacks
     void Awake() {
-      _statusScreenMessage.message = CancelDraggingTxt.Format(CancelEvent);
       InputLockManager.SetControlLock(DragControlsLockTypes, TotalControlLock);
       _oldCanAutoSaveState = HighLogic.CurrentGame.Parameters.Flight.CanAutoSave;
       HighLogic.CurrentGame.Parameters.Flight.CanAutoSave = false;
@@ -93,6 +92,7 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
         return;
       }
       if (canCancelInteractively) {
+        _statusScreenMessage.message = CancelDraggingTxt.Format(CancelEvent);
         ScreenMessages.PostScreenMessage(_statusScreenMessage);
         // Delay the lock handling to not leak the ESC key release to the game.
         if (Input.GetKeyUp(CancelEvent.keyCode)) {
