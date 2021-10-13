@@ -89,7 +89,7 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
     }
 
     void Update() {
-      if (!_controlsLocked) {
+      if (!_controlsLocked || !controller.isDragging) {
         return;
       }
       if (canCancelInteractively) {
