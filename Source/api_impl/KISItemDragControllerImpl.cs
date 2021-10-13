@@ -19,7 +19,7 @@ namespace KIS2 {
 
 /// <inheritdoc/>
 // ReSharper disable once InconsistentNaming
-internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
+sealed class KisItemDragControllerImpl : IKisItemDragController  {
 
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -58,7 +58,12 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
     public bool canCancelInteractively;
 
     /// <summary>Tells if callbacks are being handling.</summary>
-    /// <remarks>Not all actions with the controller are allowed in this mode.</remarks>
+    /// <remarks>
+    /// Not all actions with the controller are allowed in this mode. In particular, the consumption or cancelling are
+    /// not allowed.
+    /// </remarks>
+    /// <seealso cref="controller"/>
+    /// <seealso cref="IKisDragTarget.OnKisDrag"/>
     public bool isInCallbackCycle { get; private set; }
   
     #region Local fields
@@ -259,8 +264,7 @@ internal sealed class KisItemDragControllerImpl : IKisItemDragController  {
   public void SetFocusedTarget(GameObject newTarget) {
     if (focusedTarget != newTarget) {
       DebugEx.Fine("Focus target changed: old={0}, new={1}",
-                   focusedTarget != null ? focusedTarget.name : null,
-                   newTarget != null ? newTarget.name : null);
+                   focusedTarget != null ? focusedTarget.name : null, newTarget != null ? newTarget.name : null);
       focusedTarget = newTarget;
       Array.ForEach(_dragTargets, t => SafeCallbacks.Action(() => t.OnFocusTarget(newTarget)));
     }

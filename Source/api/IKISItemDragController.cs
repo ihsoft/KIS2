@@ -10,15 +10,12 @@ using UnityEngine;
 // ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
-/// <summary>
-/// Interface that controls the inventory items movements between the inventories and the scene.
-/// </summary>
+/// <summary>Interface that controls the inventory items movements between the inventories and the scene.</summary>
 /// <remarks>
-/// This interface is not made for dealing with actual KIS items movements or instantiating the
-/// parts. Instead, it serves as a proxy to connect a provider, the class that offers item(s) for
-/// movement, and a target, the class that can consume the item(s). The providers should
-/// pro-actively call this interface implementation to offer the item(s) for dragging. The targets
-/// must be reacting on their events to verify if they can/should consume anything from the
+/// This interface is not made for dealing with actual KIS items movements or instantiating the parts. Instead, it
+/// serves as a proxy to connect a provider, the class that offers item(s) for movement, and a target, the class that
+/// can consume the item(s). The providers should pro-actively call this interface implementation to offer the item(s)
+/// for dragging. The targets must be reacting on their events to verify if they can/should consume anything from the
 /// controller, and register themselves as targets if they can.
 /// </remarks>
 /// <seealso cref="IKisDragTarget"/>
