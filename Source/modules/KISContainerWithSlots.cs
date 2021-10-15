@@ -1145,16 +1145,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// the same slot, the caller is responsible to do this check.
   /// </remarks>
   /// <param name="targetSlot">The slot to put the items into.</param>
-  /// <param name="items">The items to put into the slot. They all must be the valid items of this inventory!</param>
-  void MoveItemsToSlot(InventorySlotImpl targetSlot, IEnumerable<InventoryItem> items) {
-    foreach (var item in items) {
-      if (!_itemToSlotMap.TryGetValue(item.itemId, out var slot)) {
-        HostedDebugLog.Error(this, "Cannot find slot for item: itemId={0}", item.itemId);
-        continue;
-      }
-      RemoveSlotItem(slot, item);
-      AddSlotItem(targetSlot, item);
+  /// <param name="item">The item to put into the slot. It must belong to this inventory!</param>
+  void MoveItemsToSlot(InventorySlotImpl targetSlot, InventoryItem item) {
+    if (!_itemToSlotMap.TryGetValue(item.itemId, out var slot)) {
+      HostedDebugLog.Error(this, "Cannot find slot for item: itemId={0}", item.itemId);
+      return;
     }
+    RemoveSlotItem(slot, item);
+    AddSlotItem(targetSlot, item);
   }
 
   /// <summary>Invokes a GUI dialog that allows choosing a part to be spawned in the slot.</summary>
@@ -1187,7 +1185,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           continue;
         }
         var newItem = AddItem(slotWithPointerFocus.slotItems[0]); // It will get added to a random slot.
-        MoveItemsToSlot(slotWithPointerFocus, new []{ newItem }); // Move the item to the the specific slot.
+        MoveItemsToSlot(slotWithPointerFocus, newItem); // Move the item to the the specific slot.
       }
       checkResult = checkResult
           .GroupBy(p => p.guiString, StringComparer.OrdinalIgnoreCase)
@@ -1272,13 +1270,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       foreach (var consumedItem in consumedItems) {
         var item = AddItem(consumedItem);
         if (item != null) {
-          newItems.Add(item);
+          MoveItemsToSlot(slotWithPointerFocus, item);
         } else {
           HostedDebugLog.Error(
               this, "Cannot add dragged item: part={0}, itemId={1}", consumedItem.avPart.name, consumedItem.itemId);
         }
       }
-      MoveItemsToSlot(slotWithPointerFocus, newItems);
       UpdateInventoryStats();
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     } else {
