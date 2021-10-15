@@ -307,20 +307,19 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="_slotEventsHandler"/>
   enum SlotActionMode {
     /// <summary>
-    /// Dragging mode is in action and the pointer hovers over an empty, and it's not the slot that
-    /// started the dragging action.
+    /// Dragging mode is in action and the pointer hovers over an empty, and it's not the slot that started the dragging
+    /// action.
     /// </summary>
     DraggingOverEmptyTargetSlot,
 
     /// <summary>
-    /// Dragging mode is in action and the pointer hovers over a slot with items, and it's not the
-    /// slot that started the dragging action.
+    /// Dragging mode is in action and the pointer hovers over a slot with items, and it's not the slot that started the
+    /// dragging action.
     /// </summary>
     DraggingOverItemsTargetSlot,
 
     /// <summary>
-    /// Dragging mode is in action and the pointer hovers over the slot that started the dragging
-    /// action (not empty).
+    /// Dragging mode is in action and the pointer hovers over the slot that started the dragging action (not empty).
     /// </summary>
     DraggingOverSourceSlot,
 
@@ -332,8 +331,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>
-  /// State machine that controls what input actions are active with regard to the slot drag/drop
-  /// operations.
+  /// State machine that controls what input actions are active with regard to the slot drag/drop operations.
   /// </summary>
   readonly EventsHandlerStateMachine<SlotActionMode> _slotEventsHandler = new();
 
@@ -768,25 +766,19 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>Returns a slot where the item can be stored.</summary>
-  /// <remarks>
-  /// This method tries to find a best slot, so that the inventory is kept as dense as possible.
-  /// </remarks>
-  /// <param name="item">
-  /// The item to find a slot for. It may belong to a different inventory.
-  /// </param>
+  /// <remarks>This method tries to find a best slot, so that the inventory is kept as dense as possible.</remarks>
+  /// <param name="item">The item to find a slot for. It may belong to a different inventory.</param>
   /// <param name="preferredSlots">
-  /// If set, then these slots will be checked for best fit first. The preferred slots can be
-  /// invisible.
+  /// If set, then these slots will be checked for best fit first. The preferred slots can be invisible.
   /// </param>
   /// <param name="addInvisibleSlot">
-  /// If <c>true</c>, then a new invisible slot will be created in the inventory in case of no
-  /// compatible slot was found.
+  /// If <c>true</c>, then a new invisible slot will be created in the inventory in case of no compatible slot was
+  /// found.
   /// </param>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
   /// <seealso cref="_inventorySlots"/>
-  InventorySlotImpl FindSlotForItem(InventoryItem item,
-                                    IEnumerable<InventorySlotImpl> preferredSlots = null,
-                                    bool addInvisibleSlot = false) {
+  InventorySlotImpl FindSlotForItem(
+      InventoryItem item, IEnumerable<InventorySlotImpl> preferredSlots = null, bool addInvisibleSlot = false) {
     InventorySlotImpl slot;
     var matchItems = new[] { item };
     // First, try to store the item into one of the preferred slots.
@@ -819,9 +811,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>Triggers when items from the slot are consumed by the target.</summary>
-  /// <remarks>
-  /// This method may detect a failing condition. If it happens, the state must stay unchanged.
-  /// </remarks>
+  /// <remarks>This method may detect a failing condition. If it happens, the state must stay unchanged.</remarks>
   /// <seealso cref="_dragSourceSlot"/>
   bool ConsumeSlotItems() {
     var leasedItems = KisApi.ItemDragController.leasedItems;
@@ -846,13 +836,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>
-  /// Ensures that each UI slot has a corresponded inventory slot. Also, updates and optimizes the
-  /// inventory slots that are not currently present in UI. 
+  /// Ensures that each UI slot has a corresponded inventory slot. Also, updates and optimizes the inventory slots that
+  /// are not currently present in UI. 
   /// </summary>
   /// <remarks>
-  /// This method must be called each time the inventory or unity slots number is changed. It
-  /// implements a tricky logic that tries to adapt to the inventory GUI size change, and adjusts
-  /// the  slots so that the least number of the visible slots change their positions.
+  /// This method must be called each time the inventory or unity slots number is changed. It implements a tricky logic
+  /// that tries to adapt to the inventory GUI size change, and adjusts the  slots so that the least number of the
+  /// visible slots change their positions.
   /// </remarks>
   void ArrangeSlots() {
     if (!isGuiOpen) {
@@ -866,8 +856,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       UnregisterSlotHoverCallback();
     }
 
-    // Make a grid from the flat slots array.
-    // Expand with empty slots at the right and bottom as needed.
+    // Make a grid from the flat slots array. Expand with empty slots at the right-bottom as needed.
     var slotGrid = new InventorySlotImpl[
         Math.Max(newSlotGridWidth, slotGridWidth),
         Math.Max(newSlotGridHeight, slotGridHeight)];
@@ -884,8 +873,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         .Skip(slotGridWidth * slotGridHeight)
         .ToList();
 
-    // Make sure all the slot references are detached from the GUI. The code below may completely
-    // change the slots layout.
+    // Make sure all the slot references are detached from the GUI. The code below may completely change the slots
+    // layout.
     _inventorySlots.ForEach(x => x.BindTo(null));
 
     // Remove lines in a user friendly manner. The items from the bottom will be pulled up.
@@ -913,8 +902,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
     }
 
-    // Remove columns in a user friendly manner. The items from the right will be shifted to the
-    // left.
+    // Remove columns in a user friendly manner. The items from the right will be shifted to the left.
     if (newSlotGridWidth < slotGridWidth) {
       var slotsToDelete = slotGridWidth - newSlotGridWidth;
       for (var row = 0; row < slotGrid.GetLength(1); row++) {
@@ -999,7 +987,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>
-  /// Verifies the current conditions and sets the appropriate state of the events handler state machine.</summary>
+  /// Verifies the current conditions and sets the appropriate state of the events handler state machine.
+  /// </summary>
   /// <remarks>
   /// <p>
   /// This method only sets the state of the machine, which is a cheap operation if the state was the same. Than being
@@ -1048,9 +1037,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Updates the currently focused slot (if any) with the relevant tooltip info.</summary>
   /// <remarks>
-  /// This method needs to be called every time the slot content is changed in any way. Including
-  /// the updates to the slot item configs. Note, that this methods is expensive and it's not
-  /// advised to be invoked in every frame update.
+  /// This method needs to be called every time the slot content is changed in any way. Including the updates to the
+  /// slot item configs. Note, that this methods is expensive and it's not advised to be invoked in every frame update.
   /// </remarks>
   void UpdateTooltip() {
     if (slotWithPointerFocus == null || currentTooltip == null) {
@@ -1234,8 +1222,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Takes items from the focused slot and starts dragging operation.</summary>
   /// <param name="num">
-  /// The number of items to take from the slot. It's OK to request more items than exist in the
-  /// slot, all the items will be taken in this case.
+  /// The number of items to take from the slot. It's OK to request more items than exist in the slot, all the items
+  /// will be taken in this case.
   /// </param>
   /// <remarks>It's an action, invoked from the slot events state machine.</remarks>
   /// <seealso cref="_slotEventsHandler"/>

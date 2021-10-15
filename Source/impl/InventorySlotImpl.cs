@@ -17,9 +17,9 @@ namespace KIS2 {
 
 /// <summary>Internal class that holds inventory slot logic.</summary>
 /// <remarks>
-/// Every slot can only hold items that refer the same part proto. The persisted properties on the
-/// items should be "similar". If two parts of the same kind are too different with regard to their
-/// internal state, they cannot stack to the same slot.
+/// Every slot can only hold items that refer the same part proto. The persisted properties on the items should be
+/// "similar". If two parts of the same kind are too different with regard to their internal state, they cannot stack to
+/// the same slot.
 /// </remarks>
 /// <seealso cref="KisContainerWithSlots"/>
 sealed class InventorySlotImpl {
@@ -181,30 +181,26 @@ sealed class InventorySlotImpl {
   // ReSharper disable MemberCanBePrivate.Global
 
   /// <summary>
-  /// Short name of the checking error for the case when parts with different signature are being
-  /// added to the slot.
+  /// Short name of the checking error for the case when parts with different signature are being added to the slot.
   /// </summary>
   /// <seealso cref="DifferentPartsReasonText"/>
   public const string DifferentPartReason = "DifferentPart";
 
-  /// <summary>
-  /// Short name of the checking error for the case when parts have different resource sets.
-  /// </summary>
+  /// <summary>Short name of the checking error for the case when parts have different resource sets.</summary>
   /// <seealso cref="DifferentResourcesReasonText"/>
   /// <seealso cref="CheckIfSimilar"/>
   public const string DifferentResourcesReason = "DifferentResources";
 
   /// <summary>
-  /// Short name of the checking error for the case when parts have the same resources, but the
-  /// amounts are too to be stored in the same slot.
+  /// Short name of the checking error for the case when parts have the same resources, but the amounts are too to be
+  /// stored in the same slot.
   /// </summary>
   /// <seealso cref="DifferentResourcesReasonText"/>
   /// <seealso cref="CheckIfSimilar"/>
   public const string DifferentResourceAmountsReason = "DifferentResourcesAmounts";
 
   /// <summary>
-  /// Short name of the checking error for the case when parts with different variants are being
-  /// added to the slot.
+  /// Short name of the checking error for the case when parts with different variants are being added to the slot.
   /// </summary>
   /// <seealso cref="DifferentVariantReasonText"/>
   public const string DifferentVariantReason = "DifferentVariant";
@@ -219,18 +215,15 @@ sealed class InventorySlotImpl {
 
   /// <summary>Tells if this slot is visible in the inventory dialog.</summary>
   /// <remarks>
-  /// Slot can be invisible in two cases: the dialog is closed or there are not enough UI elements
-  /// to represent all the slots in the dialog. In the latter case, the tail slots become invisible.
+  /// Slot can be invisible in two cases: the dialog is closed or there are not enough UI elements to represent all the
+  /// slots in the dialog. In the latter case, the tail slots become invisible.
   /// </remarks>
   public bool isVisible => _unitySlot != null;
 
   /// <summary>
-  /// Tells if the slot is participating in a multi-frame operation and must not get removed from
-  /// the dialog.
+  /// Tells if the slot is participating in a multi-frame operation and must not get removed from the dialog.
   /// </summary>
-  /// <remarks>
-  /// The content of the locked slot can change as long as the affected items are not locked.
-  /// </remarks>
+  /// <remarks>The content of the locked slot can change as long as the affected items are not locked.</remarks>
   public bool isLocked {
     // ReSharper disable once UnusedMember.Global
     get => _isLocked;
@@ -247,14 +240,12 @@ sealed class InventorySlotImpl {
   /// <remarks>Items that have data are not allowed to stack in the slots.</remarks>
   public bool hasScience => isVisible && _unitySlot.hasScience;
 
-  /// <summary>
-  /// Gives percentile string that describes the aggregate state of the items in the slot.
-  /// </summary>
+  /// <summary>Gives percentile string that describes the aggregate state of the items in the slot.</summary>
   public string resourceStatus => isVisible ? _unitySlot.resourceStatus : null;
 
   /// <summary>
-  /// Number of the items that was claimed by the inventory fro the removal. They must be skipped
-  /// from the UI related updates.
+  /// Number of the items that was claimed by the inventory fro the removal. They must be skipped from the UI related
+  /// updates.
   /// </summary>
   /// <remarks>The items are always reserved starting from item 0.</remarks>
   public int reservedItems {
@@ -267,6 +258,7 @@ sealed class InventorySlotImpl {
   int _reservedItems;
 
   /// <summary>Inventory items in the slot.</summary>
+  /// FIXME: make it hashset, or sorted hashset
   public List<InventoryItem> slotItems { get; private set; } = new();
 
   /// <summary>Generalized icon of the slot.</summary>
@@ -276,7 +268,7 @@ sealed class InventorySlotImpl {
           ? KisApi.PartIconUtils.MakeDefaultIcon(avPart, slotItems[0].variant)
           : null;
 
-  /// <summary>Tells if this slot has any part item.</summary>
+  /// <summary>Indicates if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Count == 0;
 
   // ReSharper enable MemberCanBePrivate.Global
@@ -310,8 +302,8 @@ sealed class InventorySlotImpl {
   #region API methods
   /// <summary>Attaches this slot to a Unity slot object.</summary>
   /// <remarks>
-  /// The slots that are not attached to any Unity object are invisible. Invisible slots are fully
-  /// functional slots, except the UI related properties and methods are NO-OP. 
+  /// The slots that are not attached to any Unity object are invisible. Invisible slots are fully functional slots,
+  /// except the UI related properties and methods are NO-OP. 
   /// </remarks>
   /// <param name="newUnitySlot">The slot or <c>null</c> if slot should become invisible.</param>
   /// <seealso cref="isVisible"/>
@@ -332,8 +324,8 @@ sealed class InventorySlotImpl {
 
   /// <summary>Adds an item into the slot.</summary>
   /// <remarks>
-  /// This method doesn't check preconditions. The item will be added even if it breaks the slot's
-  /// logic. The caller is responsible to verify if the item can be added before attempting to add anything.
+  /// This method doesn't check preconditions. The item will be added even if it breaks the slot's logic. The caller is
+  /// responsible to verify if the item can be added before attempting to add anything.
   /// </remarks>
   /// <param name="item">
   /// An item to add. The item is not copied, it's added as a reference. It must be already added into the inventory.
@@ -363,14 +355,13 @@ sealed class InventorySlotImpl {
 
   /// <summary>Verifies if the items can be added to the slot.</summary>
   /// <remarks>
-  /// The items must be "similar" to the other items in the slot. At the very least, it must be the
-  /// same part. The part's state similarity is implementation dependent and the callers must not be
-  /// guessing about it.
+  /// The items must be "similar" to the other items in the slot. At the very least, it must be the same part. The
+  /// part's state similarity is implementation dependent and the callers must not be guessing about it.
   /// </remarks>
   /// <param name="checkItems">The items to check. If it's empty, the reply is always "yes".</param>
   /// <param name="logErrors">
-  /// If <c>true</c>, then all the found errors will be written to the system log. Callers may use
-  /// this option when they don't normally expect any errors.
+  /// If <c>true</c>, then all the found errors will be written to the system log. Callers may use this option when
+  /// they don't normally expect any errors.
   /// </param>
   /// <returns>
   /// An empty list if the item can be added to the slot, or a list of human readable errors otherwise.
@@ -507,8 +498,7 @@ sealed class InventorySlotImpl {
 
   /// <summary>Gives an approximate short string for a percent value.</summary>
   /// <remarks>
-  /// The boundary values, 100% and 0%, are only shown if this value is not a default for any of the
-  /// part resources.
+  /// The boundary values, 100% and 0%, are only shown if this value is not a default for any of the part resources.
   /// </remarks>
   string GetSlotResourceAmountStatus() {
     if (_resourceSimilarityValues == null || slotItems[0].resources.Length == 0) {
@@ -551,10 +541,8 @@ sealed class InventorySlotImpl {
     // FIXME: implement
   }
 
-  /// <summary>Allocates the percentile into one of the 13 fixed slots.</summary>
-  /// <remarks>
-  /// The slots were chosen so that the grouping would make sense for the usual game cases.  
-  /// </remarks>
+  /// <summary>Allocates the percentile into one of the 5 fixed slots.</summary>
+  /// <remarks>The slots were chosen so that the grouping would make sense for the usual game cases.</remarks>
   static int GetResourceAmountSlot(double percent) {
     int res;
     if (percent < double.Epsilon) {

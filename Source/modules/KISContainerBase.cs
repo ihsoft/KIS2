@@ -390,7 +390,7 @@ public class KisContainerBase : AbstractPartModule,
   /// The new item is not added to <see cref="inventoryItems"/>, but it's expected that it will be added there by the
   /// calling code. A normal way of doing it is calling <see cref="AddItem"/> or <see cref="DeleteItem"/>.
   /// </remarks>
-  /// <param name="stockSlotIndex">The slot index in teh stock inventory module.</param>
+  /// <param name="stockSlotIndex">The slot index in the stock inventory module.</param>
   /// <param name="itemId">
   /// An optional ID to assign to the new item. If omitted, then a new unique ID will be generated.
   /// </param>
