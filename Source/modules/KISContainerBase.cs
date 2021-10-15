@@ -10,15 +10,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using KSP.UI.Screens;
+using KSPDev.ConfigUtils;
 using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
 
-/// <summary>
-/// Base module to handle inventory items. It can only hold items, no GUI is offered.
-/// </summary>
+/// <summary>Base module to handle inventory items. It can only hold items, no GUI is offered.</summary>
+[PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 public class KisContainerBase : AbstractPartModule,
                                 IKisInventory {
   #region Localizable GUI strings
@@ -47,6 +47,17 @@ public class KisContainerBase : AbstractPartModule,
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
   public Vector3 maxItemSize;
+  #endregion
+
+  #region Global settings
+  /// <summary>The maximum size of the slot in the stock inventory.</summary>
+  /// <remarks>
+  /// It only makes sense if the <c>respectStockStackingLogic</c> is set to <c>false</c>. If the stock logic is not
+  /// honored, it's technically possible to put ANY number of items into one slot. However, putting "any" number of
+  /// items is never a good idea. A too large slot can result in to unpredictable consequences in the stock game.
+  /// </remarks>
+  [PersistentField("Performance/maxStockSlotSize")]
+  public int maxStockSlotSize = 99; // The default is based on the 1.12.2 parts set.
   #endregion
 
   #region IKISInventory properties
@@ -139,9 +150,6 @@ public class KisContainerBase : AbstractPartModule,
     readonly int _originalStackCapacity;
     readonly int _originalQuantity;
 
-    /// <summary>The maximum size of the stock inventory slot stack.</summary>
-    const int MaxStackCapacity = 99; // Keep it two-digits for better UI experience.
-
     /// <summary>Temporarily increases the stack capacity and restores it back on the disposal.</summary>
     /// <remarks>
     /// The stack capacity will be set to a high (but limited) value to let the stock logic accommodating more items. On
@@ -149,14 +157,13 @@ public class KisContainerBase : AbstractPartModule,
     /// </remarks>
     /// <param name="kisBaseModule">The KIS module on which behalf the action is being performed.</param>
     /// <param name="storedPart">The stock slot to modify.</param>
-    /// <seealso cref="MaxStackCapacity"/>
-    public StackCapacityScope(KisContainerBase kisBaseModule, StoredPart storedPart) {
+    public StackCapacityScope(KisContainerBase kisBaseModule, StoredPart storedPart, int maxStackCapacity) {
       _kisBaseModule = kisBaseModule;
       _storedPart = storedPart;
       _originalStackCapacity = storedPart.stackCapacity;
       _originalQuantity = storedPart.quantity;
-      storedPart.stackCapacity = MaxStackCapacity;
-      storedPart.snapshot.moduleCargoStackableQuantity = MaxStackCapacity;
+      storedPart.stackCapacity = maxStackCapacity;
+      storedPart.snapshot.moduleCargoStackableQuantity = maxStackCapacity;
     }
 
     /// <summary>Restores the original stack capacity or sets a new one.</summary>
@@ -192,6 +199,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public override void OnLoad(ConfigNode node) {
     base.OnLoad(node);
+    ConfigAccessor.ReadFieldsInType(GetType(), this);
     if (stockInventoryModule == null || stockInventoryModule.storedParts == null) {
       HostedDebugLog.Error(this, "Cannot load state due to a bad part state");
       return;
@@ -461,7 +469,7 @@ public class KisContainerBase : AbstractPartModule,
       }
 
       // Verify if we can go above the stock limit.
-      using (new StackCapacityScope(this, slot)) {
+      using (new StackCapacityScope(this, slot, maxStockSlotSize)) {
         if (!stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
           continue;
         }
@@ -522,7 +530,7 @@ public class KisContainerBase : AbstractPartModule,
       stockInventoryModule.StoreCargoPartAtSlot(item.snapshot, stockSlotIndex);
     } else {
       var slot = stockInventoryModule.storedParts[stockSlotIndex];
-      using (new StackCapacityScope(this, slot)) {
+      using (new StackCapacityScope(this, slot, int.MaxValue)) {
         stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
       }
     }
