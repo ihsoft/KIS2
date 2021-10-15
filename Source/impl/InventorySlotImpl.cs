@@ -201,6 +201,10 @@ sealed class InventorySlotImpl {
   /// <seealso cref="DifferentVariantReasonText"/>
   public const string DifferentVariantReason = "DifferentVariant";
 
+  /// <summary>The inventory that owns this slot.</summary>
+  /// <value>The inventory instance. It's never <c>null</c>.</value>
+  public readonly KisContainerWithSlots ownerInventory;
+
   /// <summary>Tells if this slot is visible in the inventory dialog.</summary>
   /// <remarks>
   /// Slot can be invisible in two cases: the dialog is closed or there are not enough UI elements
@@ -286,7 +290,8 @@ sealed class InventorySlotImpl {
   #endregion
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
-  public InventorySlotImpl(UIKISInventorySlot.Slot unitySlot) {
+  public InventorySlotImpl(KisContainerWithSlots owner, UIKISInventorySlot.Slot unitySlot) {
+    ownerInventory = owner;
     BindTo(unitySlot);
   }
 

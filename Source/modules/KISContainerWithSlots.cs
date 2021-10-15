@@ -479,7 +479,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public override void OnLoad(ConfigNode node) {
     // First, make all the slots to allow the default allocation logic to work smoothly.
     for (var i = 0; i < slotGridWidth * slotGridHeight; i++) {
-      _inventorySlots.Add(new InventorySlotImpl(null));
+      _inventorySlots.Add(new InventorySlotImpl(this, null));
     }
     // Rebuild the stored state, but keep in mind that it may be inconsistent.
     var itemToKisSlotMap = new Dictionary<string, int>();
@@ -491,7 +491,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       if (slotIndex >= _inventorySlots.Count) {
         HostedDebugLog.Warning(this, "Found slot beyond capacity: {0}", slotIndex);
         while (_inventorySlots.Count <= slotIndex) {
-          _inventorySlots.Add(new InventorySlotImpl(null));
+          _inventorySlots.Add(new InventorySlotImpl(this, null));
         }
       }
     }
@@ -790,7 +790,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     // Finally, create a new invisible slot to fit the items.
     HostedDebugLog.Warning(this, "Adding an invisible slot: slotIdx={0}", _inventorySlots.Count);
-    slot = new InventorySlotImpl(null);
+    slot = new InventorySlotImpl(this, null);
     _inventorySlots.Add(slot);
     return slot;
   }
@@ -851,7 +851,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     for (var i = 0; i < slotGrid.GetLength(0); i++) {
       for (var j = 0; j < slotGrid.GetLength(1); j++) {
         if (i >= slotGridWidth || j >= slotGridHeight || j * slotGridWidth + i >= _inventorySlots.Count) {
-          slotGrid[i, j] = new InventorySlotImpl(null);
+          slotGrid[i, j] = new InventorySlotImpl(this, null);
         } else {
           slotGrid[i, j] = _inventorySlots[j * slotGridWidth + i];
         }
