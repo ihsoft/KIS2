@@ -140,10 +140,13 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   /// <remarks>If the action doesn't have a hint string, then it will be ignored.</remarks>
   /// <param name="separator">The string to use to join hints for multiple events.</param>
   /// <returns>The event hints, joined with the separator.</returns>
+  /// <seealso cref="HandlerDef.checkFn"/>
+  /// <seealso cref="HandlerDef.actionHint"/>
   public string GetHints(string separator = "\n") {
     return string.Join(
         separator,
         _currentStateHandlers
+            .Where(handler => handler.checkFn == null || handler.checkFn())
             .Select(x => x.actionHint)
             .Where(x => !string.IsNullOrEmpty(x))
             .ToList());
