@@ -14,11 +14,21 @@ using KSPDev.PrefabUtils;
 using KSPDev.Unity;
 using KISAPIv2;
 using KIS2.UIKISInventorySlot;
+using KSPDev.ConfigUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
 
+/// <summary>
+/// A GUI extension above the inventory system that allows grouping parts into slots of (almost) any size.
+/// </summary>
+/// <remarks>
+/// Under the hood all items are kept in the regular KIS inventory, meaning their the state is persisted at the part
+/// level. The parts with different but resource amounts can be placed into the same slot if the difference is not too
+/// much.
+/// </remarks>
+[PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 public sealed class KisContainerWithSlots : KisContainerBase,
     IHasGUI, IKisDragTarget {
 
@@ -234,6 +244,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField(isPersistant = true)]
   public int slotGridHeight;
+  #endregion
+
+  #region Global settings
+  /// <summary>The maximum size of the slot in the KIS inventory.</summary>
+  /// <remarks>
+  /// A high setting may impact the low-end machines: the dragging operation of the large slots may kill the game
+  /// performance wise. A low setting will limit the KIS inventory usability: the inventory capacity may get
+  /// significantly limited if there are many light wight or small volume items being stored.
+  /// </remarks>
+  [PersistentField("Performance/maxKisSlotSize")]
+  public int maxKisSlotSize = 500; // The default is based on a high-end machine test.
   #endregion
 
   #region GUI menu action handlers
@@ -770,13 +791,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var matchItems = new[] { item };
     // First, try to store the item into one of the preferred slots.
     if (preferredSlots != null) {
-      slot = preferredSlots.FirstOrDefault(x => x.CheckCanAddItems(matchItems).Count == 0);
+      slot = preferredSlots.FirstOrDefault(
+          x => x.slotItems.Count < maxKisSlotSize && x.CheckCanAddItems(matchItems).Count == 0);
       if (slot != null) {
         return slot;
       }
     }
     // Then, try to store the item into an existing slot to save slots space.
-    slot = _inventorySlots.FirstOrDefault(x => !x.isEmpty && x.CheckCanAddItems(matchItems).Count == 0);
+    slot = _inventorySlots.FirstOrDefault(
+        x => !x.isEmpty && x.slotItems.Count < maxKisSlotSize && x.CheckCanAddItems(matchItems).Count == 0);
     if (slot != null) {
       return slot;
     }
@@ -1155,17 +1178,21 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Adds or removes items to the hovered slot in the editor or constructor mode.</summary>
   /// <remarks>All new items will have the config from the first item in the slot.</remarks>
-  /// <param name="delta">
+  /// <param name="requestedDelta">
   /// The delta value to add. If it's negative, then the items are removed. It's OK to request removal of more items
   /// than exist in the slot. In this case, all the items will be removed and the slot released.
   /// </param>
   /// <seealso cref="_slotEventsHandler"/>
-  void UpdateItemsCountInFocusedSlot(int delta) {
-    HostedDebugLog.Fine(this, "Update items count in slot: slot=#{0}, delta={1}",
-                        _inventorySlots.IndexOf(slotWithPointerFocus), delta);
-    if (delta > 0) {
+  void UpdateItemsCountInFocusedSlot(int requestedDelta) {
+    var actualDelta = requestedDelta;
+    if (requestedDelta > 0 && slotWithPointerFocus.slotItems.Count + requestedDelta > maxKisSlotSize) {
+      actualDelta = Math.Max(maxKisSlotSize - slotWithPointerFocus.slotItems.Count, 0);
+    }
+    HostedDebugLog.Fine(this, "Update items count in slot: slot=#{0}, requestedDelta={1}, actualDelta={2}",
+                        _inventorySlots.IndexOf(slotWithPointerFocus), requestedDelta, actualDelta);
+    if (actualDelta > 0) {
       var checkResult = new List<ErrorReason>();
-      for (var i = 0; i < delta; i++) {
+      for (var i = 0; i < actualDelta; i++) {
         var itemErrors = CheckCanAddItem(slotWithPointerFocus.slotItems[0]);
         if (itemErrors.Count > 0) {
           checkResult.AddRange(itemErrors);
@@ -1189,12 +1216,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
               ScreenMessaging.SetColorToRichText(string.Join("\n", errorMsg), ScreenMessaging.ErrorColor));
         }
       }
-    } else {
-      for (var i = slotWithPointerFocus.slotItems.Count - 1; i >= 0 && delta < 0; i--) {
+    } else if (actualDelta < 0) {
+      //FIXME: here we may be more smart and pre-sort the items by their stock slot. The gerater slots must be deleted first.
+      for (var i = slotWithPointerFocus.slotItems.Count - 1; i >= 0 && actualDelta < 0; i--) {
         var item = slotWithPointerFocus.slotItems[i];
         if (!item.isLocked) {
           if (DeleteItem(item)) {
-            ++delta;
+            ++actualDelta;
           } else {
             HostedDebugLog.Error(this, "Cannot delete item: itemPart={0}, itemId={1}", item.avPart.name, item.itemId);
           }

@@ -142,6 +142,14 @@ sealed class InventorySlotImpl {
       description: "Error message that is presented when parts cannot be added to the inventory"
       + " slot due to their variants are different between each other or with the slot's items.");
 
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<int> SlotIsFullReasonText = new(
+      "",
+      defaultTemplate: "Slot is full, max stack size is <<1>>",
+      description: "Error message that is presented when the parts cannot be dropped into teh slot due to it doesn't"
+      + " have enough spare space.\n"
+      + " The <<1>> argument is the maximum allowed size.\n");
+
   /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
   static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
       ResourceMultipartSpecialValueText = new Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>(
@@ -200,6 +208,10 @@ sealed class InventorySlotImpl {
   /// </summary>
   /// <seealso cref="DifferentVariantReasonText"/>
   public const string DifferentVariantReason = "DifferentVariant";
+
+  /// <summary>The target slot doesn't have space to fit all the items.</summary>
+  /// <seealso cref="KisContainerWithSlots.maxKisSlotSize"/>
+  public const string SlotIsFullReason = "kisSlotIsFull";
 
   /// <summary>The inventory that owns this slot.</summary>
   /// <value>The inventory instance. It's never <c>null</c>.</value>
@@ -366,6 +378,10 @@ sealed class InventorySlotImpl {
   public List<ErrorReason> CheckCanAddItems(InventoryItem[] checkItems, bool logErrors = false) {
     if (checkItems.Length == 0) {
       return new List<ErrorReason>();
+    }
+    if (slotItems.Count + checkItems.Length > ownerInventory.maxKisSlotSize) {
+      return ReturnErrorReasons(
+          logErrors, SlotIsFullReason, SlotIsFullReasonText.Format(ownerInventory.maxKisSlotSize));
     }
     var refItem = isEmpty ? checkItems[0] : slotItems[0];
 
