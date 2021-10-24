@@ -11,6 +11,7 @@ using KSPDev.ModelUtils;
 using KSPDev.ProcessingUtils;
 using KSPDev.Unity;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -200,23 +201,23 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
   #region KISItemDragController implementation
   /// <inheritdoc/>
   public bool LeaseItems(
-      Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn,
+      Texture dragIcon, ICollection<InventoryItem> items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn,
       bool allowInteractiveCancel = true) {
-    ArgumentGuard.HasElements(items, nameof(items));
+    ArgumentGuard.HasElements(items.ToList(), nameof(items));
     if (isDragging) {
       DebugEx.Error("Cannot start a new dragging: oldLeasedItems={0}, newLeasedItems={1}",
-                    leasedItems.Length, items.Length);
+                    leasedItems.Length, items.Count);
       return false;
     }
     ArgumentGuard.NotNull(dragIcon, nameof(dragIcon));
     ArgumentGuard.NotNull(consumeItemsFn, nameof(consumeItemsFn));
     ArgumentGuard.NotNull(cancelItemsLeaseFn, nameof(cancelItemsLeaseFn));
-    if (items.Length == 0) {
+    if (items.Count == 0) {
       DebugEx.Error("Cannot start dragging for an empty items list");
       return false;
     }
-    DebugEx.Info("Leasing items: count={0}", items.Length);
-    leasedItems = items;
+    DebugEx.Info("Leasing items: count={0}", items.Count);
+    leasedItems = items.ToArray();
     _consumeItemsFn = consumeItemsFn;
     _cancelItemsLeaseFn = cancelItemsLeaseFn;
     StartDragIcon(dragIcon);

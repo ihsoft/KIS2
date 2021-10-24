@@ -4,6 +4,7 @@
 
 using KIS2;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -69,8 +70,9 @@ public interface IKisItemDragController {
   /// <seealso cref="ConsumeItems"/>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="IKisDragTarget.OnKisDragStart"/>
-  bool LeaseItems(Texture dragIcon, InventoryItem[] items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn,
-                  bool allowInteractiveCancel = true);
+  bool LeaseItems(
+      Texture dragIcon, ICollection<InventoryItem> items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn,
+      bool allowInteractiveCancel = true);
 
   /// <summary>Indicates that the target is willing to consume the dragged items.</summary>
   /// <remarks>
