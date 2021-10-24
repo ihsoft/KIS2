@@ -251,10 +251,10 @@ public class KisContainerBase : AbstractPartModule,
   public override void OnStart(StartState state) {
     base.OnStart(state);
     var inventorySlotControl = stockInventoryModule.Fields[nameof(stockInventoryModule.InventorySlots)];
-    var compatibilitySettings = KisApi.CommonConfig.compatibilitySettings;
-    if (compatibilitySettings.hideStockGui && inventorySlotControl != null) {
+    if (StockCompatibilitySettings.hideStockGui && inventorySlotControl != null) {
       HostedDebugLog.Fine(this, "Disabling the stock inventory GUI settings");
-      if (!compatibilitySettings.respectStockInventoryLayout || !compatibilitySettings.respectStockStackingLogic) {
+      if (!StockCompatibilitySettings.respectStockInventoryLayout
+          || !StockCompatibilitySettings.respectStockStackingLogic) {
         HostedDebugLog.Warning(
             this, "Some of the compatibility settings are not active! The stock GUI may (and likely will) fail.");
       }
@@ -439,15 +439,14 @@ public class KisContainerBase : AbstractPartModule,
   /// <param name="item">The item to verify.</param>
   /// <param name="logChecks">Tells if the stock compatibility related errors or limitations should be logged.</param>
   /// <returns>The stock slot index that can accept the item or <c>-1</c> if there are none.</returns>
-  /// <seealso cref="KisApi.CommonConfig.compatibilitySettings"/>
+  /// <seealso cref="StockCompatibilitySettings"/>
   int FindStockSlotForItem(InventoryItem item, bool logChecks = false) {
     var variant = item.variant;
     var variantName = variant != null ? variant.Name : "";
     var maxSlotIndex = -1;
-    var compatibility = KisApi.CommonConfig.compatibilitySettings;
 
     // Check if the stock compatibility mode is satisfied.
-    if (compatibility.addOnlyCargoParts && !KisApi.PartPrefabUtils.GetCargoModule(item.avPart)) {
+    if (StockCompatibilitySettings.handleNonCargoParts && !KisApi.PartPrefabUtils.GetCargoModule(item.avPart)) {
       if (logChecks) {
         HostedDebugLog.Error(this, "The item is not stock cargo compatible: partName={0}", item.avPart.name);
       }
@@ -463,7 +462,7 @@ public class KisContainerBase : AbstractPartModule,
       }
 
       // Verify if the item must not be added due to the stock inventory limit.
-      if (compatibility.respectStockStackingLogic
+      if (StockCompatibilitySettings.respectStockStackingLogic
           && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
         continue;
       }
@@ -491,7 +490,7 @@ public class KisContainerBase : AbstractPartModule,
     if (slotIndex != -1) {
       return slotIndex;
     }
-    if (compatibility.respectStockInventoryLayout) {
+    if (StockCompatibilitySettings.respectStockInventoryLayout) {
       if (logChecks) {
         HostedDebugLog.Error(
             this, "Cannot add an extra stock slot in the compatibility mode: partName={0}", item.avPart.name);

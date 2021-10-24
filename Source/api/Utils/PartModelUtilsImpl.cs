@@ -8,6 +8,7 @@ using KSPDev.PartUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KIS2;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -200,7 +201,7 @@ public class PartModelUtilsImpl {
     if (_partsVolumeCache.TryGetValue(cacheKey, out var cachedVolume)) {
       return cachedVolume;
     }
-    if (!KisApi.CommonConfig.compatibilitySettings.stockVolumeExceptions.Contains(avPart.name)) {
+    if (!StockCompatibilitySettings.stockVolumeExceptions.Contains(avPart.name)) {
       var cargoModule = KisApi.PartPrefabUtils.GetCargoModule(avPart);
       if (cargoModule != null) {
         DebugEx.Info("Put cargo module volume into the cache: partName={0}, volume={1}, cacheKey={2}",
