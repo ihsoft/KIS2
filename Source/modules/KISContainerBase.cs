@@ -157,6 +157,7 @@ public class KisContainerBase : AbstractPartModule,
     /// </remarks>
     /// <param name="kisBaseModule">The KIS module on which behalf the action is being performed.</param>
     /// <param name="storedPart">The stock slot to modify.</param>
+    /// <param name="maxStackCapacity">The stack limit capacity to set while in the scope.</param>
     public StackCapacityScope(KisContainerBase kisBaseModule, StoredPart storedPart, int maxStackCapacity) {
       _kisBaseModule = kisBaseModule;
       _storedPart = storedPart;
