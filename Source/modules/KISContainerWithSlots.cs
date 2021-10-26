@@ -5,6 +5,7 @@
 using KSP.UI;
 using System.Collections.Generic;
 using System;
+using System.Collections;
 using System.Linq;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
@@ -542,16 +543,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
   #endregion
 
-  #region MonoBehaviour events
-  /// <summary>Detects mouse clicks.</summary>
-  /// <remarks>Don't use module's <c>OnUpdate</c> due to it's not called in the editor.</remarks>
-  void Update() {
-    if (isGuiOpen && Time.timeScale > float.Epsilon) {
-      _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
-    }
-  }
-  #endregion
-
   #region DEBUG: IHasGUI implementation
   public void OnGUI() {
     // TODO(ihsoft): Drop this debug code.
@@ -728,6 +719,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.SendMessage(
         nameof(IKspDevUnityControlChanged.ControlUpdated), _unityWindow.gameObject,
         SendMessageOptions.DontRequireReceiver);
+    _unityWindow.StartCoroutine(GuiActionsHandler());
   }
 
   /// <summary>Destroys the inventory window.</summary>
@@ -1283,6 +1275,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       HostedDebugLog.Error(
           this, "Cannot store/stack dragged items to slot: slot=#{0}, draggedItems={1}",
           _inventorySlots.IndexOf(slotWithPointerFocus), KisApi.ItemDragController.leasedItems.Length);
+    }
+  }
+
+  /// <summary>Runs on the opened dialog to handle the dialog actions.</summary>
+  /// <remarks>It must be attached to the dialog's game object.</remarks>
+  IEnumerator GuiActionsHandler() {
+    while (true) {
+      yield return null; // Call on every frame update.
+      if (Time.timeScale > float.Epsilon) {
+        _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
+      }
     }
   }
   #endregion
