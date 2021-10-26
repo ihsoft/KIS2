@@ -47,6 +47,13 @@ public class KisContainerBase : AbstractPartModule,
       + " disallowed for inventory storing. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message CannotAddIntoSelfErrorText = new Message(
+      "",
+      defaultTemplate: "You cannot store a part into itself. Seriously?!",
+      description: "An error that is presented when the part cannot be added into a KIS container due to the inventory"
+      + " is owned by that part.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message StockContainerLimitReachedErrorText = new Message(
       "",
       defaultTemplate: "Stock container limit reached",
@@ -110,6 +117,9 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <summary>The part is too large to be added into the inventory.</summary>
   public const string VolumeTooLargeReason = "VolumeTooLarge";
+
+  /// <summary>A part is being attempted to be added into it's own inventory.</summary>
+  public const string InventoryConsistencyReason = "InventoryConsistency";
 
   // ReSharper enable MemberCanBeProtected.Global
   #endregion
@@ -291,6 +301,14 @@ public class KisContainerBase : AbstractPartModule,
   public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
     var errors = new List<ErrorReason>();
+    if (item.itemConfig.GetValue("cid").Trim() == part.craftID.ToString()
+        || item.itemConfig.GetValue("persistentId").Trim() == part.persistentId.ToString()) {
+      errors.Add(new ErrorReason() {
+          shortString = InventoryConsistencyReason,
+          guiString = CannotAddIntoSelfErrorText,
+      });
+      return errors;
+    }
     if (StockCompatibilitySettings.respectStockStackingLogic) {
       var cargoModule = KisApi.PartPrefabUtils.GetCargoModule(item.avPart, onlyForStockInventory: false);
       if (cargoModule == null) {
