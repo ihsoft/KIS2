@@ -33,6 +33,20 @@ public class KisContainerBase : AbstractPartModule,
       + "The <<1>> parameter is the volume delta that would be needed for the item to fit of type VolumeLType.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message NonCargoPartErrorText = new Message(
+      "",
+      defaultTemplate: "Non-cargo part",
+      description: "An error that is presented when the part cannot be added into a KIS container due to it doesn't"
+      + " have cargo part module. It only makes sense in the stock compatibility mode.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message ConstructionOnlyPartErrorText = new Message(
+      "#autoLOC_6002642",
+      defaultTemplate: "Construction Only Part",
+      description: "An error that is presented when the part cannot be added into a KIS container due to it's"
+      + " disallowed for inventory storing. It only makes sense in the stock compatibility mode.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message StockContainerLimitReachedErrorText = new Message(
       "",
       defaultTemplate: "Stock container limit reached",
@@ -277,6 +291,23 @@ public class KisContainerBase : AbstractPartModule,
   public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
     var errors = new List<ErrorReason>();
+    if (StockCompatibilitySettings.respectStockStackingLogic) {
+      var cargoModule = KisApi.PartPrefabUtils.GetCargoModule(item.avPart, onlyForStockInventory: false);
+      if (cargoModule == null) {
+        errors.Add(new ErrorReason() {
+            shortString = StockInventoryLimitReason,
+            guiString = NonCargoPartErrorText,
+        });
+        return errors;
+      }
+      if (cargoModule.packedVolume < 0.0f) {
+        errors.Add(new ErrorReason() {
+            shortString = StockInventoryLimitReason,
+            guiString = ConstructionOnlyPartErrorText,
+        });
+        return errors;
+      }
+    }
     if (FindStockSlotForItem(item) == -1) {
       errors.Add(new ErrorReason() {
           shortString = StockInventoryLimitReason,
