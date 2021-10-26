@@ -203,7 +203,7 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
   public bool LeaseItems(
       Texture dragIcon, ICollection<InventoryItem> items, Func<bool> consumeItemsFn, Action cancelItemsLeaseFn,
       bool allowInteractiveCancel = true) {
-    ArgumentGuard.HasElements(items.ToList(), nameof(items));
+    ArgumentGuard2.HasElements(items, nameof(items));
     if (isDragging) {
       DebugEx.Error("Cannot start a new dragging: oldLeasedItems={0}, newLeasedItems={1}",
                     leasedItems.Length, items.Count);
