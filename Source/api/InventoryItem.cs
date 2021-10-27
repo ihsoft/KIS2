@@ -2,6 +2,7 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -120,6 +121,25 @@ public interface InventoryItem {
   /// <seealso cref="inventory"/>
   /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
   void UpdateConfig();
+
+  /// <summary>Gets a value from the config by the specified path</summary>
+  /// <param name="path">The "/" delimited path to the value.</param>
+  /// <typeparam name="T">The type of the value. Only the ordinary values are recognized.</typeparam>
+  /// <returns>The requested value or <c>null</c> if the value is not found.</returns>
+  /// <exception cref="ArgumentException">If value cannot be parsed as the requested type.</exception>
+  T? GetConfigValue<T>(string path) where T : struct;
+
+  /// <summary>Sets a value in the config by the specified path</summary>
+  /// <remarks> 
+  /// The changed are not automatically picked up by the item. The caller is responsible to either update the item's
+  /// state via <see cref="UpdateConfig"/> or by using the <see cref="IKisInventory.UpdateInventoryStats"/> semantic.
+  /// </remarks>
+  /// <param name="path">The "/" delimited path to the value. If the path doesn't exist, it will be created.</param>
+  /// <param name="value">The value to set.</param>
+  /// <typeparam name="T">The type of the value. Only the ordinary values are recognized.</typeparam>
+  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
+  void SetConfigValue<T>(string path, T value) where T : struct;
 }
 
 }  // namespace

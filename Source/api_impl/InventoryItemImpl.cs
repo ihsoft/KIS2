@@ -5,6 +5,7 @@
 using KISAPIv2;
 using System;
 using System.Linq;
+using KSPDev.ConfigUtils;
 using KSPDev.PartUtils;
 using KSPDev.ProcessingUtils;
 using UnityEngine;
@@ -94,6 +95,16 @@ sealed class InventoryItemImpl : InventoryItem {
           .FirstOrDefault(x => x.resourceName == resource.resourceName);
     }
     science = KisApi.PartNodeUtils.GetScience(itemConfig);
+  }
+
+  /// <inheritdoc/>
+  public T? GetConfigValue<T>(string path) where T : struct {
+    return ConfigAccessor.GetValueByPath<T>(itemConfig, path);
+  }
+
+  /// <inheritdoc/>
+  public void SetConfigValue<T>(string path, T value) where T : struct {
+    ConfigAccessor.SetValueByPath(itemConfig, path, value);
   }
   #endregion
 

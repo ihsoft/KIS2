@@ -301,8 +301,9 @@ public class KisContainerBase : AbstractPartModule,
   public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
     var errors = new List<ErrorReason>();
-    if (item.itemConfig.GetValue("cid").Trim() == part.craftID.ToString()
-        || item.itemConfig.GetValue("persistentId").Trim() == part.persistentId.ToString()) {
+    var partCid = item.GetConfigValue<uint>("cid");
+    var partPersistentId = item.GetConfigValue<uint>("persistentId");
+    if (part.craftID == partCid || part.persistentId == partPersistentId) {
       errors.Add(new ErrorReason() {
           shortString = InventoryConsistencyReason,
           guiString = CannotAddIntoSelfErrorText,
