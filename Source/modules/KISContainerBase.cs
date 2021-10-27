@@ -54,6 +54,13 @@ public class KisContainerBase : AbstractPartModule,
       + " is owned by that part.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message CannotAddRootPartErrorText = new Message(
+      "",
+      defaultTemplate: "Cannot add root part into inventory",
+      description: "An error that is presented when the part cannot be added into a KIS container due to the part being"
+      + " added is a root part in the editor. It only makes sense in the editor mode.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message StockContainerLimitReachedErrorText = new Message(
       "",
       defaultTemplate: "Stock container limit reached",
@@ -307,6 +314,14 @@ public class KisContainerBase : AbstractPartModule,
       errors.Add(new ErrorReason() {
           shortString = InventoryConsistencyReason,
           guiString = CannotAddIntoSelfErrorText,
+      });
+      return errors;
+    }
+    if (HighLogic.LoadedSceneIsEditor && EditorLogic.RootPart != null
+        && (EditorLogic.RootPart.craftID == partCid || EditorLogic.RootPart.persistentId == partPersistentId)) {
+      errors.Add(new ErrorReason() {
+          shortString = InventoryConsistencyReason,
+          guiString = CannotAddRootPartErrorText,
       });
       return errors;
     }
