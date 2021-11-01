@@ -32,11 +32,6 @@ public interface InventoryItem {
   /// <value>The variant or <c>null</c> if the part doesn't have any.</value>
   PartVariant variant { get; }
 
-  /// <summary>Real part in the scene if there was one created.</summary>
-  /// <remarks>A real part is only defined when the items is equipped in mode "Part".</remarks>
-  /// <value>The part or <c>null</c>.</value>
-  Part physicalPart { get; }
-
   /// <summary>Persisted state of the part.</summary>
   /// <remarks>
   /// This node can be updated by the external callers, but they must letting the item know that the config has changed

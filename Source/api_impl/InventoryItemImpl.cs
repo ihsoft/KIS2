@@ -33,9 +33,6 @@ sealed class InventoryItemImpl : InventoryItem {
       _snapshot ??= KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(
           inventory?.ownerVessel, itemConfig, keepPersistentId: true);
   ProtoPartSnapshot _snapshot;
-  
-  /// <inheritdoc/>
-  public Part physicalPart { get; }
 
   /// <inheritdoc/>
   public PartVariant variant { get; private set; }
