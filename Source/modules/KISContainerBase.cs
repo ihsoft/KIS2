@@ -307,7 +307,10 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
-    var errors = new List<ErrorReason>();
+    var errors = item.CheckCanChangeOwnership();
+    if (errors.Count > 0) {
+      return errors; // The item is refusing the action. No more checks needed.
+    }
     var partCid = item.GetConfigValue<uint>("cid");
     var partPersistentId = item.GetConfigValue<uint>("persistentId");
     if (part.craftID == partCid || part.persistentId == partPersistentId) {

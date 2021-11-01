@@ -4,6 +4,7 @@
 
 using KISAPIv2;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using KSPDev.ConfigUtils;
 using KSPDev.PartUtils;
@@ -67,6 +68,9 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public bool isLocked { get; private set; }
+
+  /// <inheritdoc/>
+  public List<Func<ErrorReason?>> checkChangeOwnershipPreconditions { get; private set; } = new();
   #endregion
 
   #region InventoryItem implementation
@@ -103,6 +107,15 @@ sealed class InventoryItemImpl : InventoryItem {
   public void SetConfigValue<T>(string path, T value) where T : struct {
     ConfigAccessor.SetValueByPath(itemConfig, path, value);
   }
+
+  /// <inheritdoc/>
+  public List<ErrorReason> CheckCanChangeOwnership() {
+    return checkChangeOwnershipPreconditions
+        .Select(fn => fn())
+        .Where(x => x.HasValue)
+        .Select(x => x.Value)
+        .ToList();
+  }
   #endregion
 
   #region API methods
@@ -137,8 +150,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
   public static InventoryItemImpl FromPart(IKisInventory inventory, Part part, string itemId = null) {
-    return new InventoryItemImpl(
-        inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(itemId));
+    return new InventoryItemImpl(inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(itemId));
   }
 
   /// <summary>Creates an item for the given part name.</summary>

@@ -3,6 +3,7 @@
 // License: Public Domain
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -97,6 +98,14 @@ public interface InventoryItem {
   /// <seealso cref="SetLocked"/>
   bool isLocked { get; }
 
+  /// <summary>The list of callbacks to be called when a change ownership action is attempted on the item.</summary>
+  /// <remarks>
+  /// The item will only be considered to the ownership change if none of the callbacks has replied with a non-empty
+  /// error reason. These callbacks let the external actors to have a control over the inventory item's fate.
+  /// </remarks>
+  /// <seealso cref="CheckCanChangeOwnership"/>
+  List<Func<ErrorReason?>> checkChangeOwnershipPreconditions { get; }
+
   /// <summary>Sets locked state.</summary>
   /// <remarks>
   /// The inventory may need to know if the item's lock stat has updated. The actor, that changes the state, is
@@ -135,6 +144,18 @@ public interface InventoryItem {
   /// <seealso cref="UpdateConfig"/>
   /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
   void SetConfigValue<T>(string path, T value) where T : struct;
+
+  /// <summary>
+  /// Verifies the item dynamic conditions that may prevent this item to be moved between the inventories or be added
+  /// into a new one.
+  /// </summary>
+  /// <remarks>
+  /// This method guards the item's ownership change. It's the first condition to be checked in
+  /// <see cref="IKisInventory.CheckCanAddItem"/>.
+  /// </remarks>
+  /// <returns>The error that doesn't allow the add/move action. Or an empty value.</returns>
+  /// <seealso cref="checkChangeOwnershipPreconditions"/>
+  List<ErrorReason> CheckCanChangeOwnership();
 }
 
 }  // namespace
