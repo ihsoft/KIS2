@@ -307,27 +307,38 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
-    var errors = item.CheckCanChangeOwnership();
-    if (errors.Count > 0) {
-      return errors; // The item is refusing the action. No more checks needed.
+    var errors = new List<ErrorReason>();
+
+    // Check if the item is allowing to change the owner when it's the case.
+    if (!ReferenceEquals(item.inventory, this)) {
+      errors.AddRange(item.CheckCanChangeOwnership());
+      if (errors.Count > 0) {
+        return ReportAndReturnCheckErrors(item, errors, logErrors);
+      }
     }
-    var partCid = item.GetConfigValue<uint>("cid");
-    var partPersistentId = item.GetConfigValue<uint>("persistentId");
-    if (part.craftID == partCid || part.persistentId == partPersistentId) {
+
+    // Check if the inventory is being added into self. Obviously, a bad idea.
+    if (part.craftID == item.GetConfigValue<uint>("cid")
+        || part.persistentId == item.GetConfigValue<uint>("persistentId")) {
       errors.Add(new ErrorReason() {
           shortString = InventoryConsistencyReason,
           guiString = CannotAddIntoSelfErrorText,
       });
-      return errors;
+      return ReportAndReturnCheckErrors(item, errors, logErrors);
     }
+
+    // Check if the editor root part is being added (not allowed).
     if (HighLogic.LoadedSceneIsEditor && EditorLogic.RootPart != null
-        && (EditorLogic.RootPart.craftID == partCid || EditorLogic.RootPart.persistentId == partPersistentId)) {
+        && (part.craftID == item.GetConfigValue<uint>("cid")
+            || part.persistentId == item.GetConfigValue<uint>("persistentId"))) {
       errors.Add(new ErrorReason() {
           shortString = InventoryConsistencyReason,
           guiString = CannotAddRootPartErrorText,
       });
-      return errors;
+      return ReportAndReturnCheckErrors(item, errors, logErrors);
     }
+
+    // Check if the compatibility settings restrict item adding/moving.
     if (StockCompatibilitySettings.respectStockStackingLogic) {
       var cargoModule = KisApi.PartPrefabUtils.GetCargoModule(item.avPart, onlyForStockInventory: false);
       if (cargoModule == null) {
@@ -335,14 +346,14 @@ public class KisContainerBase : AbstractPartModule,
             shortString = StockInventoryLimitReason,
             guiString = NonCargoPartErrorText,
         });
-        return errors;
+        return ReportAndReturnCheckErrors(item, errors, logErrors);
       }
       if (cargoModule.packedVolume < 0.0f) {
         errors.Add(new ErrorReason() {
             shortString = StockInventoryLimitReason,
             guiString = ConstructionOnlyPartErrorText,
         });
-        return errors;
+        return ReportAndReturnCheckErrors(item, errors, logErrors);
       }
     }
     if (FindStockSlotForItem(item) == -1) {
@@ -350,18 +361,20 @@ public class KisContainerBase : AbstractPartModule,
           shortString = StockInventoryLimitReason,
           guiString = StockContainerLimitReachedErrorText,
       });
-    } else if (usedVolume + item.volume > maxVolume) {
+      return ReportAndReturnCheckErrors(item, errors, logErrors);
+    }
+
+    // Finally, verify the volume limit.
+    if (usedVolume + item.volume > maxVolume) {
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
           shortString = VolumeTooLargeReason,
           guiString = NotEnoughVolumeText.Format(item.volume - freeVolume),
       });
+      return ReportAndReturnCheckErrors(item, errors, logErrors);
     }
-    if (logErrors && errors.Count > 0) {
-      HostedDebugLog.Error(
-          this, "Cannot add '{0}' part:\n{1}", item.avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
-    }
-    return errors;
+
+    return errors;  // It must be empty at this point.
   }
 
   /// <inheritdoc/>
@@ -687,6 +700,19 @@ public class KisContainerBase : AbstractPartModule,
     var slotUi = slotObject.AddComponent<UIPartActionInventorySlot>();
     slotUi.Setup(stockInventoryUiAction, stockSlotIndex);
     return slotObject;
+  }
+
+  /// <summary>Reports the check errors if requested.</summary>
+  /// <param name="item">The item for which the checks are being made.</param>
+  /// <param name="errors">The detected errors. Can be an empty list.</param>
+  /// <param name="logErrors">Indicates of the errors must be logged.</param>
+  /// <returns>The <paramref name="errors"/> provided in the call.</returns>
+  public List<ErrorReason> ReportAndReturnCheckErrors(InventoryItem item, List<ErrorReason> errors, bool logErrors) {
+    if (logErrors && errors.Count > 0) {
+      HostedDebugLog.Error(
+          this, "Cannot add '{0}' part:\n{1}", item.avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
+    }
+    return errors;
   }
   #endregion
 }
