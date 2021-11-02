@@ -107,18 +107,43 @@ public class KisContainerBase : AbstractPartModule,
   #region Check reasons
   // ReSharper disable MemberCanBeProtected.Global
 
-  /// <summary>Any of the stock storage settings prevent the action.</summary>
+  /// <summary>
+  /// The error reason type in the case when the STOCK  inventory cannot accept the item due to its layout setup.
+  /// </summary>
   /// <remarks>
-  /// It depends on the compatibility settings. When all the settings are disabled, this error reason is not expected to
-  /// be seen. The actual error text reason can differ for this type.
+  /// THis error type relates to the compatibility settings. When all the settings are disabled, this error reason is
+  /// not expected to be seen.
   /// </remarks>
+  /// <seealso cref="ErrorReason.errorClass"/>
   /// <seealso cref="StockContainerLimitReachedErrorText"/>
+  /// <seealso cref="NonCargoPartErrorText"/>
+  /// <seealso cref="ConstructionOnlyPartErrorText"/>
   public const string StockInventoryLimitReason = "StockInventoryLimit";
 
-  /// <summary>The part is too large to be added into the inventory.</summary>
-  public const string VolumeTooLargeReason = "VolumeTooLarge";
+  /// <summary>The error reason type of the case when KIS doesn't yet have the proper code.</summary>
+  /// <remarks>
+  /// KIS must be able to deal with any items, except the compatibility settings enabled. However, KIS may not have the
+  /// proper support for the feature yet. This is when this error type may appear.
+  /// </remarks>
+  /// <seealso cref="ErrorReason.errorClass"/>
+  public const string KisNotImplementedReason = "KisNotImplemented";
 
-  /// <summary>A part is being attempted to be added into it's own inventory.</summary>
+  /// <summary>The error reason type of the case when the item is too large to be added into the inventory.</summary>
+  /// <remarks>
+  /// Note, that it's recognized as the "item's problem". The inventory can be large enough to accomodate large items,
+  /// but the free volume may be limited. So, if a single item is too big to fit, it's "its own problem".
+  /// </remarks>
+  /// <seealso cref="ErrorReason.errorClass"/>
+  /// <seealso cref="NotEnoughVolumeText"/>
+  public const string ItemVolumeTooLargeReason = "ItemVolumeLimit";
+
+  /// <summary>The error reason type of the case when adding the item would break the inventory consistency.</summary>
+  /// <remarks>
+  /// This error type addresses a set of critical but not that spread set of problems. One example of the problem could
+  /// be trying to add an inventory into self. There can be other examples based on the current scene.
+  /// </remarks>
+  /// <seealso cref="ErrorReason.errorClass"/>
+  /// <seealso cref="CannotAddIntoSelfErrorText"/>
   public const string InventoryConsistencyReason = "InventoryConsistency";
 
   // ReSharper enable MemberCanBeProtected.Global

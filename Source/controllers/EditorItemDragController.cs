@@ -36,11 +36,6 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   // ReSharper enable MemberCanBePrivate.Global
   #endregion
 
-  #region Check reasons
-  /// <summary>The part is too large to be added into the inventory.</summary>
-  public const string AssemblyStoreIsNotSupportedReason = "AssemblyStoreIsNotSupported";
-  #endregion
-
   #region Local fields and properties
   /// <summary>
   /// A part that was dragged in the editor before entering a KIS inventory dialog.
