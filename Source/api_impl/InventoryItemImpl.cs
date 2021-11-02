@@ -57,8 +57,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public double fullCost { get; private set; }
 
   /// <inheritdoc/>
-  public ProtoPartResourceSnapshot[] resources { get; private set; }
-      = new ProtoPartResourceSnapshot[0];
+  public ProtoPartResourceSnapshot[] resources { get; private set; } = new ProtoPartResourceSnapshot[0];
 
   /// <inheritdoc/>
   public ScienceData[] science { get; private set; } = new ScienceData[0];
