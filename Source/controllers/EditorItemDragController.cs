@@ -89,12 +89,12 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
           && (EditorLogic.RootPart.craftID == draggedItem.GetConfigValue<uint>("cid")
               || EditorLogic.RootPart.persistentId == draggedItem.GetConfigValue<uint>("persistentId"))) {
         draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
-            shortString = KisContainerBase.InventoryConsistencyReason,
+            errorClass = KisContainerBase.InventoryConsistencyReason,
             guiString = CannotAddRootPartErrorText,
         });
       } else if (_savedEditorPart.children.Count > 0) {
         draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
-            shortString = AssemblyStoreIsNotSupportedReason,
+            errorClass = KisContainerBase.KisNotImplementedReason,
             guiString = CannotAddPartWithChildrenErrorText,
         });
       }

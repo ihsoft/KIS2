@@ -583,7 +583,7 @@ sealed class InventorySlotImpl {
   /// <summary>Returns a standard error reason response.</summary>
   static List<ErrorReason> ReturnErrorReasons(bool logErrors, string reasonCode, string reasonText) {
     var reason = new ErrorReason() {
-        shortString = reasonCode,
+        errorClass = reasonCode,
         guiString = reasonText,
     };
     if (logErrors) {

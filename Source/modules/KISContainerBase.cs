@@ -314,7 +314,7 @@ public class KisContainerBase : AbstractPartModule,
     if (part.craftID == item.GetConfigValue<uint>("cid")
         || part.persistentId == item.GetConfigValue<uint>("persistentId")) {
       errors.Add(new ErrorReason() {
-          shortString = InventoryConsistencyReason,
+          errorClass = InventoryConsistencyReason,
           guiString = CannotAddIntoSelfErrorText,
       });
       return ReportAndReturnCheckErrors(item, errors, logErrors);
@@ -325,14 +325,14 @@ public class KisContainerBase : AbstractPartModule,
       var cargoModule = KisApi.PartPrefabUtils.GetCargoModule(item.avPart, onlyForStockInventory: false);
       if (cargoModule == null) {
         errors.Add(new ErrorReason() {
-            shortString = StockInventoryLimitReason,
+            errorClass = StockInventoryLimitReason,
             guiString = NonCargoPartErrorText,
         });
         return ReportAndReturnCheckErrors(item, errors, logErrors);
       }
       if (cargoModule.packedVolume < 0.0f) {
         errors.Add(new ErrorReason() {
-            shortString = StockInventoryLimitReason,
+            errorClass = StockInventoryLimitReason,
             guiString = ConstructionOnlyPartErrorText,
         });
         return ReportAndReturnCheckErrors(item, errors, logErrors);
@@ -340,7 +340,7 @@ public class KisContainerBase : AbstractPartModule,
     }
     if (FindStockSlotForItem(item) == -1) {
       errors.Add(new ErrorReason() {
-          shortString = StockInventoryLimitReason,
+          errorClass = StockInventoryLimitReason,
           guiString = StockContainerLimitReachedErrorText,
       });
       return ReportAndReturnCheckErrors(item, errors, logErrors);
@@ -350,7 +350,7 @@ public class KisContainerBase : AbstractPartModule,
     if (usedVolume + item.volume > maxVolume) {
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
-          shortString = VolumeTooLargeReason,
+          errorClass = ItemVolumeTooLargeReason,
           guiString = NotEnoughVolumeText.Format(item.volume - freeVolume),
       });
       return ReportAndReturnCheckErrors(item, errors, logErrors);

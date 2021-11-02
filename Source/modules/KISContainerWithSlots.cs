@@ -577,7 +577,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var slot = FindSlotForItem(item);
     if (slot == null) {
       errors.Add(new ErrorReason() {
-          shortString = StockInventoryLimitReason,
+          errorClass = StockInventoryLimitReason,
           guiString = StockContainerLimitReachedErrorText,
       });
     }
@@ -1101,7 +1101,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
       if (extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
         checkResult.Add(new ErrorReason() {
-            shortString = VolumeTooLargeReason,
+            errorClass = ItemVolumeTooLargeReason,
             guiString = NotEnoughVolumeText.Format(usedVolume + extraVolumeNeeded - maxVolume),
         });
       }
@@ -1109,7 +1109,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     // De-dup the errors by the short string to not spam on multiple items.
     _canAcceptDraggedItemsCheckResult = checkResult
-        .GroupBy(p => p.shortString, StringComparer.OrdinalIgnoreCase)
+        .GroupBy(p => p.errorClass, StringComparer.OrdinalIgnoreCase)
         .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
         .Values
         .ToArray();
