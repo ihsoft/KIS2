@@ -4,6 +4,7 @@
 
 using System.Linq;
 using KISAPIv2;
+using KSPDev.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using UnityEngine;
@@ -17,6 +18,13 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region Localizable GUI strings
   // ReSharper disable MemberCanBePrivate.Global
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  public static readonly Message CannotAddPartWithChildrenErrorText = new(
+      "#autoLOC_6005091",
+      defaultTemplate: "Part has other parts attached, can't add to inventory",
+      description: "An error that is presented when a hierarchy of parts if being tried to be added into the"
+      + " inventory.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   public static readonly Message CannotAddRootPartErrorText = new(
@@ -75,16 +83,20 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
     if (newTarget != null && EditorLogic.SelectedPart != null) {
       _savedEditorPart = EditorLogic.SelectedPart;
       // We cannot nicely handle the cancel action when the pointer is hovering over an inventory dialog.
-      // So, restrict the user action. The API action is the problem of the caller.
+      // So, always start the dragging, but indicate if the item cannot be added anywhere.
       var draggedItem = InventoryItemImpl.FromPart(null, _savedEditorPart);
-      if (EditorLogic.RootPart != null) {
-        if (EditorLogic.RootPart.craftID == draggedItem.GetConfigValue<uint>("cid")
-            || EditorLogic.RootPart.persistentId == draggedItem.GetConfigValue<uint>("persistentId")) {
-          draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
-              shortString = KisContainerBase.InventoryConsistencyReason,
-              guiString = CannotAddRootPartErrorText,
-          });
-        }
+      if (EditorLogic.RootPart != null
+          && (EditorLogic.RootPart.craftID == draggedItem.GetConfigValue<uint>("cid")
+              || EditorLogic.RootPart.persistentId == draggedItem.GetConfigValue<uint>("persistentId"))) {
+        draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
+            shortString = KisContainerBase.InventoryConsistencyReason,
+            guiString = CannotAddRootPartErrorText,
+        });
+      } else if (_savedEditorPart.children.Count > 0) {
+        draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
+            shortString = AssemblyStoreIsNotSupportedReason,
+            guiString = CannotAddPartWithChildrenErrorText,
+        });
       }
 
       KisApi.ItemDragController.LeaseItems(
