@@ -15,6 +15,24 @@ namespace KIS2 {
 [KSPAddon(KSPAddon.Startup.EditorAny, false /*once*/)]
 sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
 
+  #region Localizable GUI strings
+  // ReSharper disable MemberCanBePrivate.Global
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  public static readonly Message CannotAddRootPartErrorText = new(
+      "",
+      defaultTemplate: "Cannot add root part into inventory",
+      description: "An error that is presented when the part cannot be added into a KIS container due to the part being"
+      + " added is a root part in the editor. It only makes sense in the editor mode.");
+
+  // ReSharper enable MemberCanBePrivate.Global
+  #endregion
+
+  #region Check reasons
+  /// <summary>The part is too large to be added into the inventory.</summary>
+  public const string AssemblyStoreIsNotSupportedReason = "AssemblyStoreIsNotSupported";
+  #endregion
+
   #region Local fields and properties
   /// <summary>
   /// A part that was dragged in the editor before entering a KIS inventory dialog.
@@ -58,9 +76,20 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       _savedEditorPart = EditorLogic.SelectedPart;
       // We cannot nicely handle the cancel action when the pointer is hovering over an inventory dialog.
       // So, restrict the user action. The API action is the problem of the caller.
+      var draggedItem = InventoryItemImpl.FromPart(null, _savedEditorPart);
+      if (EditorLogic.RootPart != null) {
+        if (EditorLogic.RootPart.craftID == draggedItem.GetConfigValue<uint>("cid")
+            || EditorLogic.RootPart.persistentId == draggedItem.GetConfigValue<uint>("persistentId")) {
+          draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
+              shortString = KisContainerBase.InventoryConsistencyReason,
+              guiString = CannotAddRootPartErrorText,
+          });
+        }
+      }
+
       KisApi.ItemDragController.LeaseItems(
           KisApi.PartIconUtils.MakeDefaultIcon(_savedEditorPart),
-          new InventoryItem[] { InventoryItemImpl.FromPart(null, _savedEditorPart) },
+          new InventoryItem[] { draggedItem },
           EditorItemsConsumed, EditorItemsCancelled,
           allowInteractiveCancel: false);
       UIPartActionController.Instance.partInventory.editorPartDroppedBlockSfx = true;
