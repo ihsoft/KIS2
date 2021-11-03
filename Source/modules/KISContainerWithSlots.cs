@@ -1092,14 +1092,28 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (checkResult.Count == 0) {
       // For the items from other inventories also check the basic constraints.
       var extraVolumeNeeded = 0.0;
-      foreach (var item in allItems) {
+      var breakCheckLoop = false;
+      for (var i = 0; i < allItems.Length && !breakCheckLoop; i++) {
+        var item = allItems[i];
         if (!ReferenceEquals(item.inventory, this)) {
           extraVolumeNeeded += item.volume;
-          checkResult.AddRange(CheckCanAddItem(item));
+        }
+        foreach (var itemCheck in CheckCanAddItem(item)) {
+          if (itemCheck.errorClass == InventoryConsistencyReason
+              || itemCheck.errorClass == StockInventoryLimitReason
+              || itemCheck.errorClass == KisNotImplementedReason) {
+            // It's a fatal error. Stop all the other logic.
+            checkResult.Add(itemCheck);
+            breakCheckLoop = true;
+            break;
+          }
+          // Skip a single item volume check since we have our own batch algo.
+          if (itemCheck.errorClass != ItemVolumeTooLargeReason) {
+            checkResult.Add(itemCheck);
+          }
         }
       }
-
-      if (extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
+      if (!breakCheckLoop && extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
         checkResult.Add(new ErrorReason() {
             errorClass = ItemVolumeTooLargeReason,
             guiString = NotEnoughVolumeText.Format(usedVolume + extraVolumeNeeded - maxVolume),
@@ -1107,7 +1121,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
     }
 
-    // De-dup the errors by the short string to not spam on multiple items.
+    // De-dup the errors by the error class to not spam on multiple items.
     _canAcceptDraggedItemsCheckResult = checkResult
         .GroupBy(p => p.errorClass, StringComparer.OrdinalIgnoreCase)
         .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
