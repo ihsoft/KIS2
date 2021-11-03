@@ -17,7 +17,7 @@ namespace KIS2 {
 [KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
 sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region Event static configs
-  static readonly Event DropItemToScene = Event.KeyboardEvent("mouse0");
+  static readonly Event DropItemToSceneEvent = Event.KeyboardEvent("mouse0");
   #endregion
 
   #region Local fields and properties
@@ -97,7 +97,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return; // Only key/mouse event handlers are in this method. 
     }
     if (isActiveModelInScene) {
-      if (EventChecker.CheckClickEvent(DropItemToScene)) {
+      if (EventChecker.CheckClickEvent(DropItemToSceneEvent)) {
         CreateVesselFromDraggedItem();
       }
     } else if (!KisApi.ItemDragController.isDragging) {
@@ -193,9 +193,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var camera = FlightCamera.fetch.mainCamera;
     var ray = camera.ScreenPointToRay(Input.mousePosition);
 
-    RaycastHit hit;
     var colliderHit = Physics.Raycast(
-        ray, out hit, maxDistance: MaxRaycastDistance,
+        ray, out var hit, maxDistance: MaxRaycastDistance,
         //FIXME also 0x800000?
         layerMask: (int)(KspLayerMask.Part | KspLayerMask.Kerbal | KspLayerMask.SurfaceCollider),
         queryTriggerInteraction: QueryTriggerInteraction.Ignore);
