@@ -181,10 +181,9 @@ public sealed class Tooltip : UiPrefabBaseScript {
           ? lines[i + 1].startCharIdx
           : title.Length;
       var lineText = title.Substring(line.startCharIdx, lineEnd - line.startCharIdx);
-      maxTextWidth =
-          Mathf.Max(maxTextWidth, textGen.GetPreferredWidth(lineText, generationSettings));
+      maxTextWidth = Mathf.Max(maxTextWidth, textGen.GetPreferredWidth(lineText, generationSettings));
     }
-    preferredContentWidth = maxTextWidth;
+    preferredContentWidth = maxTextWidth / mainRect.lossyScale.x;
   }
   #endregion
 }
