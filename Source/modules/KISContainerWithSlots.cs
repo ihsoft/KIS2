@@ -694,12 +694,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow = UnityPrefabController.CreateInstance<UiKisInventoryWindow>(
         "KISInventoryDialog-" + part.persistentId, UIMasterController.Instance.actionCanvas.transform);
 
-    // TODO(ihsoft): Fix it in the prefab via TMPro.
-    if (!UIMasterController.Instance.actionCanvas.pixelPerfect) {
-      DebugEx.Warning("WORKAROUND: Enabling PerfectPixel mode on the root UI canvas");
-      UIMasterController.Instance.actionCanvas.pixelPerfect = true;
-    }
-
     _unityWindow.gameObject.AddComponent<UIScalableWindowController2>(); // Respect the game's UI scale settings.
     _unityWindow.gameObject.AddComponent<UIWindowMoveTracker>(); // Remove from the grid if the dialog has moved.
     _unityWindow.onSlotHover.Add(OnSlotHover);
