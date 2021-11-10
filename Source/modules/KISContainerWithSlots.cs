@@ -637,7 +637,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         KisApi.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
       }
       //FIXME: check volume and size
-      if (AddPart(avPart.name, node) == null) {
+      var addedItem = AddPart(avPart.name, node);
+      if (addedItem != null) {
+        HostedDebugLog.Warning(
+            this, "DEBUG: added part '{0}': resources={1}", avPart.name,
+            DbgFormatter.C2S(addedItem.resources.Select(x => x.amount)));
+      } else {
         HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}':\n:{1}, ", avPart.name, node);
       }
     }
