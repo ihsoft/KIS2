@@ -560,21 +560,33 @@ sealed class InventorySlotImpl {
     return res;
   }
 
-  /// <summary>Calculate amount slots from the item's resources reserve.</summary>
-  Dictionary<string, int> CalculateSimilarityValues(InventoryItem item) {
-    return item.resources.ToDictionary(r => r.resourceName,
-                                       r => GetResourceAmountSlot(r.amount / r.maxAmount));
+  /// <summary>Makes the values that let groping items with different resources reserve.</summary>
+  /// <remarks>
+  /// <p>
+  /// This method allocates the item to a "slot" on every resource which it may have. The slots are used to group the
+  /// items. Two items can only be grouped together if their slots on every resource match exactly, even though each
+  /// item may have different amount of the resource.
+  /// </p>
+  /// <p>
+  /// Simple example. If two items of the same part have resource reserve of "less than 5%", then they can be grouped as
+  /// "items that have less than 5% of the reserve". If any of them has more than 5% of the reserve, then they cannot be
+  /// grouped. However, the exact logic of assigning the slots is undetermined.
+  /// </p>
+  /// </remarks>
+  /// <seealso cref="GetResourceAmountSlot"/>
+  static Dictionary<string, int> CalculateSimilarityValues(InventoryItem item) {
+    return item.resources.ToDictionary(r => r.resourceName, r => GetResourceAmountSlot(r.amount / r.maxAmount));
   }
 
   /// <summary>Checks if items resources are the same and the amounts are somewhat close.</summary>
-  bool CheckIfSimilar(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
+  static bool CheckIfSimilar(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
     var checkSimilarityValues = CalculateSimilarityValues(checkItem);
     return similarityValues.Count == checkSimilarityValues.Count
         && !similarityValues.Except(checkSimilarityValues).Any();
   }
 
   /// <summary>Checks if items resources are the same, disregarding the amounts.</summary>
-  bool CheckIfSameResources(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
+  static bool CheckIfSameResources(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
     var checkSimilarityValues = CalculateSimilarityValues(checkItem);
     return similarityValues.Count == checkSimilarityValues.Count
         && !similarityValues.Keys.Except(checkSimilarityValues.Keys).Any();
