@@ -300,6 +300,21 @@ sealed class InventorySlotImpl {
   }
 
   #region API methods
+  /// <summary>Fills tooltip with the info for the provided items.</summary>
+  /// <remarks>If the slot is empty, then all info fields are erased.</remarks>
+  public static void UpdateTooltip(UIKISInventoryTooltip.Tooltip tooltip, ICollection<InventoryItem> items) {
+    tooltip.ClearInfoFields();
+    if (items.Count == 0) {
+      return;
+    }
+    if (items.Count == 1) {
+      UpdateSingleItemTooltip(tooltip, items.First());
+    } else {
+      UpdateMultipleItemsTooltip(tooltip, items);
+    }
+    tooltip.UpdateLayout();
+  }
+
   /// <summary>Attaches this slot to a Unity slot object.</summary>
   /// <remarks>
   /// The slots that are not attached to any Unity object are invisible. Invisible slots are fully functional slots,
@@ -400,25 +415,14 @@ sealed class InventorySlotImpl {
   /// <summary>Fills tooltip with the slot info.</summary>
   /// <remarks>If the slot is empty, then all info fields are erased.</remarks>
   public void UpdateTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    tooltip.ClearInfoFields();
-    if (isEmpty) {
-      return;
-    }
-    //FIXME: consider reservedItems or better the take one modifier
-    if (slotItems.Count == 1) {
-      UpdateSingleItemTooltip(tooltip);
-    } else {
-      UpdateMultipleItemsTooltip(tooltip);
-    }
-    tooltip.UpdateLayout();
+    UpdateTooltip(tooltip, slotItems);
   }
   #endregion
 
   #region Local utility methods
-  /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
-  void UpdateSingleItemTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    var item = slotItems[0];
-    tooltip.title = avPart.title;
+  /// <summary>Fills tooltip with useful information about one item.</summary>
+  static void UpdateSingleItemTooltip(UIKISInventoryTooltip.Tooltip tooltip, InventoryItem item) {
+    tooltip.title = item.avPart.title;
     var infoLines = new List<string> {
         MassTooltipText.Format(item.fullMass),
         VolumeTooltipText.Format(item.volume),
@@ -458,15 +462,17 @@ sealed class InventorySlotImpl {
   }
 
   /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
-  void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    var refItem = slotItems[0];
-    tooltip.title = avPart.title;
+  static void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip, ICollection<InventoryItem> items,
+                                         Dictionary<string, int> similarityValues = null) {
+    var refItem = items.First();
+    similarityValues ??= CalculateSimilarityValues(refItem);
+    tooltip.title = refItem.avPart.title;
 
     // Basic stats.
     var infoLines = new List<string> {
-        MassMultipartTooltipText.Format(refItem.fullMass, slotItems.Sum(x => x.fullMass)),
-        VolumeMultipartTooltipText.Format(refItem.volume, slotItems.Sum(x => x.volume)),
-        CostMultipartTooltipText.Format(refItem.fullCost, slotItems.Sum(x => x.fullCost))
+        MassMultipartTooltipText.Format(refItem.fullMass, items.Sum(x => x.fullMass)),
+        VolumeMultipartTooltipText.Format(refItem.volume, items.Sum(x => x.volume)),
+        CostMultipartTooltipText.Format(refItem.fullCost, items.Sum(x => x.fullCost))
     };
     var variant = VariantsUtils.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
     if (variant != null) {
@@ -477,10 +483,10 @@ sealed class InventorySlotImpl {
     // Available resources stats.
     var resourceInfoLines = new List<string>();
     foreach (var resource in refItem.resources) {
-      var amountSlot = _resourceSimilarityValues[resource.resourceName];
-      var totalAmount = slotItems.Sum(
+      var amountSlot = similarityValues[resource.resourceName];
+      var totalAmount = items.Sum(
           x => x.resources.First(r => r.resourceName == resource.resourceName).amount);
-      if (amountSlot == 0 || amountSlot == 100) { // Show exact values with no highlighting.
+      if (amountSlot is 0 or 100) { // Show exact values with no highlighting.
         resourceInfoLines.Add(
             ResourceMultipartValueText.Format(
                 resource.resourceName, resource.amount, resource.maxAmount, totalAmount));
