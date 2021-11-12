@@ -111,6 +111,7 @@
     <Compile Include="impl\StockCompatibilitySettings.cs" />
     <Compile Include="KSPDev_candidates\AmbientSettingsScope.cs" />
     <Compile Include="KSPDev_candidates\ArgumentGuard.cs" />
+    <Compile Include="KSPDev_candidates\EventChecker2.cs" />
     <Compile Include="KSPDev_candidates\ProfilerScope.cs" />
     <Compile Include="KSPDev_candidates\UIDialogsGridController.cs" />
     <Compile Include="KSPDev_candidates\KspLayer.cs" />
