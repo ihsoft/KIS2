@@ -318,7 +318,7 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
     }
     if (currentTooltip == null) {
       currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
-          "tooltip", transform.parent);
+          "inventorySlotTooltip", transform.parent);
     }
     return currentTooltip;
   }
