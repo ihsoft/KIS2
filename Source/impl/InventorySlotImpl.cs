@@ -6,8 +6,6 @@ using KISAPIv2;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using KSPDev.GUIUtils;
-using KSPDev.GUIUtils.TypeFormatters;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -25,93 +23,6 @@ namespace KIS2 {
 sealed class InventorySlotImpl {
 
   #region Localizable strings
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<MassType> MassTooltipText = new Message<MassType>(
-      "",
-      defaultTemplate: "Mass: <b><<1>></b>",
-      description: "A slot tooltip string that shows the mass of an item. It's used when the slot"
-          + " has exactly one item.\n"
-          + " The <<1>> argument is the item mass of type MassType.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
-  static readonly Message<MassType, MassType> MassMultipartTooltipText =
-      new Message<MassType, MassType>(
-          "",
-          defaultTemplate: "Mass: <b><<1>></b> (total: <b><<2>></b>)",
-          description: "A slot tooltip string that shows both the mass of an item and the total"
-              + " slot mass. It's used when the slot has more than one item.\n"
-              + " The <<1>> argument is the item mass.\n"
-              + " The <<2>> argument is the slot total mass.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<VolumeLType> VolumeTooltipText = new Message<VolumeLType>(
-      "",
-      defaultTemplate: "Volume: <b><<1>></b>",
-      description: "A slot tooltip string that shows the volume of an item. It's used when the slot"
-          + " has exactly one item.\n"
-          + " The <<1>> argument is the item volume.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
-  static readonly Message<VolumeLType, VolumeLType> VolumeMultipartTooltipText =
-      new Message<VolumeLType, VolumeLType>(
-          "",
-          defaultTemplate: "Volume: <b><<1>></b> (total: <b><<2>></b>)",
-          description: "A slot tooltip string that shows both the volume of an item and the total"
-              + " slot volume. It's used when the slot has more than one item.\n"
-              + " The <<1>> argument is the item volume.\n"
-              + " The <<2>> argument is the slot total volume.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<CostType> CostTooltipText = new Message<CostType>(
-      "",
-      defaultTemplate: "Cost: <b><<1>></b>",
-      description: "A slot tooltip string that shows the cost of an item. It's used when the slot"
-          + " has exactly one item.\n"
-          + " The <<1>> argument is the item cost.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
-  static readonly Message<CostType, CostType> CostMultipartTooltipText =
-      new Message<CostType, CostType>(
-          "",
-          defaultTemplate: "Cost: <b><<1>></b> (total: <b><<2>></b>)",
-          description: "A slot tooltip string that shows both the cost of an item and the total"
-              + " slot cost. It's used when the slot has more than one item.\n"
-          + " The <<1>> argument is the item cost.\n"
-          + " The <<2>> argument is the slot total cost.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<string> VariantTooltipText = new Message<string>(
-      "",
-      defaultTemplate: "Variant: <b><<1>></b>",
-      description: "Name of the variant of the items in the slot tooltip. All items in the slot"
-          + " have the same variant.\n"
-          + " The <<1>> argument is a localized name of the variant.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType>
-      NormalResourceValueText = new Message<ResourceType, CompactNumberType, CompactNumberType>(
-          "",
-          defaultTemplate: "<<1>>: <b><<2>></b> / <b><<3>></b>",
-          description: "Resource status string in the slot tooltip when the available amount is at"
-              + " the expected level (e.g. 'empty' for the ore tanks or 'full' for the fuel"
-              + " ones).\n"
-              + " The <<1>> argument is a localized name of the resource.\n"
-              + " The <<2>> argument is the current amount of the resource.\n"
-              + " The <<3>> argument is the maximum amount of the resource.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType>
-      SpecialResourceValueText = new Message<ResourceType, CompactNumberType, CompactNumberType>(
-          "",
-          defaultTemplate: "<<1>>: <b><color=yellow><<2>></color></b> / <b><<3>></b>",
-          description: "Resource status string in the slot tooltip when the available amount is at"
-              + " the level that is not normally expected (e.g. 'full' for the ore tanks or"
-              + " 'empty' for"
-              + " the fuel ones).\n"
-              + " The <<1>> argument is a localized name of the resource.\n"
-              + " The <<2>> argument is the current amount of the resource.\n"
-              + " The <<3>> argument is the maximum amount of the resource.");
-
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message DifferentPartsReasonText = new Message(
       "",
@@ -149,32 +60,6 @@ sealed class InventorySlotImpl {
       description: "Error message that is presented when the parts cannot be dropped into teh slot due to it doesn't"
       + " have enough spare space.\n"
       + " The <<1>> argument is the maximum allowed size.\n");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
-      ResourceMultipartSpecialValueText = new Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>(
-          "",
-          defaultTemplate:
-          "<<1>>: <b><color=yellow>~<<2>></color></b> / <b><<3>></b> (total: <b><<4>></b>)",
-          description: "Resource status string in the slot tooltip when there are more than one"
-          + " items available in the slot and the resource reserve is varying in the items.\n"
-          + " The <<1>> argument is a localized name of the resource.\n"
-          + " The <<2>> argument is the estimated amount of the resource per item.\n"
-          + " The <<3>> argument is the maximum amount of the resource per item.\n"
-          + " The <<4>> argument is the slot total reserve.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
-      ResourceMultipartValueText = new Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>(
-          "",
-          defaultTemplate: "<<1>>: <b><<2>></b> / <b><<3>></b> (total: <b><<4>></b>)",
-          description: "Resource status string in the slot tooltip when there are more than one"
-          + " items the available in the slot and the resource reserve in all the items is at its"
-          + " min or max value (i.e. it's exact).\n"
-          + " The <<1>> argument is a localized name of the resource.\n"
-          + " The <<2>> argument is the available amount of the resource per item.\n"
-          + " The <<3>> argument is the maximum amount of the resource per item.\n"
-          + " The <<4>> argument is the slot total reserve.");
   #endregion
 
   #region API properties and fields
@@ -300,21 +185,6 @@ sealed class InventorySlotImpl {
   }
 
   #region API methods
-  /// <summary>Fills tooltip with the info for the provided items.</summary>
-  /// <remarks>If the slot is empty, then all info fields are erased.</remarks>
-  public static void UpdateTooltip(UIKISInventoryTooltip.Tooltip tooltip, ICollection<InventoryItem> items) {
-    tooltip.ClearInfoFields();
-    if (items.Count == 0) {
-      return;
-    }
-    if (items.Count == 1) {
-      UpdateSingleItemTooltip(tooltip, items.First());
-    } else {
-      UpdateMultipleItemsTooltip(tooltip, items);
-    }
-    tooltip.UpdateLayout();
-  }
-
   /// <summary>Attaches this slot to a Unity slot object.</summary>
   /// <remarks>
   /// The slots that are not attached to any Unity object are invisible. Invisible slots are fully functional slots,
@@ -349,7 +219,7 @@ sealed class InventorySlotImpl {
   /// <seealso cref="CheckCanAddItems"/>
   public void AddItem(InventoryItem item) {
     if (_itemsSet.Count == 0) {
-      _resourceSimilarityValues = CalculateSimilarityValues(item);
+      _resourceSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(item);
     }
     _itemsSet.Add(item);
     slotItems.Add(item);
@@ -401,107 +271,19 @@ sealed class InventorySlotImpl {
     if (checkItems.Any(x => VariantsUtils.GetCurrentPartVariant(x.avPart, x.itemConfig) != slotVariant)) {
       return ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
     }
-    var checkSimilarityValues = _resourceSimilarityValues ?? CalculateSimilarityValues(refItem);
-    if (checkItems.Any(x => !CheckIfSameResources(x, checkSimilarityValues))) {
+    var refSimilarityValues = _resourceSimilarityValues ?? KisContainerWithSlots.CalculateSimilarityValues(refItem);
+    if (checkItems.Any(x => !CheckIfSameResources(x, refSimilarityValues))) {
       return ReturnErrorReasons(logErrors, DifferentResourcesReason, DifferentResourcesReasonText);
     }
-    if (checkItems.Any(x => !CheckIfSimilar(x, checkSimilarityValues))) {
+    if (checkItems.Any(x => !CheckIfSimilar(x, refSimilarityValues))) {
       return ReturnErrorReasons(logErrors, DifferentResourceAmountsReason, DifferentResourceAmountsReasonText);
     }
 
     return new List<ErrorReason>();
   }
-
-  /// <summary>Fills tooltip with the slot info.</summary>
-  /// <remarks>If the slot is empty, then all info fields are erased.</remarks>
-  public void UpdateTooltip(UIKISInventoryTooltip.Tooltip tooltip) {
-    UpdateTooltip(tooltip, slotItems);
-  }
   #endregion
 
   #region Local utility methods
-  /// <summary>Fills tooltip with useful information about one item.</summary>
-  static void UpdateSingleItemTooltip(UIKISInventoryTooltip.Tooltip tooltip, InventoryItem item) {
-    tooltip.title = item.avPart.title;
-    var infoLines = new List<string> {
-        MassTooltipText.Format(item.fullMass),
-        VolumeTooltipText.Format(item.volume),
-        CostTooltipText.Format(item.fullCost)
-    };
-
-    // Basic stats.
-    var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, item.itemConfig);
-    if (variant != null) {
-      infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
-    }
-    tooltip.baseInfo.text = string.Join("\n", infoLines);
-
-    // Available resources stats.
-    // Populate the available resources on the part. 
-    if (item.resources.Length > 0) {
-      var resItems = new List<string>();
-      foreach (var resource in item.resources) {
-        if (Math.Abs(resource.amount - resource.maxAmount) <= double.Epsilon) {
-          resItems.Add(NormalResourceValueText.Format(
-              resource.resourceName,
-              resource.amount,
-              resource.maxAmount));
-        } else {
-          resItems.Add(SpecialResourceValueText.Format(
-              resource.resourceName,
-              resource.amount,
-              resource.maxAmount));
-        }
-      }
-      tooltip.availableResourcesInfo.text = string.Join("\n", resItems);
-    } else {
-      tooltip.availableResourcesInfo.text = null;
-    }
-
-    //FIXME: show science
-  }
-
-  /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
-  static void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip, ICollection<InventoryItem> items,
-                                         Dictionary<string, int> similarityValues = null) {
-    var refItem = items.First();
-    similarityValues ??= CalculateSimilarityValues(refItem);
-    tooltip.title = refItem.avPart.title;
-
-    // Basic stats.
-    var infoLines = new List<string> {
-        MassMultipartTooltipText.Format(refItem.fullMass, items.Sum(x => x.fullMass)),
-        VolumeMultipartTooltipText.Format(refItem.volume, items.Sum(x => x.volume)),
-        CostMultipartTooltipText.Format(refItem.fullCost, items.Sum(x => x.fullCost))
-    };
-    var variant = VariantsUtils.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
-    if (variant != null) {
-      infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
-    }
-    tooltip.baseInfo.text = string.Join("\n", infoLines);
-
-    // Available resources stats.
-    var resourceInfoLines = new List<string>();
-    foreach (var resource in refItem.resources) {
-      var amountSlot = similarityValues[resource.resourceName];
-      var totalAmount = items.Sum(
-          x => x.resources.First(r => r.resourceName == resource.resourceName).amount);
-      if (amountSlot is 0 or 100) { // Show exact values with no highlighting.
-        resourceInfoLines.Add(
-            ResourceMultipartValueText.Format(
-                resource.resourceName, resource.amount, resource.maxAmount, totalAmount));
-      } else {
-        var amountPerItem = resource.maxAmount * amountSlot / 100.0;
-        resourceInfoLines.Add(
-            ResourceMultipartSpecialValueText.Format(
-                resource.resourceName, amountPerItem, resource.maxAmount, totalAmount));
-      }
-    }
-    tooltip.availableResourcesInfo.text = string.Join("\n", resourceInfoLines);
-
-    // Multi part slots don't support science, so skip it.
-  }
-
   /// <summary>Gives an approximate short string for a percent value.</summary>
   /// <remarks>
   /// The boundary values, 100% and 0%, are only shown if this value is not a default for any of the part resources.
@@ -512,7 +294,7 @@ sealed class InventorySlotImpl {
     }
     var slotPercent = _resourceSimilarityValues.Sum(x => (double) x.Value) / 100.0
         / _resourceSimilarityValues.Count;
-    var amountSlot = GetResourceAmountSlot(slotPercent);
+    var amountSlot = KisContainerWithSlots.GetResourceAmountSlot(slotPercent);
     string text;
     if (amountSlot == 0) {
       var defaultIsEmpty = slotItems[0].resources.Any(r => r.resourceRef?.amount < double.Epsilon); 
@@ -547,53 +329,16 @@ sealed class InventorySlotImpl {
     // FIXME: implement
   }
 
-  /// <summary>Allocates the percentile into one of the 5 fixed slots.</summary>
-  /// <remarks>The slots were chosen so that the grouping would make sense for the usual game cases.</remarks>
-  static int GetResourceAmountSlot(double percent) {
-    int res;
-    if (percent < double.Epsilon) {
-      res = 0; // 0%
-    } else if (percent < 0.05) {
-      res = 5; // (0%, 5%) 
-    } else if (percent < 0.95) {
-      // [-5%; +5%) with step 10 starting from 10%. 
-      res = (int) (Math.Floor((percent + 0.05) * 10) * 10);
-    } else if (percent - 1 > double.Epsilon) {
-      res = 95; // [95%, 100%)
-    } else {
-      res = 100; // 100%
-    }
-    return res;
-  }
-
-  /// <summary>Makes the values that let groping items with different resources reserve.</summary>
-  /// <remarks>
-  /// <p>
-  /// This method allocates the item to a "slot" on every resource which it may have. The slots are used to group the
-  /// items. Two items can only be grouped together if their slots on every resource match exactly, even though each
-  /// item may have different amount of the resource.
-  /// </p>
-  /// <p>
-  /// Simple example. If two items of the same part have resource reserve of "less than 5%", then they can be grouped as
-  /// "items that have less than 5% of the reserve". If any of them has more than 5% of the reserve, then they cannot be
-  /// grouped. However, the exact logic of assigning the slots is undetermined.
-  /// </p>
-  /// </remarks>
-  /// <seealso cref="GetResourceAmountSlot"/>
-  static Dictionary<string, int> CalculateSimilarityValues(InventoryItem item) {
-    return item.resources.ToDictionary(r => r.resourceName, r => GetResourceAmountSlot(r.amount / r.maxAmount));
-  }
-
   /// <summary>Checks if items resources are the same and the amounts are somewhat close.</summary>
   static bool CheckIfSimilar(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
-    var checkSimilarityValues = CalculateSimilarityValues(checkItem);
+    var checkSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(checkItem);
     return similarityValues.Count == checkSimilarityValues.Count
         && !similarityValues.Except(checkSimilarityValues).Any();
   }
 
   /// <summary>Checks if items resources are the same, disregarding the amounts.</summary>
   static bool CheckIfSameResources(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
-    var checkSimilarityValues = CalculateSimilarityValues(checkItem);
+    var checkSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(checkItem);
     return similarityValues.Count == checkSimilarityValues.Count
         && !similarityValues.Keys.Except(checkSimilarityValues.Keys).Any();
   }
