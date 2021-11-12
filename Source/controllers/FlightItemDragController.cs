@@ -2,12 +2,17 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System.Collections;
 using Experience.Effects;
 using KISAPIv2;
 using KSPDev.InputUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using System.Linq;
+using KSP.UI;
+using KSPDev.GUIUtils;
+using KSPDev.GUIUtils.TypeFormatters;
+using KSPDev.Unity;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -16,8 +21,19 @@ namespace KIS2 {
 /// <summary>Controller that deals with dragged items in the flight scenes.</summary>
 [KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
 sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
+  #region Localizable strings
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> TakeFocusedPartHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab the part",
+      description: "The tooltip status to present when the KIS grabbing mode is activated, but no part is being"
+      + " focused.");
+  #endregion
+
   #region Event static configs
   static readonly Event DropItemToSceneEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event PickupItemFromSceneEvent = Event.KeyboardEvent("mouse0");
+  static readonly Event KisFlightModeSwitchEvent = Event.KeyboardEvent("j");
   #endregion
 
   #region Local fields and properties
@@ -79,29 +95,73 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
   /// <seealso cref="_hitPointTransform"/>
   Transform _touchPointTransform;
+
+  // TODO(ihsoft): Implement support ofr the multi items pickup!
+  enum InFlightActionMode {
+    SinglePartFocused,
+    PartAssemblyFocused,
+  }
+  readonly EventsHandlerStateMachine<InFlightActionMode> _slotEventsHandler = new();
+
+  /// <summary>The tooltip the is currently being presented.</summary>
+  UIKISInventoryTooltip.Tooltip _currentTooltip;
+
+  /// <summary>The part to highlight for the purpose of the KIS action.</summary>
+  /// <remarks>The handler of the property change will control the UI appearance of the "hover action".</remarks>
+  /// <seealso cref="_slotEventsHandler"/>
+  Part hoveredPart {
+    get => _hoveredPart;
+    set {
+      if (_hoveredPart == value) {
+        return;
+      }
+      if (_hoveredPart != null) {
+        _hoveredPart.SetHighlight(false, recursive: true);
+        _hoveredPart.SetHighlightDefault();
+      }
+      _hoveredPart = value;
+      if (_hoveredPart != null) {
+        _hoveredPart.SetHighlightType(Part.HighlightType.AlwaysOn);
+        _hoveredPart.SetHighlight(true, recursive: true);
+      }
+      if (_hoveredPart == null) {
+        _slotEventsHandler.currentState = null;
+      } else if (_hoveredPart.children.Count == 0) {
+        _slotEventsHandler.currentState = InFlightActionMode.SinglePartFocused;
+      } else {
+        _slotEventsHandler.currentState = InFlightActionMode.PartAssemblyFocused;
+      }
+    }
+  }
+  Part _hoveredPart;
   #endregion
 
   #region MonoBehaviour overrides
   void Awake() {
     DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
     KisApi.ItemDragController.RegisterTarget(this);
+    _slotEventsHandler.DefineAction(
+        InFlightActionMode.SinglePartFocused, TakeFocusedPartHint, PickupItemFromSceneEvent, HandleScenePartPickup);
   }
 
   void OnDestroy() {
     DebugEx.Fine("[{0}] Controller stopped", nameof(FlightItemDragController));
     KisApi.ItemDragController.UnregisterTarget(this);
+    _slotEventsHandler.currentState = null;
   }
 
+  /// <summary>Handles the in-flight keyboard and mouse input.</summary>
   void Update() {
     if (!Input.anyKeyDown) {
-      return; // Only key/mouse event handlers are in this method. 
+      return; // Only key/mouse click events below this line. 
     }
+    // Below this point only THIS FRAME PRESS DOWN events can be checked. It's a performance requirement.
     if (isActiveModelInScene) {
       if (EventChecker.CheckClickEvent(DropItemToSceneEvent)) {
         CreateVesselFromDraggedItem();
       }
-    } else if (!KisApi.ItemDragController.isDragging) {
-      //FIXME: implement picking up parts.
+    } else if (EventChecker.CheckClickEvent(KisFlightModeSwitchEvent)) {
+      StartCoroutine(KisPickupEventHandler());
     }
   }
   #endregion
@@ -340,6 +400,80 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     part.ModulesOnStartFinished();
 
     return part;
+  }
+
+  /// <summary>Handles the keyboard and mouse events when KIS pickup  mode is enabled in flight.</summary>
+  /// <remarks>It automatically ends as soon as the appropriate modifier key is released.</remarks>
+  /// <seealso cref="KisFlightModeSwitchEvent"/>
+  IEnumerator KisPickupEventHandler() {
+    DebugEx.Info("Start KIS events handler in-flight");
+    while (true) {
+      if (KisApi.ItemDragController.isDragging) {
+        // It's a safe guard. API can start it in background.
+        DebugEx.Warning("Unexpectedly the dragging operation started while in in-flight action mode");
+        break;
+      }
+      if (!EventChecker2.CheckEventActive(KisFlightModeSwitchEvent)) {
+        break;
+      }
+      hoveredPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
+      UpdateInFlightTooltip();
+      _slotEventsHandler.HandleActions();
+      yield return null;
+    }
+    hoveredPart = null;
+    KillInFlightTooltip();
+    DebugEx.Info("End KIS events handler in-flight");
+  }
+
+
+  /// <summary>Updates the in-flight tooltip with the current data.</summary>
+  /// <remarks>It's intended to be called on evey frame update. This method must be efficient.</remarks>
+  void UpdateInFlightTooltip() {
+    if (_currentTooltip == null) {
+      _currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
+          "inFlightControllerTooltip", UIMasterController.Instance.actionCanvas.transform);
+    }
+    if (_slotEventsHandler.currentState == InFlightActionMode.SinglePartFocused) {
+      KisContainerWithSlots.UpdateTooltip(_currentTooltip, new[] { InventoryItemImpl.FromPart(null, hoveredPart) });
+    } else if (_slotEventsHandler.currentState == InFlightActionMode.PartAssemblyFocused) {
+      // TODO(ihsoft): Implement!
+      _currentTooltip.ClearInfoFields();
+      _currentTooltip.title = "Cannot grab a hierarchy";
+      _currentTooltip.baseInfo.text = string.Format("{0} part(s) attached", CountChildrenInHierarchy(hoveredPart));
+    } else {
+      _currentTooltip.ClearInfoFields();
+      _currentTooltip.title = "Focus a part";
+      _currentTooltip.baseInfo.text = null;
+    }
+    _currentTooltip.hints = _slotEventsHandler.GetHints();
+    _currentTooltip.UpdateLayout();
+  }
+
+  /// <summary>Returns the total number of the parts in the hierarchy.</summary>
+  static int CountChildrenInHierarchy(Part p) {
+    return p.children.Count + p.children.Sum(CountChildrenInHierarchy);
+  }
+
+  /// <summary>Kills the in-flight tooltip if one exists.</summary>
+  /// <remarks>It's a cleanup method. It never fails.</remarks>
+  void KillInFlightTooltip() {
+    if (_currentTooltip != null) {
+      HierarchyUtils.SafeDestroy(_currentTooltip);
+      _currentTooltip = null;
+    }
+  }
+
+  /// <summary>Handles the in-flight part/hierarchy pick up action.</summary>
+  void HandleScenePartPickup() {
+    if (Mouse.HoveredPart == null) {
+      // Unexpectedly this method is called when no part ios being hovered on. There is nothing to pick up!
+      DebugEx.Info("No focused part to handle pickup");
+      UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
+      return;  // Nothing to do.
+    }
+    // TODO(ihsoft): Implement!
+    DebugEx.Warning("*** Pickup action executed!!!");
   }
   #endregion
 
