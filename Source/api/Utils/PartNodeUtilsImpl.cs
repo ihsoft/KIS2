@@ -8,6 +8,7 @@ using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 // ReSharper disable once IdentifierTypo
@@ -265,13 +266,64 @@ public class PartNodeUtilsImpl {
     return pPart;
   }
 
-  /// <summary>Saves a proto part snapshot into the config node.</summary>
-  /// <param name="pPart">The proto part to store.</param>
+  /// <summary>Makes a fully populated node fo part based on the snapshot.</summary>
+  /// <remarks>
+  /// All IDs in the node will be updated to be universe unique. The returned node is safe to be sued when creating
+  /// vessel nodes via <see cref="ProtoVessel.CreateVesselNode"/>.
+  /// </remarks>
+  /// <param name="actorVessel">The vessel to get the situation from. The resulted vessel will inherit it.</param>
+  /// <param name="partNode">The parts saved state.</param>
   /// <returns>The resulted config node.</returns>
-  public ConfigNode GetConfigNodeFromProtoPartSnapshot(ProtoPartSnapshot pPart) {
-    var state = new ConfigNode("PART");
-    pPart.Save(state);
-    return state;
+  /// <seealso cref="MakeNewVesselNode"/>
+  public ConfigNode MakeNewPartConfig(Vessel actorVessel, ConfigNode partNode) {
+    var configNode = new ConfigNode("PART");
+    var snapshot = new ProtoPartSnapshot(partNode, null, null);
+    snapshot.Save(configNode);
+    configNode.SetValue("flag", actorVessel.rootPart.flagURL, createIfNotFound: true);
+    var flightId = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
+    configNode.SetValue("uid", flightId, createIfNotFound: true);
+    configNode.SetValue("mid", flightId, createIfNotFound: true);
+    configNode.SetValue("state", 0);
+    return configNode;
+  }
+
+  /// <summary>Makes a node for the proto vessel.</summary>
+  /// <param name="actorVessel">The vessel to get the situation from. The resulted vessel will inherit it.</param>
+  /// <param name="rootItem">The item state to make the vessel from.</param>
+  /// <param name="partPosition">The vessel's position.</param>
+  /// <param name="rotation">The vessel's location.</param>
+  /// <returns>The node that can be used to restore a vessel.</returns>
+  public ConfigNode MakeNewVesselNode(
+      Vessel actorVessel, InventoryItem rootItem, Vector3 partPosition, Quaternion rotation) {
+    //CheckGroundCollision()
+    var orbit = new Orbit(actorVessel.orbit);
+    var vesselName = rootItem.avPart.title;
+    var vesselNode = ProtoVessel.CreateVesselNode(
+        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, rootItem.itemConfig) });
+
+    //FIXME: need more than one part to skip repositioning! !vesselSpawning && skipGroundPositioning
+    vesselNode.SetValue("skipGroundPositioning", newValue: true, createIfNotFound: true);
+    vesselNode.SetValue("vesselSpawning", newValue: true, createIfNotFound: true);
+    vesselNode.AddValue("prst", value: true);
+    vesselNode.SetValue("sit", newValue: actorVessel.situation.ToString(), createIfNotFound: true);
+    vesselNode.SetValue("landed", newValue: actorVessel.Landed, createIfNotFound: true);
+    vesselNode.SetValue("splashed", newValue: actorVessel.Splashed, createIfNotFound: true);
+    vesselNode.SetValue("displaylandedAt", actorVessel.displaylandedAt, createIfNotFound: true);
+
+    double alt;
+    double lat;
+    double lon;
+    actorVessel.mainBody.GetLatLonAlt(partPosition, out lat, out lon, out alt);
+    vesselNode.SetValue("lat", newValue: lat, createIfNotFound: true);
+    vesselNode.SetValue("lon", newValue: lon, createIfNotFound: true);
+    vesselNode.SetValue("alt", newValue: alt, createIfNotFound: true);
+
+    var refRotation = actorVessel.mainBody.bodyTransform.rotation.Inverse() * rotation;
+    vesselNode.AddValue("rot", KSPUtil.WriteQuaternion(refRotation));
+    vesselNode.SetValue("PQSMin", 0, createIfNotFound: true);
+    vesselNode.SetValue("PQSMax", 0, createIfNotFound: true);
+
+    return vesselNode;
   }
 
   /// <summary>

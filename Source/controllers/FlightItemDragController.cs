@@ -2,6 +2,7 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System;
 using System.Collections;
 using Experience.Effects;
 using KISAPIv2;
@@ -311,55 +312,19 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <summary>Consumes the item being dragged and makes a scene vessel from it.</summary>
   void CreateVesselFromDraggedItem() {
+    if (KisApi.ItemDragController.leasedItems.Length != 1) {
+      throw new InvalidOperationException("Exactly one dragged item required to create a vessel");
+    }
     var pos = _draggedModel.position;
     var rot = _draggedModel.rotation;
-    var partItem = KisApi.ItemDragController.leasedItems[0];
-    KisApi.ItemDragController.ConsumeItems();
+    var consumedItems = KisApi.ItemDragController.ConsumeItems();
+    if (consumedItems == null || consumedItems.Length == 0) {
+      DebugEx.Error("The leased item cannot be consumed");
+      return;
+    }
     //FIXME vessel.heightFromPartOffsetLocal = -vessel.HeightFromPartOffsetGlobal
-    var protoVesselNode = GetProtoVesselNode(FlightGlobals.ActiveVessel, partItem.avPart, pos, rot);
+    var protoVesselNode = KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
     HighLogic.CurrentGame.AddVessel(protoVesselNode);
-  }
-
-  static ConfigNode GetProtoVesselNode(
-      Vessel actorVessel, AvailablePart avPart, Vector3 partPosition, Quaternion rotation) {
-    //CheckGroundCollision()
-    var orbit = new Orbit(actorVessel.orbit);
-    var vesselName = avPart.title;
-    var configNode = ProtoVessel.CreateVesselNode(
-        vesselName, VesselType.DroppedPart, orbit, 0,
-        new[] {
-            //FIXME: itemconfig
-            CreatePartNode(avPart, null, actorVessel)
-        });
-
-    //FIXME: need more than one part, !vesselSpawning && skipGroundPositioning 
-    configNode.SetValue("skipGroundPositioning", newValue: true, createIfNotFound: true);
-    configNode.SetValue("vesselSpawning", newValue: true, createIfNotFound: true);
-    configNode.SetValue("prst", newValue: true, createIfNotFound: true);
-    configNode.SetValue("sit", newValue: actorVessel.situation.ToString(), createIfNotFound: true);
-    //FIXME: do it when placing on surface only? or relay on repositioning?
-    configNode.SetValue("landed", newValue: actorVessel.Landed, createIfNotFound: true);
-    configNode.SetValue("splashed", newValue: actorVessel.Splashed, createIfNotFound: true);
-    configNode.SetValue("displaylandedAt", actorVessel.displaylandedAt, createIfNotFound: true);
-    
-    double alt;
-    double lat;
-    double lon;
-    actorVessel.mainBody.GetLatLonAlt(partPosition, out lat, out lon, out alt);
-    configNode.SetValue("lat", newValue: lat, createIfNotFound: true);
-    configNode.SetValue("lon", newValue: lon, createIfNotFound: true);
-    configNode.SetValue("alt", newValue: alt, createIfNotFound: true);
-
-    var refRotation = actorVessel.mainBody.bodyTransform.rotation.Inverse() * rotation;
-    configNode.SetValue(
-        "rot", newValue: KSPUtil.WriteQuaternion(refRotation), createIfNotFound: true);
-    configNode.SetValue("PQSMin", 0, createIfNotFound: true);
-    configNode.SetValue("PQSMax", 0, createIfNotFound: true);
-
-    //FIXME
-    DebugEx.Warning("*** vessel node:\n{0}", configNode);
-
-    return configNode;
   }
 
   /// <summary>Makes a part from the saved config for the purpose of the part "holo" capture.</summary>
@@ -485,28 +450,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region API/Utility candidates
-  /// <summary>Creates a part node snapshot, given the custom config.</summary>
-  /// <remarks>
-  /// Takes into account if the part being snapshot`ed is a ground experiment part. If it is, then
-  /// the actor's vessel modifiers will be applied.
-  /// </remarks>
-  /// <param name="avPart">The part info.</param>
-  /// <param name="partNode">The optional part's saved state. If not set, then the prefab state will be used.</param>
-  /// <param name="actorVessel">The actor vessel to get modifiers and flag from.</param>
-  /// <returns>The part's config node.</returns>
-  static ConfigNode CreatePartNode(AvailablePart avPart, ConfigNode partNode, Vessel actorVessel) {
-    var flightId = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
-    var configNode = ProtoVessel.CreatePartNode(avPart.name, flightId, null);
-    configNode.SetValue("flag", actorVessel.rootPart.flagURL, createIfNotFound: true);
-    // TODO(ihsoft): Copy/create uid/mid values.
-    configNode.SetValue("state", 0);
-    partNode ??= avPart.partConfig;
-    partNode.GetNodes("MODULE")
-        .ToList()
-        .ForEach(x => configNode.AddNode(x.CreateCopy()));
-    return configNode;
-  }
-
   /// <summary>Calculates ground experiment part power production modifier.</summary>
   /// <remarks>
   /// When the part is deployed by a kerbal, it's power generation can be adjusted by the kerbal's

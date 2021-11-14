@@ -564,9 +564,9 @@ public class KisContainerBase : AbstractPartModule,
       }
 
       // In the stock inventory the part states in the slot must be exactly the same.
-      var slotState =
-          KisApi.PartNodeUtils.MakeComparablePartNode(
-              KisApi.PartNodeUtils.GetConfigNodeFromProtoPartSnapshot(slot.snapshot));
+      var partConfig = new ConfigNode("PART");
+      slot.snapshot.Save(partConfig);
+      var slotState = KisApi.PartNodeUtils.MakeComparablePartNode(partConfig);
       var itemState = KisApi.PartNodeUtils.MakeComparablePartNode(item.itemConfig);
       if (slotState.ToString() != itemState.ToString()) {
         continue;
