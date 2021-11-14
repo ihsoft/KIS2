@@ -362,11 +362,18 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     return configNode;
   }
 
+  /// <summary>Makes a part from the saved config for the purpose of the part "holo" capture.</summary>
+  /// <remarks>
+  /// This part is not fully initialized and is not intended to live till the next frame. It method tries to capture as
+  /// many dynamic behavior on the part as possible, but there are compromises.
+  /// </remarks>
+  /// <param name="partInfo">The part info to create.</param>
+  /// <param name="itemConfig">The state of the part.</param>
+  /// <returns>The sample part. It <i>must</i> be destroyed before the next frame starts!</returns>
   Part MakeSamplePart(AvailablePart partInfo, ConfigNode itemConfig) {
     var part = Instantiate(partInfo.partPrefab);
-    part.gameObject.SetLayerRecursive((int) KspLayer.Part,
-                                      filterTranslucent: true,
-                                      ignoreLayersMask: (int) KspLayerMask.TriggerCollider);
+    part.gameObject.SetLayerRecursive(
+        (int) KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int) KspLayerMask.TriggerCollider);
     part.partInfo = partInfo;
     //FIXME: do ground experiment parts setup.
     part.gameObject.SetActive(true);
