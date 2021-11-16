@@ -546,7 +546,8 @@ public class KisContainerBase : AbstractPartModule,
     foreach (var existingSlotIndex in stockInventoryModule.storedParts.Keys) {
       maxSlotIndex = Math.Max(existingSlotIndex, maxSlotIndex);
       var slot = stockInventoryModule.storedParts[existingSlotIndex];
-      if (!slot.partName.Equals(item.avPart.name)) {
+      if (!slot.partName.Equals(item.avPart.name) || item.resources.Length > 0) {
+        // Absolutely no stacking for different parts or parts with resources.
         continue;
       }
 
