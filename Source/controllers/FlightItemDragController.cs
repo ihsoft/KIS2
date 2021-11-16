@@ -220,8 +220,13 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     dragModel.transform.rotation = draggedPart.initRotation;
     _touchPointTransform = new GameObject("surfaceTouchPoint").transform;
     _touchPointTransform.SetParent(_draggedModel, worldPositionStays: false);
-    //FIXME: take it from the colliders, not meshes.
-    var bounds = KisApi.PartModelUtils.GetPartBounds(draggedPart);
+    var bounds = draggedPart.FindModelComponents<Collider>()
+        .Select(x => x.bounds)
+        .Aggregate(
+            (res, next) => {
+              res.Encapsulate(next);
+              return res;
+            });
     var dist = bounds.center.y + bounds.extents.y;
     _touchPointTransform.position += -_draggedModel.up * dist;  
     _touchPointTransform.rotation = Quaternion.LookRotation(-_draggedModel.up, -_draggedModel.forward);
