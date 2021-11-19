@@ -601,6 +601,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <inheritdoc/>
   public override void OnDestroy() {
     CloseInventoryWindow();
+    KisApi.ItemDragController.UnregisterTarget(this);
     base.OnDestroy();
   }
 
