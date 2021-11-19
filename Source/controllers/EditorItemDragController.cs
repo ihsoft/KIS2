@@ -7,6 +7,7 @@ using KISAPIv2;
 using KSPDev.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
+using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -34,13 +35,6 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       + " added is a root part in the editor. It only makes sense in the editor mode.");
 
   // ReSharper enable MemberCanBePrivate.Global
-  #endregion
-
-  #region Local fields and properties
-  /// <summary>
-  /// A part that was dragged in the editor before entering a KIS inventory dialog.
-  /// </summary>
-  Part _savedEditorPart;
   #endregion
 
   #region MonoBehaviour overrides
@@ -76,41 +70,44 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
     // DRAGGING EDITOR PART - hover over KIS window. 
     // Take the editors dragged part and start KIS dragging for it. Hide the part in the editor.
     if (newTarget != null && EditorLogic.SelectedPart != null) {
-      _savedEditorPart = EditorLogic.SelectedPart;
       // We cannot nicely handle the cancel action when the pointer is hovering over an inventory dialog.
       // So, always start the dragging, but indicate if the item cannot be added anywhere.
-      var draggedItem = InventoryItemImpl.FromPart(null, _savedEditorPart);
-      if (EditorLogic.RootPart != null
-          && (EditorLogic.RootPart.craftID == draggedItem.GetConfigValue<uint>("cid")
-              || EditorLogic.RootPart.persistentId == draggedItem.GetConfigValue<uint>("persistentId"))) {
-        draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
-            errorClass = KisContainerBase.InventoryConsistencyReason,
-            guiString = CannotAddRootPartErrorText,
-        });
-      } else if (_savedEditorPart.children.Count > 0) {
-        draggedItem.checkChangeOwnershipPreconditions.Add(() => new ErrorReason {
-            errorClass = KisContainerBase.KisNotImplementedReason,
-            guiString = CannotAddPartWithChildrenErrorText,
-        });
-      }
+      var draggedItem = InventoryItemImpl.FromPart(null, EditorLogic.SelectedPart);
+      draggedItem.checkChangeOwnershipPreconditions.Add(
+          () => {
+            if (EditorLogic.RootPart != null && EditorLogic.RootPart == draggedItem.materialPart) {
+              return new ErrorReason {
+                  errorClass = KisContainerBase.InventoryConsistencyReason,
+                  guiString = CannotAddRootPartErrorText,
+              };
+            }
+            if (draggedItem.materialPart.children.Count > 0) {
+              return new ErrorReason {
+                  errorClass = KisContainerBase.KisNotImplementedReason,
+                  guiString = CannotAddPartWithChildrenErrorText,
+              };
+            }
+            return null;
+          });
 
       KisApi.ItemDragController.LeaseItems(
-          KisApi.PartIconUtils.MakeDefaultIcon(_savedEditorPart),
+          KisApi.PartIconUtils.MakeDefaultIcon(draggedItem.materialPart),
           new InventoryItem[] { draggedItem },
           EditorItemsConsumed, EditorItemsCancelled,
           allowInteractiveCancel: false);
       UIPartActionController.Instance.partInventory.editorPartDroppedBlockSfx = true;
       EditorLogic.fetch.ReleasePartToIcon();
-      _savedEditorPart.gameObject.SetLayerRecursive(LayerMask.NameToLayer("UIAdditional"));
-      _savedEditorPart.highlighter.ReinitMaterials();
-      _savedEditorPart.SetHighlightType(Part.HighlightType.OnMouseOver);
-      _savedEditorPart.SetHighlight(active: false, recursive: true);
+      draggedItem.materialPart.gameObject.SetLayerRecursive(LayerMask.NameToLayer("UIAdditional"));
+      draggedItem.materialPart.highlighter.ReinitMaterials();
+      draggedItem.materialPart.SetHighlightType(Part.HighlightType.OnMouseOver);
+      draggedItem.materialPart.SetHighlight(active: false, recursive: true);
       return;
     }
 
     // DRAGGING EDITOR PART - focus blur from a KIS window.
     // Cancel KIS dragging and return the dragged part back to the editor. 
-    if (newTarget == null && KisApi.ItemDragController.isDragging && _savedEditorPart != null) {
+    if (newTarget == null && KisApi.ItemDragController.isDragging
+        && KisApi.ItemDragController.leasedItems[0].materialPart != null) {
       KisApi.ItemDragController.CancelItemsLease();
       return;
     }
@@ -118,7 +115,8 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
     // DRAGGING KIS INVENTORY PART - focus blur from a KIS window.
     // If there is just one part, consume it and start the editor's drag. Otherwise, do nothing and
     // let KIS inventories to handle the logic.
-    if (newTarget == null && KisApi.ItemDragController.isDragging && _savedEditorPart == null) {
+    if (newTarget == null && KisApi.ItemDragController.isDragging
+        && KisApi.ItemDragController.leasedItems[0].materialPart == null) {
       if (KisApi.ItemDragController.leasedItems.Length == 1) {
         var items = KisApi.ItemDragController.ConsumeItems();
         if (items == null) {
@@ -134,23 +132,21 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region Local utility methods
   /// <summary>Returns the dragged item back to the editor when KIS dragging is cancelled.</summary>
-  /// <seealso cref="_savedEditorPart"/>
   void EditorItemsCancelled() {
-    if (_savedEditorPart != null) {
-      UIPartActionController.Instance.partInventory.editorPartPickedBlockSfx = true;
-      EditorLogic.fetch.SetIconAsPart(_savedEditorPart);
-      _savedEditorPart = null;
-    } 
+    Preconditions.HasSize(KisApi.ItemDragController.leasedItems, 1);
+    var item = KisApi.ItemDragController.leasedItems[0];
+    UIPartActionController.Instance.partInventory.editorPartPickedBlockSfx = true;
+    EditorLogic.fetch.SetIconAsPart(item.materialPart);
+    item.materialPart = null;
   }
 
   /// <summary>Cleans up the editor dragging part that was consumed by an inventory.</summary>
   /// <returns>Always <c>true</c>.</returns>
-  /// <seealso cref="_savedEditorPart"/>
   bool EditorItemsConsumed() {
-    if (_savedEditorPart != null) {
-      Hierarchy.SafeDestroy(_savedEditorPart);
-      _savedEditorPart = null;
-    }
+    Preconditions.HasSize(KisApi.ItemDragController.leasedItems, 1);
+    var item = KisApi.ItemDragController.leasedItems[0];
+    Hierarchy.SafeDestroy(item.materialPart);
+    item.materialPart = null;
     return true;
   }
 

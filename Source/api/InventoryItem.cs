@@ -26,6 +26,13 @@ public interface InventoryItem {
   /// <remarks>The ID is generated when the part is first time added into inventory. It's an immutable value.</remarks>
   string itemId { get; }
 
+  /// <summary>The actual part object which this item represents.</summary>
+  /// <remarks>
+  /// By the contract it must never be a part prefab, even though the prefab is technically a "part object".
+  /// </remarks>
+  /// <value>The part object or <c>null</c> if no material part relates to the item.</value>
+  Part materialPart { get; set; }
+
   /// <summary>Part proto.</summary>
   AvailablePart avPart { get; }
 

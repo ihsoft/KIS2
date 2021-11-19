@@ -149,7 +149,10 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
   public static InventoryItemImpl FromPart(IKisInventory inventory, Part part, string itemId = null) {
-    return new InventoryItemImpl(inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(itemId));
+    var res = new InventoryItemImpl(inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(itemId)) {
+        materialPart = part != part.partInfo.partPrefab ? part : null,
+    };
+    return res;
   }
 
   /// <summary>Creates an item for the given part name.</summary>
