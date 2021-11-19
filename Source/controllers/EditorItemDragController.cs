@@ -74,14 +74,14 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       // So, always start the dragging, but indicate if the item cannot be added anywhere.
       var draggedItem = InventoryItemImpl.FromPart(null, EditorLogic.SelectedPart);
       draggedItem.checkChangeOwnershipPreconditions.Add(
-          () => {
-            if (EditorLogic.RootPart != null && EditorLogic.RootPart == draggedItem.materialPart) {
+          (item) => {
+            if (EditorLogic.RootPart != null && EditorLogic.RootPart == item.materialPart) {
               return new ErrorReason {
                   errorClass = KisContainerBase.InventoryConsistencyReason,
                   guiString = CannotAddRootPartErrorText,
               };
             }
-            if (draggedItem.materialPart.children.Count > 0) {
+            if (item.materialPart.children.Count > 0) {
               return new ErrorReason {
                   errorClass = KisContainerBase.KisNotImplementedReason,
                   guiString = CannotAddPartWithChildrenErrorText,

@@ -111,7 +111,7 @@ public interface InventoryItem {
   /// error reason. These callbacks let the external actors to have a control over the inventory item's fate.
   /// </remarks>
   /// <seealso cref="CheckCanChangeOwnership"/>
-  List<Func<ErrorReason?>> checkChangeOwnershipPreconditions { get; }
+  List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; }
 
   /// <summary>Sets locked state.</summary>
   /// <remarks>

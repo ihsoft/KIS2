@@ -69,7 +69,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public bool isLocked { get; private set; }
 
   /// <inheritdoc/>
-  public List<Func<ErrorReason?>> checkChangeOwnershipPreconditions { get; private set; } = new();
+  public List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; private set; } = new();
   #endregion
 
   #region InventoryItem implementation
@@ -110,7 +110,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <inheritdoc/>
   public List<ErrorReason> CheckCanChangeOwnership() {
     return checkChangeOwnershipPreconditions
-        .Select(fn => fn())
+        .Select(fn => fn(this))
         .Where(x => x.HasValue)
         .Select(x => x.Value)
         .ToList();
