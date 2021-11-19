@@ -72,7 +72,7 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   }
 
   /// <inheritdoc/>
-  void IKisDragTarget.OnFocusTarget(GameObject newTarget) {
+  void IKisDragTarget.OnFocusTarget(IKisDragTarget newTarget) {
     // DRAGGING EDITOR PART - hover over KIS window. 
     // Take the editors dragged part and start KIS dragging for it. Hide the part in the editor.
     if (newTarget != null && EditorLogic.SelectedPart != null) {

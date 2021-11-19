@@ -156,7 +156,7 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
   UiKisInventorySlotDragIcon _dragIconObj;
 
   /// <inheritdoc/>
-  public GameObject focusedTarget { get; private set; }
+  public IKisDragTarget focusedTarget { get; private set; }
   #endregion
 
   #region Local constants, properties and fields
@@ -262,10 +262,10 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
   }
 
   /// <inheritdoc/>
-  public void SetFocusedTarget(GameObject newTarget) {
+  public void SetFocusedTarget(IKisDragTarget newTarget) {
     if (focusedTarget != newTarget) {
-      DebugEx.Fine("Focus target changed: old={0}, new={1}",
-                   focusedTarget != null ? focusedTarget.name : null, newTarget != null ? newTarget.name : null);
+      DebugEx.Fine(
+          "Focus target changed: old={0}, new={1}", focusedTarget?.unityComponent.name, newTarget?.unityComponent.name);
       focusedTarget = newTarget;
       Array.ForEach(_dragTargets, t => SafeCallbacks.Action(() => t.OnFocusTarget(newTarget)));
     }
@@ -287,14 +287,13 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
   /// <inheritdoc/>
   public void UnregisterTarget(IKisDragTarget target) {
     ArgumentGuard.NotNull(target, nameof(target));
-    if (_dragTargets.Contains(target)) {
-      if (isDragging) {
-        SafeCallbacks.Action(() => target.OnKisDragEnd(isCancelled: true));
-      }
-      _dragTargets = _dragTargets.Where((t, i) => t != target).ToArray();
-    } else {
-      DebugEx.Warning("Cannot unregister unknown target: {0}", target);
+    if (!_dragTargets.Contains(target)) {
+      return;
     }
+    if (isDragging) {
+      SafeCallbacks.Action(() => target.OnKisDragEnd(isCancelled: true));
+    }
+    _dragTargets = _dragTargets.Where((t, i) => t != target).ToArray();
   }
   #endregion
 

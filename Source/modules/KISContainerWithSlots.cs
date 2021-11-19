@@ -515,7 +515,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <inheritdoc/>
-  public void OnFocusTarget(GameObject newTarget) {
+  public void OnFocusTarget(IKisDragTarget newTarget) {
   }
   #endregion
 
@@ -766,7 +766,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   void OnSlotHover(Slot hoveredSlot, bool isHover) {
     if (isHover) {
       // The slot can receive the event before the owner dialog had. So, ensure the target is properly set.
-      KisApi.ItemDragController.SetFocusedTarget(_unityWindow.gameObject);
+      KisApi.ItemDragController.SetFocusedTarget(this);
       RegisterSlotHoverCallback();
     } else {
       UnregisterSlotHoverCallback();
@@ -794,7 +794,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>Callback when pointers enters or leaves the dialog.</summary>
   void OnEditorDialogHover(bool isHovered) {
-    KisApi.ItemDragController.SetFocusedTarget(isHovered ? _unityWindow.gameObject : null);
+    KisApi.ItemDragController.SetFocusedTarget(isHovered ? this : null);
   }
   #endregion
 

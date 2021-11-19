@@ -41,9 +41,13 @@ public interface IKisItemDragController {
   UiKisInventorySlotDragIcon dragIconObj { get; }
 
   /// <summary>Target that currently has the pointer focus.</summary>
-  /// <value>The object that represents GUI or <c>null</c> of there is none.</value>
+  /// <remarks>
+  /// This property reflects what target is currently being hovered over by the mouse pointer. Any Unity game object can
+  /// be that target if it has at least one component that implements the interface.  
+  /// </remarks>
+  /// <value>The target or <c>null</c> of there is none.</value>
   /// <seealso cref="SetFocusedTarget"/>
-  GameObject focusedTarget { get; }
+  IKisDragTarget focusedTarget { get; }
 
   /// <summary>Offers items for the dragging.</summary>
   /// <remarks>Items can belong to different inventories. The items can only be consumed all or none.</remarks>
@@ -92,25 +96,20 @@ public interface IKisItemDragController {
   /// <seealso cref="IKisDragTarget.OnKisDragEnd"/>
   void CancelItemsLease();
 
-  /// <summary>Sets the target GUI object that is currently owns the dragging focus.</summary>
+  /// <summary>Sets the target Unity object that is currently owns the dragging focus.</summary>
+  /// <remarks>Only the Unity objects can get the focus.</remarks>
   /// <remarks>
-  /// <p>
-  /// Even though any caller can set the value, only the actual UI handlers should be doing it. Exactly one GameObject
-  /// can be a focus target at the moment. In a normal case, it's the dialog that has the pointer focus.
-  /// </p>
-  /// <p>
   /// When the focused control looses focus, it must call this method with <c>null</c> to indicate that the focus has
   /// been released.
-  /// </p>
   /// </remarks>
   /// <param name="newTarget">The object that claims ownership on the focus.</param>
   /// <seealso cref="focusedTarget"/>
-  void SetFocusedTarget(GameObject newTarget);
+  void SetFocusedTarget(IKisDragTarget newTarget);
 
-  /// <summary>Registers a drag target that will be notified about the dragged items status.</summary>
+  /// <summary>Registers a drop target that will be notified about the dragged items status.</summary>
   /// <remarks>
   /// The drag controller will ask all the registered targets about the currently dragged items. If none of them can
-  /// accept the drop, then UI will make it clear to the user.
+  /// accept the drop, then the controller's UI will make it clear to the user.
   /// <p>
   /// If a target is registered when the dragging state is ON, then this target will immediately get
   /// <see cref="IKisDragTarget.OnKisDragStart"/>.
@@ -120,9 +119,10 @@ public interface IKisItemDragController {
   /// <seealso cref="IKisDragTarget.OnKisDrag"/>
   void RegisterTarget(IKisDragTarget target);
 
-  /// <summary>Unregisters the drag target.</summary>
+  /// <summary>Unregisters the drop target.</summary>
   /// <remarks>
-  /// If a target is unregistered when the dragging state is ON, then this target will immediately get
+  /// It's a cleanup method. It can be called even if the target is not currently registered. If a target is
+  /// unregistered when the dragging state is ON, then this target will immediately get
   /// <see cref="IKisDragTarget.OnKisDragEnd"/>.
   /// </remarks>
   /// <param name="target">The target to unregister.</param>

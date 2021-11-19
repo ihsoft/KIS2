@@ -4,6 +4,8 @@
 
 // ReSharper disable once CheckNamespace
 // ReSharper disable once IdentifierTypo
+
+using JetBrains.Annotations;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -11,8 +13,22 @@ using UnityEngine;
 namespace KISAPIv2 {
 
 /// <summary>Interface for the components that need to be aware of the KIS dragging actions.</summary>
+/// <remarks>
+/// For the purpose of getting callbacks, any object can implement this interface and be registered in the controller.
+/// However, in order to become a <see cref="IKisItemDragController.focusedTarget"/>, the object must be a Unity
+/// component.
+/// </remarks>
 /// <seealso cref="IKisItemDragController"/>
+/// <seealso cref="unityComponent"/>
 public interface IKisDragTarget {
+  /// <summary>The game component that is responsible for this target handling.</summary>
+  /// <remarks>
+  /// If this property returns <c>null</c>, then this target will be disregarded by the controller when determining
+  /// which target is currently being focused.
+  /// </remarks>
+  /// <value>A Unity component or <c>null</c> if it's not a focusable target.</value>
+  Component unityComponent { get; }
+
   /// <summary>Notifies when new items are leased for dragging in the controller.</summary>
   /// <remarks>
   /// This method will be called when registering a target, if the dragging state was already started at the moment.
@@ -55,7 +71,7 @@ public interface IKisDragTarget {
   /// <remarks>The callback is called <i>before</i> the target is changed.</remarks>
   /// <param name="newTarget">The new UI object that takes the focus. It's <c>null</c> on focus blur.</param>
   /// <seealso cref="IKisItemDragController.focusedTarget"/>
-  void OnFocusTarget(GameObject newTarget);
+  void OnFocusTarget(IKisDragTarget newTarget);
 }
 
 }  // namespace

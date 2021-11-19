@@ -186,7 +186,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   }
 
   /// <inheritdoc/>
-  void IKisDragTarget.OnFocusTarget(GameObject newTarget) {
+  void IKisDragTarget.OnFocusTarget(IKisDragTarget newTarget) {
     if (newTarget != null) {
       DestroyDraggedModel();
     } else if (KisApi.ItemDragController.isDragging && KisApi.ItemDragController.leasedItems.Length == 1) {
