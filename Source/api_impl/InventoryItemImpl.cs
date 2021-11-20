@@ -24,6 +24,9 @@ sealed class InventoryItemImpl : InventoryItem {
   public string itemId { get; }
 
   /// <inheritdoc/>
+  public Part materialPart { get; set; }
+
+  /// <inheritdoc/>
   public AvailablePart avPart { get; }
 
   /// <inheritdoc/>
