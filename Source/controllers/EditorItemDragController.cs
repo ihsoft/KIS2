@@ -51,6 +51,9 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region IKisDragTarget implementation
   /// <inheritdoc/>
+  public Component unityComponent => this;
+
+  /// <inheritdoc/>
   void IKisDragTarget.OnKisDragStart() {
     // Not interested.
   }

@@ -169,6 +169,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region IKisDragTarget implementation
   /// <inheritdoc/>
+  public Component unityComponent => this;
+
+  /// <inheritdoc/>
   void IKisDragTarget.OnKisDragStart() {
     if (KisApi.ItemDragController.focusedTarget == null && KisApi.ItemDragController.leasedItems.Length == 1) {
       MakeDraggedModelFromItem();

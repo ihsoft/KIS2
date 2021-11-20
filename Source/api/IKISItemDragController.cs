@@ -104,6 +104,7 @@ public interface IKisItemDragController {
   /// </remarks>
   /// <param name="newTarget">The object that claims ownership on the focus.</param>
   /// <seealso cref="focusedTarget"/>
+  /// <seealso cref="IKisDragTarget.unityComponent"/>
   void SetFocusedTarget(IKisDragTarget newTarget);
 
   /// <summary>Registers a drop target that will be notified about the dragged items status.</summary>

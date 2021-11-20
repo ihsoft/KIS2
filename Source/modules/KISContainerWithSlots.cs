@@ -500,6 +500,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region IKisDragTarget implementation
   /// <inheritdoc/>
+  public Component unityComponent => this;
+
+  /// <inheritdoc/>
   public void OnKisDragStart() {
     UpdateEventsHandlerState();
   }
