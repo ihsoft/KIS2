@@ -1288,6 +1288,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
     currentTooltip.ClearInfoFields();
     switch (_slotEventsHandler.currentState) {
+      case SlotActionMode.DraggingOverSourceSlot:
       case SlotActionMode.HoveringOverItemsSlot:
         UpdateTooltip(_unityWindow.currentTooltip, slotWithPointerFocus.slotItems);
         break;
