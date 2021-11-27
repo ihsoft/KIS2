@@ -2,7 +2,6 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using Experience.Effects;
@@ -238,7 +237,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <inheritdoc/>
   void IKisDragTarget.OnKisDragStart() {
-    _controllerStateMachine.currentState = ControllerState.DraggingItems;;
+    _controllerStateMachine.currentState = ControllerState.DraggingItems;
   }
 
   /// <inheritdoc/>
@@ -390,6 +389,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       yield return new WaitForEndOfFrame(); // Let the state machine an opportunity to kill the coroutine.
     }
     // No code beyond this point! The coroutine is explicitly killed from the state machine.
+    // ReSharper disable once IteratorNeverReturns
   }
   Coroutine _trackDraggingModeCoroutine;
   #endregion
