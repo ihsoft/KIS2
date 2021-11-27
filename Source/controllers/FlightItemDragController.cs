@@ -4,6 +4,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Experience.Effects;
 using KISAPIv2;
 using KSPDev.InputUtils;
@@ -13,6 +14,7 @@ using System.Linq;
 using KSP.UI;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
+using KSPDev.ProcessingUtils;
 using KSPDev.Unity;
 using UnityEngine;
 
@@ -29,6 +31,30 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab the part",
       description: "The tooltip status to present when the KIS grabbing mode is activated, but no part is being"
       + " focused.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> DraggedPartDropPartHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop at the part",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> DraggedPartDropSurfaceHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop on the surface",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message/*"/>
+  static readonly Message CannotGrabHierarchyTooltipMsg = new(
+      "",
+      defaultTemplate: "Cannot grab a hierarchy",
+      description: "It's a temp string. DO NOT localize it!");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<int> CannotGrabHierarchyTooltipDetailsMsg = new(
+      "",
+      defaultTemplate: "<<1>> part(s) attached",
+      description: "It's a temp string. DO NOT localize it!");
   #endregion
 
   #region Event static configs
@@ -38,34 +64,17 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region Local fields and properties
-  /// <summary>Tells if there is an item model being displayed in the scene.</summary>
-  /// <remarks>
-  /// When it's the case, it means the pointer is placed outside of any GUI element. However, it
-  /// doesn't mean that the dragged item can be dropped into the scene. 
-  /// </remarks>
-  bool isActiveModelInScene => _draggedModel != null;
+  /// <summary>Renderer to apply to the scene part hat is being dragged.</summary>
+  const string StdTransparentRenderer = "Transparent/Diffuse";
 
-  /// <summary>
-  /// Main texture color for the dragged model renderers when the item can be dropped at the pointed
-  /// located. 
-  /// </summary>
-  /// <seealso cref="MaxRaycastDistance"/>
-  static readonly Color GoodToPlaceColor = new Color(0f, 1f, 0f, 0.2f);
-
-  /// <summary>
-  /// Main texture color for the dragged model renderers when the item CANNOT be dropped at the
-  /// pointed located. It's also used fro the hanging item model coloring.
-  /// </summary>
-  /// <seealso cref="MaxRaycastDistance"/>
-  /// <seealso cref="HangingObjectDistance"/>
-  static readonly Color NotGoodToPlaceColor = new Color(1f, 0f, 0f, 0.2f);
+  /// <summary>The color and transparency of the holo model of the part being dragged.</summary>
+  static readonly Color HoloColor = new Color(0f, 1f, 1f, 0.7f);
 
   /// <summary>Distance from the camera of the object that cannot be placed anywhere.</summary>
   /// <remarks>
   /// If an item cannot be dropped, it will be "hanging" at the camera at this distance. It mostly
   /// affects the object's size.
   /// </remarks>
-  /// <seealso cref="NotGoodToPlaceColor"/>
   const float HangingObjectDistance = 10.0f;
 
   /// <summary>
@@ -97,73 +106,129 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_hitPointTransform"/>
   Transform _touchPointTransform;
 
-  // TODO(ihsoft): Implement support ofr the multi items pickup!
-  enum InFlightActionMode {
-    SinglePartFocused,
-    PartAssemblyFocused,
+  /// <summary>The exhaustive definition of the controller states.</summary>
+  enum ControllerState {
+    /// <summary>The controller isn't handling anything.</summary>
+    Idle,
+    /// <summary>The controller is in a pickup mode and expects user's input.</summary>
+    PickupModePending,
+    /// <summary>The items are being dragged.</summary>
+    DraggingItems,
   }
-  readonly EventsHandlerStateMachine<InFlightActionMode> _slotEventsHandler = new();
+
+  /// <summary>The state machine of the controller.</summary>
+  /// <remarks>
+  /// If the state needs to be changed from the user input, use a delayed change (by one frame). Or else, the handlers
+  /// from the different states may detect the same mouse/keyboard event.
+  /// </remarks>
+  readonly SimpleStateMachine<ControllerState> _controllerStateMachine = new(strict: false);
+
+  /// <summary>Defines the currently focused pickup target.</summary>
+  /// <remarks>The <c>null</c> state is used to indicate that nothing of the interest is being focused.</remarks>
+  enum PickupTarget {
+    /// <summary>A lone part or the last child of a vessel is being hovered.</summary>
+    SinglePart,
+    /// <summary>The part focused has some children.</summary>
+    PartAssembly,
+  }
+
+  /// <summary>The events state machine to control the pickup stage.</summary>
+  readonly EventsHandlerStateMachine<PickupTarget> _pickupTargetEventsHandler = new();
+
+  /// <summary>Defines the currently focused drop target.</summary>
+  /// <remarks>The <c>null</c> state is used to indicate that nothing of the interest is being focused.</remarks>
+  enum DropTarget {
+    /// <summary>The mouse cursor doesn't hit anything reasonable.</summary>
+    Nothing,
+    /// <summary>The mouse cursor hovers over the surface.</summary>
+    Surface,
+    /// <summary>The mouse cursor hovers over a part.</summary>
+    Part,
+    /// <summary>The mouse cursor hovers over a KIS inventory part.</summary>
+    KisInventory,
+    /// <summary>The mouse cursor hovers over a kerbal (they always have KIS inventory).</summary>
+    /// <remarks>This state is favored over the <see cref="KisInventory"/> when a kerbal is being focused.</remarks>
+    KerbalInventory,
+    /// <summary>The mouse cursor hovers over a KIS target.</summary>
+    /// <remarks>Such targets handle the drop logic themselves. So, the controller just stops interfering.</remarks>
+    KisTarget,
+  }
+
+  /// <summary>The events state machine to control the drop stage.</summary>
+  readonly EventsHandlerStateMachine<DropTarget> _dropTargetEventsHandler = new();
 
   /// <summary>The tooltip the is currently being presented.</summary>
   UIKISInventoryTooltip.Tooltip _currentTooltip;
-
-  /// <summary>The part to highlight for the purpose of the KIS action.</summary>
-  /// <remarks>The handler of the property change will control the UI appearance of the "hover action".</remarks>
-  /// <seealso cref="_slotEventsHandler"/>
-  Part hoveredPart {
-    get => _hoveredPart;
-    set {
-      if (_hoveredPart == value) {
-        return;
-      }
-      if (_hoveredPart != null) {
-        _hoveredPart.SetHighlight(false, recursive: true);
-        _hoveredPart.SetHighlightDefault();
-      }
-      _hoveredPart = value;
-      if (_hoveredPart != null) {
-        _hoveredPart.SetHighlightType(Part.HighlightType.AlwaysOn);
-        _hoveredPart.SetHighlight(true, recursive: true);
-      }
-      if (_hoveredPart == null) {
-        _slotEventsHandler.currentState = null;
-      } else if (_hoveredPart.children.Count == 0) {
-        _slotEventsHandler.currentState = InFlightActionMode.SinglePartFocused;
-      } else {
-        _slotEventsHandler.currentState = InFlightActionMode.PartAssemblyFocused;
-      }
-    }
-  }
-  Part _hoveredPart;
   #endregion
 
   #region MonoBehaviour overrides
   void Awake() {
     DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
+
+    // Setup the controller state machine.
+    _controllerStateMachine.onAfterTransition += (before, after) => {
+      DebugEx.Fine("In-flight controller state changed: {0} => {1}", before, after);
+    };
+    _controllerStateMachine.AddStateHandlers(
+        ControllerState.Idle,
+        _ => { _trackIdleStateCoroutine = StartCoroutine(TrackIdleStateCoroutine()); },
+        _ => {
+          if (_trackIdleStateCoroutine != null) {
+            StopCoroutine(_trackIdleStateCoroutine);
+          }
+        });
+    _controllerStateMachine.AddStateHandlers(
+        ControllerState.PickupModePending,
+        _ => { _trackPickupStateCoroutine = StartCoroutine(TrackPickupStateCoroutine()); },
+        _ => {
+          _pickupTargetEventsHandler.currentState = null;
+          targetPickupPart = null;
+          DestroyCurrentTooltip();
+          if (_trackPickupStateCoroutine != null) {
+            StopCoroutine(_trackPickupStateCoroutine);
+            _trackPickupStateCoroutine = null;
+          }
+        });
+    _controllerStateMachine.AddStateHandlers(
+        ControllerState.DraggingItems,
+        _ => { _trackDraggingModeCoroutine = StartCoroutine(TrackDraggingModeCoroutine()); },
+        _ => {
+          _dropTargetEventsHandler.currentState = null;
+          sourceDraggedPart = null;
+          DestroyDraggedModel();
+          if (_trackDraggingModeCoroutine != null) {
+            StopCoroutine(_trackDraggingModeCoroutine);
+            _trackDraggingModeCoroutine = null;
+          }
+        });
+    _controllerStateMachine.currentState = ControllerState.Idle;
+
+    // Setup the pickup target state machine.
+    _pickupTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
+      DebugEx.Fine("Pickup target state changed: {0} => {1}", oldState, newState);
+    };
+    _pickupTargetEventsHandler.DefineAction(
+        PickupTarget.SinglePart, TakeFocusedPartHint, PickupItemFromSceneEvent, HandleScenePartPickupAction);
+
+    // Setup the drop target state machine.
+    _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
+      DebugEx.Fine("Drop target state changed: {0} => {1}", oldState, newState);
+    };
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.Surface, DraggedPartDropSurfaceHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.Part, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.KerbalInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.KisInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
     KisApi.ItemDragController.RegisterTarget(this);
-    _slotEventsHandler.DefineAction(
-        InFlightActionMode.SinglePartFocused, TakeFocusedPartHint, PickupItemFromSceneEvent, HandleScenePartPickup);
   }
 
   void OnDestroy() {
     DebugEx.Fine("[{0}] Controller stopped", nameof(FlightItemDragController));
     KisApi.ItemDragController.UnregisterTarget(this);
-    _slotEventsHandler.currentState = null;
-  }
-
-  /// <summary>Handles the in-flight keyboard and mouse input.</summary>
-  void Update() {
-    if (!Input.anyKeyDown) {
-      return; // Only key/mouse click events below this line. 
-    }
-    // Below this point only THIS FRAME PRESS DOWN events can be checked. It's a performance requirement.
-    if (isActiveModelInScene) {
-      if (EventChecker.CheckClickEvent(DropItemToSceneEvent)) {
-        CreateVesselFromDraggedItem();
-      }
-    } else if (EventChecker.CheckClickEvent(KisFlightModeSwitchEvent)) {
-      StartCoroutine(KisPickupEventHandler());
-    }
+    _pickupTargetEventsHandler.currentState = null;
   }
   #endregion
 
@@ -173,65 +238,188 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <inheritdoc/>
   void IKisDragTarget.OnKisDragStart() {
-    if (KisApi.ItemDragController.focusedTarget == null && KisApi.ItemDragController.leasedItems.Length == 1) {
-      MakeDraggedModelFromItem();
-    }
+    _controllerStateMachine.currentState = ControllerState.DraggingItems;;
   }
 
   /// <inheritdoc/>
   void IKisDragTarget.OnKisDragEnd(bool isCancelled) {
-    DestroyDraggedModel();
+    _controllerStateMachine.currentState = ControllerState.Idle;
   }
 
   /// <inheritdoc/>
   bool IKisDragTarget.OnKisDrag(bool pointerMoved) {
-    return _draggedModel != null && PositionModelInTheScene();
+    return KisApi.ItemDragController.leasedItems.Length == 1;
   }
 
   /// <inheritdoc/>
   void IKisDragTarget.OnFocusTarget(IKisDragTarget newTarget) {
-    if (newTarget != null) {
-      DestroyDraggedModel();
-    } else if (KisApi.ItemDragController.isDragging && KisApi.ItemDragController.leasedItems.Length == 1) {
-      MakeDraggedModelFromItem();
-    }
   }
   #endregion
 
+  #region Idle state handling
+  /// <summary>Handles the keyboard/mouse events when the controller is idle.</summary>
+  /// <seealso cref="KisFlightModeSwitchEvent"/>
+  /// <seealso cref="_controllerStateMachine"/>
+  IEnumerator TrackIdleStateCoroutine() {
+    while (true) {
+      // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
+      yield return null;
+
+      if (Input.anyKeyDown && EventChecker.CheckClickEvent(KisFlightModeSwitchEvent)) {
+        _controllerStateMachine.currentState = ControllerState.PickupModePending;
+        break;
+      }
+    }
+    // No code beyond this point! The coroutine is explicitly killed from the state machine.
+  }
+  Coroutine _trackIdleStateCoroutine;
+  #endregion
+
+  #region Pickup state handling
+  /// <summary>The part that is currently hovered over in the part pickup mode.</summary>
+  /// <remarks>Setting this property affects the hovered part(s) highlighting</remarks>
+  /// <value>The part or <c>null</c> if no acceptable part is being hovered over.</value>
+  Part targetPickupPart {
+    get => _targetPickupPart;
+    set {
+      if (_targetPickupPart == value) {
+        return;
+      }
+      if (_targetPickupPart != null) {
+        _targetPickupPart.SetHighlight(false, recursive: true);
+        _targetPickupPart.SetHighlightDefault();
+      }
+      _targetPickupPart = value;
+      if (_targetPickupPart != null) {
+        _targetPickupPart.SetHighlightType(Part.HighlightType.AlwaysOn);
+        _targetPickupPart.SetHighlight(true, recursive: true);
+      }
+    }
+  }
+  Part _targetPickupPart;
+
+  /// <summary>Handles the keyboard and mouse events when KIS pickup mode is enabled in flight.</summary>
+  /// <remarks>
+  /// It checks if the modifier key is released and brings teh controller to the idle state if that's the case.
+  /// </remarks>
+  /// <seealso cref="KisFlightModeSwitchEvent"/>
+  /// <seealso cref="_controllerStateMachine"/>
+  /// <seealso cref="_pickupTargetEventsHandler"/>
+  IEnumerator TrackPickupStateCoroutine() {
+    while (true) {
+      targetPickupPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
+      if (targetPickupPart == null) {
+        _pickupTargetEventsHandler.currentState = null;
+      } else if (targetPickupPart.children.Count == 0) {
+        _pickupTargetEventsHandler.currentState = PickupTarget.SinglePart;
+      } else {
+        _pickupTargetEventsHandler.currentState = PickupTarget.PartAssembly;
+      }
+      UpdatePickupTooltip(targetPickupPart);
+
+      // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
+      yield return null;
+
+      _pickupTargetEventsHandler.HandleActions();
+      if (!Input.anyKey || !EventChecker2.CheckEventActive(KisFlightModeSwitchEvent)) {
+        _controllerStateMachine.currentState = ControllerState.Idle;
+        break;
+      }
+
+      yield return new WaitForEndOfFrame(); // Let the state machine an opportunity to kill the coroutine.
+    }
+    // No code beyond this point! The coroutine is explicitly killed from the state machine.
+  }
+  Coroutine _trackPickupStateCoroutine;
+  #endregion
+
+  #region Drop state handling
+  /// <summary>The material part that was a source for the drag operation.</summary>
+  /// <remarks>
+  /// This part will be considered "being dragged". It'll stay being material and (maybe) physical, but it may change
+  /// its visual appearance to indicate its new status.
+  /// </remarks>
+  /// <value>The part or <c>null</c> if not part is being a source of the dragging operation.</value>
+  Part sourceDraggedPart {
+    get => _sourceDraggedPart;
+    set {
+      if (_sourceDraggedPart == value) {
+        return;
+      }
+      if (_sourceDraggedPart != null) {
+        RestorePartState(_sourceDraggedPart, _sourceDraggedPartSavedState);
+      }
+      _sourceDraggedPart = value;
+      if (_sourceDraggedPart != null) {
+        _sourceDraggedPartSavedState = MakeDraggedPartGhost(_sourceDraggedPart);
+      }
+    }
+  }
+  Part _sourceDraggedPart;
+  Dictionary<int, Material[]> _sourceDraggedPartSavedState;
+
+  /// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
+  /// <seealso cref="_controllerStateMachine"/>
+  /// <seealso cref="_dropTargetEventsHandler"/>
+  IEnumerator TrackDraggingModeCoroutine() {
+    var singleItem = KisApi.ItemDragController.leasedItems.Length == 1
+        ? KisApi.ItemDragController.leasedItems[0]
+        : null;
+    sourceDraggedPart = singleItem?.materialPart;
+
+    // Handle the dragging operation.
+    while (true) {
+      // Track the mouse cursor position and update the view.
+      if (KisApi.ItemDragController.focusedTarget == null) {
+        // The cursor is in a free space, the controller deals with it.
+        if (singleItem != null) {
+          MakeDraggedModelFromItem(singleItem);
+          _dropTargetEventsHandler.currentState = PositionModelInTheScene(singleItem);
+          //FIXME: highlight cannot drop cases.
+        }
+      } else {
+        _dropTargetEventsHandler.currentState = DropTarget.KisTarget;
+        DestroyDraggedModel();
+      }
+
+      // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
+      yield return null;
+
+      _dropTargetEventsHandler.HandleActions();
+
+      yield return new WaitForEndOfFrame(); // Let the state machine an opportunity to kill the coroutine.
+    }
+    // No code beyond this point! The coroutine is explicitly killed from the state machine.
+  }
+  Coroutine _trackDraggingModeCoroutine;
+  #endregion
+  
   #region Local utility methods
   /// <summary>Creates a part model, given there is only one item is being dragged.</summary>
   /// <remarks>
   /// The model will immediately become active, so it should be either disabled or positioned in the same frame.
   /// </remarks>
-  void MakeDraggedModelFromItem() {
-    DestroyDraggedModel();
-    if (KisApi.ItemDragController.leasedItems.Length != 1) {
-      DebugEx.Warning("Cannot make dragged model for multiple parts: leasedCount={0}",
-                      KisApi.ItemDragController.leasedItems.Length);
-      return; // Cannot be placed into the world.
+  void MakeDraggedModelFromItem(InventoryItem item) {
+    if (_draggedModel != null) {
+      return; // The model already exists.
     }
     DebugEx.Fine("Creating flight scene dragging model...");
-    if (KisApi.ItemDragController.isDragging) {
-      KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
-    }
-    _draggedModel = new GameObject("KisDragModel").transform; //FIXME: make the model.
-    _draggedModel.gameObject.SetActive(true); //FIXME: needed?
-    var partItem = KisApi.ItemDragController.leasedItems[0];
-    var draggedPart = MakeSamplePart(partItem.avPart, partItem.itemConfig);
+    KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
+    _draggedModel = new GameObject("KisDragModel").transform;
+    _draggedModel.gameObject.SetActive(true);
+    var draggedPart = MakeSamplePart(item.avPart, item.itemConfig);
     var dragModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart);
     dragModel.transform.SetParent(_draggedModel, worldPositionStays: false);
     dragModel.transform.rotation = draggedPart.initRotation;
     _touchPointTransform = new GameObject("surfaceTouchPoint").transform;
     _touchPointTransform.SetParent(_draggedModel, worldPositionStays: false);
-    var bounds = draggedPart.FindModelComponents<Collider>()
-        .Select(x => x.bounds)
-        .Aggregate(
-            (res, next) => {
-              res.Encapsulate(next);
-              return res;
-            });
+    var bounds = draggedPart.FindModelComponents<Collider>().Select(x => x.bounds).Aggregate(
+        (res, next) => {
+          res.Encapsulate(next);
+          return res;
+        });
     var dist = bounds.center.y + bounds.extents.y;
-    _touchPointTransform.position += -_draggedModel.up * dist;  
+    _touchPointTransform.position += -_draggedModel.up * dist;
     _touchPointTransform.rotation = Quaternion.LookRotation(-_draggedModel.up, -_draggedModel.forward);
     Hierarchy.SafeDestroy(draggedPart);
   }
@@ -257,34 +445,30 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// hit, then this method returns <c>false</c>, and the model is aligned to the pointer at a
   /// constant distance from the camera.
   /// </remarks>
-  /// <returns><c>true</c> if the item can be dropped into the scene.</returns>
-  bool PositionModelInTheScene() {
+  /// <returns>The target type being hit by the ray cast.</returns>
+  DropTarget? PositionModelInTheScene(InventoryItem draggedItem) {
     var camera = FlightCamera.fetch.mainCamera;
     var ray = camera.ScreenPointToRay(Input.mousePosition);
 
-    var colliderHit = Physics.Raycast(
-        ray, out var hit, maxDistance: MaxRaycastDistance,
-        //FIXME also 0x800000?
+    var hitsBuffer = new RaycastHit[100];  // 100 is an empiric value.
+    var hitsCount = Physics.RaycastNonAlloc(
+        ray, hitsBuffer,
+        maxDistance: MaxRaycastDistance,
         layerMask: (int)(KspLayerMask.Part | KspLayerMask.Kerbal | KspLayerMask.SurfaceCollider),
         queryTriggerInteraction: QueryTriggerInteraction.Ignore);
-    var color = colliderHit
-        ? GoodToPlaceColor
-        : NotGoodToPlaceColor;
-    foreach (var renderer in _draggedModel.GetComponentsInChildren<Renderer>()) {
-      renderer.material.color = color;
-    }
+    var hit = hitsBuffer.Take(hitsCount)
+        .OrderBy(x => x.distance) // Unity doesn't sort the result.
+        .FirstOrDefault(
+            x => draggedItem.materialPart == null || x.transform.gameObject != draggedItem.materialPart.gameObject);
 
-    // If no surface or part is hit, then show the part being carried. 
-    if (!colliderHit) {
+    // If no surface or part is hit, then show the part being carried.
+    if (hit.Equals(default(RaycastHit))) {
       Hierarchy.SafeDestroy(_hitPointTransform);
       _hitPointTransform = null;
       var cameraTransform = camera.transform;
-      _draggedModel.position =
-          cameraTransform.position + ray.direction * HangingObjectDistance;
+      _draggedModel.position = cameraTransform.position + ray.direction * HangingObjectDistance;
       _draggedModel.rotation = cameraTransform.rotation;
-
-      //FIXME: position on screen
-      return false;
+      return DropTarget.Nothing;
     }
     var needNewHitTransform = _hitPointTransform == null; // Will be used for logging.
     if (needNewHitTransform) {
@@ -305,24 +489,29 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       }
       var surfaceNorm = FlightGlobals.getUpAxis(FlightGlobals.ActiveVessel.mainBody, hit.point);
       _hitPointTransform.rotation = Quaternion.LookRotation(surfaceNorm);
-    } else {
-      // We've hit a part. Bind to this point!
-      if (_hitPointTransform.parent != hitPart.transform || needNewHitTransform) {
-        DebugEx.Fine("Hit part: part={0}", hitPart);
-        _hitPointTransform.SetParent(hitPart.transform);
-      }
-      //FIXME: choose "not-up" when hitting the up/down plane of the target part. 
-      _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hitPart.transform.up);
+      AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
+      return DropTarget.Surface;
     }
+
+    // We've hit a part. Bind to this point!
+    if (_hitPointTransform.parent != hitPart.transform || needNewHitTransform) {
+      DebugEx.Fine("Hit part: part={0}", hitPart);
+      _hitPointTransform.SetParent(hitPart.transform);
+    }
+    //FIXME: choose "not-up" when hitting the up/down plane of the target part.
+    _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hitPart.transform.up);
     AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
-    return true;
+    if (hitPart.isVesselEVA && hitPart.HasModuleImplementing<IKisInventory>()) {
+      return DropTarget.KerbalInventory;
+    }
+    if (hitPart.HasModuleImplementing<IKisInventory>()) {
+      return DropTarget.KisInventory;
+    }
+    return DropTarget.Part;
   }
 
   /// <summary>Consumes the item being dragged and makes a scene vessel from it.</summary>
   void CreateVesselFromDraggedItem() {
-    if (KisApi.ItemDragController.leasedItems.Length != 1) {
-      throw new InvalidOperationException("Exactly one dragged item required to create a vessel");
-    }
     var pos = _draggedModel.position;
     var rot = _draggedModel.rotation;
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
@@ -382,52 +571,81 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     return part;
   }
 
-  /// <summary>Handles the keyboard and mouse events when KIS pickup  mode is enabled in flight.</summary>
-  /// <remarks>It automatically ends as soon as the appropriate modifier key is released.</remarks>
-  /// <seealso cref="KisFlightModeSwitchEvent"/>
-  IEnumerator KisPickupEventHandler() {
-    DebugEx.Info("Start KIS events handler in-flight");
-    while (true) {
-      if (KisApi.ItemDragController.isDragging) {
-        // It's a safe guard. API can start it in background.
-        DebugEx.Warning("Unexpectedly the dragging operation started while in in-flight action mode");
-        break;
-      }
-      if (!EventChecker2.CheckEventActive(KisFlightModeSwitchEvent)) {
-        break;
-      }
-      hoveredPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
-      UpdateInFlightTooltip();
-      _slotEventsHandler.HandleActions();
-      yield return null;
+  /// <summary>Destroys any tooltip that is existing in the controller.</summary>
+  /// <remarks>It's a cleanup method and it's safe to call it from any state.</remarks>
+  void DestroyCurrentTooltip() {
+    if (_currentTooltip != null) {
+      HierarchyUtils.SafeDestroy(_currentTooltip);
+      _currentTooltip = null;
     }
-    hoveredPart = null;
-    KillInFlightTooltip();
-    DebugEx.Info("End KIS events handler in-flight");
   }
 
-
-  /// <summary>Updates the in-flight tooltip with the current data.</summary>
-  /// <remarks>It's intended to be called on evey frame update. This method must be efficient.</remarks>
-  void UpdateInFlightTooltip() {
+  void CreateTooltip() {
     if (_currentTooltip == null) {
       _currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
           "inFlightControllerTooltip", UIMasterController.Instance.actionCanvas.transform);
     }
-    if (_slotEventsHandler.currentState == InFlightActionMode.SinglePartFocused) {
+  }
+
+  /// <summary>Updates or creates the in-flight tooltip with the part data.</summary>
+  /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
+  /// <param name="hoveredPart">
+  /// The part to make the tooltip for. If it's <c>null</c>, then the tooltip gets destroyed.
+  /// </param>
+  /// <seealso cref="DestroyCurrentTooltip"/>
+  void UpdatePickupTooltip(Part hoveredPart) {
+    if (hoveredPart == null) {
+      DestroyCurrentTooltip();
+      return;
+    }
+    CreateTooltip();
+    if (_pickupTargetEventsHandler.currentState == PickupTarget.SinglePart) {
       KisContainerWithSlots.UpdateTooltip(_currentTooltip, new[] { InventoryItemImpl.FromPart(null, hoveredPart) });
-    } else if (_slotEventsHandler.currentState == InFlightActionMode.PartAssemblyFocused) {
+    } else if (_pickupTargetEventsHandler.currentState == PickupTarget.PartAssembly) {
       // TODO(ihsoft): Implement!
       _currentTooltip.ClearInfoFields();
-      _currentTooltip.title = "Cannot grab a hierarchy";
-      _currentTooltip.baseInfo.text = string.Format("{0} part(s) attached", CountChildrenInHierarchy(hoveredPart));
-    } else {
-      _currentTooltip.ClearInfoFields();
-      _currentTooltip.title = "Focus a part";
-      _currentTooltip.baseInfo.text = null;
+      _currentTooltip.title = CannotGrabHierarchyTooltipMsg;
+      _currentTooltip.baseInfo.text =
+          CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(hoveredPart));
     }
-    _currentTooltip.hints = _slotEventsHandler.GetHints();
+    _currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
     _currentTooltip.UpdateLayout();
+  }
+
+  /// <summary>Handles the in-flight part/hierarchy pick up event action.</summary>
+  /// <remarks>
+  /// <p>It's required that there is a part being hovered. This part will be offered for the KIS dragging action.</p>
+  /// <p>If the part being consumed is attached to a vessel, it will get decoupled first.</p>
+  /// <p>
+  /// The consumed part will <i>DIE</i>. Which will break the link between the part and the item. And it may have effect
+  /// on the contracts state, if the part was a part of any.
+  /// </p>
+  /// </remarks>
+  void HandleScenePartPickupAction() {
+    var leasedItem = InventoryItemImpl.FromPart(null, _targetPickupPart);
+    KisApi.ItemDragController.LeaseItems(
+        KisApi.PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
+        new[] { leasedItem },
+        () => { // The consume action.
+          var consumedPart = leasedItem.materialPart;
+          if (consumedPart == null) {
+            // This is not normally happening, but is expected.
+            DebugEx.Error("The item's material part has disappeared before the drag operation has ended");
+            leasedItem.materialPart = null;
+            return false;
+          }
+          if (leasedItem.materialPart.parent != null) {
+            DebugEx.Fine("Detaching on KIS move: part={0}, parent={1}", consumedPart, consumedPart.parent);
+            consumedPart.decouple();
+          }
+          DebugEx.Info("Kill the part consumed by KIS in-flight pickup: {0}", consumedPart);
+          consumedPart.Die();
+          leasedItem.materialPart = null;
+          return true;
+        },
+        () => { // The cancel action.
+          leasedItem.materialPart = null; // It's a cleanup just in case.
+        });
   }
 
   /// <summary>Returns the total number of the parts in the hierarchy.</summary>
@@ -435,25 +653,72 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     return p.children.Count + p.children.Sum(CountChildrenInHierarchy);
   }
 
-  /// <summary>Kills the in-flight tooltip if one exists.</summary>
-  /// <remarks>It's a cleanup method. It never fails.</remarks>
-  void KillInFlightTooltip() {
-    if (_currentTooltip != null) {
-      HierarchyUtils.SafeDestroy(_currentTooltip);
-      _currentTooltip = null;
+  /// <summary>Turns the designated part into a "holo".</summary>
+  /// <remarks>
+  /// <p>
+  /// The part in question changes it's visual appearance to highlight the "dragging state". However, this part stays
+  /// fully physical and its game role doesn't change.
+  /// </p>
+  /// <p>
+  /// It's not defined how exactly the part appearance will be changed, but the changes must be limited to the materials
+  /// modifications.
+  /// </p>
+  /// </remarks>
+  /// <param name="p">The part to turn into a "holo".</param>
+  /// <returns>
+  /// <p>
+  /// The saved state of the original materials. The caller is responsible to use this information to restore the
+  /// original part appearance when applicable.
+  /// </p>
+  /// <p>
+  /// The key in the dictionary is the renderer's object hash code. It's expected that the set of the renderers on the
+  /// part won't change while the part is in the dragging state.
+  /// </p>
+  /// </returns>
+  /// <seealso cref="RestorePartState"/>
+  static Dictionary<int, Material[]> MakeDraggedPartGhost(Part p) {
+    var res = new Dictionary<int, Material[]>();
+    var holoShader = Shader.Find(StdTransparentRenderer);
+    if (holoShader != null) {
+      DebugEx.Fine("Turning the the target part into a holo: {0}", p);
+      var resetRenderers = p.GetComponentsInChildren<Renderer>();
+      foreach (var resetRenderer in resetRenderers) {
+        res[resetRenderer.GetHashCode()] = resetRenderer.materials;
+        foreach (var m in resetRenderer.materials) {
+          var newMaterial = new Material(holoShader) {
+              color = HoloColor
+          };
+          resetRenderer.material = newMaterial;
+        }
+      }
+    } else {
+      DebugEx.Error("Cannot find standard transparent renderer: {0}", StdTransparentRenderer);
     }
+    return res;
   }
 
-  /// <summary>Handles the in-flight part/hierarchy pick up action.</summary>
-  void HandleScenePartPickup() {
-    if (Mouse.HoveredPart == null) {
-      // Unexpectedly this method is called when no part ios being hovered on. There is nothing to pick up!
-      DebugEx.Info("No focused part to handle pickup");
-      UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
-      return;  // Nothing to do.
+  /// <summary>Restores the part appearance.</summary>
+  /// <param name="p">The part to restore the state of.</param>
+  /// <param name="savedState">
+  /// The saved state to apply to the part. It must exactly match to the state that was at the moment of making the
+  /// snapshot. If it doesn't, the state will not be restored and an error will be logged.
+  /// </param>
+  /// <seealso cref="MakeDraggedPartGhost"/>
+  static void RestorePartState(Part p, IReadOnlyDictionary<int, Material[]> savedState) {
+    DebugEx.Fine("Restoring renderers on: {0}", p);
+    var renderers = p.GetComponentsInChildren<Renderer>();
+    foreach (var renderer in renderers) {
+      if (savedState.TryGetValue(renderer.GetHashCode(), out var materials)) {
+        if (renderer.materials.Length == materials.Length) {
+          renderer.materials = materials;
+        } else {
+          DebugEx.Error("Cannot restore renderer materials: renderer={0}, actualCount={1}, savedCount={2}",
+                        renderer, renderer.materials.Length, materials.Length);
+        }
+      } else {
+        DebugEx.Error("The part's renderer is not found in the saved state: {0}", renderer);
+      }
     }
-    // TODO(ihsoft): Implement!
-    DebugEx.Warning("*** Pickup action executed!!!");
   }
   #endregion
 
