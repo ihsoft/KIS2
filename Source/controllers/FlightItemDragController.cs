@@ -393,7 +393,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   }
   Coroutine _trackDraggingModeCoroutine;
   #endregion
-  
+
   #region Local utility methods
   /// <summary>Creates a part model, given there is only one item is being dragged.</summary>
   /// <remarks>
@@ -476,15 +476,16 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
     _hitPointTransform.position = hit.point;
 
-    // Find out if a part was hit.
+    // Find out what's was hit.
     var hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
     if (hitPart == null) {
       // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
       // Align the model to the celestial body normal and rely on the game's logic on the vessel
       // positioning. It may (and, likely, will) not match to what we may have presented in GUI.
       if (_hitPointTransform.parent != null || needNewHitTransform) {
-        DebugEx.Fine("Hit surface: collider={0}, celestialBody={1}",
-                     hit.collider.transform, FlightGlobals.ActiveVessel.mainBody);
+        DebugEx.Fine(
+            "Hit surface: collider={0}, celestialBody={1}", hit.collider.transform,
+            FlightGlobals.ActiveVessel.mainBody);
         _hitPointTransform.SetParent(null);
       }
       var surfaceNorm = FlightGlobals.getUpAxis(FlightGlobals.ActiveVessel.mainBody, hit.point);
@@ -520,7 +521,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return;
     }
     //FIXME vessel.heightFromPartOffsetLocal = -vessel.HeightFromPartOffsetGlobal
-    var protoVesselNode = KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
+    var protoVesselNode =
+        KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
     HighLogic.CurrentGame.AddVessel(protoVesselNode);
   }
 
@@ -535,7 +537,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   Part MakeSamplePart(AvailablePart partInfo, ConfigNode itemConfig) {
     var part = Instantiate(partInfo.partPrefab);
     part.gameObject.SetLayerRecursive(
-        (int) KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int) KspLayerMask.TriggerCollider);
+        (int)KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int)KspLayerMask.TriggerCollider);
     part.partInfo = partInfo;
     //FIXME: do ground experiment parts setup.
     part.gameObject.SetActive(true);
@@ -562,7 +564,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       part.LoadModule(configNode, ref moduleIdx);
     }
     itemConfig.GetNodes("RESOURCE").ToList().ForEach(x => part.SetResource(x));
-    
+
     part.InitializeModules();
     part.ModulesBeforePartAttachJoint();
     part.ModulesOnStart();
