@@ -154,7 +154,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message<KeyboardEventType> StoreIntoSlotActionHint = new Message<KeyboardEventType>(
       "",
-      defaultTemplate: "<b><color=#5a5><<1>></color></b> to store items into the slot",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: to store items into the slot",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add the dragged items into an empty slot.\n"
       + " The <<1>> argument is a user friendly action name.");
