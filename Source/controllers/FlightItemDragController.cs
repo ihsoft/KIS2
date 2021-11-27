@@ -686,12 +686,13 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       var resetRenderers = p.GetComponentsInChildren<Renderer>();
       foreach (var resetRenderer in resetRenderers) {
         res[resetRenderer.GetHashCode()] = resetRenderer.materials;
-        foreach (var m in resetRenderer.materials) {
-          var newMaterial = new Material(holoShader) {
+        var newMaterials = new Material[resetRenderer.materials.Length];
+        for (var i = 0; i < resetRenderer.materials.Length; ++i) {
+          newMaterials[i] = new Material(holoShader) {
               color = HoloColor
           };
-          resetRenderer.material = newMaterial;
         }
+        resetRenderer.materials = newMaterials;
       }
     } else {
       DebugEx.Error("Cannot find standard transparent renderer: {0}", StdTransparentRenderer);
