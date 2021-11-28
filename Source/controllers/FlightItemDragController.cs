@@ -674,23 +674,26 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// </returns>
   /// <seealso cref="RestorePartState"/>
   static Dictionary<int, Material[]> MakeDraggedPartGhost(Part p) {
-    var res = new Dictionary<int, Material[]>();
-    var holoShader = Shader.Find(StdTransparentRenderer);
+    var resetRenderers = p.GetComponentsInChildren<Renderer>();
+    var res = resetRenderers.ToDictionary(x => x.GetHashCode(), x => x.materials);
+    Shader holoShader = null;
+    if (stdTransparentRenderer != "") {
+      holoShader = Shader.Find(stdTransparentRenderer);
+      if (holoShader == null) {
+        DebugEx.Error("Cannot find standard transparent renderer: {0}", stdTransparentRenderer);
+      }
+    }
     if (holoShader != null) {
-      DebugEx.Fine("Turning the the target part into a holo: {0}", p);
-      var resetRenderers = p.GetComponentsInChildren<Renderer>();
+      DebugEx.Fine("Turning the target part into a holo: {0}", p);
       foreach (var resetRenderer in resetRenderers) {
-        res[resetRenderer.GetHashCode()] = resetRenderer.materials;
         var newMaterials = new Material[resetRenderer.materials.Length];
         for (var i = 0; i < resetRenderer.materials.Length; ++i) {
           newMaterials[i] = new Material(holoShader) {
-              color = HoloColor
+              color = holoColor
           };
         }
         resetRenderer.materials = newMaterials;
       }
-    } else {
-      DebugEx.Error("Cannot find standard transparent renderer: {0}", StdTransparentRenderer);
     }
     return res;
   }
