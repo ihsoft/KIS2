@@ -260,7 +260,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="KisFlightModeSwitchEvent"/>
   /// <seealso cref="_controllerStateMachine"/>
   IEnumerator TrackIdleStateCoroutine() {
-    while (true) {
+    while (_controllerStateMachine.currentState == ControllerState.Idle) {
       // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
       yield return null;
 
@@ -305,7 +305,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_controllerStateMachine"/>
   /// <seealso cref="_pickupTargetEventsHandler"/>
   IEnumerator TrackPickupStateCoroutine() {
-    while (true) {
+    while (_controllerStateMachine.currentState == ControllerState.PickupModePending) {
       targetPickupPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
       if (targetPickupPart == null) {
         _pickupTargetEventsHandler.currentState = null;
@@ -324,8 +324,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         _controllerStateMachine.currentState = ControllerState.Idle;
         break;
       }
-
-      yield return new WaitForEndOfFrame(); // Let the state machine an opportunity to kill the coroutine.
     }
     // No code beyond this point! The coroutine is explicitly killed from the state machine.
   }
@@ -367,7 +365,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     sourceDraggedPart = singleItem?.materialPart;
 
     // Handle the dragging operation.
-    while (true) {
+    while (_controllerStateMachine.currentState == ControllerState.DraggingItems) {
       // Track the mouse cursor position and update the view.
       if (KisApi.ItemDragController.focusedTarget == null) {
         // The cursor is in a free space, the controller deals with it.
@@ -385,11 +383,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       yield return null;
 
       _dropTargetEventsHandler.HandleActions();
-
-      yield return new WaitForEndOfFrame(); // Let the state machine an opportunity to kill the coroutine.
     }
     // No code beyond this point! The coroutine is explicitly killed from the state machine.
-    // ReSharper disable once IteratorNeverReturns
   }
   Coroutine _trackDraggingModeCoroutine;
   #endregion
