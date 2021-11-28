@@ -264,7 +264,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
       yield return null;
 
-      if (Input.anyKeyDown && EventChecker.CheckClickEvent(KisFlightModeSwitchEvent)) {
+      if (Input.anyKey && EventChecker2.CheckEventActive(KisFlightModeSwitchEvent)) {
         _controllerStateMachine.currentState = ControllerState.PickupModePending;
         break;
       }
