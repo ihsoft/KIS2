@@ -11,6 +11,7 @@ using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using System.Linq;
 using KSP.UI;
+using KSPDev.ConfigUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.ProcessingUtils;
@@ -22,6 +23,7 @@ namespace KIS2 {
 
 /// <summary>Controller that deals with dragged items in the flight scenes.</summary>
 [KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
+[PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -56,6 +58,44 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       description: "It's a temp string. DO NOT localize it!");
   #endregion
 
+  #region Configuration
+  // ReSharper disable FieldCanBeMadeReadOnly.Local
+  // ReSharper disable FieldCanBeMadeReadOnly.Global
+  // ReSharper disable ConvertToConstant.Global
+  // ReSharper disable MemberCanBePrivate.Global
+  // ReSharper disable ConvertToConstant.Local
+
+  /// <summary>The renderer to apply to the scene part that is being dragged.</summary>
+  /// <remarks>If it's an empty string, than the shader on the part won't be changed.</remarks>
+  [PersistentField("PickupMode/holoPartShader")]
+  static string _stdTransparentRenderer = "Transparent/Diffuse";
+
+  /// <summary>The color and transparency of the holo model of the part being dragged.</summary>
+  [PersistentField("PickupMode/holoColor")]
+  static Color _holoColor = new(0f, 1f, 1f, 0.7f);
+
+  /// <summary>Distance from the camera of the object that cannot be placed anywhere.</summary>
+  /// <remarks>If an item cannot be dropped, it will be "hanging" at the camera at this distance.</remarks>
+  /// <seealso cref="_maxRaycastDistance"/>
+  [PersistentField("PickupMode/hangingObjectDistance")]
+  static float _hangingObjectDistance = 10.0f;
+
+  /// <summary>Maximum distance from the current camera to the hit point, where an item can be dropped.</summary>
+  /// <remarks>
+  /// This setting limits how far the mod will be looking for the possible placement location, but it doesn't define the
+  /// maximum interaction distance.
+  /// </remarks>
+  /// <seealso cref="_hangingObjectDistance"/>
+  [PersistentField("PickupMode/maxRaycastDistance")]
+  static float _maxRaycastDistance = 50;
+
+  // ReSharper enable FieldCanBeMadeReadOnly.Local
+  // ReSharper enable FieldCanBeMadeReadOnly.Global
+  // ReSharper enable ConvertToConstant.Global
+  // ReSharper enable MemberCanBePrivate.Global
+  // ReSharper enable ConvertToConstant.Local
+  #endregion
+
   #region Event static configs
   static readonly Event DropItemToSceneEvent = Event.KeyboardEvent("mouse0");
   static readonly Event PickupItemFromSceneEvent = Event.KeyboardEvent("mouse0");
@@ -63,29 +103,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region Local fields and properties
-  /// <summary>Renderer to apply to the scene part hat is being dragged.</summary>
-  const string StdTransparentRenderer = "Transparent/Diffuse";
-
-  /// <summary>The color and transparency of the holo model of the part being dragged.</summary>
-  static readonly Color HoloColor = new Color(0f, 1f, 1f, 0.7f);
-
-  /// <summary>Distance from the camera of the object that cannot be placed anywhere.</summary>
-  /// <remarks>
-  /// If an item cannot be dropped, it will be "hanging" at the camera at this distance. It mostly
-  /// affects the object's size.
-  /// </remarks>
-  const float HangingObjectDistance = 10.0f;
-
-  /// <summary>
-  /// Maximum distance from the current camera to the hit point, where an item can be dropped.  
-  /// </summary>
-  /// <remarks>
-  /// Hit points out of this radius will not be considered as the drop points. The dragged object
-  /// will not be allowed to drop. 
-  /// </remarks>
-  /// <seealso cref="HangingObjectDistance"/>
-  const float MaxRaycastDistance = 50;
-
   /// <summary>Model of the part or assembly that is being dragged.</summary>
   /// <seealso cref="_touchPointTransform"/>
   /// <seealso cref="_hitPointTransform"/>
@@ -163,6 +180,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region MonoBehaviour overrides
   void Awake() {
     DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
+    ConfigAccessor.ReadFieldsInType(GetType(), null); // Read the static fields.
 
     // Setup the controller state machine.
     _controllerStateMachine.onAfterTransition += (before, after) => {
@@ -448,7 +466,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var hitsBuffer = new RaycastHit[100];  // 100 is an empiric value.
     var hitsCount = Physics.RaycastNonAlloc(
         ray, hitsBuffer,
-        maxDistance: MaxRaycastDistance,
+        maxDistance: _maxRaycastDistance,
         layerMask: (int)(KspLayerMask.Part | KspLayerMask.Kerbal | KspLayerMask.SurfaceCollider),
         queryTriggerInteraction: QueryTriggerInteraction.Ignore);
     var hit = hitsBuffer.Take(hitsCount)
@@ -461,7 +479,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       Hierarchy.SafeDestroy(_hitPointTransform);
       _hitPointTransform = null;
       var cameraTransform = camera.transform;
-      _draggedModel.position = cameraTransform.position + ray.direction * HangingObjectDistance;
+      _draggedModel.position = cameraTransform.position + ray.direction * _hangingObjectDistance;
       _draggedModel.rotation = cameraTransform.rotation;
       return DropTarget.Nothing;
     }
@@ -677,10 +695,10 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var resetRenderers = p.GetComponentsInChildren<Renderer>();
     var res = resetRenderers.ToDictionary(x => x.GetHashCode(), x => x.materials);
     Shader holoShader = null;
-    if (stdTransparentRenderer != "") {
-      holoShader = Shader.Find(stdTransparentRenderer);
+    if (_stdTransparentRenderer != "") {
+      holoShader = Shader.Find(_stdTransparentRenderer);
       if (holoShader == null) {
-        DebugEx.Error("Cannot find standard transparent renderer: {0}", stdTransparentRenderer);
+        DebugEx.Error("Cannot find standard transparent renderer: {0}", _stdTransparentRenderer);
       }
     }
     if (holoShader != null) {
@@ -689,7 +707,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         var newMaterials = new Material[resetRenderer.materials.Length];
         for (var i = 0; i < resetRenderer.materials.Length; ++i) {
           newMaterials[i] = new Material(holoShader) {
-              color = holoColor
+              color = _holoColor
           };
         }
         resetRenderer.materials = newMaterials;
