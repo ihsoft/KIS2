@@ -89,6 +89,14 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   [PersistentField("PickupMode/maxRaycastDistance")]
   static float _maxRaycastDistance = 50;
 
+  /// <summary>The key that activates the in-flight pickup mode.</summary>
+  /// <remarks>
+  /// It's a standard keyboard event definition. Even though it can have modifiers, avoid specifying them since it may
+  /// affect the UX experience.
+  /// </remarks>
+  [PersistentField("PickupMode/actionKey")]
+  static string _flightActionKey = "g";
+
   // ReSharper enable FieldCanBeMadeReadOnly.Local
   // ReSharper enable FieldCanBeMadeReadOnly.Global
   // ReSharper enable ConvertToConstant.Global
@@ -99,7 +107,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region Event static configs
   static readonly Event DropItemToSceneEvent = Event.KeyboardEvent("mouse0");
   static readonly Event PickupItemFromSceneEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event KisFlightModeSwitchEvent = Event.KeyboardEvent("j");
+  static Event _pickupModeSwitchEvent = Event.KeyboardEvent(_flightActionKey);
   #endregion
 
   #region Local fields and properties
@@ -181,6 +189,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   void Awake() {
     DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
     ConfigAccessor.ReadFieldsInType(GetType(), null); // Read the static fields.
+    _pickupModeSwitchEvent = Event.KeyboardEvent(_flightActionKey);
 
     // Setup the controller state machine.
     _controllerStateMachine.onAfterTransition += (before, after) => {
@@ -275,14 +284,14 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region Idle state handling
   /// <summary>Handles the keyboard/mouse events when the controller is idle.</summary>
-  /// <seealso cref="KisFlightModeSwitchEvent"/>
+  /// <seealso cref="_pickupModeSwitchEvent"/>
   /// <seealso cref="_controllerStateMachine"/>
   IEnumerator TrackIdleStateCoroutine() {
     while (_controllerStateMachine.currentState == ControllerState.Idle) {
       // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
       yield return null;
 
-      if (Input.anyKey && EventChecker2.CheckEventActive(KisFlightModeSwitchEvent)) {
+      if (Input.anyKey && EventChecker2.CheckEventActive(_pickupModeSwitchEvent)) {
         _controllerStateMachine.currentState = ControllerState.PickupModePending;
         break;
       }
@@ -319,7 +328,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <remarks>
   /// It checks if the modifier key is released and brings teh controller to the idle state if that's the case.
   /// </remarks>
-  /// <seealso cref="KisFlightModeSwitchEvent"/>
+  /// <seealso cref="_pickupModeSwitchEvent"/>
   /// <seealso cref="_controllerStateMachine"/>
   /// <seealso cref="_pickupTargetEventsHandler"/>
   IEnumerator TrackPickupStateCoroutine() {
@@ -338,7 +347,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       yield return null;
 
       _pickupTargetEventsHandler.HandleActions();
-      if (!Input.anyKey || !EventChecker2.CheckEventActive(KisFlightModeSwitchEvent)) {
+      if (!Input.anyKey || !EventChecker2.CheckEventActive(_pickupModeSwitchEvent)) {
         _controllerStateMachine.currentState = ControllerState.Idle;
         break;
       }
