@@ -206,27 +206,11 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _controllerStateMachine.AddStateHandlers(
         ControllerState.PickupModePending,
         _ => { _trackPickupStateCoroutine = StartCoroutine(TrackPickupStateCoroutine()); },
-        _ => {
-          _pickupTargetEventsHandler.currentState = null;
-          targetPickupPart = null;
-          DestroyCurrentTooltip();
-          if (_trackPickupStateCoroutine != null) {
-            StopCoroutine(_trackPickupStateCoroutine);
-            _trackPickupStateCoroutine = null;
-          }
-        });
+        _ => CleanupTrackPickupState());
     _controllerStateMachine.AddStateHandlers(
         ControllerState.DraggingItems,
-        _ => { _trackDraggingModeCoroutine = StartCoroutine(TrackDraggingModeCoroutine()); },
-        _ => {
-          _dropTargetEventsHandler.currentState = null;
-          sourceDraggedPart = null;
-          DestroyDraggedModel();
-          if (_trackDraggingModeCoroutine != null) {
-            StopCoroutine(_trackDraggingModeCoroutine);
-            _trackDraggingModeCoroutine = null;
-          }
-        });
+        _ => { _trackDraggingStateCoroutine = StartCoroutine(TrackDraggingStateCoroutine()); },
+        _ => CleanupTrackDraggingState());
     _controllerStateMachine.currentState = ControllerState.Idle;
 
     // Setup the pickup target state machine.
@@ -352,9 +336,24 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         break;
       }
     }
-    // No code beyond this point! The coroutine is explicitly killed from the state machine.
+    // No code beyond this point! The coroutine may be explicitly killed from the state machine.
   }
   Coroutine _trackPickupStateCoroutine;
+
+  /// <summary>Cleans ups any state created in <see cref="TrackPickupStateCoroutine"/>.</summary>
+  /// <remarks>
+  /// Doing the cleanup in the coroutine itself is a bad idea due to it can die at any moment. Instead, the
+  /// <see cref="_controllerStateMachine"/> should take care about it when the state is changed.
+  /// </remarks>
+  void CleanupTrackPickupState() {
+    _pickupTargetEventsHandler.currentState = null;
+    targetPickupPart = null;
+    DestroyCurrentTooltip();
+    if (_trackPickupStateCoroutine != null) {
+      StopCoroutine(_trackPickupStateCoroutine);
+      _trackPickupStateCoroutine = null;
+    }
+  }
   #endregion
 
   #region Drop state handling
@@ -385,7 +384,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
   /// <seealso cref="_controllerStateMachine"/>
   /// <seealso cref="_dropTargetEventsHandler"/>
-  IEnumerator TrackDraggingModeCoroutine() {
+  IEnumerator TrackDraggingStateCoroutine() {
     var singleItem = KisApi.ItemDragController.leasedItems.Length == 1
         ? KisApi.ItemDragController.leasedItems[0]
         : null;
@@ -411,9 +410,24 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
       _dropTargetEventsHandler.HandleActions();
     }
-    // No code beyond this point! The coroutine is explicitly killed from the state machine.
+    // No code beyond this point! The coroutine may be explicitly killed from the state machine.
   }
-  Coroutine _trackDraggingModeCoroutine;
+  Coroutine _trackDraggingStateCoroutine;
+
+  /// <summary>Cleans ups any state created in <see cref="TrackDraggingStateCoroutine"/>.</summary>
+  /// <remarks>
+  /// Doing the cleanup in the coroutine itself is a bad idea due to it can die at any moment. Instead, the
+  /// <see cref="_controllerStateMachine"/> should take care about it when the state is changed.
+  /// </remarks>
+  void CleanupTrackDraggingState() {
+    _dropTargetEventsHandler.currentState = null;
+    sourceDraggedPart = null;
+    DestroyDraggedModel();
+    if (_trackDraggingStateCoroutine != null) {
+      StopCoroutine(_trackDraggingStateCoroutine);
+      _trackDraggingStateCoroutine = null;
+    }
+  }
   #endregion
 
   #region Local utility methods
