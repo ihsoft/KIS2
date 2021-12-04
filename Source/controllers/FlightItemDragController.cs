@@ -515,7 +515,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
     _hitPointTransform.position = hit.point;
 
-    // Find out what's was hit.
+    // Find out what was hit.
     var hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
     if (hitPart == null) {
       // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
@@ -594,6 +594,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     if (effects != null) {
       part.Effects.OnLoad(effects);
     }
+    // ReSharper disable once StringLiteralTypo
     var partData = itemConfig.GetNode("PARTDATA");
     if (partData != null) {
       part.OnLoad(partData);
