@@ -95,7 +95,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// affect the UX experience.
   /// </remarks>
   [PersistentField("PickupMode/actionKey")]
-  static string _flightActionKey = "g";
+  static string _flightActionKey = "j";
 
   // ReSharper enable FieldCanBeMadeReadOnly.Local
   // ReSharper enable FieldCanBeMadeReadOnly.Global
