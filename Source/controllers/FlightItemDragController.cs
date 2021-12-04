@@ -320,6 +320,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_pickupTargetEventsHandler"/>
   IEnumerator TrackPickupStateCoroutine() {
     while (_controllerStateMachine.currentState == ControllerState.PickupModePending) {
+      CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the part!
+
       targetPickupPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
       if (targetPickupPart == null) {
         _pickupTargetEventsHandler.currentState = null;
@@ -349,6 +351,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <see cref="_controllerStateMachine"/> should take care about it when the state is changed.
   /// </remarks>
   void CleanupTrackPickupState() {
+    CrewHatchController.fetch.EnableInterface();
     _pickupTargetEventsHandler.currentState = null;
     targetPickupPart = null;
     DestroyCurrentTooltip();
@@ -395,6 +398,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
     // Handle the dragging operation.
     while (_controllerStateMachine.currentState == ControllerState.DraggingItems) {
+      CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the drop location!
+
       // Track the mouse cursor position and update the view.
       if (KisApi.ItemDragController.focusedTarget == null) {
         // The cursor is in a free space, the controller deals with it.
@@ -423,6 +428,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <see cref="_controllerStateMachine"/> should take care about it when the state is changed.
   /// </remarks>
   void CleanupTrackDraggingState() {
+    CrewHatchController.fetch.EnableInterface();
     _dropTargetEventsHandler.currentState = null;
     sourceDraggedPart = null;
     DestroyDraggedModel();
