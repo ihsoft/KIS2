@@ -238,6 +238,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   void OnDestroy() {
     DebugEx.Fine("[{0}] Controller stopped", nameof(FlightItemDragController));
     KisApi.ItemDragController.UnregisterTarget(this);
+
+    // Ensure the state machines did their cleanups.
+    _controllerStateMachine.currentState = null;
     _pickupTargetEventsHandler.currentState = null;
   }
   #endregion
