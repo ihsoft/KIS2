@@ -137,7 +137,7 @@ public static class EventChecker2 {
     return null;
   }
 
-  /// <summary>Checks if the keyboard/mouse click event has happen during the frame.</summary>
+  /// <summary>Checks if the keyboard/mouse down event has happen during the frame.</summary>
   /// <remarks>
   /// This check treats "left" and "right" modifiers equally. And it doesn't consider any of the
   /// state modifiers (CAPS, NUM, SCROLL, etc.).
@@ -150,15 +150,12 @@ public static class EventChecker2 {
   /// <seealso href="https://docs.unity3d.com/ScriptReference/Input.GetKeyDown.html">
   /// Input.GetKeyDown
   /// </seealso>
-  public static bool CheckClickEvent(Event ev) {
+  public static bool CheckDownEvent(Event ev) {
     return CheckAnySymmetricalModifiers(ev) && Input.GetKeyDown(ev.keyCode);
   }
 
   /// <summary>Checks if the keyboard/mouse event is happening during this frame.</summary>
-  /// <remarks>
-  /// This check treats "left" and "right" modifiers equally. And it doesn't consider any of the
-  /// state modifiers (CAPS, NUM, SCROLL, etc.).
-  /// </remarks>
+  /// <remarks>If the event has ended in the current frame, it's assumed it's NOT active during this frame.</remarks>
   /// <param name="ev">The event to match for.</param>
   /// <returns>
   /// <c>true</c> if the requested combination has matched the current frame state.
@@ -168,7 +165,7 @@ public static class EventChecker2 {
   /// Input.GetKeyDown
   /// </seealso>
   public static bool CheckEventActive(Event ev) {
-    return CheckAnySymmetricalModifiers(ev) && Input.GetKey(ev.keyCode);
+    return Input.GetKeyUp(ev.keyCode) || Input.GetKey(ev.keyCode);
   }
 
   /// <summary>Checks if the mouse click event has happen during the frame.</summary>
