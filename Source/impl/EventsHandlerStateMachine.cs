@@ -76,7 +76,7 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   struct HandlerDef {
     /// <summary>Action that triggers the handler.</summary>
     /// <seealso cref="HandleActions"/>
-    public Event actionEvent;
+    public ClickEvent actionEvent;
 
     /// <summary>Hint string for the action.</summary>
     /// FIXME: use message
@@ -122,7 +122,8 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   /// be always active.
   /// </param>
   public void DefineAction(
-      T state, Message<KeyboardEventType> hintText, Event actionEvent, Action actionFn,
+      //T state, Message<KeyboardEventType> hintText, Event actionEvent, Action actionFn,
+      T state, Message<KeyboardEventType> hintText, ClickEvent actionEvent, Action actionFn,
       Func<bool> checkIfAvailable = null) {
     if (!_stateHandlers.TryGetValue(state, out var stateHandlers)) {
       stateHandlers = new List<HandlerDef>();
@@ -130,7 +131,7 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
     }
     stateHandlers.Add(new HandlerDef() {
         actionEvent = actionEvent,
-        actionHint = hintText.Format(actionEvent),
+        actionHint = hintText.Format(actionEvent.unityEvent),
         actionFn = actionFn,
         checkFn = checkIfAvailable,
     });
@@ -167,10 +168,10 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
     var handlersNum = _currentStateHandlers.Count;
     for (var i = 0; i < handlersNum; i++) {
       var handler = _currentStateHandlers[i];
-      if ((handler.checkFn != null && !handler.checkFn()) || !EventChecker.CheckClickEvent(handler.actionEvent)) {
+      if ((handler.checkFn != null && !handler.checkFn()) || !handler.actionEvent.CheckClick()) {
         continue;
       }
-      DebugEx.Fine("Trigger action: event={0}, index={1}", KeyboardEventType.Format(handler.actionEvent), i);
+      DebugEx.Fine("Trigger action: event={0}, index={1}", KeyboardEventType.Format(handler.actionEvent.unityEvent), i);
       handler.actionFn();
       return true;
     }

@@ -105,8 +105,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region Event static configs
-  static readonly Event DropItemToSceneEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event PickupItemFromSceneEvent = Event.KeyboardEvent("mouse0");
+  static readonly ClickEvent DropItemToSceneEvent = new(Event.KeyboardEvent("mouse0"));
+  static readonly ClickEvent PickupItemFromSceneEvent = new(Event.KeyboardEvent("mouse0"));
   static Event _pickupModeSwitchEvent = Event.KeyboardEvent(_flightActionKey);
   #endregion
 

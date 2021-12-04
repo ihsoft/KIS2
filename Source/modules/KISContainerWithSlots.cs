@@ -16,6 +16,7 @@ using KSPDev.Unity;
 using KISAPIv2;
 using KIS2.UIKISInventorySlot;
 using KSPDev.ConfigUtils;
+using KSPDev.InputUtils;
 using KSPDev.PartUtils;
 using UnityEngine;
 
@@ -383,18 +384,18 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Event static configs
-  static readonly Event TakeSlotEvent = Event.KeyboardEvent("&mouse0");
-  static readonly Event TakeOneItemEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event TakeTenItemsEvent = Event.KeyboardEvent("#mouse0");
-  static readonly Event AddToStackEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event StoreIntoSlotEvent = Event.KeyboardEvent("mouse0");
-  static readonly Event AddOneItemEvent = Event.KeyboardEvent("^mouse0");
-  static readonly Event AddTenItemsEvent = Event.KeyboardEvent("#mouse0");
-  static readonly Event RemoveOneItemEvent = Event.KeyboardEvent("^mouse1");
-  static readonly Event RemoveTenItemsEvent = Event.KeyboardEvent("#mouse1");
-  static readonly Event SpawnNewItemEvent = Event.KeyboardEvent("mouse1");
-  static readonly Event SpawnExtraItemEvent = Event.KeyboardEvent("mouse1");
-  static readonly Event DropOneItemEvent = Event.KeyboardEvent("&mouse1");
+  static readonly ClickEvent TakeSlotEvent = new(Event.KeyboardEvent("&mouse0"));
+  static readonly ClickEvent TakeOneItemEvent = new(Event.KeyboardEvent("mouse0"));
+  static readonly ClickEvent TakeTenItemsEvent = new(Event.KeyboardEvent("#mouse0"));
+  static readonly ClickEvent AddToStackEvent = new(Event.KeyboardEvent("mouse0"));
+  static readonly ClickEvent StoreIntoSlotEvent = new(Event.KeyboardEvent("mouse0"));
+  static readonly ClickEvent AddOneItemEvent = new(Event.KeyboardEvent("^mouse0"));
+  static readonly ClickEvent AddTenItemsEvent = new(Event.KeyboardEvent("#mouse0"));
+  static readonly ClickEvent RemoveOneItemEvent = new(Event.KeyboardEvent("^mouse1"));
+  static readonly ClickEvent RemoveTenItemsEvent = new(Event.KeyboardEvent("#mouse1"));
+  static readonly ClickEvent SpawnNewItemEvent = new(Event.KeyboardEvent("mouse1"));
+  static readonly ClickEvent SpawnExtraItemEvent = new(Event.KeyboardEvent("mouse1"));
+  static readonly ClickEvent DropOneItemEvent = new(Event.KeyboardEvent("&mouse1"));
   #endregion
 
   #region Persistent node names
