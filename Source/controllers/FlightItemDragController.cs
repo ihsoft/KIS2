@@ -111,25 +111,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region Local fields and properties
-  /// <summary>Model of the part or assembly that is being dragged.</summary>
-  /// <seealso cref="_touchPointTransform"/>
-  /// <seealso cref="_hitPointTransform"/>
-  Transform _draggedModel;
-
-  /// <summary>Transform of the point which received the pointer hit.</summary>
-  /// <remarks>
-  /// It can be attached to part if a part has been hit, or be a static object if it was surface.
-  /// This transform, is dynamically created when something is hit, and destroyed when there is
-  /// nothing.
-  /// </remarks>
-  /// <seealso cref="_touchPointTransform"/>
-  Transform _hitPointTransform;
-
-  /// <summary>Transform in the dragged model that should contact with the hit point.</summary>
-  /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
-  /// <seealso cref="_hitPointTransform"/>
-  Transform _touchPointTransform;
-
   /// <summary>The exhaustive definition of the controller states.</summary>
   enum ControllerState {
     /// <summary>The controller isn't handling anything.</summary>
@@ -181,7 +162,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <summary>The events state machine to control the drop stage.</summary>
   readonly EventsHandlerStateMachine<DropTarget> _dropTargetEventsHandler = new();
 
-  /// <summary>The tooltip the is currently being presented.</summary>
+  /// <summary>The tooltip that is currently being presented.</summary>
   UIKISInventoryTooltip.Tooltip _currentTooltip;
   #endregion
 
@@ -387,6 +368,25 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   Part _sourceDraggedPart;
   Dictionary<int, Material[]> _sourceDraggedPartSavedState;
 
+  /// <summary>Model of the part or assembly that is being dragged.</summary>
+  /// <seealso cref="_touchPointTransform"/>
+  /// <seealso cref="_hitPointTransform"/>
+  Transform _draggedModel;
+
+  /// <summary>Transform of the point which received the pointer hit.</summary>
+  /// <remarks>
+  /// It can be attached to part if a part has been hit, or be a static object if it was surface.
+  /// This transform, is dynamically created when something is hit, and destroyed when there is
+  /// nothing.
+  /// </remarks>
+  /// <seealso cref="_touchPointTransform"/>
+  Transform _hitPointTransform;
+
+  /// <summary>Transform in the dragged model that should contact with the hit point.</summary>
+  /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
+  /// <seealso cref="_hitPointTransform"/>
+  Transform _touchPointTransform;
+
   /// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
   /// <seealso cref="_controllerStateMachine"/>
   /// <seealso cref="_dropTargetEventsHandler"/>
@@ -437,9 +437,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _trackDraggingStateCoroutine = null;
     }
   }
-  #endregion
 
-  #region Local utility methods
   /// <summary>Creates a part model, given there is only one item is being dragged.</summary>
   /// <remarks>
   /// The model will immediately become active, so it should be either disabled or positioned in the same frame.
@@ -556,21 +554,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     return DropTarget.Part;
   }
 
-  /// <summary>Consumes the item being dragged and makes a scene vessel from it.</summary>
-  void CreateVesselFromDraggedItem() {
-    var pos = _draggedModel.position;
-    var rot = _draggedModel.rotation;
-    var consumedItems = KisApi.ItemDragController.ConsumeItems();
-    if (consumedItems == null || consumedItems.Length == 0) {
-      DebugEx.Error("The leased item cannot be consumed");
-      return;
-    }
-    //FIXME vessel.heightFromPartOffsetLocal = -vessel.HeightFromPartOffsetGlobal
-    var protoVesselNode =
-        KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
-    HighLogic.CurrentGame.AddVessel(protoVesselNode);
-  }
-
   /// <summary>Makes a part from the saved config for the purpose of the part "holo" capture.</summary>
   /// <remarks>
   /// This part is not fully initialized and is not intended to live till the next frame. It method tries to capture as
@@ -579,7 +562,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <param name="partInfo">The part info to create.</param>
   /// <param name="itemConfig">The state of the part.</param>
   /// <returns>The sample part. It <i>must</i> be destroyed before the next frame starts!</returns>
-  Part MakeSamplePart(AvailablePart partInfo, ConfigNode itemConfig) {
+  static Part MakeSamplePart(AvailablePart partInfo, ConfigNode itemConfig) {
     var part = Instantiate(partInfo.partPrefab);
     part.gameObject.SetLayerRecursive(
         (int)KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int)KspLayerMask.TriggerCollider);
@@ -617,6 +600,23 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     part.ModulesOnStartFinished();
 
     return part;
+  }
+  #endregion
+
+  #region Local utility methods
+  /// <summary>Consumes the item being dragged and makes a scene vessel from it.</summary>
+  void CreateVesselFromDraggedItem() {
+    var pos = _draggedModel.position;
+    var rot = _draggedModel.rotation;
+    var consumedItems = KisApi.ItemDragController.ConsumeItems();
+    if (consumedItems == null || consumedItems.Length == 0) {
+      DebugEx.Error("The leased item cannot be consumed");
+      return;
+    }
+    //FIXME vessel.heightFromPartOffsetLocal = -vessel.HeightFromPartOffsetGlobal
+    var protoVesselNode =
+        KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
+    HighLogic.CurrentGame.AddVessel(protoVesselNode);
   }
 
   /// <summary>Destroys any tooltip that is existing in the controller.</summary>
