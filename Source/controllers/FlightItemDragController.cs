@@ -282,15 +282,21 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       if (_targetPickupPart != null) {
         _targetPickupPart.SetHighlight(false, recursive: true);
         _targetPickupPart.SetHighlightDefault();
+        _targetPickupItem = null;
       }
       _targetPickupPart = value;
       if (_targetPickupPart != null) {
         _targetPickupPart.SetHighlightType(Part.HighlightType.AlwaysOn);
         _targetPickupPart.SetHighlight(true, recursive: true);
+        if (_targetPickupPart.children.Count == 0) {
+          _targetPickupItem = InventoryItemImpl.FromPart(null, _targetPickupPart);
+          _targetPickupItem.materialPart = _targetPickupPart;
+        }
       }
     }
   }
   Part _targetPickupPart;
+  InventoryItem _targetPickupItem;
 
   /// <summary>Handles the keyboard and mouse events when KIS pickup mode is enabled in flight.</summary>
   /// <remarks>
@@ -311,7 +317,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       } else {
         _pickupTargetEventsHandler.currentState = PickupTarget.PartAssembly;
       }
-      UpdatePickupTooltip(targetPickupPart);
+      UpdatePickupTooltip();
 
       // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
       yield return null;
@@ -637,24 +643,22 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <summary>Updates or creates the in-flight tooltip with the part data.</summary>
   /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
-  /// <param name="hoveredPart">
-  /// The part to make the tooltip for. If it's <c>null</c>, then the tooltip gets destroyed.
-  /// </param>
   /// <seealso cref="DestroyCurrentTooltip"/>
-  void UpdatePickupTooltip(Part hoveredPart) {
-    if (hoveredPart == null) {
+  /// <seealso cref="targetPickupPart"/>
+  void UpdatePickupTooltip() {
+    if (targetPickupPart == null) {
       DestroyCurrentTooltip();
       return;
     }
     CreateTooltip();
     if (_pickupTargetEventsHandler.currentState == PickupTarget.SinglePart) {
-      KisContainerWithSlots.UpdateTooltip(_currentTooltip, new[] { InventoryItemImpl.FromPart(null, hoveredPart) });
+      KisContainerWithSlots.UpdateTooltip(_currentTooltip, new[] { _targetPickupItem });
     } else if (_pickupTargetEventsHandler.currentState == PickupTarget.PartAssembly) {
       // TODO(ihsoft): Implement!
       _currentTooltip.ClearInfoFields();
       _currentTooltip.title = CannotGrabHierarchyTooltipMsg;
       _currentTooltip.baseInfo.text =
-          CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(hoveredPart));
+          CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
     }
     _currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
     _currentTooltip.UpdateLayout();
@@ -670,25 +674,21 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// </p>
   /// </remarks>
   void HandleScenePartPickupAction() {
-    var leasedItem = InventoryItemImpl.FromPart(null, _targetPickupPart);
+    var leasedItem = _targetPickupItem;
     KisApi.ItemDragController.LeaseItems(
         KisApi.PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
         new[] { leasedItem },
         () => { // The consume action.
           var consumedPart = leasedItem.materialPart;
-          if (consumedPart == null) {
-            // This is not normally happening, but is expected.
-            DebugEx.Error("The item's material part has disappeared before the drag operation has ended");
+          if (consumedPart != null) {
+            if (consumedPart.parent != null) {
+              DebugEx.Fine("Detaching on KIS move: part={0}, parent={1}", consumedPart, consumedPart.parent);
+              consumedPart.decouple();
+            }
+            DebugEx.Info("Kill the part consumed by KIS in-flight pickup: {0}", consumedPart);
+            consumedPart.Die();
             leasedItem.materialPart = null;
-            return false;
           }
-          if (leasedItem.materialPart.parent != null) {
-            DebugEx.Fine("Detaching on KIS move: part={0}, parent={1}", consumedPart, consumedPart.parent);
-            consumedPart.decouple();
-          }
-          DebugEx.Info("Kill the part consumed by KIS in-flight pickup: {0}", consumedPart);
-          consumedPart.Die();
-          leasedItem.materialPart = null;
           return true;
         },
         () => { // The cancel action.
