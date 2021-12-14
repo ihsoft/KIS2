@@ -84,44 +84,29 @@ public class PartNodeUtilsImpl {
     return partNode;
   }
 
-  /// <summary>
-  /// Makes a proto part snapshot from the part.
-  /// </summary>
+  /// <summary>Makes a proto part snapshot from the part.</summary>
+  /// <remarks>It erases all the vessel related info from the snapshot.</remarks>
   /// <param name="part">The part to capture.</param>
   /// <returns>A snapshot fo the part's current state.</returns>
   public ProtoPartSnapshot GetProtoPartSnapshot(Part part) {
-    if (part.protoPartSnapshot != null) {
-      return part.protoPartSnapshot; // Piece of cake!
-    }
-
     DebugEx.Fine("Make a proto part snapshot for: {0}", part);
     MaybeFixPrefabPart(part);
 
     // Persist the old part's proto state to not affect it after the snapshot.
-    var oldVessel = part.vessel;
-    var oldPartSnapshot = part.protoPartSnapshot;
     var oldCrewSnapshot = part.protoModuleCrew;
-    if (oldVessel == null) {
-      part.vessel = part.gameObject.AddComponent<Vessel>();
-      DebugEx.Fine("Making a fake vessel for the part to make a snapshot: part={0}, vessel={1}",
-                   part, part.vessel);
-    }
-
+    var oldProtoPartSnapshot = part.protoPartSnapshot;
     var snapshot = new ProtoPartSnapshot(part, null) {
+        // We don't need the vessel relations. 
         attachNodes = new List<AttachNodeSnapshot>(),
-        srfAttachNode = new AttachNodeSnapshot("attach,-1"),
+        srfAttachNode = new AttachNodeSnapshot("None,-1"),
         symLinks = new List<ProtoPartSnapshot>(),
-        symLinkIdxs = new List<int>()
+        symLinkIdxs = new List<int>(),
+        state = 0,
+        PreFailState = 0,
+        attached = false,
     };
-
-    // Rollback the part's proto state to the original settings.
-    if (oldVessel != part.vessel) {
-      DebugEx.Fine("Destroying the fake vessel: part={0}, vessel={1}", part, part.vessel);
-      UnityEngine.Object.DestroyImmediate(part.vessel);
-    }
-    part.vessel = oldVessel;
-    part.protoPartSnapshot = oldPartSnapshot;
     part.protoModuleCrew = oldCrewSnapshot;
+    part.protoPartSnapshot = oldProtoPartSnapshot;
 
     return snapshot;
   }
