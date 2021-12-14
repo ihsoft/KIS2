@@ -76,6 +76,7 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       // We cannot nicely handle the cancel action when the pointer is hovering over an inventory dialog.
       // So, always start the dragging, but indicate if the item cannot be added anywhere.
       var draggedItem = InventoryItemImpl.FromPart(null, EditorLogic.SelectedPart);
+      draggedItem.materialPart = EditorLogic.SelectedPart;
       draggedItem.checkChangeOwnershipPreconditions.Add(
           (item) => {
             if (EditorLogic.RootPart != null && EditorLogic.RootPart == item.materialPart) {
