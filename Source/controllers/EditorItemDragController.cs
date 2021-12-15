@@ -155,6 +155,11 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   }
 
   /// <summary>Creates part and restores its state from config node.</summary>
+  /// <remarks>
+  /// The part is created non-started! Be careful with manual part's starting. The down stream logic may choose to start
+  /// the part regardless to fact it has already started. And it will have a lot of bad side effects. Only start the
+  /// part if are confident it must be done.
+  /// </remarks>
   Part MakeEditorPartFromItem(InventoryItem item) {
     var partInfo = item.avPart;
     var part = Instantiate(partInfo.partPrefab);
@@ -186,9 +191,6 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
     
     part.InitializeModules();
     part.ModulesBeforePartAttachJoint();
-    part.ModulesOnStart();
-    part.ModulesOnStartFinished();
-
     return part;
   }
   #endregion
