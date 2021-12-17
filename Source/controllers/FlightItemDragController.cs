@@ -393,6 +393,19 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_touchPointTransform"/>
   Transform _hitPointTransform;
 
+  /// <summary>The part that holds the current hit transform.</summary>
+  /// <remarks>This property is NOT performance optimized.</remarks>
+  /// <value>The hovered part party or <c>null</c>.</value>
+  /// <seealso cref="_hitPointTransform"/>
+  Part hitPart {
+    get {
+      if (_hitPointTransform == null || _hitPointTransform.parent == null) {
+        return null;
+      }
+      return FlightGlobals.GetPartUpwardsCached(_hitPointTransform.parent.gameObject);
+    }
+  }
+
   /// <summary>Transform in the dragged model that should contact with the hit point.</summary>
   /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
   /// <seealso cref="_hitPointTransform"/>
@@ -619,15 +632,38 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   void CreateVesselFromDraggedItem() {
     var pos = _draggedModel.position;
     var rot = _draggedModel.rotation;
+
+    var canConsumeItem = KisApi.ItemDragController.leasedItems[0];
+    var materialPart = canConsumeItem.materialPart;
+    if (materialPart != null) {
+      canConsumeItem.materialPart = null; // From here we'll be handling the material part.
+    }
+
+    // Consuming items will change the state, so capture all the important values before doing it.
+    var dropAtPart = hitPart; 
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
     if (consumedItems == null || consumedItems.Length == 0) {
       DebugEx.Error("The leased item cannot be consumed");
+      canConsumeItem.materialPart = materialPart; // It didn't work, return the part back to the item.
       return;
     }
-    //FIXME vessel.heightFromPartOffsetLocal = -vessel.HeightFromPartOffsetGlobal
-    var protoVesselNode =
-        KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
-    HighLogic.CurrentGame.AddVessel(protoVesselNode);
+
+    if (materialPart != null) {
+      // Only reposition the existing part.
+      if (materialPart.parent != null) {
+        DebugEx.Info("Decouple the dragged part: part={0}, parent={1}", materialPart, materialPart.parent);
+        materialPart.decouple();
+        materialPart.vessel.vesselType = VesselType.DroppedPart;
+        materialPart.vessel.vesselName = materialPart.partInfo.title;
+      }
+      KisApi.VesselUtils.MoveVessel(materialPart.vessel, pos, rot, dropAtPart);
+    } else {
+      // Create a new vessel from the item.
+      DebugEx.Info("Create new vessel from the dragged part: part={0}", consumedItems[0].avPart.name);
+      var protoVesselNode =
+          KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
+      HighLogic.CurrentGame.AddVessel(protoVesselNode);
+    }
   }
 
   /// <summary>Destroys any tooltip that is existing in the controller.</summary>
