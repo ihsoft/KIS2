@@ -242,6 +242,11 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <inheritdoc/>
   bool IKisDragTarget.OnKisDrag(bool pointerMoved) {
+    if (_dropTargetEventsHandler.currentState == DropTarget.Nothing
+        || _dropTargetEventsHandler.currentState == DropTarget.KisTarget) {
+      // In these states the controller doesn't deal with the dragged item(s).
+      return false;
+    }
     return KisApi.ItemDragController.leasedItems.Length == 1;
   }
 
