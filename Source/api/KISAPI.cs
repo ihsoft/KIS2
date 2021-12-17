@@ -35,6 +35,9 @@ public static class KisApi {
   /// <summary>Utils to deal with part icons.</summary>
   public static readonly PartIconUtils PartIconUtils = new PartIconUtils();
 
+  /// <summary>Utils to deal with the vessels.</summary>
+  public static readonly VesselUtilsImpl VesselUtils = new VesselUtilsImpl();
+
   /// <summary>KAS common config settings.</summary>
   public static readonly CommonConfigImpl CommonConfig = new CommonConfigImpl();
 
