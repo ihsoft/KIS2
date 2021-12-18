@@ -21,9 +21,10 @@ public class VesselUtilsImpl {
   /// <param name="refPart">An optional part to sync velocities to.</param>
   public void MoveVessel(Vessel movingVessel, Vector3 position, Quaternion rotation, Part refPart) {
     DebugEx.Info("Moving dragged vessel: part={0}, vessel={1}", movingVessel.rootPart, movingVessel.vesselName);
-    movingVessel.SetPosition(position, usePristineCoords: true);
-    movingVessel.SetRotation(rotation);
     movingVessel.ResetGroundContact();
+    movingVessel.vesselTransform.position = position;
+    movingVessel.vesselTransform.rotation = rotation;
+    movingVessel.SetRotation(rotation);  // It applies changes to the parts.
     var refVelocity = Vector3.zero;
     var refAngularVelocity = Vector3.zero;
     if (refPart != null) {
