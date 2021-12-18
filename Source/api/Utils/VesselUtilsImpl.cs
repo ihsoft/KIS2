@@ -20,18 +20,10 @@ public class VesselUtilsImpl {
   /// <param name="rotation">The new rotation.</param>
   /// <param name="refPart">An optional part to sync velocities to.</param>
   public void MoveVessel(Vessel movingVessel, Vector3 position, Quaternion rotation, Part refPart) {
-    // In the latest versions of KSP the vessels get attached to the surface to make them stable. This conflicts with
-    // the vessel move action. So, just drop such joints before move. They will be automatically re-created.
-    movingVessel.rootPart.gameObject.GetComponents<Joint>()
-        .Where(x => x.connectedBody == null)
-        .ToList()
-        .ForEach(j => {
-          DebugEx.Fine("Dropping vessel static attach joint: vessel={0}", movingVessel.vesselName);
-          Object.DestroyImmediate(j);  // Yes, it has to be the immediate destroy.
-        });
     DebugEx.Info("Moving dragged vessel: part={0}, vessel={1}", movingVessel.rootPart, movingVessel.vesselName);
     movingVessel.SetPosition(position, usePristineCoords: true);
     movingVessel.SetRotation(rotation);
+    movingVessel.ResetGroundContact();
     var refVelocity = Vector3.zero;
     var refAngularVelocity = Vector3.zero;
     if (refPart != null) {
