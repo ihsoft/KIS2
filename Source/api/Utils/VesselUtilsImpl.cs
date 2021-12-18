@@ -22,6 +22,7 @@ public class VesselUtilsImpl {
   public void MoveVessel(Vessel movingVessel, Vector3 position, Quaternion rotation, Part refPart) {
     DebugEx.Info("Moving dragged vessel: part={0}, vessel={1}", movingVessel.rootPart, movingVessel.vesselName);
     movingVessel.ResetGroundContact();
+    CollisionEnhancer.bypass = true;  // This prevents the surface obstacles to interfere with the move.
     movingVessel.vesselTransform.position = position;
     movingVessel.vesselTransform.rotation = rotation;
     movingVessel.SetRotation(rotation);  // It applies changes to the parts.
