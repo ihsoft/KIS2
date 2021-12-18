@@ -393,18 +393,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_touchPointTransform"/>
   Transform _hitPointTransform;
 
-  /// <summary>The part that holds the current hit transform.</summary>
-  /// <remarks>This property is NOT performance optimized.</remarks>
-  /// <value>The hovered part party or <c>null</c>.</value>
+  /// <summary>The part that is being hit with the current drag.</summary>
   /// <seealso cref="_hitPointTransform"/>
-  Part hitPart {
-    get {
-      if (_hitPointTransform == null || _hitPointTransform.parent == null) {
-        return null;
-      }
-      return FlightGlobals.GetPartUpwardsCached(_hitPointTransform.parent.gameObject);
-    }
-  }
+  Part _hitPart;
 
   /// <summary>Transform in the dragged model that should contact with the hit point.</summary>
   /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
@@ -545,8 +536,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hit.transform.up);
 
     // Find out what was hit.
-    var hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
-    if (hitPart == null) {
+    _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
+    if (_hitPart == null) {
       // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
       // Align the model to the celestial body normal and rely on the game's logic on the vessel
       // positioning. It may (and, likely, will) not match to what we may have presented in GUI.
@@ -561,19 +552,16 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
 
     // We've hit a part. Bind to this point!
-    if (_hitPointTransform.parent != hitPart.transform || needNewHitTransform) {
-      DebugEx.Fine("Hit part: part={0}", hitPart);
-      _hitPointTransform.SetParent(hitPart.transform);
+    if (_hitPointTransform.parent != _hitPart.transform || needNewHitTransform) {
+      DebugEx.Fine("Hit part: part={0}", _hitPart);
+      _hitPointTransform.SetParent(_hitPart.transform);
     }
     //FIXME: choose "not-up" when hitting the up/down plane of the target part.
     AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
-    if (hitPart.isVesselEVA && hitPart.HasModuleImplementing<IKisInventory>()) {
+    if (_hitPart.isVesselEVA && _hitPart.HasModuleImplementing<IKisInventory>()) {
       return DropTarget.KerbalInventory;
     }
-    if (hitPart.HasModuleImplementing<IKisInventory>()) {
-      return DropTarget.KisInventory;
-    }
-    return DropTarget.Part;
+    return _hitPart.HasModuleImplementing<IKisInventory>() ? DropTarget.KisInventory : DropTarget.Part;
   }
 
   /// <summary>Makes a part from the saved config for the purpose of the part "holo" capture.</summary>
@@ -638,7 +626,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
 
     // Consuming items will change the state, so capture all the important values before doing it.
-    var dropAtPart = hitPart; 
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
     if (consumedItems == null || consumedItems.Length == 0) {
       DebugEx.Error("The leased item cannot be consumed");
@@ -654,7 +641,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         materialPart.vessel.vesselType = VesselType.DroppedPart;
         materialPart.vessel.vesselName = materialPart.partInfo.title;
       }
-      KisApi.VesselUtils.MoveVessel(materialPart.vessel, pos, rot, dropAtPart);
+      KisApi.VesselUtils.MoveVessel(materialPart.vessel, pos, rot, _hitPart);
     } else {
       // Create a new vessel from the item.
       DebugEx.Info("Create new vessel from the dragged part: part={0}", consumedItems[0].avPart.name);
