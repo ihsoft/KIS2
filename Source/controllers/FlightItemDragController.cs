@@ -360,7 +360,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// This part will be considered "being dragged". It'll stay being material and (maybe) physical, but it may change
   /// its visual appearance to indicate its new status.
   /// </remarks>
-  /// <value>The part or <c>null</c> if not part is being a source of the dragging operation.</value>
+  /// <value>The part or <c>null</c> if no part is being a source of the dragging operation.</value>
   Part sourceDraggedPart {
     get => _sourceDraggedPart;
     set {
