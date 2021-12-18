@@ -542,6 +542,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _hitPointTransform = new GameObject("KISHitTarget").transform;
     }
     _hitPointTransform.position = hit.point;
+    _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hit.transform.up);
 
     // Find out what was hit.
     var hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
@@ -555,8 +556,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
             FlightGlobals.ActiveVessel.mainBody);
         _hitPointTransform.SetParent(null);
       }
-      var surfaceNorm = FlightGlobals.getUpAxis(FlightGlobals.ActiveVessel.mainBody, hit.point);
-      _hitPointTransform.rotation = Quaternion.LookRotation(surfaceNorm);
       AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
       return DropTarget.Surface;
     }
@@ -567,7 +566,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _hitPointTransform.SetParent(hitPart.transform);
     }
     //FIXME: choose "not-up" when hitting the up/down plane of the target part.
-    _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hitPart.transform.up);
     AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
     if (hitPart.isVesselEVA && hitPart.HasModuleImplementing<IKisInventory>()) {
       return DropTarget.KerbalInventory;
