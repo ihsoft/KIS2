@@ -536,7 +536,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hit.transform.up);
 
     // Find out what was hit.
-    _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.transform.gameObject);
+    _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.gameObject);
     if (_hitPart == null) {
       // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
       // Align the model to the celestial body normal and rely on the game's logic on the vessel
