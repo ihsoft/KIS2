@@ -85,7 +85,7 @@ public class PartNodeUtilsImpl {
   }
 
   /// <summary>Makes a proto part snapshot from the part.</summary>
-  /// <remarks>It erases all the vessel related info from the snapshot.</remarks>
+  /// <remarks>It erases all the vessel related info from the snapshot as well as any crew related info.</remarks>
   /// <param name="part">The part to capture.</param>
   /// <returns>A snapshot fo the part's current state.</returns>
   public ProtoPartSnapshot GetProtoPartSnapshot(Part part) {
@@ -94,6 +94,7 @@ public class PartNodeUtilsImpl {
 
     // Persist the old part's proto state to not affect it after the snapshot.
     var oldCrewSnapshot = part.protoModuleCrew;
+    part.protoModuleCrew = null;
     var oldProtoPartSnapshot = part.protoPartSnapshot;
     var snapshot = new ProtoPartSnapshot(part, null) {
         // We don't need the vessel relations. 
