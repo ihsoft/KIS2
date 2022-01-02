@@ -25,6 +25,9 @@ public static class EventChecker2 {
   /// <seealso cref="KeyModifiers"/>
   [ObsoleteAttribute("This method will soon be depreacted. Use CheckAnySymmetricalModifiers().")]
   public static bool IsModifierCombinationPressed(KeyModifiers modifiers) {
+    if (Time.timeScale <= float.Epsilon) {
+      return false;  // Prevent behavior in the game menu.
+    }
     bool shiftPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
     bool altPressed = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt);
     bool ctrlPressed = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
@@ -45,6 +48,9 @@ public static class EventChecker2 {
   /// <param name="ev">The event to get modifiers from.</param>
   /// <returns><c>true</c> if the the current hold modifier(s) match the event.</returns>
   public static bool CheckLeftSymmetricalModifiers(Event ev) {
+    if (Time.timeScale <= float.Epsilon) {
+      return false;  // Prevent behavior in the game menu.
+    }
     var modifiers = EventModifiers.None;
     if (Input.GetKey(KeyCode.LeftAlt)) {
       modifiers |= EventModifiers.Alt;
@@ -73,6 +79,9 @@ public static class EventChecker2 {
   /// <param name="ev">The event to get modifiers from.</param>
   /// <returns><c>true</c> if the the current hold modifier(s) match the event.</returns>
   public static bool CheckRightSymmetricalModifiers(Event ev) {
+    if (Time.timeScale <= float.Epsilon) {
+      return false;  // Prevent behavior in the game menu.
+    }
     var modifiers = EventModifiers.None;
     if (Input.GetKey(KeyCode.RightAlt)) {
       modifiers |= EventModifiers.Alt;
@@ -101,6 +110,9 @@ public static class EventChecker2 {
   /// <param name="ev">The event to get modifiers from.</param>
   /// <returns><c>true</c> if the the current hold modifier(s) match the event.</returns>
   public static bool CheckAnySymmetricalModifiers(Event ev) {
+    if (Time.timeScale <= float.Epsilon) {
+      return false;  // Prevent behavior in the game menu.
+    }
     var modifiers = EventModifiers.None;
     if (Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)) {
       modifiers |= EventModifiers.Alt;
@@ -126,6 +138,9 @@ public static class EventChecker2 {
   /// The button or <c>null</c> if event doesn't have any recognizable mouse button.
   /// </returns>
   public static PointerEventData.InputButton? GetInputButtonFromEvent(Event ev) {
+    if (Time.timeScale <= float.Epsilon) {
+      return null;  // Prevent behavior in the game menu.
+    }
     switch (ev.keyCode) {
       case KeyCode.Mouse0:
         return PointerEventData.InputButton.Left;
@@ -151,7 +166,7 @@ public static class EventChecker2 {
   /// Input.GetKeyDown
   /// </seealso>
   public static bool CheckDownEvent(Event ev) {
-    return CheckAnySymmetricalModifiers(ev) && Input.GetKeyDown(ev.keyCode);
+    return Time.timeScale > float.Epsilon && CheckAnySymmetricalModifiers(ev) && Input.GetKeyDown(ev.keyCode);
   }
 
   /// <summary>Checks if the keyboard/mouse event is happening during this frame.</summary>
@@ -165,7 +180,7 @@ public static class EventChecker2 {
   /// Input.GetKeyDown
   /// </seealso>
   public static bool CheckEventActive(Event ev) {
-    return Input.GetKeyUp(ev.keyCode) || Input.GetKey(ev.keyCode);
+    return Time.timeScale > float.Epsilon && (Input.GetKeyUp(ev.keyCode) || Input.GetKey(ev.keyCode));
   }
 
   /// <summary>Checks if the mouse click event has happen during the frame.</summary>
@@ -189,7 +204,7 @@ public static class EventChecker2 {
   /// Input.GetKeyDown
   /// </seealso>
   public static bool CheckClickEvent(Event ev, PointerEventData.InputButton button) {
-    return CheckAnySymmetricalModifiers(ev) && button == GetInputButtonFromEvent(ev);
+    return Time.timeScale > float.Epsilon && CheckAnySymmetricalModifiers(ev) && button == GetInputButtonFromEvent(ev);
   }
 }
 
