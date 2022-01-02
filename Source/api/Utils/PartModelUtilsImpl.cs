@@ -97,23 +97,19 @@ public class PartModelUtilsImpl {
 
   /// <summary>Collects all the models in the part or hierarchy.</summary>
   /// <remarks>
-  /// The result of this method only includes meshes and renderers. Any colliders, animations or
-  /// effects will be dropped.
+  /// The result of this method only includes meshes and renderers. Any colliders, animations or effects will be
+  /// dropped.
   /// <para>
-  /// Note, that this method captures the current model state fro the part, which may be affected
-  /// by animations or third-party mods. That said, each call for the same part may return different
-  /// results.
+  /// Note, that this method captures the current model state fro the part, which may be affected by animations or
+  /// third-party mods. That said, each call for the same part may return different results.
   /// </para>
   /// </remarks>
   /// <param name="rootPart">The part to start scanning the assembly from.</param>
-  /// <param name="goThruChildren">
-  /// Tells if the parts down the hierarchy need to be captured too.
-  /// </param>
+  /// <param name="goThroughChildren">Tells if the parts down the hierarchy need to be captured too.</param>
   /// <returns>
-  /// The root game object of the new hierarchy. This object must be explicitly disposed when not
-  /// needed anymore.
+  /// The root game object of the new hierarchy. This object must be explicitly disposed when not needed anymore.
   /// </returns>
-  public GameObject GetSceneAssemblyModel(Part rootPart, bool goThruChildren = true) {
+  public GameObject GetSceneAssemblyModel(Part rootPart, bool goThroughChildren = true) {
     var modelObj = UnityEngine.Object.Instantiate(Hierarchy.GetPartModelTransform(rootPart).gameObject);
     modelObj.SetActive(true);
 
@@ -139,7 +135,7 @@ public class PartModelUtilsImpl {
         joints.Add(joint);
         continue;  // They must be handled before the connected RBs handled.
       }
-      if (!(component is Renderer || component is MeshFilter)) {
+      if (component is not (Renderer or MeshFilter)) {
         UnityEngine.Object.DestroyImmediate(component);
       }
     }
@@ -152,9 +148,9 @@ public class PartModelUtilsImpl {
       UnityEngine.Object.DestroyImmediate(rb);
     }
 
-    if (goThruChildren) {
+    if (goThroughChildren) {
       foreach (var childPart in rootPart.children) {
-        var childObj = GetSceneAssemblyModel(childPart);
+        var childObj = GetSceneAssemblyModel(childPart, goThroughChildren: true, keepColliders: keepColliders);
         childObj.transform.parent = modelObj.transform;
         childObj.transform.localRotation =
             rootPart.transform.rotation.Inverse() * childPart.transform.rotation;
