@@ -564,7 +564,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     return _hitPart.HasModuleImplementing<IKisInventory>() ? DropTarget.KisInventory : DropTarget.Part;
   }
 
-  /// <summary>Makes a part from the saved config for the purpose of the part "holo" capture.</summary>
+  /// <summary>Makes a part from the saved config for the purpose of the part model capture.</summary>
   /// <remarks>
   /// This part is not fully initialized and is not intended to live till the next frame. It method tries to capture as
   /// many dynamic behavior on the part as possible, but there are compromises.
@@ -580,15 +580,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     //FIXME: do ground experiment parts setup.
     part.gameObject.SetActive(true);
     part.name = partInfo.name;
-    part.persistentId = FlightGlobals.CheckPartpersistentId(part.persistentId, part, false, true);
-    var actions = itemConfig.GetNode("ACTIONS");
-    if (actions != null) {
-      part.Actions.OnLoad(actions);
-    }
-    var events = itemConfig.GetNode("EVENTS");
-    if (events != null) {
-      part.Events.OnLoad(events);
-    }
     var effects = itemConfig.GetNode("EFFECTS");
     if (effects != null) {
       part.Effects.OnLoad(effects);
@@ -598,16 +589,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     if (partData != null) {
       part.OnLoad(partData);
     }
+    itemConfig.GetNodes("RESOURCE").ToList().ForEach(x => part.SetResource(x));
     var moduleIdx = 0;
     foreach (var configNode in itemConfig.GetNodes("MODULE")) {
       part.LoadModule(configNode, ref moduleIdx);
     }
-    itemConfig.GetNodes("RESOURCE").ToList().ForEach(x => part.SetResource(x));
-
     part.InitializeModules();
-    part.ModulesBeforePartAttachJoint();
-    part.ModulesOnStart();
-    part.ModulesOnStartFinished();
 
     return part;
   }
