@@ -471,13 +471,11 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     dragModel.transform.rotation = draggedPart.initRotation;
     _touchPointTransform = new GameObject("surfaceTouchPoint").transform;
     _touchPointTransform.SetParent(_draggedModel, worldPositionStays: false);
-    var bounds = draggedPart.FindModelComponents<Collider>().Select(x => x.bounds).Aggregate(
-        (res, next) => {
-          res.Encapsulate(next);
-          return res;
-        });
-    var dist = bounds.center.y + bounds.extents.y;
-    _touchPointTransform.position += -_draggedModel.up * dist;
+    var dist3 = draggedPart.FindModelComponents<Collider>()
+        .Where(c => c.gameObject.layer == (int)KspLayer.Part)
+        .Select(c => c.ClosestPoint(c.transform.position + -_draggedModel.up * 100).y)
+        .Min();
+    _touchPointTransform.position += _draggedModel.up * dist3;
     _touchPointTransform.rotation = Quaternion.LookRotation(-_draggedModel.up, -_draggedModel.forward);
     Hierarchy.SafeDestroy(draggedPart);
   }
