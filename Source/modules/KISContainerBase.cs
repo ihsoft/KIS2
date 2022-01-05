@@ -535,7 +535,7 @@ public class KisContainerBase : AbstractPartModule,
     var maxSlotIndex = -1;
 
     // Check if the stock compatibility mode is satisfied.
-    if (StockCompatibilitySettings.handleNonCargoParts && !KisApi.PartPrefabUtils.GetCargoModule(item.avPart)) {
+    if (!StockCompatibilitySettings.handleNonCargoParts && KisApi.PartPrefabUtils.GetCargoModule(item.avPart) == null) {
       if (logChecks) {
         HostedDebugLog.Error(this, "The item is not stock cargo compatible: partName={0}", item.avPart.name);
       }
