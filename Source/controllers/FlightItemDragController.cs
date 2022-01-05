@@ -322,16 +322,16 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       } else {
         _pickupTargetEventsHandler.currentState = PickupTarget.PartAssembly;
       }
-      UpdatePickupTooltip();
-
-      // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
-      yield return null;
-
-      _pickupTargetEventsHandler.HandleActions();
       if (!Input.anyKey || !EventChecker2.CheckEventActive(_pickupModeSwitchEvent)) {
         _controllerStateMachine.currentState = ControllerState.Idle;
         break;
       }
+      UpdatePickupTooltip();
+
+      // Don't handle the keys in the same frame as the coroutine has started in to avoid the double actions.
+      yield return null;
+
+      _pickupTargetEventsHandler.HandleActions();
     }
     // No code beyond this point! The coroutine may be explicitly killed from the state machine.
   }
