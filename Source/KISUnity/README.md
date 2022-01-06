@@ -1,8 +1,9 @@
 # Overview
 
-This is a Unity project folder. Load it from the Unity editor to manage the content. The only
-purpose of this project is to create an asset bundle - `ui_prefab`, a file that contains all the
-UI elements for `KIS`.
+This is a Unity project folder. Load it from the Unity editor to manage the content. Use it to
+design/modify KIS assets. Once done, a custom script within Unity should be used to make and
+export an asset bundle - `ui_prefab`, a file that contains all the UI elements for `KIS` and
+that can be loaded from the game (see `KSPDev.PrefabUtils.LoadAllAssets`).
 
 # Dependencies
 
