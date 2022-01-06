@@ -8,6 +8,7 @@ PackageCache
 StateCache
 ScriptAssemblies
 APIUpdater
+Artifacts
 
 # Dynamic files.
 EditorSnapSettings.asset
@@ -15,3 +16,7 @@ expandedItems
 ScriptMapper
 Style.catalog
 assetDatabase3
+ArtifactDB
+ArtifactDB-lock
+SourceAssetDB
+SourceAssetDB-lock
