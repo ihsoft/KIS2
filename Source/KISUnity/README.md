@@ -5,6 +5,10 @@ design/modify KIS assets. Once done, a custom script within Unity should be used
 export an asset bundle - `ui_prefab`, a file that contains all the UI elements for `KIS` and
 that can be loaded from the game (see `KSPDev.PrefabUtils.LoadAllAssets`).
 
+IMPORTANT! Sometimes Unity fails to load the project correctly. It may say the prefabs are not
+available or don't show the prefabs at all. This is a Unity setup problem! Uninstall the
+`2019.4.28f1` version and then install it again. Re-try opening the project.
+
 # Dependencies
 
 This project requires Uinity editor of version `2019.4.28f1`. It's a good idea to upgarde as the
