@@ -8,3 +8,9 @@ PackageCache
 StateCache
 ScriptAssemblies
 APIUpdater
+
+# Dynamic files.
+EditorSnapSettings.asset
+expandedItems
+ScriptMapper
+Style.catalog
