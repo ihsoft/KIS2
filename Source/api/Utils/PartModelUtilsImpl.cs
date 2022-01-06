@@ -150,7 +150,7 @@ public class PartModelUtilsImpl {
 
     if (goThroughChildren) {
       foreach (var childPart in rootPart.children) {
-        var childObj = GetSceneAssemblyModel(childPart, goThroughChildren: true, keepColliders: keepColliders);
+        var childObj = GetSceneAssemblyModel(childPart, goThroughChildren: true);
         childObj.transform.parent = modelObj.transform;
         childObj.transform.localRotation =
             rootPart.transform.rotation.Inverse() * childPart.transform.rotation;
