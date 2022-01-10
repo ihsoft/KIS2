@@ -248,8 +248,8 @@
  <Reference Include="UnityEditor.WindowsStandalone.Extensions">
  <HintPath>K:/Program Files (x86)/Unity/Editor/2019.4.28f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll</HintPath>
  </Reference>
- <Reference Include="KIS.Unity">
- <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Assets/Plugins/KIS.Unity.dll</HintPath>
+ <Reference Include="KIS_Unity">
+ <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Assets/Plugins/KIS_Unity.dll</HintPath>
  </Reference>
  <Reference Include="nunit.framework">
  <HintPath>K:/work/KSP/KIS2/Source/KISUnity/Library/PackageCache/com.unity.ext.nunit@1.0.6/net35/unity-custom/nunit.framework.dll</HintPath>

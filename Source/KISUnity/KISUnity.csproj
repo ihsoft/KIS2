@@ -78,7 +78,7 @@
       <HintPath>k:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityHoloLens/RuntimeEditor/UnityEngine.HoloLens.dll</HintPath>
     </Reference>
     <Reference Include="KIS.Unity">
-      <HintPath>Assets/Plugins/KIS.Unity.dll</HintPath>
+      <HintPath>Assets/Plugins/KIS_Unity.dll</HintPath>
     </Reference>
     <Reference Include="TextMeshPro-2017.1-Runtime">
       <HintPath>Assets/TextMesh Pro/Plugins/Editor DLL/TextMeshPro-2017.1-Runtime.dll</HintPath>

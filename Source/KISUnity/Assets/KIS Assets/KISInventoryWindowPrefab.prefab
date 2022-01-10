@@ -536,7 +536,7 @@ MonoBehaviour:
         m_Mode: 2
         m_Arguments:
           m_ObjectArgument: {fileID: 4594365128019843652}
-          m_ObjectArgumentAssemblyTypeName: KIS2.UiKisHorizontalSliderControl, KIS.Unity
+          m_ObjectArgumentAssemblyTypeName: KIS2.UiKisHorizontalSliderControl, KIS_Unity
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -1623,7 +1623,7 @@ MonoBehaviour:
         m_Mode: 2
         m_Arguments:
           m_ObjectArgument: {fileID: 4594249576053085646}
-          m_ObjectArgumentAssemblyTypeName: KIS2.UiKisHorizontalSliderControl, KIS.Unity
+          m_ObjectArgumentAssemblyTypeName: KIS2.UiKisHorizontalSliderControl, KIS_Unity
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
