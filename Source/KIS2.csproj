@@ -132,6 +132,7 @@
     <Folder Include="modules" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="KISUnity\Assets\StreamingAssets\ui_prefabs" />
     <Content Include="KSPDevUtilsAPI_HelpIndex.xml" />
     <Content Include="SpecialDocTags.xml" />
   </ItemGroup>
