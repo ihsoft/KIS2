@@ -18,23 +18,27 @@ namespace KSPDev.GUIUtils {
 /// <p>Use it as a generic parameter when creating a <c>KSPDev.GUIUtils.LocalizableMessage</c> descendants.</p>
 /// </remarks>
 public sealed class VolumeLType {
-  /// <summary>Localized suffix for the "liter" units. Scale x1.</summary>
+  /// <summary>Localized suffix for the "litre" units. Scale x1.</summary>
   static readonly Message<CompactNumberType> DefaultLiterUnitTemplate = new(
-      "#kisLOC_99000", defaultTemplate: "<<1>> L",
+      null, defaultTemplate: "<<1>> L",
       description: "Liter unit for a volume value to use when the stock localization cannot be extracted.");
 
   /// <summary>Localization pattern for the litres unit.</summary>
   /// <value>The litres unit localization message.</value>
-  public static Message<CompactNumberType> literUnitTemplate {
+  public static Message<CompactNumberType> litreUnitTemplate {
     get {
-      if (_literUnitTemplate == null || LocalizableMessage.systemLocVersion > _loadedLocVersion) {
+      if (LocalizableMessage.systemLocVersion > _loadedLocVersion) {
         UpdateTemplate();
       }
       return _literUnitTemplate;
     }
+    set {
+      _literUnitTemplate = value;
+      _loadedLocVersion = LocalizableMessage.systemLocVersion;
+    }
   }
   static Message<CompactNumberType> _literUnitTemplate;
-  static int _loadedLocVersion;
+  static int _loadedLocVersion = -1;
 
   /// <summary>A wrapped numeric value.</summary>
   /// <remarks>This is the original non-rounded and unscaled value.</remarks>
@@ -75,7 +79,7 @@ public sealed class VolumeLType {
   /// <param name="value">The numeric value to format.</param>
   /// <returns>A formatted and localized string</returns>
   public static string Format(double value) {
-    return literUnitTemplate.Format(value);
+    return litreUnitTemplate.Format(value);
   }
 
   /// <summary>Returns a string formatted as a human friendly volume specification.</summary>
@@ -90,25 +94,20 @@ public sealed class VolumeLType {
   /// First, it tries to extract the unit name from the stock strings. If failed, then a fallback pattern is used.
   /// </remarks>
   /// <seealso cref="DefaultLiterUnitTemplate"/>
-  /// <seealso cref="literUnitTemplate"/>
+  /// <seealso cref="litreUnitTemplate"/>
   static void UpdateTemplate() {
-    if (_literUnitTemplate != null && LocalizableMessage.systemLocVersion == _loadedLocVersion) {
-      return;
-    }
-    _loadedLocVersion = LocalizableMessage.systemLocVersion;
     // KSP version dependent code below! The fallback addresses the incompatible changes.
     var sample = Localizer.Format("#autoLOC_8003412", 1111, 2222);
     var totalSizeValuePos = sample.IndexOf("2222", StringComparison.Ordinal);
     if (totalSizeValuePos == -1) {
-      _literUnitTemplate = DefaultLiterUnitTemplate; // A very unexpected case, but it's still possible.
+      litreUnitTemplate = DefaultLiterUnitTemplate; // A very unexpected case, but it's still possible.
       DebugEx.Error("Cannot extract stock string for the litres unit, using default: tag={0}, template={1}",
-                    _literUnitTemplate.tag, _literUnitTemplate.defaultTemplate);
+                    DefaultLiterUnitTemplate.tag, DefaultLiterUnitTemplate.defaultTemplate);
       return;
     }
-    _literUnitTemplate = new Message<CompactNumberType>(
-        DefaultLiterUnitTemplate.tag, defaultTemplate: "<<1>> " + sample.Substring(totalSizeValuePos + 4).Trim());
-    DebugEx.Fine("Created a litres unit from stock: tag={0}, template={1}",
-                 _literUnitTemplate.tag, _literUnitTemplate.defaultTemplate);
+    var newTemplate = "<<1>> " + sample.Substring(totalSizeValuePos + 4).Trim();
+    litreUnitTemplate = new Message<CompactNumberType>(null, defaultTemplate: newTemplate);
+    DebugEx.Fine("Created a litres unit from stock: template={0}", newTemplate);
   }
 }
 
