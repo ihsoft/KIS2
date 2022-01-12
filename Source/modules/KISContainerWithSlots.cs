@@ -369,7 +369,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region GUI menu action handlers
-  [KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveUncommand = true, guiActiveEditor = true)]
+  // TODO(IgorZ): manage the unfocused range the same way as the old KIS does (with resect to the geometry).
+  [KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveUncommand = true, guiActiveEditor = true,
+            unfocusedRange = 10)]
   [LocalizableItem(
       tag = "#01",
       defaultTemplate = "KISv2: Inventory",
