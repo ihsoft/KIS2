@@ -17,29 +17,43 @@ static class StockCompatibilitySettings {
   // ReSharper disable ConvertToConstant.Global
   // ReSharper disable CollectionNeverUpdated.Global
 
-  /// <summary>Indicates if the cargo stacking limit settings must be unconditionally obeyed.</summary>
+  /// <summary>
+  /// When this mode is enabled, the KIS mod will be 100% compatible with the stock inventory system if the game's type
+  /// is either carrier or science.
+  /// </summary>
   /// <remarks>
-  /// If this flags set to <c>false</c>, then KIS may increase the stock slot size on its own discretion. This makes the
-  /// save state less sparse, but may have bad consequences when the mod is removed.
+  /// <p>
+  /// Some inventory related features of KIS will be lost, but most of nice KIS features will be available. And the
+  /// stock system behavior will be fully honored. This mode makes sense if there is a plan to drop KIS in the future or
+  /// if there are other mods that require the strict stock logic. The following abilities will be unavailable:
+  /// </p>
+  /// <ul>
+  /// <li>Unlimited stacking in the slot. The stock limit will be honored.</li>
+  /// <li>Stacking of the parts with resources.</li>
+  /// <li>Extra slots to store parts. The stock setting will be honored.</li>
+  /// <li>KIS inventory dialog resizing. It will permanently have the number of slots, which is setup in the part.</li>
+  /// </ul>
   /// </remarks>
-  [PersistentField("Compatibility/respectStockStackingLogic")]
-  public static bool respectStockStackingLogic = true;
+  [PersistentField("Compatibility/fullCompatibilityInCarrierGame")]
+  public static bool fullCompatibilityInCarrierGame = true;
 
-  /// <summary>Indicates if number of the slots must not be changed in the stock inventory.</summary>
+  /// <summary>
+  /// Indicates if the stock inventory compatibility must be maintained in the sandbox games. Similar to
+  /// <see cref="fullCompatibilityInCarrierGame"/>.
+  /// </summary>
   /// <remarks>
-  /// If this flag set, then no new slots will be added when extra space is needed to accomodate a new item. It gives a
-  /// great backwards compatibility, but at the price of significant limiting of the KIS storage functionality.
+  /// In the normal case there is no good reason to restrict KIS in the sandbox games: they are not supposed to be
+  /// compatible anyway. However, it may be useful for the testing.
   /// </remarks>
-  [PersistentField("Compatibility/respectStockInventoryLayout")]
-  public static bool respectStockInventoryLayout = true;
+  [PersistentField("Compatibility/fullCompatibilityInSandboxGame")]
+  public static bool fullCompatibilityInSandboxGame = true;
 
-  /// <summary>Indicates if parts without the cargo module can be handled by the KIS inventory.</summary>
-  /// <remarks>
-  /// KIS will calculate the part's volume based on the part's model bounds. And the stacking limit will be set to
-  /// <c>1</c>. Which make make sense if <see cref="respectStockStackingLogic"/> is enabled.
-  /// </remarks>
-  [PersistentField("Compatibility/handleNonCargoParts")]
-  public static bool handleNonCargoParts = false;
+  /// <summary>Indicates if the current game must be running in the full compatibility mode.</summary>
+  /// <seealso cref="fullCompatibilityInCarrierGame"/>
+  /// <seealso cref="fullCompatibilityInSandboxGame"/>
+  public static bool isCompatibilityMode =>
+      HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && fullCompatibilityInCarrierGame
+      || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX && fullCompatibilityInSandboxGame;
 
   /// <summary>Indicates if the inventory description should not have the stock related features.</summary>
   [PersistentField("Compatibility/fixInventoryDescriptions")]

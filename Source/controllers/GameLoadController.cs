@@ -59,50 +59,19 @@ class KisLoadController: LoadingSystem {
     _isReady = true;
   }
 
-  /// <summary>Fixes one part.</summary>
+  /// <summary>Fixes cargo module on one part.</summary>
   /// <param name="avPart">The part to fix.</param>
   void PatchPartVolume(AvailablePart avPart) {
-    if (avPart.partPrefab.isKerbalEVA()) {
-      return;  // Kerbals cannot be put into inventory.
-    }
-
-    // The cargo module must exist for every part and specify a non-negative packed volume.
-    var cargoModule = avPart.partPrefab.FindModuleImplementing<ModuleCargoPart>();
-    if (cargoModule == null) {
-      if (StockCompatibilitySettings.handleNonCargoParts) {
-        cargoModule = avPart.partPrefab.gameObject.AddComponent<ModuleCargoPart>();
-        cargoModule.packedVolume = QuickVolume(avPart);
-        DebugEx.Info(
-            "Add ModuleCargoPart module to part: {0}, packedVolume={1}", avPart.name, cargoModule.packedVolume);
-      }
-    } else {
-      if (StockCompatibilitySettings.respectStockStackingLogic) {
-        cargoModule = null;
-      } else {
-        if (cargoModule.packedVolume < 0 || !StockCompatibilitySettings.stockVolumeExceptions.Contains(avPart.name)) {
-          cargoModule.packedVolume = QuickVolume(avPart);
-          DebugEx.Info("Update stock volume in part: {0}, packedVolume={1}", avPart.name, cargoModule.packedVolume);
-        }
-      }
+    if (avPart.partPrefab.isKerbalEVA() || !StockCompatibilitySettings.fixInventoryDescriptions) {
+      return;
     }
 
     // The inventory module must not be reporting the number of stock slots. Disable it.
-    var inventoryModule =
-        StockCompatibilitySettings.fixInventoryDescriptions
-            ? avPart.partPrefab.FindModuleImplementing<ModuleInventoryPart>()
-            : null;
-
+    var inventoryModule = avPart.partPrefab.FindModuleImplementing<ModuleInventoryPart>();
+    var cargoModule = avPart.partPrefab.FindModuleImplementing<ModuleCargoPart>();
     if (cargoModule != null || inventoryModule != null) {
       RefreshInfo(avPart, cargoModule, inventoryModule);
     }
-  }
-
-  /// <summary>Gets a rough estimation of the part volume from it's geometry.</summary>
-  /// <param name="avPart">The part to get volume for.</param>
-  /// <returns>The volume in liters.</returns>
-  float QuickVolume(AvailablePart avPart) {
-    var boundsSize = KisApi.PartModelUtils.GetPartBounds(avPart);
-    return boundsSize.x * boundsSize.y * boundsSize.z * 1000f;
   }
 
   /// <summary>Updates the editor's part info to reflect KIS changes.</summary>
