@@ -35,14 +35,14 @@ public class KisContainerBase : AbstractPartModule,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message NonCargoPartErrorText = new Message(
       "",
-      defaultTemplate: "Non-cargo part",
+      defaultTemplate: "Stock inventory limitation\nNon-cargo part",
       description: "An error that is presented when the part cannot be added into a KIS container due to it doesn't"
       + " have cargo part module. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message ConstructionOnlyPartErrorText = new Message(
-      "#autoLOC_6002642",
-      defaultTemplate: "Construction Only Part",
+      "",
+      defaultTemplate: "Stock inventory limitation\nConstruction Only Part",
       description: "An error that is presented when the part cannot be added into a KIS container due to it's"
       + " disallowed for inventory storing. It only makes sense in the stock compatibility mode.");
 
