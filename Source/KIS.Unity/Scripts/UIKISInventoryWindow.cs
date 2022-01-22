@@ -34,6 +34,9 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
 
   [SerializeField]
   UiKisHorizontalSliderControl sizeRowsSlider = null;
+
+  [SerializeField]
+  Transform gridSizeSliders = null;
   #endregion
 
   #region Callback handlers
@@ -92,6 +95,17 @@ public class UiKisInventoryWindow : UiPrefabBaseScript,
   #endregion
 
   #region API properties and fields
+  /// <summary>Indicates if the dialog can be resized from GUI.</summary>
+  /// <remarks>
+  /// If resizing is not allowed, the related controls will not be shown. However, the resizing logic will stay
+  /// functional, so the size still can be changed from the code.
+  /// </remarks>
+  /// <seealso cref="gridSize"/>
+  public bool isResizable {
+    get => gridSizeSliders.gameObject.activeInHierarchy;
+    set => gridSizeSliders.gameObject.SetActive(value);
+  }
+
   /// <summary>Number of slots in the grid.</summary>
   /// <seealso cref="SetGridSize"/>
   public Vector2 gridSize {

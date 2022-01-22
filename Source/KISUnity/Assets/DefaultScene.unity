@@ -1059,7 +1059,7 @@ PrefabInstance:
     - target: {fileID: 4416100890987806174, guid: 59726df33260de3429b693c031841fef,
         type: 3}
       propertyPath: m_RootOrder
-      value: 5
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 4416100890987806174, guid: 59726df33260de3429b693c031841fef,
         type: 3}
@@ -1576,6 +1576,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: KISInventoryWindowPrefab
       objectReference: {fileID: 0}
+    - target: {fileID: 4490706169685155044, guid: 59726df33260de3429b693c031841fef,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6781200553060208068, guid: 59726df33260de3429b693c031841fef,
         type: 3}
       propertyPath: m_AnchorMax.y
@@ -1839,7 +1844,7 @@ PrefabInstance:
     - target: {fileID: 224764494123666730, guid: 1e75e281312475e489dcf44c453fc52c,
         type: 3}
       propertyPath: m_RootOrder
-      value: 4
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 224764494123666730, guid: 1e75e281312475e489dcf44c453fc52c,
         type: 3}
