@@ -613,11 +613,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <inheritdoc/>
   public override void OnLoad(ConfigNode node) {
-    // First, make all the slots to allow the default allocation logic to work smoothly.
+    // Prepare slots before loading.
     for (var i = 0; i < slotGridWidth * slotGridHeight; i++) {
       _inventorySlots.Add(new InventorySlotImpl(this, null));
     }
-    // Rebuild the stored state, but keep in mind that it may be inconsistent.
+
     var itemToKisSlotMap = new Dictionary<string, int>();
     var savedMappings = node.GetValues(PersistentConfigKisSlotMapping);
     foreach (var savedMapping in savedMappings) {
@@ -631,14 +631,29 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
       }
     }
+
     base.OnLoad(node);
 
-    // Move the loaded items to their designated slots.
+    // Drop the default layout and move the loaded items to their designated slots.
+    foreach (var slot in _inventorySlots) {
+      while (slot.slotItems.Count > 0) {
+        RemoveSlotItem(slot, slot.slotItems[0]);
+      }
+    }
     foreach (var mapping in itemToKisSlotMap) {
       var item = FindItem(mapping.Key);
-      if (item != null && _itemToSlotMap.TryGetValue(item.itemId, out var slot)) {
-        RemoveSlotItem(slot, item); // It was added in the base method to an arbitrary KIS slot.
-        AddSlotItem(_inventorySlots[mapping.Value], item); // Now it's where it should be.
+      var slotIndex = mapping.Value;
+      if (item != null) {
+        if (slotIndex >= _inventorySlots.Count) {
+          HostedDebugLog.Warning(this, "Found slot beyond capacity: index={0}, addExtra={1}",
+                                 slotIndex, _inventorySlots.Count - slotIndex);
+          while (_inventorySlots.Count <= slotIndex) {
+            _inventorySlots.Add(new InventorySlotImpl(this, null));
+          }
+        }
+        AddSlotItem(_inventorySlots[slotIndex], item); // Place item to the proper slot.
+      } else {
+        HostedDebugLog.Warning(this, "Drop unknown item slot mapping: item={0}, slot={1}", mapping.Key, slotIndex);
       }
     }
 
