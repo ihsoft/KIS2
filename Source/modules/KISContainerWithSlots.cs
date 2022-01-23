@@ -624,12 +624,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var pair = savedMapping.Split(new[] {'-'}, 2);
       var slotIndex = int.Parse(pair[0]);
       itemToKisSlotMap[pair[1]] = slotIndex;
-      if (slotIndex >= _inventorySlots.Count) {
-        HostedDebugLog.Warning(this, "Found slot beyond capacity: {0}", slotIndex);
-        while (_inventorySlots.Count <= slotIndex) {
-          _inventorySlots.Add(new InventorySlotImpl(this, null));
-        }
-      }
     }
 
     base.OnLoad(node);
