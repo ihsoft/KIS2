@@ -52,8 +52,9 @@ static class StockCompatibilitySettings {
   /// <seealso cref="fullCompatibilityInCarrierGame"/>
   /// <seealso cref="fullCompatibilityInSandboxGame"/>
   public static bool isCompatibilityMode =>
-      HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && fullCompatibilityInCarrierGame
-      || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX && fullCompatibilityInSandboxGame;
+      HighLogic.CurrentGame != null
+      && (HighLogic.CurrentGame.Mode != Game.Modes.SANDBOX && fullCompatibilityInCarrierGame
+          || HighLogic.CurrentGame.Mode == Game.Modes.SANDBOX && fullCompatibilityInSandboxGame);
 
   /// <summary>Indicates if the inventory description should not have the stock related features.</summary>
   [PersistentField("Compatibility/fixInventoryDescriptions")]
