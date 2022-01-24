@@ -264,8 +264,9 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
   /// <inheritdoc/>
   public void SetFocusedTarget(IKisDragTarget newTarget) {
     if (focusedTarget != newTarget) {
-      DebugEx.Fine(
-          "Focus target changed: old={0}, new={1}", focusedTarget?.unityComponent.name, newTarget?.unityComponent.name);
+      var oldName = focusedTarget?.unityComponent != null ? focusedTarget.unityComponent.name : null;
+      var newName = newTarget?.unityComponent != null ? newTarget.unityComponent.name : null;
+      DebugEx.Fine("Focus target changed: old={0}, new={1}", oldName, newName);
       focusedTarget = newTarget;
       Array.ForEach(_dragTargets, t => SafeCallbacks.Action(() => t.OnFocusTarget(newTarget)));
     }
