@@ -18,6 +18,10 @@ public struct ErrorReason {
   /// <summary>Localized string that can be presented to the user.</summary>
   /// <remarks>It can be <c>null</c> if the error is not supposed to be shown to the user.</remarks>
   public string guiString;
+
+  /// <summary>Optional error details for debugging and troubleshooting.</summary>
+  /// <remarks>This string may have implementation specific details.</remarks>
+  public string logDetails;
 }
 
 }  // namespace

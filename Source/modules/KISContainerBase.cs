@@ -713,7 +713,8 @@ public class KisContainerBase : AbstractPartModule,
   public List<ErrorReason> ReportAndReturnCheckErrors(InventoryItem item, List<ErrorReason> errors, bool logErrors) {
     if (logErrors && errors.Count > 0) {
       HostedDebugLog.Error(
-          this, "Cannot add '{0}' part:\n{1}", item.avPart.name, DbgFormatter.C2S(errors, separator: "\n"));
+          this, "Cannot add '{0}' part:\n{1}", item.avPart.name,
+          DbgFormatter.C2S(errors, separator: "\n", predicate: x => x.logDetails ?? x.guiString));
     }
     return errors;
   }
