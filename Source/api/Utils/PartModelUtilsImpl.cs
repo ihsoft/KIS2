@@ -161,25 +161,12 @@ public class PartModelUtilsImpl {
     return modelObj;
   }
 
-  /// <summary>Returns part's volume basing on its geometric.</summary>
-  /// <remarks>
-  /// The volume is calculated basing on the smallest boundary box that encapsulates all the meshes
-  /// in the part. The deployable parts can take much more space in the deployed state.
-  /// </remarks>
-  /// <param name="part">The actual part, that exists in the scene.</param>
-  /// <returns>The volume in liters.</returns>
-  /// FIXME: This method should capture real part bounds/volume
-  public double GetPartVolume(Part part) {
-    var partNode = KisApi.PartNodeUtils.GetConfigNode(part);
-    return GetPartVolume(part.partInfo, partNode: partNode);
-  }
-
   /// <summary>Returns a part's volume.</summary>
   /// <remarks>
   /// The volume is either get from the <c>ModuleCargoPart</c> or from the smallest boundary box that encapsulates all
   /// the meshes in the part. See <see cref="KisApi.CommonConfig.compatibilitySettings.stockVolumeExceptions"/>.
   /// </remarks>
-  /// <param name="avPart">The part proto to get the models from.</param>
+  /// <param name="avPart">The part info to get the models from.</param>
   /// <param name="variant">
   /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
   /// <paramref name="partNode"/>. If both the <paramref name="variant"/> and the
