@@ -18,10 +18,14 @@ namespace KIS2 {
 sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
-  public IKisInventory inventory { get; }
+  public IKisInventory inventory => _inventory;
+  readonly KisContainerBase _inventory;
 
   /// <inheritdoc/>
   public string itemId { get; }
+
+  /// <inheritdoc/>
+  public int stockSlotIndex => _inventory != null ? _inventory.GetStockSlotForItem(this) : -1;
 
   /// <inheritdoc/>
   public Part materialPart { get; set; }
@@ -89,6 +93,8 @@ sealed class InventoryItemImpl : InventoryItem {
   public void UpdateConfig() {
     _snapshot = null; // Force refresh on access.
     variant = VariantsUtils.GetCurrentPartVariant(avPart, itemConfig);
+    //FIXME: How to deal with the compatibilioty saettings?
+    //FIXME: maybe just not call this method?
     volume = KisApi.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
     size = KisApi.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
     dryMass = KisApi.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);
@@ -130,7 +136,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
   public static InventoryItemImpl FromProtoPartSnapshot(
-      IKisInventory inventory, ProtoPartSnapshot snapshot, string itemId = null) {
+      KisContainerBase inventory, ProtoPartSnapshot snapshot, string itemId = null) {
     return new InventoryItemImpl(inventory, snapshot: snapshot, NewItemId(itemId));
   }
 
@@ -142,7 +148,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="item">The item to copy from.</param>
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromItem(IKisInventory inventory, InventoryItem item, string itemId = null) {
+  public static InventoryItemImpl FromItem(KisContainerBase inventory, InventoryItem item, string itemId = null) {
     return new InventoryItemImpl(inventory, item, NewItemId(itemId));
   }
 
@@ -154,7 +160,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="part">The part to take a snapshot from.</param>
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromPart(IKisInventory inventory, Part part, string itemId = null) {
+  public static InventoryItemImpl FromPart(KisContainerBase inventory, Part part, string itemId = null) {
     return new InventoryItemImpl(inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(itemId));
   }
 
@@ -169,7 +175,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
   /// <exception cref="InvalidOperationException">If the part name cannot be found.</exception>
-  public static InventoryItemImpl ForPartName(IKisInventory inventory, string partName,
+  public static InventoryItemImpl ForPartName(KisContainerBase inventory, string partName,
                                               ConfigNode itemConfig = null, string itemId = null) {
     var partInfo = PartLoader.getPartInfoByName(partName);
     Preconditions.NotNull(partInfo, message: "Part name not found: " + partName);
@@ -196,8 +202,8 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="itemConfig">The part's state node.</param>
   /// <param name="newItemId">The new item ID.</param>
   /// <seealso cref="snapshot"/>
-  InventoryItemImpl(IKisInventory inventory, AvailablePart avPart, ConfigNode itemConfig, string newItemId) {
-    this.inventory = inventory;
+  InventoryItemImpl(KisContainerBase inventory, AvailablePart avPart, ConfigNode itemConfig, string newItemId) {
+    this._inventory = inventory;
     this.avPart = avPart;
     this.itemConfig = itemConfig;
     this.itemId = newItemId;
@@ -211,8 +217,8 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="inventory">The inventory to bind the item to.</param>
   /// <param name="snapshot">The part's snapshot.</param>
   /// <param name="newItemId">The new item ID.</param>
-  InventoryItemImpl(IKisInventory inventory, ProtoPartSnapshot snapshot, string newItemId) {
-    this.inventory = inventory;
+  InventoryItemImpl(KisContainerBase inventory, ProtoPartSnapshot snapshot, string newItemId) {
+    this._inventory = inventory;
     this.avPart = snapshot.partInfo;
     this.itemConfig = new ConfigNode("PART");
     snapshot.Save(this.itemConfig);
@@ -231,8 +237,8 @@ sealed class InventoryItemImpl : InventoryItem {
   /// The item to copy the data from. The deep copy is not guaranteed. Avoid changing the source once the copy is made!
   /// </param>
   /// <param name="newItemId">The new item ID.</param>
-  InventoryItemImpl(IKisInventory inventory, InventoryItem srcItem, string newItemId) {
-    this.inventory = inventory;
+  InventoryItemImpl(KisContainerBase inventory, InventoryItem srcItem, string newItemId) {
+    this._inventory = inventory;
     this.avPart = srcItem.avPart;
     this.itemConfig = srcItem.itemConfig;
     this.itemId = newItemId;
