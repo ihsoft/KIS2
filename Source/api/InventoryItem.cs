@@ -40,6 +40,10 @@ public interface InventoryItem {
   /// <value>The variant or <c>null</c> if the part doesn't have any.</value>
   PartVariant variant { get; }
 
+  /// <summary>The name of the current variant.</summary>
+  /// <value>The variant name or empty string if the part doesn't have variants.</value>
+  string variantName { get; }
+
   /// <summary>Persisted state of the part.</summary>
   /// <remarks>
   /// This node can be updated by the external callers, but they must letting the item know that the config has changed

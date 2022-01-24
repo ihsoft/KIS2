@@ -42,6 +42,9 @@ sealed class InventoryItemImpl : InventoryItem {
   public PartVariant variant { get; private set; }
 
   /// <inheritdoc/>
+  public string variantName => variant != null ? variant.Name : "";
+
+  /// <inheritdoc/>
   public double volume { get; private set; }
   
   /// <inheritdoc/>
