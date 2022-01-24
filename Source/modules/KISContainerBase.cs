@@ -699,8 +699,14 @@ public class KisContainerBase : AbstractPartModule,
       elementsAdded++;
     }
     if (elementsAdded > 0) {
-      HostedDebugLog.Fine(
-          this, "Added extra stock inventory GUI elements: elements={0}, refSlot=#{1}", elementsAdded, maxSlotIndex);
+      if (StockCompatibilitySettings.isCompatibilityMode) {
+        HostedDebugLog.Warning(
+            this, "Added extra stock inventory GUI elements in the compatibility mode: elements={0}, refSlot=#{1}",
+            elementsAdded, maxSlotIndex);
+      } else {
+        HostedDebugLog.Fine(
+            this, "Added extra stock inventory GUI elements: elements={0}, refSlot=#{1}", elementsAdded, maxSlotIndex);
+      }
     }
   }
 
