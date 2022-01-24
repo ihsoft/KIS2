@@ -26,6 +26,14 @@ public interface InventoryItem {
   /// <remarks>The ID is generated when the part is first time added into inventory. It's an immutable value.</remarks>
   string itemId { get; }
 
+  /// <summary>Index of slot in the stock inventory.</summary>
+  /// <remarks>
+  /// Indicates which stock inventory slot contains this item. If the stock slot contains a stack of items, then
+  /// multiple items will be referring the same slot.
+  /// </remarks>
+  /// <value>The stock slot index or <c>-1</c> if the item doesn't belong to any inventory.</value>
+  int stockSlotIndex { get; }
+
   /// <summary>The actual part object which this item represents.</summary>
   /// <remarks>
   /// By the contract it must never be a part prefab, even though the prefab is technically a "part object".
