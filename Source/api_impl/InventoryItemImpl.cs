@@ -99,13 +99,13 @@ sealed class InventoryItemImpl : InventoryItem {
     size = KisApi.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
     dryMass = KisApi.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);
     dryCost = KisApi.PartNodeUtils.GetPartDryCost(avPart, partNode: itemConfig);
-    fullMass = dryMass + resources.Sum(r => r.amount * r.definition.density);
-    fullCost = dryCost + resources.Sum(r => r.amount * r.definition.unitCost);
     resources = KisApi.PartNodeUtils.GetResources(itemConfig);
     foreach (var resource in resources) {
       resource.resourceRef = avPart.partPrefab.Resources
           .FirstOrDefault(x => x.resourceName == resource.resourceName);
     }
+    fullMass = dryMass + resources.Sum(r => r.amount * r.definition.density);
+    fullCost = dryCost + resources.Sum(r => r.amount * r.definition.unitCost);
     science = KisApi.PartNodeUtils.GetScience(itemConfig);
   }
 
