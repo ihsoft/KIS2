@@ -267,8 +267,7 @@ sealed class InventorySlotImpl {
     if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
       return ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
     }
-    var slotVariant = VariantsUtils.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
-    if (checkItems.Any(x => VariantsUtils.GetCurrentPartVariant(x.avPart, x.itemConfig) != slotVariant)) {
+    if (checkItems.Any(x => x.variantName != refItem.variantName)) {
       return ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
     }
     var refSimilarityValues = _resourceSimilarityValues ?? KisContainerWithSlots.CalculateSimilarityValues(refItem);
