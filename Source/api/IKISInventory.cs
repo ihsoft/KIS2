@@ -53,12 +53,17 @@ public interface IKisInventory {
   /// <param name="node">
   /// The part's persisted state. If <c>null</c>, then a default state will be created from the prefab.
   /// </param>
+  /// <param name="stockSlotIndex">
+  /// Optional stock slot index. If not specified, the item will be matched to any available stock slot. Otherwise,
+  /// the specific slot will be examined to be compatible with the item.
+  /// </param>
   /// <param name="logErrors">
   /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
   /// </param>
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddPart"/>
-  List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false);
+  List<ErrorReason> CheckCanAddPart(
+      string partName, ConfigNode node = null, int stockSlotIndex = -1, bool logErrors = false);
 
   /// <summary>Verifies if the item can be added into the inventory.</summary>
   /// <remarks>
@@ -66,12 +71,16 @@ public interface IKisInventory {
   /// part addition conditions.
   /// </remarks>
   /// <param name="item">The item to check.</param>
+  /// <param name="stockSlotIndex">
+  /// Optional stock slot index. If not specified, the item will be matched to any available stock slot. Otherwise,
+  /// the specific slot will be examined to be compatible with the item.
+  /// </param>
   /// <param name="logErrors">
   /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
   /// </param>
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddItem"/>
-  List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false);
+  List<ErrorReason> CheckCanAddItem(InventoryItem item, int stockSlotIndex = -1, bool logErrors = false);
 
   /// <summary>Adds a new part into the inventory.</summary>
   /// <remarks>
@@ -90,10 +99,14 @@ public interface IKisInventory {
   /// <param name="node">
   /// The part persisted state. An entry can be <c>null</c> if the default state from prefab should be used.
   /// </param>
+  /// <param name="stockSlotIndex">
+  /// Optional stock slot index. If not specified, the item will be added to any available stock slot. Otherwise,
+  /// the specific slot will be examined to be compatible with the item, and if doesn't fit the action will fail.
+  /// </param>
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
   /// <seealso cref="CheckCanAddPart"/>
   /// <seealso cref="UpdateInventoryStats"/>
-  InventoryItem AddPart(string partName, ConfigNode node = null);
+  InventoryItem AddPart(string partName, ConfigNode node = null, int stockSlotIndex = -1);
 
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>
@@ -109,6 +122,10 @@ public interface IKisInventory {
   /// </p>
   /// </remarks>
   /// <param name="item">The item to add.</param>
+  /// <param name="stockSlotIndex">
+  /// Optional stock slot index. If not specified, the item will be added to any available stock slot. Otherwise,
+  /// the specific slot will be examined to be compatible with the item, and if doesn't fit the action will fail.
+  /// </param>
   /// <returns>
   /// The new item from the inventory or <c>null</c> if the action has failed. The ID of the new item will be different
   /// from the source item.
@@ -116,7 +133,8 @@ public interface IKisInventory {
   /// <seealso cref="CheckCanAddItem"/>
   /// <seealso cref="UpdateInventoryStats"/>
   /// <seealso cref="InventoryItem.itemId"/>
-  InventoryItem AddItem(InventoryItem item);
+  //InventoryItem AddItem(InventoryItem item);
+  InventoryItem AddItem(InventoryItem item, int stockSlotIndex = -1);
 
   /// <summary>Removes the specified item from the inventory.</summary>
   /// <remarks>

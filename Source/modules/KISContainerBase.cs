@@ -47,18 +47,39 @@ public class KisContainerBase : AbstractPartModule,
       + " disallowed for inventory storing. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message DifferentPartInSlotReasonText = new Message(
+      "",
+      defaultTemplate: "Stock inventory limitation\nDifferent part in the stock slot",
+      description: "An error that is presented when the part cannot be added into the stock slot due to it already has"
+      + " a different part/variant. It only makes sense in the stock compatibility mode.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message CannotStackInSlotReasonText = new Message(
+      "",
+      defaultTemplate: "Stock inventory limitation\nCannot stack in the stock slot",
+      description: "An error that is presented when the part cannot be added into the stock slot due to it has the"
+      + " maximum allowed stacked items. It only makes sense in the stock compatibility mode.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message NoFreeSlotsReasonText = new Message(
+      "",
+      defaultTemplate: "Stock inventory limitation\nNo free stock slots",
+      description: "An error that is presented when the part cannot be added into the stock slot due to there are no "
+      + " more empty slots. It only makes sense in the stock compatibility mode.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message NoMoreKisSlotsErrorText = new Message(
+      "",
+      defaultTemplate: "No free slots",
+      description: "An error that is presented when the part cannot be added into a KIS container due to there no more"
+      + " compatible visible slots.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message CannotAddIntoSelfErrorText = new Message(
       "",
       defaultTemplate: "You cannot store a part into itself. Seriously?!",
       description: "An error that is presented when the part cannot be added into a KIS container due to the inventory"
       + " is owned by that part.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  protected static readonly Message StockContainerLimitReachedErrorText = new Message(
-      "",
-      defaultTemplate: "Stock container limit reached",
-      description: "An error that is presented when the part cannot be added into a KIS container due to the stock"
-      + " container limitations (any). It only makes sense in the stock compatibility mode.");
 
   // ReSharper enable MemberCanBePrivate.Global
   #endregion
@@ -115,7 +136,6 @@ public class KisContainerBase : AbstractPartModule,
   /// not expected to be seen.
   /// </remarks>
   /// <seealso cref="ErrorReason.errorClass"/>
-  /// <seealso cref="StockContainerLimitReachedErrorText"/>
   /// <seealso cref="NonCargoPartErrorText"/>
   /// <seealso cref="ConstructionOnlyPartErrorText"/>
   public const string StockInventoryLimitReason = "StockInventoryLimit";
@@ -312,13 +332,15 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public List<ErrorReason> CheckCanAddPart(string partName, ConfigNode node = null, bool logErrors = false) {
+  public List<ErrorReason> CheckCanAddPart(
+      string partName, ConfigNode node = null, int stockSlotIndex = -1, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return CheckCanAddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node), logErrors: logErrors);
+    return CheckCanAddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node), stockSlotIndex, logErrors);
   }
 
   /// <inheritdoc/>
-  public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
+  public virtual List<ErrorReason> CheckCanAddItem(
+      InventoryItem item, int stockSlotIndex = -1, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
     var errors = new List<ErrorReason>();
 
@@ -358,11 +380,7 @@ public class KisContainerBase : AbstractPartModule,
         return ReportAndReturnCheckErrors(item, errors, logErrors);
       }
     }
-    if (FindStockSlotForItem(item) == -1) {
-      errors.Add(new ErrorReason() {
-          errorClass = StockInventoryLimitReason,
-          guiString = StockContainerLimitReachedErrorText,
-      });
+    if (FindStockSlotForItem(item, stockSlotIndex, out errors) == -1) {
       return ReportAndReturnCheckErrors(item, errors, logErrors);
     }
 
@@ -380,17 +398,17 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public InventoryItem AddPart(string partName, ConfigNode node = null) {
+  public InventoryItem AddPart(string partName, ConfigNode node = null, int stockSlotIndex = -1) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
     return AddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node));
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem AddItem(InventoryItem item) {
+  public virtual InventoryItem AddItem(InventoryItem item, int stockSlotIndex = -1) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
-    var stockSlotIndex = FindStockSlotForItem(item, logChecks: true);
-    if (stockSlotIndex == -1) {
-      HostedDebugLog.Error(this, "Cannot find a stock slot for part: name={0}", item.avPart.name);
+    stockSlotIndex = FindStockSlotForItem(item, stockSlotIndex, out var errors);
+    if (errors.Count > 0) {
+      ReportAndReturnCheckErrors(item, errors, true);
       return null;
     }
     var newItem = InventoryItemImpl.FromItem(this, item);
@@ -444,6 +462,18 @@ public class KisContainerBase : AbstractPartModule,
   }
   #endregion
 
+  #region API methods
+  /// <summary>Returns a stock inventory limitation error reason response.</summary>
+  public static List<ErrorReason> ReturnStockInventoryErrorReasons(string reasonText, string logDetails = null) {
+    var reason = new ErrorReason() {
+        errorClass = StockInventoryLimitReason,
+        guiString = reasonText,
+        logDetails = logDetails,
+    };
+    return new List<ErrorReason> { reason };
+  }
+  #endregion
+
   #region Inheritable methods
   /// <summary>Adds the item into <see cref="inventoryItems"/> collection.</summary>
   /// <remarks>
@@ -465,6 +495,36 @@ public class KisContainerBase : AbstractPartModule,
     if (!inventoryItems.Remove(item.itemId)) {
       HostedDebugLog.Error(this, "Cannot delete item, not in the index: itemId={0}", item.itemId);
     }
+  }
+
+  /// <summary>Verifies if the item can fit the stock slot.</summary>
+  /// <param name="item">The item to check.</param>
+  /// <param name="stockSlotIndex">The stock slot to check for.</param>
+  /// <param name="quantity">The quantity of the items to try to fit into the slot.</param>
+  /// <returns>The list of check errors. It's empty if items can be stored into the slot.</returns>
+  protected List<ErrorReason> CheckSlotStockForItem(InventoryItem item, int stockSlotIndex, int quantity = 1) {
+    var errors = new List<ErrorReason>();
+    if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)) {
+      return errors;
+    }
+    var stockSlot = stockInventoryModule.storedParts[stockSlotIndex];
+    var maxSlotStackCapacity = StockCompatibilitySettings.isCompatibilityMode
+        ? stockSlot.stackCapacity
+        : maxStockSlotSize;
+    using (new StackCapacityScope(this, stockSlot, maxSlotStackCapacity)) {
+      if (stockSlot.stackCapacity - stockSlot.quantity < quantity) {
+        return ReturnStockInventoryErrorReasons(
+            CannotStackInSlotReasonText,
+            logDetails: string.Format("Stack capacity reached in stock slot: index={0}, quantity={1}, stackLimit={2}",
+                                      stockSlotIndex, stockSlot.quantity, stockSlot.stackCapacity));
+      }
+      if (!stockInventoryModule.CanStackInSlot(item.avPart, item.variantName, stockSlotIndex)) {
+        return ReturnStockInventoryErrorReasons(
+            DifferentPartInSlotReasonText,
+            logDetails: $"Incompatible stock slot: index={stockSlotIndex}, slotPart={stockSlot.partName}");
+      }
+    }
+    return errors;
   }
   #endregion
 
@@ -532,23 +592,27 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Gets a stock inventory slot that can accept the given item.</summary>
   /// <remarks>This method may modify the stock module state if an extra slot needs to be added.</remarks>
   /// <param name="item">The item to verify.</param>
-  /// <param name="logChecks">Tells if the stock compatibility related errors or limitations should be logged.</param>
-  /// <returns>The stock slot index that can accept the item or <c>-1</c> if there are none.</returns>
+  /// <param name="stockSlotIndex">
+  /// Optional stock slot index to place the item into. If provided, then the other slots will not be considered to find
+  /// a suitable slot. To enable searching set this parameter to <c>-1</c>.
+  /// </param>
+  /// <param name="errors">The list of errors that were detected during searching the compatible slot.</param>
+  /// <returns>
+  /// The stock slot index that can accept the item or <c>-1</c> if there are none. If no slot was found, the
+  /// <paramref name="errors"/> list will not be empty.
+  /// </returns>
   /// <seealso cref="StockCompatibilitySettings"/>
-  int FindStockSlotForItem(InventoryItem item, bool logChecks = false) {
-    var variant = item.variant;
-    var variantName = variant != null ? variant.Name : "";
+  int FindStockSlotForItem(InventoryItem item, int stockSlotIndex, out List<ErrorReason> errors) {
+    errors = new List<ErrorReason>(); 
     var maxSlotIndex = -1;
 
-    // Check if the stock compatibility mode is satisfied.
-    if (StockCompatibilitySettings.isCompatibilityMode && KisApi.PartPrefabUtils.GetCargoModule(item.avPart) == null) {
-      if (logChecks) {
-        HostedDebugLog.Error(this, "The item is not stock cargo compatible: partName={0}", item.avPart.name);
-      }
-      return -1;
+    // When the stock slot is provided, only run the checks.
+    if (stockSlotIndex >= 0) {
+      errors = CheckSlotStockForItem(item, stockSlotIndex);
+      return errors.Count == 0 ? stockSlotIndex : -1;
     }
 
-    // First, try to fit the item into an existing occupied slot to preserve the space.
+    // Try to fit the item into an existing occupied slot to preserve the space.
     foreach (var existingSlotIndex in stockInventoryModule.storedParts.Keys) {
       maxSlotIndex = Math.Max(existingSlotIndex, maxSlotIndex);
       var slot = stockInventoryModule.storedParts[existingSlotIndex];
@@ -557,17 +621,9 @@ public class KisContainerBase : AbstractPartModule,
         continue;
       }
 
-      // Verify if the item must not be added due to the stock inventory limit.
-      if (StockCompatibilitySettings.isCompatibilityMode
-          && !stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
+      // Verify if the slot cannot be used due to the stock inventory limit.
+      if (CheckSlotStockForItem(item, existingSlotIndex).Count > 0) {
         continue;
-      }
-
-      // Verify if we can go above the stock limit.
-      using (new StackCapacityScope(this, slot, maxStockSlotSize)) {
-        if (!stockInventoryModule.CanStackInSlot(item.avPart, variantName, existingSlotIndex)) {
-          continue;
-        }
       }
 
       // In the stock inventory the part states in the slot must be exactly the same.
@@ -587,10 +643,9 @@ public class KisContainerBase : AbstractPartModule,
       return slotIndex;
     }
     if (StockCompatibilitySettings.isCompatibilityMode) {
-      if (logChecks) {
-        HostedDebugLog.Error(
-            this, "Cannot add an extra stock slot in the compatibility mode: partName={0}", item.avPart.name);
-      }
+      errors = ReturnStockInventoryErrorReasons(
+          NoFreeSlotsReasonText,
+          logDetails: string.Format("Cannot find a compatible stock slot and cannot create a new one"));
       return -1;
     }
 
@@ -727,7 +782,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <param name="errors">The detected errors. Can be an empty list.</param>
   /// <param name="logErrors">Indicates of the errors must be logged.</param>
   /// <returns>The <paramref name="errors"/> provided in the call.</returns>
-  public List<ErrorReason> ReportAndReturnCheckErrors(InventoryItem item, List<ErrorReason> errors, bool logErrors) {
+  protected List<ErrorReason> ReportAndReturnCheckErrors(InventoryItem item, List<ErrorReason> errors, bool logErrors) {
     if (logErrors && errors.Count > 0) {
       HostedDebugLog.Error(
           this, "Cannot add '{0}' part:\n{1}", item.avPart.name,

@@ -202,7 +202,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   static readonly Message CannotAddToStackTooltipText = new Message(
       "",
       defaultTemplate: "Cannot add items to stack",
-      description: "The title to show in the slot tooltip when the dragged items ca NOT be added into the slot. Only"
+      description: "The title to show in the slot tooltip when the dragged items can NOT be added into the slot. Only"
       + " shown when the target slot is not empty.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -614,19 +614,29 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <inheritdoc/>
   public override void OnLoad(ConfigNode node) {
     // Prepare slots before loading.
+    if (StockCompatibilitySettings.isCompatibilityMode) {
+      var width = 3;
+      var height = (stockInventoryModule.InventorySlots + width - 1)/ width; // Round up.
+      if (width != slotGridWidth || height != slotGridHeight) {
+        slotGridWidth = width;
+        slotGridHeight = height;
+        HostedDebugLog.Warning(this, "Rescale container to the stock size: width={0}, height={1}", width, height);
+      }
+    }
     for (var i = 0; i < slotGridWidth * slotGridHeight; i++) {
       _inventorySlots.Add(new InventorySlotImpl(this, null));
     }
 
-    var itemToKisSlotMap = new Dictionary<string, int>();
-    var savedMappings = node.GetValues(PersistentConfigKisSlotMapping);
-    foreach (var savedMapping in savedMappings) {
-      var pair = savedMapping.Split(new[] {'-'}, 2);
-      var slotIndex = int.Parse(pair[0]);
-      itemToKisSlotMap[pair[1]] = slotIndex;
-    }
-
     base.OnLoad(node);
+
+    //FIXME: this can extend inventory slots
+
+    var itemToKisSlotMap = StockCompatibilitySettings.isCompatibilityMode
+        ? inventoryItems.Values.ToDictionary(k => k.itemId, v => v.stockSlotIndex)
+        : node.GetValues(PersistentConfigKisSlotMapping)
+            .AsEnumerable()
+            .Select(x => x.Split(new[] { '-' }, 2))
+            .ToDictionary(k => k[1], v => int.Parse(v[0]));
 
     // Drop the default layout and move the loaded items to their designated slots.
     foreach (var slot in _inventorySlots) {
@@ -694,23 +704,20 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
-    var errors = base.CheckCanAddItem(item, logErrors);
+  public override List<ErrorReason> CheckCanAddItem(
+      InventoryItem item, int stockSlotIndex = -1, bool logErrors = false) {
+    var errors = base.CheckCanAddItem(item, stockSlotIndex, logErrors);
     if (errors.Count> 0) {
       return errors;  // Don't go deeper, it's already failed.
     }
     var slot = FindSlotForItem(item);
     if (slot == null) {
       errors.Add(new ErrorReason() {
-          errorClass = StockInventoryLimitReason,
-          guiString = StockContainerLimitReachedErrorText,
+          errorClass = InventoryConsistencyReason,
+          guiString = NoMoreKisSlotsErrorText,
       });
     }
-    if (logErrors && errors.Count > 0) {
-      HostedDebugLog.Error(this, "Cannot add '{0}' part.\nERRORS:{1}\nPART NODE:\n{2}",
-                           item.avPart.name, DbgFormatter.C2S(errors, separator: "\n"), item.itemConfig);
-    }
-    return errors;
+    return ReportAndReturnCheckErrors(item, errors, logErrors);
   }
 
   /// <inheritdoc/>
@@ -723,7 +730,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <inheritdoc/>
   protected override void AddInventoryItem(InventoryItem item) {
     base.AddInventoryItem(item);
-    AddSlotItem(FindSlotForItem(item, addInvisibleSlot: true), item);
+    var slot = StockCompatibilitySettings.isCompatibilityMode
+        ? _inventorySlots[item.stockSlotIndex]
+        : FindSlotForItem(item, addInvisibleSlot: true);
+    AddSlotItem(slot, item);
   }
 
   /// <inheritdoc/>
@@ -966,13 +976,19 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.gameObject.AddComponent<UIWindowMoveTracker>(); // Remove from the grid if the dialog has moved.
     _unityWindow.onSlotHover.Add(OnSlotHover);
     _unityWindow.onNewGridSize.Add(OnNewGridSize);
-    _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
     _unityWindow.onDialogClose.Add(CloseInventoryWindow);
     _unityWindow.onDialogHover.Add(OnEditorDialogHover);
 
     _unityWindow.title = DialogTitle.Format(part.partInfo.title);
-    _unityWindow.minSize = minGridSize;
-    _unityWindow.maxSize = maxGridSize;
+
+    if (!StockCompatibilitySettings.isCompatibilityMode) {
+      _unityWindow.onGridSizeChanged.Add(OnGridSizeChanged);
+      _unityWindow.minSize = minGridSize;
+      _unityWindow.maxSize = maxGridSize;
+    } else {
+      _unityWindow.minSize = _unityWindow.maxSize = new Vector2(slotGridWidth, slotGridHeight);
+      _unityWindow.isResizable = false;
+    }
     _unityWindow.SetGridSize(new Vector3(slotGridWidth, slotGridHeight, 0));
     ArrangeSlots(); // Ensure all slots have UI binding.
     UpdateInventoryWindow();
@@ -1026,7 +1042,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// If set, then these slots will be checked for best fit first. The preferred slots can be invisible.
   /// </param>
   /// <param name="addInvisibleSlot">
-  /// If <c>true</c>, then a new invisible slot will be created in the inventory in case of no compatible slot was
+  /// If TRUE, then a new invisible slot will be created in the inventory in case of no compatible slot was
   /// found.
   /// </param>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
@@ -1352,6 +1368,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     var allItems = KisApi.ItemDragController.leasedItems;
     var checkResult = slotWithPointerFocus.CheckCanAddItems(allItems);
+
+    if (checkResult.Count == 0 && StockCompatibilitySettings.isCompatibilityMode) {
+      var stockSlotIndex = _inventorySlots.IndexOf(slotWithPointerFocus);
+      checkResult = CheckSlotStockForItem(allItems[0], stockSlotIndex, quantity: allItems.Length);
+    }
+
     if (checkResult.Count == 0) {
       // For the items from other inventories also check the basic constraints.
       var extraVolumeNeeded = 0.0;
@@ -1532,15 +1554,21 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <seealso cref="_slotEventsHandler"/>
   void AddDraggedItemsToFocusedSlot() {
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
+    var kisSlotIndex = _inventorySlots.IndexOf(slotWithPointerFocus);
     if (consumedItems != null) {
-      HostedDebugLog.Info(this, "Add items to slot: slot=#{0}, num={1}",
-                          _inventorySlots.IndexOf(slotWithPointerFocus), consumedItems.Length);
+      HostedDebugLog.Info(this, "Add items to slot: slot=#{0}, num={1}", kisSlotIndex, consumedItems.Length);
       var newItems = new List<InventoryItem>(consumedItems.Length);
       foreach (var consumedItem in consumedItems) {
-        var item = AddItem(consumedItem);
-        if (item != null) {
-          MoveItemsToSlot(slotWithPointerFocus, item);
+        InventoryItem item;
+        if (StockCompatibilitySettings.isCompatibilityMode) {
+          item = AddItem(consumedItem, stockSlotIndex: kisSlotIndex);
         } else {
+          item = AddItem(consumedItem);
+          if (item != null) {
+            MoveItemsToSlot(slotWithPointerFocus, item);
+          }
+        }
+        if (item == null) {
           HostedDebugLog.Error(
               this, "Cannot add dragged item: part={0}, itemId={1}", consumedItem.avPart.name, consumedItem.itemId);
         }
@@ -1551,7 +1579,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
       HostedDebugLog.Error(
           this, "Cannot store/stack dragged items to slot: slot=#{0}, draggedItems={1}",
-          _inventorySlots.IndexOf(slotWithPointerFocus), KisApi.ItemDragController.leasedItems.Length);
+          kisSlotIndex, KisApi.ItemDragController.leasedItems.Length);
     }
   }
 
