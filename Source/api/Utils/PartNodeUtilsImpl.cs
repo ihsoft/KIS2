@@ -226,19 +226,7 @@ public class PartNodeUtilsImpl {
   public ProtoPartSnapshot GetProtoPartSnapshotFromNode(
       Vessel refVessel, ConfigNode node, bool keepPersistentId = false) {
     ProtoPartSnapshot pPart = null;
-    if (refVessel != null) {
-      pPart = new ProtoPartSnapshot(node, refVessel.protoVessel, HighLogic.CurrentGame);
-    } else {
-      if (HighLogic.LoadedSceneIsEditor
-          || HighLogic.LoadedSceneIsMissionBuilder
-          || HighLogic.LoadedScene == GameScenes.MAINMENU
-          || refVessel.isEVA) {
-        pPart = new ProtoPartSnapshot(node, null, HighLogic.CurrentGame);
-      }
-    }
-    if (pPart == null) {
-      throw new ArgumentException("Cannot make snapshot in scene " + HighLogic.CurrentGame + " for node:\n" + node);
-    }
+    pPart = new ProtoPartSnapshot(node, refVessel != null ? refVessel.protoVessel : null, HighLogic.CurrentGame);
 
     if (keepPersistentId) {
       var originalPartId = uint.Parse(node.GetValue("persistentId"));
