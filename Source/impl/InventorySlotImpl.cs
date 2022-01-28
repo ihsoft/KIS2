@@ -148,10 +148,7 @@ sealed class InventorySlotImpl {
 
   /// <summary>Generalized icon of the slot.</summary>
   /// <value>The texture that represents the slot.</value>
-  public Texture iconImage =>
-      !isEmpty
-          ? KisApi.PartIconUtils.MakeDefaultIcon(avPart, slotItems[0].variant)
-          : null;
+  public Texture iconImage { get; private set; } 
 
   /// <summary>Indicates if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Count == 0;
@@ -223,7 +220,10 @@ sealed class InventorySlotImpl {
     }
     _itemsSet.Add(item);
     slotItems.Add(item);
-    UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats 
+    if (_itemsSet.Count == 1) {
+      iconImage = KisApi.PartIconUtils.MakeDefaultIcon(avPart, slotItems[0].variant);
+    }
+    UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats
   }
 
   /// <summary>Deletes the item from the slot.</summary>
@@ -234,6 +234,7 @@ sealed class InventorySlotImpl {
     slotItems.Remove(item); // FIXME: This won't be fast on large sets.
     if (_itemsSet.Count == 0) {
       _resourceSimilarityValues = null;
+      iconImage = null;
     }
     UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats 
   }
