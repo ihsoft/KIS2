@@ -44,8 +44,10 @@ public sealed class CommonConfigImpl {
     [PersistentField("baseIconResolution")]
     public int baseIconResolution = 256;
 
-    [PersistentField("cameraFov")]
-    public float cameraFov = 540f; // From the stock inventory: 30 FOV x 18 boost
+    [PersistentField("cameraDistance")]
+    public float cameraDistance = 100f;
+    [PersistentField("cameraOrthoSize")]
+    public float cameraOrthoSize = 0.75f;
     [PersistentField("cameraElevation")]
     public float cameraElevation = 15f;
     [PersistentField("cameraAzimuth")]

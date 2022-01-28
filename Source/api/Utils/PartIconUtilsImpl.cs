@@ -4,7 +4,6 @@
 
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
-using System.Collections.Generic;
 using KSPDev.ModelUtils;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -15,13 +14,6 @@ namespace KISAPIv2 {
 
 public sealed class PartIconUtils {
 
-  /// <summary>Local cache for the icons. Valid with the scene only.</summary>
-  /// <remarks>
-  /// When the scene switches, the cache are is reset but the items in it get destroyed. So, the values must always be
-  /// checked for non-null.
-  /// </remarks>
-  static readonly Dictionary<string, Texture> IconsCache = new();
-
   /// <summary>
   /// Makes a sprite that represents the part in it's default icon state. This is what is shown in
   /// the editor when the part is not hovered.
@@ -31,19 +23,20 @@ public sealed class PartIconUtils {
   /// The variant to apply to the part before capturing an icon. It can be null if not variant needs
   /// to be applied.
   /// </param>
-  /// <param name="resolution">
-  /// The size of the sprite. The part icon is always square. If not set, then the best size will be
-  /// picked based on the screen resolution.
-  /// </param>
   /// <returns>The sprite of the icon.</returns>
-  public Texture MakeDefaultIcon(AvailablePart avPart, PartVariant variant, int? resolution = null) {
-    var iconSize = GetBestIconResolution(resolution);
-    var cacheKey = avPart.name + "-" + iconSize + (variant == null ? "" : "-" + variant.Name);
-    if (IconsCache.TryGetValue(cacheKey, out var result) && result != null) {
-      return result;
+  public Texture MakeDefaultIcon(AvailablePart avPart, PartVariant variant) {
+    string partIconTexturePath = null;
+    VariantsUtils.ExecuteAtPartVariant(avPart, variant, part => {
+      partIconTexturePath = CraftThumbnail.GetPartIconTexturePath(part, out _);
+    });
+    if (string.IsNullOrEmpty(partIconTexturePath)) {
+      partIconTexturePath = "kisIcon-" + avPart.name + (variant == null ? "" : "-" + variant.Name);
     }
-    DebugEx.Fine("Creating a new icon for: part={0}, variant={1}, cacheKey={2}",
-                 avPart.name, (variant != null ? variant.Name : "N/A"), cacheKey);
+    var gameIcon = GameDatabase.Instance.GetTexture(partIconTexturePath, asNormalMap: false);
+    if (gameIcon != null) {
+      return gameIcon;
+    }
+    DebugEx.Fine("Making icon texture for part: path={0}", partIconTexturePath);
 
     // There is some stock logic that KIS doesn't have a clue about. So, just warn and skip it. 
     if (CraftThumbnail.GetThumbNailSetupIface(avPart) != null) {
@@ -59,11 +52,10 @@ public sealed class PartIconUtils {
     var camera = cameraObj.AddComponent<Camera>();
     camera.clearFlags = CameraClearFlags.Color;
     camera.backgroundColor = Color.clear;
-    camera.fieldOfView = snapshotSettings.cameraFov;
     camera.cullingMask = snapshotRenderMask;
     camera.enabled = false;
     camera.orthographic = true;
-    camera.orthographicSize = 0.75f;
+    camera.orthographicSize = snapshotSettings.cameraOrthoSize;
     camera.allowHDR = false;
 
     // The "like in the editor" lighting.
@@ -81,18 +73,10 @@ public sealed class PartIconUtils {
     var iconPrefab = KisApi.PartModelUtils.GetIconPrefab(avPart, variant: variant);
     iconPrefab.layer = snapshotRenderLayer;
     iconPrefab.SetLayerRecursive(snapshotRenderLayer);
-    var iconPrefabSize =
-        PartGeometryUtil.MergeBounds(new[] { iconPrefab.GetRendererBounds() }, iconPrefab.transform.root).size;
-
-    // Position the camera so that the whole part is in focus and rotated as in the stock logic. 
-    var camDist = KSPCameraUtil.GetDistanceToFit(
-        Mathf.Max(Mathf.Max(iconPrefabSize.x, iconPrefabSize.y), iconPrefabSize.z),
-        snapshotSettings.cameraFov,
-        iconSize);
     camera.transform.position =
         Quaternion.AngleAxis(snapshotSettings.cameraAzimuth, Vector3.up)
         * Quaternion.AngleAxis(snapshotSettings.cameraElevation, Vector3.right)
-        * (Vector3.back * camDist);
+        * (Vector3.back * snapshotSettings.cameraDistance);
     camera.transform.rotation =
         Quaternion.AngleAxis(snapshotSettings.cameraHeading, Vector3.up)
         * Quaternion.AngleAxis(snapshotSettings.cameraPitch, Vector3.right);
@@ -107,7 +91,7 @@ public sealed class PartIconUtils {
       RenderSettings.ambientSkyColor = snapshotSettings.ambientSkyColor;
       Shader.SetGlobalFloat(AmbientSettingsScope.AmbientBoostDiffuse, 0f);
       Shader.SetGlobalFloat(AmbientSettingsScope.AmbientBoostEmissive, GameSettings.AMBIENTLIGHT_BOOSTFACTOR_EDITONLY);
-      thumbTexture = RenderCamera(camera, iconSize, iconSize, 24);
+      thumbTexture = RenderCamera(camera, snapshotSettings.baseIconResolution, snapshotSettings.baseIconResolution, 24);
     }
 
     // Don't use GameObject.Destroy() method here!
@@ -115,7 +99,12 @@ public sealed class PartIconUtils {
     Hierarchy.SafeDestroy(iconPrefab);
     Hierarchy.SafeDestroy(sceneLightObj);
 
-    IconsCache[cacheKey] = thumbTexture;
+    var texInfo = new GameDatabase.TextureInfo(null, thumbTexture,
+                                               isNormalMap: false, isReadable: false, isCompressed: true) {
+        name = partIconTexturePath,
+    };
+    GameDatabase.Instance.databaseTexture.Add(texInfo);
+
     return thumbTexture;
   }
 
@@ -124,13 +113,9 @@ public sealed class PartIconUtils {
   /// the editor when the part is not hovered.
   /// </summary>
   /// <param name="part">The part to make the icon for.</param>
-  /// <param name="resolution">
-  /// The size of the sprite. The part icon is always square. If not set, then the best size will be
-  /// picked based on the screen resolution.
-  /// </param>
   /// <returns>The sprite of the icon.</returns>
-  public Texture MakeDefaultIcon(Part part, int? resolution = null) {
-    return MakeDefaultIcon(part.partInfo, VariantsUtils.GetCurrentPartVariant(part), resolution: resolution);
+  public Texture MakeDefaultIcon(Part part) {
+    return MakeDefaultIcon(part.partInfo, VariantsUtils.GetCurrentPartVariant(part));
   }
 
   #region Local utility methods
@@ -142,7 +127,7 @@ public sealed class PartIconUtils {
   /// <param name="requested">
   /// The caller's idea of the resolution. If not set, then KIS will choose the best one based on its settings.
   /// </param>
-  /// <returns>The best resolution, given the current screen mode ands the settings.</returns>
+  /// <returns>The best resolution, given the current screen mode and the settings.</returns>
   static int GetBestIconResolution(int? requested = null) {
     var res = requested ?? KisApi.CommonConfig.iconIconSnapshotSettings.baseIconResolution;
     return Screen.currentResolution.height <= 1080 ? res : res * 2;
@@ -162,14 +147,16 @@ public sealed class PartIconUtils {
     RenderTexture.active = renderTexture;
     camera.targetTexture = renderTexture;
     camera.Render();
-    var texture = new Texture2D(width, height, TextureFormat.ARGB32, true);
-    texture.ReadPixels(new Rect(0.0f, 0.0f, width, height), 0, 0, false);
-    texture.Apply();
+    var outTexture = new Texture2D(width, height, TextureFormat.ARGB32, mipChain: false);
+    outTexture.ReadPixels(new Rect(0.0f, 0.0f, width, height), 0, 0, true);
+    outTexture.Compress(highQuality: true);
+    outTexture.Apply(updateMipmaps: true, makeNoLongerReadable: true);
     RenderTexture.active = oldActive;
     camera.targetTexture = null;
     renderTexture.Release();
     Object.DestroyImmediate(renderTexture);
-    return texture;
+    renderTexture = null;
+    return outTexture;
   }
   #endregion
 }
