@@ -10,6 +10,7 @@ using KSPDev.InputUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using System.Linq;
+using System.Reflection;
 using KSP.UI;
 using KSPDev.ConfigUtils;
 using KSPDev.GUIUtils;
@@ -295,6 +296,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         _targetPickupPart.SetHighlight(true, recursive: true);
         if (_targetPickupPart.children.Count == 0) {
           _targetPickupItem = InventoryItemImpl.FromPart(null, _targetPickupPart);
+          _targetPickupPart.isCargoPart();
           _targetPickupItem.materialPart = _targetPickupPart;
         }
       }
@@ -311,10 +313,24 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_controllerStateMachine"/>
   /// <seealso cref="_pickupTargetEventsHandler"/>
   IEnumerator TrackPickupStateCoroutine() {
+    var beingSettledField = typeof(ModuleCargoPart).GetField(
+        "beingSettled", BindingFlags.Instance | BindingFlags.NonPublic);
+    if (beingSettledField == null) {
+      DebugEx.Error("Cannot find beingSettled field in cargo module");
+    }
     while (_controllerStateMachine.currentState == ControllerState.PickupModePending) {
       CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the part!
 
-      targetPickupPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
+      var hoveredPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
+      if (hoveredPart != null && hoveredPart.isCargoPart() && beingSettledField != null) {
+        var cargoModule = hoveredPart.FindModuleImplementing<ModuleCargoPart>();
+        var isBeingSettling = (bool) beingSettledField.GetValue(cargoModule);
+        if (isBeingSettling) {
+          hoveredPart = null;
+        }
+      }
+      targetPickupPart = hoveredPart;
+      
       if (targetPickupPart == null) {
         _pickupTargetEventsHandler.currentState = null;
       } else if (targetPickupPart.children.Count == 0) {
