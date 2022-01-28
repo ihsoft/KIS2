@@ -293,7 +293,7 @@ public class PartNodeUtilsImpl {
     vesselNode.SetValue("alt", newValue: alt, createIfNotFound: true);
 
     var refRotation = actorVessel.mainBody.bodyTransform.rotation.Inverse() * rotation;
-    vesselNode.AddValue("rot", KSPUtil.WriteQuaternion(refRotation));
+    vesselNode.SetValue("rot", KSPUtil.WriteQuaternion(refRotation));
     vesselNode.SetValue("PQSMin", 0, createIfNotFound: true);
     vesselNode.SetValue("PQSMax", 0, createIfNotFound: true);
 
