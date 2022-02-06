@@ -6,6 +6,7 @@ using KISAPIv2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using KSPDev.ProcessingUtils;
 using UnityEngine;
@@ -36,22 +37,47 @@ sealed class InventoryItemImpl : InventoryItem {
   public ProtoPartSnapshot snapshot { get; }
 
   /// <inheritdoc/>
-  public PartVariant variant => VariantsUtils2.GetPartVariant(avPart, variantName);
+  public PartVariant variant {
+    get {
+      UpdateVariant();
+      return _variant ??= VariantsUtils2.GetPartVariant(avPart, variantName);
+    }
+  }
+  PartVariant _variant;
 
   /// <inheritdoc/>
   public string variantName => snapshot.moduleVariantName ?? "";
+  string _oldVariantName; // Used to track variant changes.
 
   /// <inheritdoc/>
-  public double volume => KisApi.PartModelUtils.GetPartVolume(avPart, variantName);
+  public double volume {
+    get {
+      UpdateVariant();
+      return _volume ??= KisApi.PartModelUtils.GetPartVolume(avPart, variantName);
+    }
+  }
+  double? _volume;
   
   /// <inheritdoc/>
-  public Vector3 size => KisApi.PartModelUtils.GetPartBounds(avPart, variantName);
+  public Vector3 size {
+    get {
+      UpdateVariant();
+      return _size ??= KisApi.PartModelUtils.GetPartBounds(avPart, variantName);
+    }
+  } 
+  Vector3? _size;
 
   /// <inheritdoc/>
   public double dryMass => snapshot.mass - snapshot.moduleMass;
   
   /// <inheritdoc/>
-  public double dryCost => KisApi.PartPrefabUtils.GetPartDryCost(avPart, variantName);
+  public double dryCost {
+    get {
+      UpdateVariant();
+      return _dryCost ??= KisApi.PartPrefabUtils.GetPartDryCost(avPart, variantName);
+    }
+  }
+  double? _dryCost;
   
   /// <inheritdoc/>
   public double fullMass => dryMass + snapshot.moduleMass + resources.Sum(r => r.amount * r.definition.density);
@@ -165,8 +191,27 @@ sealed class InventoryItemImpl : InventoryItem {
   InventoryItemImpl(KisContainerBase inventory, ProtoPartSnapshot snapshot, string newItemId) {
     this._inventory = inventory;
     this.snapshot = snapshot;
+    _oldVariantName = snapshot.moduleVariantName ?? "";
     this.itemId = newItemId;
     UpdateItem();
+  }
+
+  /// <summary>Verifies if the variant has changed on the item and resets the related caches.</summary>
+  /// <remarks>
+  /// Call this method each time a snapshot derived value is being read. This method will reset all the cached values
+  /// that were extracted from the previous snapshot. 
+  /// </remarks>
+  void UpdateVariant() {
+    if (_oldVariantName == snapshot.moduleVariantName) {
+      return;
+    }
+    DebugEx.Info("Update variant on the item: itemId={0}, cachedVariant={1}, newVariant={2}",
+                 itemId, _oldVariantName, snapshot.moduleVariantName);
+    _oldVariantName = snapshot.moduleVariantName;
+    _variant = null;
+    _volume = null;
+    _size = null;
+    _dryCost = null;
   }
 
   /// <summary>Returns a unique item ID if none was provided.</summary>
