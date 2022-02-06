@@ -4,7 +4,6 @@
 
 using KISAPIv2;
 using KSPDev.LogUtils;
-using KSPDev.PartUtils;
 using KSPDev.GUIUtils;
 using System.Collections.Generic;
 using System.Linq;
@@ -148,7 +147,7 @@ sealed class InventorySlotImpl {
 
   /// <summary>Generalized icon of the slot.</summary>
   /// <value>The texture that represents the slot.</value>
-  public Texture iconImage { get; private set; } 
+  public Texture iconImage => slotItems.Count > 0 ? slotItems[0].iconImage : null;
 
   /// <summary>Indicates if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Count == 0;
@@ -220,9 +219,6 @@ sealed class InventorySlotImpl {
     }
     _itemsSet.Add(item);
     slotItems.Add(item);
-    if (_itemsSet.Count == 1) {
-      iconImage = KisApi.PartIconUtils.MakeDefaultIcon(avPart, slotItems[0].variant);
-    }
     UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats
   }
 
@@ -234,7 +230,6 @@ sealed class InventorySlotImpl {
     slotItems.Remove(item); // FIXME: This won't be fast on large sets.
     if (_itemsSet.Count == 0) {
       _resourceSimilarityValues = null;
-      iconImage = null;
     }
     UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats 
   }

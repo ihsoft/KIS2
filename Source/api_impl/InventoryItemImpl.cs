@@ -34,6 +34,15 @@ sealed class InventoryItemImpl : InventoryItem {
   public AvailablePart avPart => snapshot.partInfo;
 
   /// <inheritdoc/>
+  public Texture iconImage {
+    get {
+      UpdateVariant();
+      return _iconImage ??= KisApi.PartIconUtils.MakeDefaultIcon(avPart, variant);
+    }
+  }
+  Texture _iconImage;
+
+  /// <inheritdoc/>
   public ProtoPartSnapshot snapshot { get; }
 
   /// <inheritdoc/>
@@ -216,6 +225,7 @@ sealed class InventoryItemImpl : InventoryItem {
     _volume = null;
     _size = null;
     _dryCost = null;
+    _iconImage = null;
   }
 
   /// <summary>Returns a unique item ID if none was provided.</summary>

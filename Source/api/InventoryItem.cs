@@ -44,6 +44,13 @@ public interface InventoryItem {
   /// <summary>Part proto.</summary>
   AvailablePart avPart { get; }
 
+  /// <summary>Icon that represents this item.</summary>
+  /// <remarks>
+  /// It's a low resolution icon that is suitable for UI, but may not be good for the bigger elements.
+  /// </remarks>
+  /// <value>The icon texture. It's never NULL.</value>
+  Texture iconImage { get; }
+
   /// <summary>The variant applied to this item.</summary>
   /// <value>The variant or <c>null</c> if the part doesn't have any.</value>
   PartVariant variant { get; }
