@@ -85,7 +85,7 @@ sealed class InventoryItemImpl : InventoryItem {
   }
 
   /// <inheritdoc/>
-  public void UpdateConfig() {
+  public void UpdateItem() {
   }
 
   /// <inheritdoc/>
@@ -166,7 +166,7 @@ sealed class InventoryItemImpl : InventoryItem {
     this._inventory = inventory;
     this.snapshot = snapshot;
     this.itemId = newItemId;
-    UpdateConfig();
+    UpdateItem();
   }
 
   /// <summary>Returns a unique item ID if none was provided.</summary>

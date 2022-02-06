@@ -777,7 +777,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           var variantIndex = (int) (UnityEngine.Random.value * item.avPart.Variants.Count);
           item.snapshot.moduleVariantName = item.avPart.Variants[variantIndex].Name;
         }
-        item.UpdateConfig();
+        item.UpdateItem();
         AddItem(item);
         HostedDebugLog.Warning(
             this, "DEBUG: added part '{0}': resources={1}, variant={2}", partName,

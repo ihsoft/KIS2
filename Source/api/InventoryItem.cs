@@ -55,9 +55,12 @@ public interface InventoryItem {
   /// <summary>The part's snapshot.</summary>
   /// <remarks>
   /// This instance is a direct reflection from the stock inventory. Its state can be changed but keep in mind that it
-  /// affects the stock logic.
+  /// affects the stock logic. If any changes were made to the snapshot, the item must be notified via
+  /// <see cref="UpdateItem"/>. Moreover, the owner inventory must also be notified via
+  /// <see cref="IKisInventory.UpdateInventory"/>.
   /// </remarks>
-  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="IKisInventory.UpdateInventory"/>
   ProtoPartSnapshot snapshot { get; }
 
   /// <summary>Cached volume that part would take in its current state.</summary>
@@ -65,7 +68,7 @@ public interface InventoryItem {
   /// The snapshot state can greatly affect the volume. E.g. most part take several times more volume when deployed.
   /// </remarks>
   /// <value>The volume in <c>litres</c>.</value>
-  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="UpdateItem"/>
   double volume { get; }
 
   /// <summary>Cached boundary size of the current part state.</summary>
@@ -74,11 +77,11 @@ public interface InventoryItem {
 
   /// <summary>Cached mass of the part without resources.</summary>
   /// <value>The mass in <c>tons</c>.</value>
-  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="UpdateItem"/>
   double dryMass { get; }
 
   /// <summary>Cached cost of the part without resources.</summary>
-  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="UpdateItem"/>
   double dryCost { get; }
 
   /// <summary>Mass of the part with all available resources.</summary>
@@ -86,15 +89,15 @@ public interface InventoryItem {
   double fullMass { get; }
 
   /// <summary>Cached cost of the part with all available resources.</summary>
-  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="UpdateItem"/>
   double fullCost { get; }
 
   /// <summary>Cached available resources in the part.</summary>
-  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="UpdateItem"/>
   ProtoPartResourceSnapshot[] resources { get; }
 
   /// <summary>Cached science data in the part.</summary>
-  /// <seealso cref="UpdateConfig"/>
+  /// <seealso cref="UpdateItem"/>
   ScienceData[] science { get; }
 
   /// <summary>Tells if this item is currently equipped on the actor.</summary>
@@ -113,6 +116,7 @@ public interface InventoryItem {
   /// The item will only be considered to the ownership change if none of the callbacks has replied with a non-empty
   /// error reason. These callbacks let the external actors to have a control over the inventory item's fate.
   /// </remarks>
+  /// <value>The list of checker functions. This list can be modified by the callers.</value>
   /// <seealso cref="CheckCanChangeOwnership"/>
   List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; }
 
@@ -125,16 +129,16 @@ public interface InventoryItem {
   /// <seealso cref="IKisInventory.UpdateInventory"/>
   void SetLocked(bool newState);
 
-  /// <summary>Updates all cached values from the part's config node.</summary>
+  /// <summary>Updates all the cached items values to make them matching the snapshot.</summary>
   /// <remarks>
   /// This method only updates a single item. It will not update the inventory. Avoid calling this method directly.
   /// Instead, call the <see cref="IKisInventory.UpdateInventory"/> on the owner inventory to ensure all the
   /// changes are accounted.
   /// </remarks>
-  /// <seealso cref="itemConfig"/>
   /// <seealso cref="inventory"/>
-  void UpdateConfig();
   /// <seealso cref="IKisInventory.UpdateInventory"/>
+  /// <seealso cref="snapshot"/>
+  void UpdateItem();
 
   /// <summary>
   /// Verifies the item dynamic conditions that may prevent this item to be moved between the inventories or be added
