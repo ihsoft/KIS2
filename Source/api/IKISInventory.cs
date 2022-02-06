@@ -33,16 +33,24 @@ public interface IKisInventory {
 
   /// <summary>Current volume of all the items in the inventory.</summary>
   /// <seealso cref="maxVolume"/>
-  /// <seealso cref="UpdateInventoryStats"/>
+  /// <seealso cref="UpdateInventory"/>
   double usedVolume { get; }
 
   /// <summary>Total mass of all the items in the inventory.</summary>
-  /// <seealso cref="UpdateInventoryStats"/>
-  double contentMass { get; }
+  /// <remarks>
+  /// This value doesn't update in real time. The inventory must be notified if the value should be refreshed.
+  /// </remarks>
+  /// <value>The total mass of the inventory content.</value>
+  /// <seealso cref="UpdateInventory"/>
+  float contentMass { get; }
 
   /// <summary>Total cost of all the items in the inventory.</summary>
-  /// <seealso cref="UpdateInventoryStats"/>
-  double contentCost { get; }
+  /// <remarks>
+  /// This value doesn't update in real time. The inventory must be notified if the value should be refreshed.
+  /// </remarks>
+  /// <value>The total cost of the inventory content.</value>
+  /// <seealso cref="UpdateInventory"/>
+  float contentCost { get; }
 
   /// <summary>Verifies if the part can be added into the inventory.</summary>
   /// <remarks>
@@ -87,7 +95,7 @@ public interface IKisInventory {
   /// </p>
   /// <p>
   /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
-  /// explicitly call the <see cref="UpdateInventoryStats"/> method at the end of the update sequence to let the
+  /// explicitly call the <see cref="UpdateInventory"/> method at the end of the update sequence to let the
   /// inventory state synced to the new items list. And it must be done on every inventory update!
   /// </p>
   /// </remarks>
@@ -98,7 +106,7 @@ public interface IKisInventory {
   /// </param>
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
   /// <seealso cref="CheckCanAddPart"/>
-  /// <seealso cref="UpdateInventoryStats"/>
+  /// <seealso cref="UpdateInventory"/>
   InventoryItem AddPart(string partName, int stockSlotIndex = -1);
 
   /// <summary>Adds an item from another inventory.</summary>
@@ -110,7 +118,7 @@ public interface IKisInventory {
   /// </p>
   /// <p>
   /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
-  /// explicitly call the <see cref="UpdateInventoryStats"/> method at the end of the update sequence to let the
+  /// explicitly call the <see cref="UpdateInventory"/> method at the end of the update sequence to let the
   /// inventory state synced to the new items list. And it must be done on every inventory update!
   /// </p>
   /// </remarks>
@@ -124,7 +132,7 @@ public interface IKisInventory {
   /// from the source item.
   /// </returns>
   /// <seealso cref="CheckCanAddItem"/>
-  /// <seealso cref="UpdateInventoryStats"/>
+  /// <seealso cref="UpdateInventory"/>
   /// <seealso cref="InventoryItem.itemId"/>
   //InventoryItem AddItem(InventoryItem item);
   InventoryItem AddItem(InventoryItem item, int stockSlotIndex = -1);
@@ -137,7 +145,7 @@ public interface IKisInventory {
   /// </p>
   /// <p>
   /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
-  /// explicitly call the <see cref="UpdateInventoryStats"/> method at the end of the update sequence to let the
+  /// explicitly call the <see cref="UpdateInventory"/> method at the end of the update sequence to let the
   /// inventory state synced to the new items list. And it must be done on every inventory update!
   /// </p>
   /// </remarks>
@@ -145,22 +153,25 @@ public interface IKisInventory {
   /// <returns><c>true</c> if removal was successful.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="InventoryItem.inventory"/>
-  /// <seealso cref="UpdateInventoryStats"/>
+  /// <seealso cref="UpdateInventory"/>
   bool DeleteItem(InventoryItem item);
 
-  /// <summary>Forces the container to refresh its state according to the new state of the items.</summary>
+  /// <summary>Forces the container to refresh its state accordingly to the current state of the items.</summary>
   /// <remarks>
+  /// <p>
   /// Every change to any item in the inventory must result in calling of this method. It relates to <i>any</i> item
-  /// state change and/or adding/deleting of the inventory items.
+  /// state change and/or adding/deleting of the inventory items. The inventory mutation methods don't trigger the
+  /// update automatically to let clients doing batch updates.
+  /// </p>
+  /// <p>This method is expected to be fast and efficient to allow the client code to call it at the high rate.</p>
   /// </remarks>
   /// <param name="changedItems">
   /// An optional collection of the items that state has to be updated before updating the inventory's state. If set to
-  /// <c>null</c>, then only the inventory state will be updated. Note, that if any existing item has changed its state,
-  /// it must either be updated via <see cref="InventoryItem.UpdateConfig"/> before calling this method, or this item
-  /// must be passed in this argument.
+  /// <c>null</c>, then the inventory state will be updated with the current item states. Note, that if any existing
+  /// item has changed its state, it must must be passed in this argument.
   /// </param>
-  /// <seealso cref="InventoryItem.UpdateConfig"/>
-  void UpdateInventoryStats(ICollection<InventoryItem> changedItems = null);
+  /// <seealso cref="InventoryItem.UpdateItem"/>
+  void UpdateInventory(ICollection<InventoryItem> changedItems = null);
 
   /// <summary>Finds an item by its unique ID.</summary>
   /// <remarks>

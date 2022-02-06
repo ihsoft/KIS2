@@ -119,22 +119,22 @@ public interface InventoryItem {
   /// <summary>Sets locked state.</summary>
   /// <remarks>
   /// The inventory may need to know if the item's lock stat has updated. The actor, that changes the state, is
-  /// responsible to notify the inventory via the <see cref="IKisInventory.UpdateInventoryStats"/> method.
+  /// responsible to notify the inventory via the <see cref="IKisInventory.UpdateInventory"/> method.
   /// </remarks>
   /// <seealso cref="isLocked"/>
-  /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
+  /// <seealso cref="IKisInventory.UpdateInventory"/>
   void SetLocked(bool newState);
 
   /// <summary>Updates all cached values from the part's config node.</summary>
   /// <remarks>
   /// This method only updates a single item. It will not update the inventory. Avoid calling this method directly.
-  /// Instead, call the <see cref="IKisInventory.UpdateInventoryStats"/> on the owner inventory to ensure all the
+  /// Instead, call the <see cref="IKisInventory.UpdateInventory"/> on the owner inventory to ensure all the
   /// changes are accounted.
   /// </remarks>
   /// <seealso cref="itemConfig"/>
   /// <seealso cref="inventory"/>
-  /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
   void UpdateConfig();
+  /// <seealso cref="IKisInventory.UpdateInventory"/>
 
   /// <summary>
   /// Verifies the item dynamic conditions that may prevent this item to be moved between the inventories or be added

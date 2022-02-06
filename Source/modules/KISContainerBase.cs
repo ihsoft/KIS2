@@ -119,10 +119,14 @@ public class KisContainerBase : AbstractPartModule,
   public double usedVolume => stockInventoryModule.volumeCapacity;
 
   /// <inheritdoc/>
-  public double contentMass { get; private set; }
+  public float contentMass =>
+      _contentMass ??= _stockInventoryModule.GetModuleMass(part.mass, ModifierStagingSituation.CURRENT);
+  float? _contentMass;
 
   /// <inheritdoc/>
-  public double contentCost { get; private set; }
+  public float contentCost =>
+      _contentCost ??= _stockInventoryModule.GetModuleCost(part.partInfo.cost, ModifierStagingSituation.CURRENT);
+  float? _contentCost;
   #endregion
 
   #region Check reasons
@@ -438,19 +442,15 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual void UpdateInventoryStats(ICollection<InventoryItem> changedItems = null) {
+  public virtual void UpdateInventory(ICollection<InventoryItem> changedItems = null) {
     if (changedItems != null) {
       HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Count);
       foreach (var changedItem in changedItems) {
-        changedItem.UpdateConfig();
+        changedItem.UpdateItem();
       }
     }
-    contentMass = 0.0;
-    contentCost = 0.0;
-    foreach (var inventoryItem in inventoryItems.Values) {
-      contentMass += inventoryItem.fullMass;
-      contentCost += inventoryItem.fullCost;
-    }
+    _contentCost = null;
+    _contentMass = null;
   }
 
   /// <inheritdoc/>

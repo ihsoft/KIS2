@@ -721,8 +721,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <inheritdoc/>
-  public override void UpdateInventoryStats(ICollection<InventoryItem> changedItems = null) {
-    base.UpdateInventoryStats(changedItems);
+  /// FIXME: can be called at high FPS.
+  public override void UpdateInventory(ICollection<InventoryItem> changedItems = null) {
+    base.UpdateInventory(changedItems);
     ArrangeSlots(); // Optimize the KIS slots usage.
     UpdateInventoryWindow();
   }
@@ -785,7 +786,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}'", partName);
       }
     }
-    UpdateInventoryStats();
+    UpdateInventory();
   }
   #endregion
 
@@ -1096,7 +1097,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
     }
     SetDraggedSlot(null);
-    UpdateInventoryStats();
+    UpdateInventory();
     return true;
   }
 
@@ -1508,7 +1509,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
       }
     }
-    UpdateInventoryStats();
+    UpdateInventory();
   }
 
   /// <summary>Takes items from the focused slot and starts dragging operation.</summary>
@@ -1544,7 +1545,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     dragIconObj.stackSize = KisApi.ItemDragController.leasedItems.Length;
     dragIconObj.resourceStatus = slotWithPointerFocus.resourceStatus;
     UIPartActionController.Instance.partInventory.PlayPartSelectedSFX();
-    UpdateInventoryStats();
+    UpdateInventory();
   }
 
   /// <summary>Consumes the dragged items and adds them into the hovered slot.</summary>
@@ -1575,7 +1576,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
               this, "Cannot add dragged item: part={0}, itemId={1}", consumedItem.avPart.name, consumedItem.itemId);
         }
       }
-      UpdateInventoryStats();
+      UpdateInventory();
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     } else {
       UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
