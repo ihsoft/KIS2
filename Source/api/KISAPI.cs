@@ -24,22 +24,22 @@ namespace KISAPIv2 {
 /// FIXME: This implementation is a FAKE for now. It's not a real API.
 public static class KisApi {
   /// <summary>Utils to deal with various aspects of part models.</summary>
-  public static readonly PartModelUtilsImpl PartModelUtils = new PartModelUtilsImpl();
+  public static readonly PartModelUtilsImpl PartModelUtils = new();
 
   /// <summary>Utils to deal with part config nodes.</summary>
-  public static readonly PartNodeUtilsImpl PartNodeUtils = new PartNodeUtilsImpl();
+  public static readonly PartNodeUtilsImpl PartNodeUtils = new();
 
   /// <summary>Utils to deal with part prefabs.</summary>
-  public static readonly PartPrefabUtilsImpl PartPrefabUtils = new PartPrefabUtilsImpl();
+  public static readonly PartPrefabUtilsImpl PartPrefabUtils = new();
 
   /// <summary>Utils to deal with part icons.</summary>
-  public static readonly PartIconUtils PartIconUtils = new PartIconUtils();
+  public static readonly PartIconUtils PartIconUtils = new();
 
   /// <summary>Utils to deal with the vessels.</summary>
-  public static readonly VesselUtilsImpl VesselUtils = new VesselUtilsImpl();
+  public static readonly VesselUtilsImpl VesselUtils = new();
 
   /// <summary>KAS common config settings.</summary>
-  public static readonly CommonConfigImpl CommonConfig = new CommonConfigImpl();
+  public static readonly CommonConfigImpl CommonConfig = new();
 
   /// <summary>
   /// Controller that handles moving KIS items between the inventories and the scene.
