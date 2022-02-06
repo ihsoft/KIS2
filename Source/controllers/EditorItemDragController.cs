@@ -161,34 +161,7 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   /// part if are confident it must be done.
   /// </remarks>
   Part MakeEditorPartFromItem(InventoryItem item) {
-    var partInfo = item.avPart;
-    var part = Instantiate(partInfo.partPrefab);
-    part.gameObject.SetActive(true);
-    part.name = partInfo.name;
-    part.persistentId = FlightGlobals.CheckPartpersistentId(part.persistentId, part, false, true);
-    var actions = item.itemConfig.GetNode("ACTIONS");
-    if (actions != null) {
-      part.Actions.OnLoad(actions);
-    }
-    var events = item.itemConfig.GetNode("EVENTS");
-    if (events != null) {
-      part.Events.OnLoad(events);
-    }
-    var effects = item.itemConfig.GetNode("EFFECTS");
-    if (effects != null) {
-      part.Effects.OnLoad(effects);
-    }
-    // ReSharper disable once StringLiteralTypo
-    var partData = item.itemConfig.GetNode("PARTDATA");
-    if (partData != null) {
-      part.OnLoad(partData);
-    }
-    var moduleIdx = 0;
-    foreach (var configNode in item.itemConfig.GetNodes("MODULE")) {
-      part.LoadModule(configNode, ref moduleIdx);
-    }
-    item.itemConfig.GetNodes("RESOURCE").ToList().ForEach(x => part.SetResource(x));
-    
+    var part = item.snapshot.CreatePart();
     part.InitializeModules();
     part.ModulesBeforePartAttachJoint();
     return part;

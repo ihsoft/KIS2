@@ -760,25 +760,29 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   };
 
   void AddFuelParts(float minPct, float maxPct, int num = 1, bool same = false) {
-    AvailablePart avPart = null;
+    string partName = null;
     for (var i = 0; i < num; ++i) {
-      if (avPart == null || !same) {
+      if (partName == null || !same) {
         var avPartIndex = (int) (UnityEngine.Random.value * _fuelParts.Length);
-        avPart = PartLoader.getPartInfoByName(_fuelParts[avPartIndex]);
+        partName = _fuelParts[avPartIndex];
       }
-      var node = KisApi.PartNodeUtils.GetConfigNode(avPart.partPrefab);
-      foreach (var res in KisApi.PartNodeUtils.GetResources(node)) {
-        var amount = UnityEngine.Random.Range(minPct, maxPct) * res.maxAmount;
-        KisApi.PartNodeUtils.UpdateResource(node, res.resourceName, amount);
-      }
-      //FIXME: check volume and size
-      var addedItem = AddPart(avPart.name, node);
-      if (addedItem != null) {
+      var item = AddPart(partName);
+      if (item != null) {
+        DeleteItem(item);
+        foreach (var resource in item.resources) {
+          resource.amount = UnityEngine.Random.Range(minPct, maxPct) * resource.maxAmount;
+        }
+        if (item.variant != null) {
+          var variantIndex = (int) (UnityEngine.Random.value * item.avPart.Variants.Count);
+          item.snapshot.moduleVariantName = item.avPart.Variants[variantIndex].Name;
+        }
+        item.UpdateConfig();
+        AddItem(item);
         HostedDebugLog.Warning(
-            this, "DEBUG: added part '{0}': resources={1}", avPart.name,
-            DbgFormatter.C2S(addedItem.resources.Select(x => x.amount)));
+            this, "DEBUG: added part '{0}': resources={1}, variant={2}", partName,
+            DbgFormatter.C2S(item.resources.Select(x => x.amount)), item.variantName);
       } else {
-        HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}':\n:{1}, ", avPart.name, node);
+        HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}'", partName);
       }
     }
     UpdateInventoryStats();
@@ -891,9 +895,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     };
 
     // Basic stats.
-    var variant = VariantsUtils.GetCurrentPartVariant(item.avPart, item.itemConfig);
-    if (variant != null) {
-      infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
+    if (item.variant != null) {
+      infoLines.Add(VariantTooltipText.Format(item.variant.DisplayName));
     }
     tooltip.baseInfo.text = string.Join("\n", infoLines);
 
@@ -935,9 +938,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         VolumeMultipartTooltipText.Format(refItem.volume, items.Sum(x => x.volume)),
         CostMultipartTooltipText.Format(refItem.fullCost, items.Sum(x => x.fullCost))
     };
-    var variant = VariantsUtils.GetCurrentPartVariant(refItem.avPart, refItem.itemConfig);
-    if (variant != null) {
-      infoLines.Add(VariantTooltipText.Format(variant.DisplayName));
+    if (refItem.variant != null) {
+      infoLines.Add(VariantTooltipText.Format(refItem.variant.DisplayName));
     }
     tooltip.baseInfo.text = string.Join("\n", infoLines);
 

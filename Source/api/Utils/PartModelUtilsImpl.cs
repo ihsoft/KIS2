@@ -163,24 +163,23 @@ public class PartModelUtilsImpl {
 
   /// <summary>Returns a part's volume.</summary>
   /// <remarks>
+  /// <p>
   /// The volume is either get from the <c>ModuleCargoPart</c> or from the smallest boundary box that encapsulates all
-  /// the meshes in the part. See <see cref="KisApi.CommonConfig.compatibilitySettings.stockVolumeExceptions"/>.
+  /// the meshes in the part. See <see cref="StockCompatibilitySettings.stockVolumeExceptions"/>.
+  /// </p>
+  /// <p>
+  /// The values are cached, so it's OK to call this method at high frequency. However, it also means that once
+  /// calculated, the volume value will stay till the end of the game. 
+  /// </p>
   /// </remarks>
   /// <param name="avPart">The part info to get the models from.</param>
-  /// <param name="variant">
-  /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
-  /// <paramref name="partNode"/>. If both the <paramref name="variant"/> and the
-  /// <paramref name="partNode"/> are specified, then the variant argument will be considered.  
-  /// </param>
-  /// <param name="partNode">
-  /// The part's persistent config. It will be looked up for the variant and other volume modifiers.
+  /// <param name="variantName">
+  /// An optional part variant name. If it's NULL, then the base variant will be applied on the part before obtaining
+  /// its volume.  
   /// </param>
   /// <returns>The volume in liters.</returns>
-  public double GetPartVolume(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
-    if (variant != null && partNode != null) {
-      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
-    }
-    var cacheKey = avPart.name + (variant != null ? "-" + avPart.Variants.IndexOf(variant) : "");
+  public double GetPartVolume(AvailablePart avPart, string variantName = null) {
+    var cacheKey = avPart.name + (variantName != null ? "-" + variantName : "");
     if (_partsVolumeCache.TryGetValue(cacheKey, out var cachedVolume)) {
       return cachedVolume;
     }
@@ -194,7 +193,7 @@ public class PartModelUtilsImpl {
       }
     }
 
-    var boundsSize = GetPartBounds(avPart, variant: variant, partNode: partNode);
+    var boundsSize = GetPartBounds(avPart, variantName);
     var volume = boundsSize.x * boundsSize.y * boundsSize.z * 1000f;
     DebugEx.Info("No cargo module volume for the part, make a KIS one: partName={0}, kisVolume={1}, cacheKey={2}",
                  avPart.name, volume, cacheKey);
@@ -205,25 +204,14 @@ public class PartModelUtilsImpl {
   /// <summary>Returns part's boundary box basing on its geometrics.</summary>
   /// <remarks>The size is calculated from the part prefab model.</remarks>
   /// <param name="avPart">The part proto to get the models from.</param>
-  /// <param name="variant">
-  /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
-  /// <paramref name="partNode"/>.
+  /// <param name="variantName">
+  /// An optional part variant name. If it's NULL, then the base variant will be applied on the part before obtaining
+  /// its bounds.  
   /// </param>
-  /// <param name="partNode">
-  /// The part's persistent config. It will be looked up for the variant if it's not specified.
-  /// </param>
-  /// <returns>The volume in liters.</returns>
-  public Vector3 GetPartBounds(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
-//    var itemModule = avPart.partPrefab.Modules.OfType<KIS.ModuleKISItem>().FirstOrDefault();
-//    if (itemModule != null && itemModule.volumeOverride > 0) {
-//      return itemModule.volumeOverride  // Ignore geometry.
-//          * KisApi.PartNodeUtils.GetTweakScaleSizeModifier(partNode);  // But respect TweakScale.
-//    }
+  /// <returns>The bounds in metres.</returns>
+  public Vector3 GetPartBounds(AvailablePart avPart, string variantName = null) {
     var bounds = default(Bounds);
-    if (variant == null && partNode != null) {
-      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
-    }
-    VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => {
+    VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, p => {
       var partModel = GetSceneAssemblyModel(p).transform;
       bounds.Encapsulate(GetMeshBounds(partModel));
       UnityEngine.Object.DestroyImmediate(partModel.gameObject);
@@ -233,7 +221,7 @@ public class PartModelUtilsImpl {
 
   /// <summary>Returns a bounds box from the render models.</summary>
   /// <param name="part">The part to get bounds for.</param>
-  /// <returns>The bounds.</returns>
+  /// <returns>The bounds in metres.</returns>
   public Bounds GetPartBounds(Part part) {
     var partModel = GetSceneAssemblyModel(part).transform;
     var bounds = GetMeshBounds(partModel);

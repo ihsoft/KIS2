@@ -307,7 +307,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <summary>Handles the keyboard and mouse events when KIS pickup mode is enabled in flight.</summary>
   /// <remarks>
-  /// It checks if the modifier key is released and brings teh controller to the idle state if that's the case.
+  /// It checks if the modifier key is released and brings the controller to the idle state if that's the case.
   /// </remarks>
   /// <seealso cref="_pickupModeSwitchEvent"/>
   /// <seealso cref="_controllerStateMachine"/>
@@ -481,7 +481,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
     _draggedModel = new GameObject("KisDragModel").transform;
     _draggedModel.gameObject.SetActive(true);
-    var draggedPart = MakeSamplePart(item.avPart, item.itemConfig);
+    var draggedPart = MakeSamplePart(item);
     var dragModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart);
     dragModel.transform.SetParent(_draggedModel, worldPositionStays: false);
     dragModel.transform.rotation = draggedPart.initRotation;
@@ -583,31 +583,13 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// This part is not fully initialized and is not intended to live till the next frame. It method tries to capture as
   /// many dynamic behavior on the part as possible, but there are compromises.
   /// </remarks>
-  /// <param name="partInfo">The part info to create.</param>
-  /// <param name="itemConfig">The state of the part.</param>
+  /// <param name="item">The item to create the part from.</param>
   /// <returns>The sample part. It <i>must</i> be destroyed before the next frame starts!</returns>
-  static Part MakeSamplePart(AvailablePart partInfo, ConfigNode itemConfig) {
-    var part = Instantiate(partInfo.partPrefab);
+  static Part MakeSamplePart(InventoryItem item) {
+    var part = item.snapshot.CreatePart();
     part.gameObject.SetLayerRecursive(
         (int)KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int)KspLayerMask.TriggerCollider);
-    part.partInfo = partInfo;
-    //FIXME: do ground experiment parts setup.
     part.gameObject.SetActive(true);
-    part.name = partInfo.name;
-    var effects = itemConfig.GetNode("EFFECTS");
-    if (effects != null) {
-      part.Effects.OnLoad(effects);
-    }
-    // ReSharper disable once StringLiteralTypo
-    var partData = itemConfig.GetNode("PARTDATA");
-    if (partData != null) {
-      part.OnLoad(partData);
-    }
-    itemConfig.GetNodes("RESOURCE").ToList().ForEach(x => part.SetResource(x));
-    var moduleIdx = 0;
-    foreach (var configNode in itemConfig.GetNodes("MODULE")) {
-      part.LoadModule(configNode, ref moduleIdx);
-    }
     part.InitializeModules();
 
     return part;

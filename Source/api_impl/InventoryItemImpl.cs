@@ -6,7 +6,6 @@ using KISAPIv2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using KSPDev.ConfigUtils;
 using KSPDev.PartUtils;
 using KSPDev.ProcessingUtils;
 using UnityEngine;
@@ -31,46 +30,42 @@ sealed class InventoryItemImpl : InventoryItem {
   public Part materialPart { get; set; }
 
   /// <inheritdoc/>
-  public AvailablePart avPart { get; }
+  public AvailablePart avPart => snapshot.partInfo;
 
   /// <inheritdoc/>
-  public ConfigNode itemConfig { get; }
+  public ProtoPartSnapshot snapshot { get; }
 
   /// <inheritdoc/>
-  public ProtoPartSnapshot snapshot =>
-      _snapshot ??= KisApi.PartNodeUtils.GetProtoPartSnapshotFromNode(
-          inventory?.ownerVessel, itemConfig, keepPersistentId: true);
-  ProtoPartSnapshot _snapshot;
+  public PartVariant variant => VariantsUtils2.GetPartVariant(avPart, variantName);
 
   /// <inheritdoc/>
-  public PartVariant variant { get; private set; }
+  public string variantName => snapshot.moduleVariantName ?? "";
 
   /// <inheritdoc/>
-  public string variantName => variant != null ? variant.Name : "";
-
-  /// <inheritdoc/>
-  public double volume { get; private set; }
+  public double volume => KisApi.PartModelUtils.GetPartVolume(avPart, variantName);
   
   /// <inheritdoc/>
-  public Vector3 size { get; private set; }
+  public Vector3 size => KisApi.PartModelUtils.GetPartBounds(avPart, variantName);
 
   /// <inheritdoc/>
-  public double dryMass { get; private set; }
+  public double dryMass => snapshot.mass - snapshot.moduleMass;
   
   /// <inheritdoc/>
-  public double dryCost { get; private set; }
+  public double dryCost => KisApi.PartNodeUtils.GetPartDryCost(avPart, variant: variant);
   
   /// <inheritdoc/>
-  public double fullMass { get; private set; }
+  public double fullMass => dryMass + snapshot.moduleMass + resources.Sum(r => r.amount * r.definition.density);
   
   /// <inheritdoc/>
-  public double fullCost { get; private set; }
+  public double fullCost => dryCost + snapshot.moduleCosts + resources.Sum(r => r.amount * r.definition.unitCost);
 
   /// <inheritdoc/>
-  public ProtoPartResourceSnapshot[] resources { get; private set; } = new ProtoPartResourceSnapshot[0];
+  public ProtoPartResourceSnapshot[] resources => snapshot.resources.ToArray();
 
   /// <inheritdoc/>
-  public ScienceData[] science { get; private set; } = new ScienceData[0];
+  public ScienceData[] science => snapshot.modules
+      .SelectMany(m => KisApi.PartNodeUtils.GetModuleScience(m.moduleValues))
+      .ToArray();
   
   /// <inheritdoc/>
   public bool isEquipped => false;
@@ -91,32 +86,6 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public void UpdateConfig() {
-    _snapshot = null; // Force refresh on access.
-    variant = VariantsUtils.GetCurrentPartVariant(avPart, itemConfig);
-    //FIXME: How to deal with the compatibilioty saettings?
-    //FIXME: maybe just not call this method?
-    volume = KisApi.PartModelUtils.GetPartVolume(avPart, partNode: itemConfig);
-    size = KisApi.PartModelUtils.GetPartBounds(avPart, partNode: itemConfig);
-    dryMass = KisApi.PartNodeUtils.GetPartDryMass(avPart, partNode: itemConfig);
-    dryCost = KisApi.PartNodeUtils.GetPartDryCost(avPart, partNode: itemConfig);
-    resources = KisApi.PartNodeUtils.GetResources(itemConfig);
-    foreach (var resource in resources) {
-      resource.resourceRef = avPart.partPrefab.Resources
-          .FirstOrDefault(x => x.resourceName == resource.resourceName);
-    }
-    fullMass = dryMass + resources.Sum(r => r.amount * r.definition.density);
-    fullCost = dryCost + resources.Sum(r => r.amount * r.definition.unitCost);
-    science = KisApi.PartNodeUtils.GetScience(itemConfig);
-  }
-
-  /// <inheritdoc/>
-  public T? GetConfigValue<T>(string path) where T : struct {
-    return ConfigAccessor.GetValueByPath<T>(itemConfig, path);
-  }
-
-  /// <inheritdoc/>
-  public void SetConfigValue<T>(string path, T value) where T : struct {
-    ConfigAccessor.SetValueByPath(itemConfig, path, value);
   }
 
   /// <inheritdoc/>
@@ -141,15 +110,17 @@ sealed class InventoryItemImpl : InventoryItem {
   }
 
   /// <summary>Creates an item from another item.</summary>
-  /// <remarks>It may apply some performance tweaks if the items are of the same type.</remarks>
+  /// <remarks>This method makes just  a new wrapper around tey existing item.</remarks>
   /// <param name="inventory">
   /// The inventory to bind the item to. It can be <c>null</c> for the intermediate items.
   /// </param>
-  /// <param name="item">The item to copy from.</param>
-  /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
+  /// <param name="item">
+  /// The item to copy from. There will be no deep copy made, so the source item must be destroyed in case of the "copy"
+  /// is adopted by any inventory.
+  /// </param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromItem(KisContainerBase inventory, InventoryItem item, string itemId = null) {
-    return new InventoryItemImpl(inventory, item, NewItemId(itemId));
+  public static InventoryItemImpl FromItem(KisContainerBase inventory, InventoryItem item) {
+    return new InventoryItemImpl(inventory, item.snapshot, NewItemId(null));
   }
 
   /// <summary>Creates an item from an active part.</summary>
@@ -158,32 +129,24 @@ sealed class InventoryItemImpl : InventoryItem {
   /// The inventory to bind the item to. It can be <c>null</c> for the intermediate items.
   /// </param>
   /// <param name="part">The part to take a snapshot from.</param>
-  /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromPart(KisContainerBase inventory, Part part, string itemId = null) {
-    return new InventoryItemImpl(inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(itemId));
+  public static InventoryItemImpl FromPart(KisContainerBase inventory, Part part) {
+    return new InventoryItemImpl(inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(null));
   }
 
   /// <summary>Creates an item for the given part name.</summary>
+  /// <remarks>The part state is captured from the prefab. Use <see cref="snapshot"/> to customize the state.</remarks>
   /// <param name="inventory">
   /// The inventory to bind the item to. It can be <c>null</c> for the intermediate items.
   /// </param>
   /// <param name="partName">The name of the part to create.</param>
-  /// <param name="itemConfig">
-  /// An optional part state node. If not provided, the default state from the prefab will be used.
-  /// </param>
-  /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
   /// <exception cref="InvalidOperationException">If the part name cannot be found.</exception>
-  public static InventoryItemImpl ForPartName(KisContainerBase inventory, string partName,
-                                              ConfigNode itemConfig = null, string itemId = null) {
+  public static InventoryItemImpl ForPartName(KisContainerBase inventory, string partName) {
     var partInfo = PartLoader.getPartInfoByName(partName);
     Preconditions.NotNull(partInfo, message: "Part name not found: " + partName);
     return new InventoryItemImpl(
-        inventory,
-        partInfo,
-        itemConfig ?? KisApi.PartNodeUtils.GetConfigNode(partInfo.partPrefab),
-        NewItemId(itemId));
+        inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab), NewItemId(null));
   }
   #endregion
 
@@ -195,58 +158,15 @@ sealed class InventoryItemImpl : InventoryItem {
 
   #region Local utility methods
 
-  /// <summary>Makes a new item from the part info and a saved state node.</summary>
-  /// <remarks>This constructor will not populate the <see cref="snapshot"/> property.</remarks>
-  /// <param name="inventory">The inventory to bind the item to.</param>
-  /// <param name="avPart">The part info of the part.</param>
-  /// <param name="itemConfig">The part's state node.</param>
-  /// <param name="newItemId">The new item ID.</param>
-  /// <seealso cref="snapshot"/>
-  InventoryItemImpl(KisContainerBase inventory, AvailablePart avPart, ConfigNode itemConfig, string newItemId) {
-    this._inventory = inventory;
-    this.avPart = avPart;
-    this.itemConfig = itemConfig;
-    this.itemId = newItemId;
-    UpdateConfig();
-  }
-
   /// <summary>Makes a new item from the part snapshot.</summary>
-  /// <remarks>
-  /// This constructor will capture the <see cref="itemConfig"/> from the <paramref name="snapshot"/>.
-  /// </remarks>
   /// <param name="inventory">The inventory to bind the item to.</param>
   /// <param name="snapshot">The part's snapshot.</param>
   /// <param name="newItemId">The new item ID.</param>
   InventoryItemImpl(KisContainerBase inventory, ProtoPartSnapshot snapshot, string newItemId) {
     this._inventory = inventory;
-    this.avPart = snapshot.partInfo;
-    this.itemConfig = new ConfigNode("PART");
-    snapshot.Save(this.itemConfig);
+    this.snapshot = snapshot;
     this.itemId = newItemId;
     UpdateConfig();
-    _snapshot = snapshot; // Use the cached value.
-  }
-
-  /// <summary>Makes a new item from another item.</summary>
-  /// <remarks>If the source item is of the same type, then a performance optimization may be mad.e</remarks>
-  /// <param name="inventory">
-  /// The inventory to bind the item to. It can be <c>null</c>, which means "no inventory". Such items only make sense
-  /// in the intermediate state.
-  /// </param>
-  /// <param name="srcItem">
-  /// The item to copy the data from. The deep copy is not guaranteed. Avoid changing the source once the copy is made!
-  /// </param>
-  /// <param name="newItemId">The new item ID.</param>
-  InventoryItemImpl(KisContainerBase inventory, InventoryItem srcItem, string newItemId) {
-    this._inventory = inventory;
-    this.avPart = srcItem.avPart;
-    this.itemConfig = srcItem.itemConfig;
-    this.itemId = newItemId;
-    UpdateConfig();
-    // Light optimization for the KIS implemented items.
-    if (srcItem is InventoryItemImpl internalItem) {
-      this._snapshot = internalItem._snapshot;
-    }
   }
 
   /// <summary>Returns a unique item ID if none was provided.</summary>

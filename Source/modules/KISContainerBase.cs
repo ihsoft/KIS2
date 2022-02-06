@@ -332,10 +332,9 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public List<ErrorReason> CheckCanAddPart(
-      string partName, ConfigNode node = null, int stockSlotIndex = -1, bool logErrors = false) {
+  public List<ErrorReason> CheckCanAddPart(string partName, int stockSlotIndex = -1, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return CheckCanAddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node), stockSlotIndex, logErrors);
+    return CheckCanAddItem(InventoryItemImpl.ForPartName(null, partName), stockSlotIndex, logErrors);
   }
 
   /// <inheritdoc/>
@@ -353,8 +352,8 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // Check if the inventory is being added into self. Obviously, a bad idea.
-    if (part.craftID == item.GetConfigValue<uint>("cid")
-        || part.persistentId == item.GetConfigValue<uint>("persistentId")) {
+    if (part.craftID == item.snapshot.craftID
+        || part.persistentId == item.snapshot.persistentId) {
       errors.Add(new ErrorReason() {
           errorClass = InventoryConsistencyReason,
           guiString = CannotAddIntoSelfErrorText,
@@ -398,9 +397,9 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public InventoryItem AddPart(string partName, ConfigNode node = null, int stockSlotIndex = -1) {
+  public InventoryItem AddPart(string partName, int stockSlotIndex = -1) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return AddItem(InventoryItemImpl.ForPartName(null, partName, itemConfig: node));
+    return AddItem(InventoryItemImpl.ForPartName(null, partName));
   }
 
   /// <inheritdoc/>
@@ -627,10 +626,8 @@ public class KisContainerBase : AbstractPartModule,
       }
 
       // In the stock inventory the part states in the slot must be exactly the same.
-      var partConfig = new ConfigNode("PART");
-      slot.snapshot.Save(partConfig);
-      var slotState = KisApi.PartNodeUtils.MakeComparablePartNode(partConfig);
-      var itemState = KisApi.PartNodeUtils.MakeComparablePartNode(item.itemConfig);
+      var slotState = KisApi.PartNodeUtils.MakeComparablePartNode(slot.snapshot);
+      var itemState = KisApi.PartNodeUtils.MakeComparablePartNode(item.snapshot);
       if (slotState.ToString() != itemState.ToString()) {
         continue;
       }

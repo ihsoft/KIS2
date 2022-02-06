@@ -153,10 +153,18 @@ public class PartNodeUtilsImpl {
   /// <param name="partNode">
   /// The persistent part's state. It can be a top-level node or the <c>PART</c> node.
   /// </param>
-  /// <returns>The found science.</returns>
-  public ScienceData[] GetScience(ConfigNode partNode) {
+  /// <returns>The found science data.</returns>
+  public IEnumerable<ScienceData> GetPartScience(ConfigNode partNode) {
     return partNode.GetNodes("MODULE")
-        .SelectMany(m => m.GetNodes("ScienceData"))
+        .SelectMany(GetModuleScience)
+        .ToArray();
+  }
+
+  /// <summary>Returns all the science from the module's saved state.</summary>
+  /// <param name="moduleNode">The persistent module's state.</param>
+  /// <returns>The found science data.</returns>
+  public IEnumerable<ScienceData> GetModuleScience(ConfigNode moduleNode) {
+    return moduleNode.GetNodes("ScienceData")
         .Select(n => new ScienceData(n))
         .ToArray();
   }
@@ -165,17 +173,10 @@ public class PartNodeUtilsImpl {
   /// <param name="avPart">The part's proto.</param>
   /// <param name="variant">
   /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
-  /// <paramref name="partNode"/>.
-  /// </param>
-  /// <param name="partNode">
-  /// The part's persistent config. It will be looked up for the variant if it's not specified.
   /// </param>
   /// <returns>The dry cost of the part.</returns>
-  public double GetPartDryMass(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+  public double GetPartDryMass(AvailablePart avPart, PartVariant variant = null) {
     var itemMass = avPart.partPrefab.mass;
-    if (variant == null && partNode != null) {
-      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
-    }
     VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => itemMass += p.GetModuleMass(p.mass));
     return itemMass;
   }
@@ -184,29 +185,10 @@ public class PartNodeUtilsImpl {
   /// <param name="avPart">The part's proto.</param>
   /// <param name="variant">
   /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
-  /// <paramref name="partNode"/>.
-  /// </param>
-  /// <param name="partNode">
-  /// The part's persistent config. It will be looked up for the various cost modifiers.
   /// </param>
   /// <returns>The dry cost of the part.</returns>
-  public double GetPartDryCost(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
-    // TweakScale compatibility
-    if (partNode != null) {
-      var tweakScale = KisApi.PartNodeUtils.GetTweakScaleModule(partNode);
-      if (tweakScale != null) {
-        var tweakedCost = ConfigAccessor.GetValueByPath<double>(tweakScale, "DryCost");
-        if (tweakedCost.HasValue) {
-          // TODO(ihsoft): Get back to this code once TweakScale supports variants.
-          return tweakedCost.Value;
-        }
-        DebugEx.Error("No dry cost specified in a tweaked part {0}:\n{1}", avPart.name, tweakScale);
-      }
-    }
+  public double GetPartDryCost(AvailablePart avPart, PartVariant variant = null) {
     var itemCost = avPart.cost;
-    if (variant == null && partNode != null) {
-      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
-    }
     VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => itemCost += p.GetModuleCosts(avPart.cost));
     return itemCost;
   }
@@ -272,8 +254,10 @@ public class PartNodeUtilsImpl {
     //CheckGroundCollision()
     var orbit = new Orbit(actorVessel.orbit);
     var vesselName = rootItem.avPart.title;
+    var itemConfig = new ConfigNode();
+    rootItem.snapshot.Save(itemConfig);
     var vesselNode = ProtoVessel.CreateVesselNode(
-        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, rootItem.itemConfig) });
+        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, itemConfig) });
 
     //FIXME: need more than one part to skip repositioning! !vesselSpawning && skipGroundPositioning
     vesselNode.SetValue("skipGroundPositioning", newValue: true, createIfNotFound: true);
@@ -308,12 +292,14 @@ public class PartNodeUtilsImpl {
   /// Use this method when two config nodes need to be compared for equality. This method only keeps the values and
   /// nodes that make sense in this matter.
   /// </remarks>
-  /// <param name="srcNode">The node to make a copy from.</param>
+  /// <param name="snapshot">The part to make a copy from.</param>
   /// <returns>
   /// The adjusted copy of the config node. It will intentionally have name "PART-SUBNODE". The caller must be sure that
   /// the right values are being compared.
   /// </returns>
-  public ConfigNode MakeComparablePartNode(ConfigNode srcNode) {
+  public ConfigNode MakeComparablePartNode(ProtoPartSnapshot snapshot) {
+    var srcNode = new ConfigNode("PART");
+    snapshot.Save(srcNode);
     var res = new ConfigNode("PART-SUBNODE");
     res.SetValue("name", srcNode.GetValue("name"), createIfNotFound: true);
     var checkNodes = new[] { "MODULE", "RESOURCE", "SCIENCE" };

@@ -50,9 +50,6 @@ public interface IKisInventory {
   /// part addition conditions.
   /// </remarks>
   /// <param name="partName">The part name to check.</param>
-  /// <param name="node">
-  /// The part's persisted state. If <c>null</c>, then a default state will be created from the prefab.
-  /// </param>
   /// <param name="stockSlotIndex">
   /// Optional stock slot index. If not specified, the item will be matched to any available stock slot. Otherwise,
   /// the specific slot will be examined to be compatible with the item.
@@ -62,8 +59,7 @@ public interface IKisInventory {
   /// </param>
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddPart"/>
-  List<ErrorReason> CheckCanAddPart(
-      string partName, ConfigNode node = null, int stockSlotIndex = -1, bool logErrors = false);
+  List<ErrorReason> CheckCanAddPart(string partName, int stockSlotIndex = -1, bool logErrors = false);
 
   /// <summary>Verifies if the item can be added into the inventory.</summary>
   /// <remarks>
@@ -96,9 +92,6 @@ public interface IKisInventory {
   /// </p>
   /// </remarks>
   /// <param name="partName">The part name to add.</param>
-  /// <param name="node">
-  /// The part persisted state. An entry can be <c>null</c> if the default state from prefab should be used.
-  /// </param>
   /// <param name="stockSlotIndex">
   /// Optional stock slot index. If not specified, the item will be added to any available stock slot. Otherwise,
   /// the specific slot will be examined to be compatible with the item, and if doesn't fit the action will fail.
@@ -106,7 +99,7 @@ public interface IKisInventory {
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
   /// <seealso cref="CheckCanAddPart"/>
   /// <seealso cref="UpdateInventoryStats"/>
-  InventoryItem AddPart(string partName, ConfigNode node = null, int stockSlotIndex = -1);
+  InventoryItem AddPart(string partName, int stockSlotIndex = -1);
 
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>

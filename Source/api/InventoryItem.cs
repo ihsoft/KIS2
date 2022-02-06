@@ -52,26 +52,17 @@ public interface InventoryItem {
   /// <value>The variant name or empty string if the part doesn't have variants.</value>
   string variantName { get; }
 
-  /// <summary>Persisted state of the part.</summary>
-  /// <remarks>
-  /// This node can be updated by the external callers, but they must letting the item know that the config has changed
-  /// via the <see cref="UpdateConfig"/> call. Otherwise, the state of the item and the owning inventory will be
-  /// inconsistent.
-  /// </remarks>
-  /// <seealso cref="UpdateConfig"/>
-  ConfigNode itemConfig { get; }
-
   /// <summary>The part's snapshot.</summary>
   /// <remarks>
-  /// This instance must NOT be changed. The changes will not be propagated to the item config, but they may affect the
-  /// downstream logic. In case of the item state needs to be changed, use <see cref="itemConfig"/>.
+  /// This instance is a direct reflection from the stock inventory. Its state can be changed but keep in mind that it
+  /// affects the stock logic.
   /// </remarks>
   /// <seealso cref="UpdateConfig"/>
   ProtoPartSnapshot snapshot { get; }
 
   /// <summary>Cached volume that part would take in its current state.</summary>
   /// <remarks>
-  /// The persisted state can greatly affect the volume. E.g. most part take several times more volume when deployed.
+  /// The snapshot state can greatly affect the volume. E.g. most part take several times more volume when deployed.
   /// </remarks>
   /// <value>The volume in <c>litres</c>.</value>
   /// <seealso cref="UpdateConfig"/>
@@ -144,25 +135,6 @@ public interface InventoryItem {
   /// <seealso cref="inventory"/>
   /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
   void UpdateConfig();
-
-  /// <summary>Gets a value from the config by the specified path</summary>
-  /// <param name="path">The "/" delimited path to the value.</param>
-  /// <typeparam name="T">The type of the value. Only the ordinary values are recognized.</typeparam>
-  /// <returns>The requested value or <c>null</c> if the value is not found.</returns>
-  /// <exception cref="ArgumentException">If value cannot be parsed as the requested type.</exception>
-  T? GetConfigValue<T>(string path) where T : struct;
-
-  /// <summary>Sets a value in the config by the specified path</summary>
-  /// <remarks> 
-  /// The changed are not automatically picked up by the item. The caller is responsible to either update the item's
-  /// state via <see cref="UpdateConfig"/> or by using the <see cref="IKisInventory.UpdateInventoryStats"/> semantic.
-  /// </remarks>
-  /// <param name="path">The "/" delimited path to the value. If the path doesn't exist, it will be created.</param>
-  /// <param name="value">The value to set.</param>
-  /// <typeparam name="T">The type of the value. Only the ordinary values are recognized.</typeparam>
-  /// <seealso cref="UpdateConfig"/>
-  /// <seealso cref="IKisInventory.UpdateInventoryStats"/>
-  void SetConfigValue<T>(string path, T value) where T : struct;
 
   /// <summary>
   /// Verifies the item dynamic conditions that may prevent this item to be moved between the inventories or be added
