@@ -73,6 +73,7 @@ public interface InventoryItem {
 
   /// <summary>Cached boundary size of the current part state.</summary>
   /// <value>The size in metres in each dimension.</value>
+  /// <seealso cref="UpdateItem"/>
   Vector3 size { get; }
 
   /// <summary>Cached mass of the part without resources.</summary>
@@ -81,23 +82,30 @@ public interface InventoryItem {
   double dryMass { get; }
 
   /// <summary>Cached cost of the part without resources.</summary>
+  /// <value>The cost in <c>credits</c>.</value>
   /// <seealso cref="UpdateItem"/>
   double dryCost { get; }
 
-  /// <summary>Mass of the part with all available resources.</summary>
+  /// <summary>Cached mass of the part with all available resources.</summary>
   /// <value>The mass in <c>tons</c>.</value>
+  /// <seealso cref="UpdateItem"/>
   double fullMass { get; }
 
   /// <summary>Cached cost of the part with all available resources.</summary>
+  /// <value>The cost in <c>credits</c>.</value>
   /// <seealso cref="UpdateItem"/>
   double fullCost { get; }
 
   /// <summary>Cached available resources in the part.</summary>
+  /// <value>The resources from the snapshot.</value>
   /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="snapshot"/>
   ProtoPartResourceSnapshot[] resources { get; }
 
   /// <summary>Cached science data in the part.</summary>
+  /// <value>The science data from the snapshot.</value>
   /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="snapshot"/>
   ScienceData[] science { get; }
 
   /// <summary>Tells if this item is currently equipped on the actor.</summary>
