@@ -33,22 +33,19 @@ public class PartModelUtilsImpl {
   /// preview. In particular, the model is scaled to fit the icon's constrains.
   /// </remarks>
   /// <param name="avPart">The part proto to get the model from.</param>
-  /// <param name="variant">
-  /// The part's variant to apply. If <c>null</c>, then variant will be extracted from <paramref name="partNode"/>.
-  /// </param>
-  /// <param name="partNode">
-  /// The part's persistent state. It's used to extract the part's variant. It can be <c>null</c>.
+  /// <param name="variantName">
+  /// An optional variant name to apply to the model. If it's NULL, then the prefab's variant will be used (if any). If
+  /// the part doesn't have any variant, then this parameter is simply ignored.
   /// </param>
   /// <returns>The model of the part. Don't forget to destroy it when not needed.</returns>
-  public GameObject GetIconPrefab(AvailablePart avPart, PartVariant variant = null, ConfigNode partNode = null) {
+  public GameObject GetIconPrefab(AvailablePart avPart, string variantName = null) {
     var iconPrefab = UnityEngine.Object.Instantiate(avPart.iconPrefab);
     iconPrefab.SetActive(true);
-    if (variant == null && partNode != null) {
-      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
-    }
     var materials = Shaders.CreateMaterialArray(iconPrefab);
+    variantName ??= VariantsUtils2.GetCurrentPartVariantName(avPart.partPrefab);
+    var variant = VariantsUtils2.GetPartVariant(avPart, variantName);
     if (variant != null) {
-      DebugEx.Fine("Applying variant to the iconPrefab: part={0}, variant={1}", avPart.name, variant.Name);
+      DebugEx.Fine("Applying variant to the iconPrefab: part={0}, variant={1}", avPart.name, variantName);
       ModulePartVariants.ApplyVariant(null, iconPrefab.transform, variant, materials, skipShader: false);
     }
     Shaders.FixScreenSpaceShaders(materials, logDifferences: true);

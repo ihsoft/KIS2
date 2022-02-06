@@ -19,18 +19,18 @@ public sealed class PartIconUtils {
   /// the editor when the part is not hovered.
   /// </summary>
   /// <param name="avPart">The part to make icon for.</param>
-  /// <param name="variant">
-  /// The variant to apply to the part before capturing an icon. It can be null if not variant needs
-  /// to be applied.
+  /// <param name="variantName">
+  /// The name of the variant to apply. It's ignored for the parts without variants, but otherwise it must be a valid
+  /// name.
   /// </param>
   /// <returns>The sprite of the icon.</returns>
-  public Texture MakeDefaultIcon(AvailablePart avPart, PartVariant variant) {
+  public Texture MakeDefaultIcon(AvailablePart avPart, string variantName) {
     string partIconTexturePath = null;
-    VariantsUtils.ExecuteAtPartVariant(avPart, variant, part => {
+    VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, part => {
       partIconTexturePath = CraftThumbnail.GetPartIconTexturePath(part, out _);
     });
     if (string.IsNullOrEmpty(partIconTexturePath)) {
-      partIconTexturePath = "kisIcon-" + avPart.name + (variant == null ? "" : "-" + variant.Name);
+      partIconTexturePath = "kisIcon-" + avPart.name + (variantName == "" ? "" : "-" + variantName);
     }
     var gameIcon = GameDatabase.Instance.GetTexture(partIconTexturePath, asNormalMap: false);
     if (gameIcon != null) {
@@ -70,7 +70,7 @@ public sealed class PartIconUtils {
     sunLight.renderMode = LightRenderMode.ForcePixel;
 
     // The model that represents the part's icon.
-    var iconPrefab = KisApi.PartModelUtils.GetIconPrefab(avPart, variant: variant);
+    var iconPrefab = KisApi.PartModelUtils.GetIconPrefab(avPart, variantName);
     iconPrefab.layer = snapshotRenderLayer;
     iconPrefab.SetLayerRecursive(snapshotRenderLayer);
     camera.transform.position =
@@ -115,24 +115,10 @@ public sealed class PartIconUtils {
   /// <param name="part">The part to make the icon for.</param>
   /// <returns>The sprite of the icon.</returns>
   public Texture MakeDefaultIcon(Part part) {
-    return MakeDefaultIcon(part.partInfo, VariantsUtils.GetCurrentPartVariant(part));
+    return MakeDefaultIcon(part.partInfo, VariantsUtils2.GetCurrentPartVariantName(part));
   }
 
   #region Local utility methods
-  /// <summary>Gives the best icon resolution if one is not explicitly set or doesn't make sense.</summary>
-  /// <remarks>
-  /// This method have an ultimate power to override the caller's preference. It tries to give a
-  /// best resolution given a number of factors. The screen resolution is one of them.
-  /// </remarks>
-  /// <param name="requested">
-  /// The caller's idea of the resolution. If not set, then KIS will choose the best one based on its settings.
-  /// </param>
-  /// <returns>The best resolution, given the current screen mode and the settings.</returns>
-  static int GetBestIconResolution(int? requested = null) {
-    var res = requested ?? KisApi.CommonConfig.iconIconSnapshotSettings.baseIconResolution;
-    return Screen.currentResolution.height <= 1080 ? res : res * 2;
-  }
-
   /// <summary>Renders the camera's output into a texture.</summary>
   /// <param name="camera">The camera to render.</param>
   /// <param name="width">The width of the resulted texture.</param>

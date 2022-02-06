@@ -31,8 +31,9 @@ public static class VariantsUtils2 {
   /// <summary>Gets the part variant that is currently selected.</summary>
   /// <param name="part">The part to get variant for.</param>
   /// <returns>The part's variant.</returns>
-  public static PartVariant GetCurrentPartVariant(Part part) {
-    return part.variants != null ? part.variants.SelectedVariant : null;
+  public static string GetCurrentPartVariantName(Part part) {
+    var variant = part.variants != null ? part.variants.SelectedVariant : null;
+    return variant != null ? variant.Name : "";
   }
 
   /// <summary>Executes an action on a part with an arbitrary variant applied.</summary>

@@ -37,7 +37,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public Texture iconImage {
     get {
       UpdateVariant();
-      return _iconImage ??= KisApi.PartIconUtils.MakeDefaultIcon(avPart, variant);
+      return _iconImage ??= KisApi.PartIconUtils.MakeDefaultIcon(avPart, variantName);
     }
   }
   Texture _iconImage;
