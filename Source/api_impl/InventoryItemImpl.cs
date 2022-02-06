@@ -86,12 +86,14 @@ sealed class InventoryItemImpl : InventoryItem {
   public double fullCost => dryCost + snapshot.moduleCosts + resources.Sum(r => r.amount * r.definition.unitCost);
 
   /// <inheritdoc/>
-  public ProtoPartResourceSnapshot[] resources => snapshot.resources.ToArray();
+  public ProtoPartResourceSnapshot[] resources => _resources ??= snapshot.resources.ToArray();
+  ProtoPartResourceSnapshot[] _resources;
 
   /// <inheritdoc/>
-  public ScienceData[] science => snapshot.modules
+  public ScienceData[] science => _science ??= snapshot.modules
       .SelectMany(m => KisApi.PartNodeUtils.GetModuleScience(m.moduleValues))
       .ToArray();
+  ScienceData[] _science;
   
   /// <inheritdoc/>
   public bool isEquipped => false;
@@ -112,6 +114,8 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public void UpdateItem() {
+    _resources = null;
+    _science = null;
   }
 
   /// <inheritdoc/>
