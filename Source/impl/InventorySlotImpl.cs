@@ -72,7 +72,6 @@ sealed class InventorySlotImpl {
 
   /// <summary>Short name of the checking error for the case when parts have different resource sets.</summary>
   /// <seealso cref="DifferentResourcesReasonText"/>
-  /// <seealso cref="CheckIfSimilar"/>
   public const string DifferentResourcesReason = "DifferentResources";
 
   /// <summary>
@@ -80,7 +79,6 @@ sealed class InventorySlotImpl {
   /// stored in the same slot.
   /// </summary>
   /// <seealso cref="DifferentResourcesReasonText"/>
-  /// <seealso cref="CheckIfSimilar"/>
   public const string DifferentResourceAmountsReason = "DifferentResourcesAmounts";
 
   /// <summary>
@@ -211,7 +209,6 @@ sealed class InventorySlotImpl {
   /// <param name="item">
   /// An item to add. The item is not copied, it's added as a reference. It must be already added into the inventory.
   /// </param>
-  /// <seealso cref="UpdateTooltip"/>
   /// <seealso cref="CheckCanAddItems"/>
   public void AddItem(InventoryItem item) {
     if (_itemsSet.Count == 0) {

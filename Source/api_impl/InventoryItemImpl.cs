@@ -211,12 +211,15 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <summary>Verifies if the variant has changed on the item and resets the related caches.</summary>
   /// <remarks>
-  /// Call this method each time a snapshot derived value is being read. This method will reset all the cached values
-  /// that were extracted from the previous snapshot. 
+  /// <p>
+  /// Call this method each time a snapshot derived value that may depend on the variant is being read. This method will
+  /// reset all the cached values that were extracted from the previous snapshot.
+  /// </p>
+  /// <p>This method is intended to be fast. Don't put heavy logic into it.</p>
   /// </remarks>
   void UpdateVariant() {
     if (_oldVariantName == snapshot.moduleVariantName) {
-      return;
+      return; // This decision must be done as fast as possible.
     }
     DebugEx.Info("Update variant on the item: itemId={0}, cachedVariant={1}, newVariant={2}",
                  itemId, _oldVariantName, snapshot.moduleVariantName);

@@ -12,6 +12,7 @@ using KIS2;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the part model.</summary>

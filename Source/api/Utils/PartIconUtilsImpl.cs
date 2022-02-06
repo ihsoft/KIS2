@@ -1,5 +1,5 @@
 ﻿// Kerbal Inventory System API v2
-// API design and implemenation: igor.zavoychinskiy@gmail.com
+// API design and implementation: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
 using KSPDev.LogUtils;
