@@ -141,7 +141,6 @@ public sealed class PartIconUtils {
     camera.targetTexture = null;
     renderTexture.Release();
     Object.DestroyImmediate(renderTexture);
-    renderTexture = null;
     return outTexture;
   }
   #endregion

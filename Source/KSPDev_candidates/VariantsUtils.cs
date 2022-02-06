@@ -42,8 +42,9 @@ public static class VariantsUtils2 {
   /// </remarks>
   /// <param name="avPart">The part proto.</param>
   /// <param name="variantName">
-  /// The name of the variant to apply. If it's not found on the part, then an errors is logged and the method is
-  /// executed on the prefab with the base variant.
+  /// The name of the variant to apply. It's ignored for the parts without variants. If there are variants on the part,
+  /// and this name cannot be resolved, then an error is logged and the method is executed on the prefab with the base
+  /// variant applied.
   /// </param>
   /// <param name="fn">
   /// The action to call once the variant is applied. The argument is a prefab part with the variant
@@ -52,8 +53,8 @@ public static class VariantsUtils2 {
   /// </param>
   public static void ExecuteAtPartVariant(AvailablePart avPart, string variantName, Action<Part> fn) {
     var part = avPart.partPrefab;
-    var oldPartVariant = GetCurrentPartVariant(part);
-    if (oldPartVariant != null) {
+    var prefabVariantName = GetCurrentPartVariantName(part);
+    if (prefabVariantName != "") {
       if (!part.variants.GetVariantNames().Contains(variantName)) {
         DebugEx.Error("Variant not found on part: part={0}, variantName={1}, useVariant={2}",
                       avPart.name, variantName, part.baseVariant.Name);
@@ -62,7 +63,7 @@ public static class VariantsUtils2 {
       part.variants.SetVariant(variantName);
       ApplyVariantOnAttachNodes(part);
       fn(part);  // Run on the updated part.
-      part.variants.SetVariant(oldPartVariant.Name);
+      part.variants.SetVariant(prefabVariantName);
       ApplyVariantOnAttachNodes(part);
     } else {
       fn(part);

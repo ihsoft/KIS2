@@ -149,10 +149,9 @@ public class PartModelUtilsImpl {
       foreach (var childPart in rootPart.children) {
         var childObj = GetSceneAssemblyModel(childPart, goThroughChildren: true);
         childObj.transform.parent = modelObj.transform;
-        childObj.transform.localRotation =
-            rootPart.transform.rotation.Inverse() * childPart.transform.rotation;
-        childObj.transform.localPosition =
-            rootPart.transform.InverseTransformPoint(childPart.transform.position);
+        var childTransform = childPart.transform;
+        childObj.transform.localRotation = rootPart.transform.rotation.Inverse() * childTransform.rotation;
+        childObj.transform.localPosition = rootPart.transform.InverseTransformPoint(childTransform.position);
       }
     }
     return modelObj;
@@ -264,10 +263,8 @@ public class PartModelUtilsImpl {
         };
         skinnedMeshRenderer.BakeMesh(combine.mesh);
         // BakeMesh() gives mesh in world scale, so don't apply it twice.
-        var localToWorldMatrix = Matrix4x4.TRS(
-            skinnedMeshRenderer.transform.position,
-            skinnedMeshRenderer.transform.rotation,
-            Vector3.one);
+        var transform = skinnedMeshRenderer.transform;
+        var localToWorldMatrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
         combine.transform = rootWorldTransform * localToWorldMatrix;
         meshCombines.Add(combine);
       }
