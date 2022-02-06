@@ -53,46 +53,6 @@ public class PartModelUtilsImpl {
     return iconPrefab;
   }
 
-  /// <summary>Returns the part's model.</summary>
-  /// <remarks>The returned model is a copy from the part prefab.</remarks>
-  /// <param name="avPart">The part proto to get the model from.</param>
-  /// <param name="variant">
-  /// The part's variant to apply. If <c>null</c>, then variant will be extracted from
-  /// <paramref name="partNode"/>.
-  /// </param>
-  /// <param name="partNode">
-  /// The part's persistent state. It's used to extract the external scale modifiers and part's
-  /// variant. It can be <c>null</c>.
-  /// </param>
-  /// <returns>The model of the part. Don't forget to destroy it when not needed.</returns>
-  public GameObject GetPartModel(
-      AvailablePart avPart,
-      PartVariant variant = null, ConfigNode partNode = null) {
-    if (variant == null && partNode != null) {
-      variant = VariantsUtils.GetCurrentPartVariant(avPart, partNode);
-    }
-    GameObject modelObj = null;
-    VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => {
-      var partPrefabModel = Hierarchy.GetPartModelTransform(p).gameObject;
-      modelObj = UnityEngine.Object.Instantiate(partPrefabModel);
-      modelObj.SetActive(true);
-    });
-
-    // Handle TweakScale settings.
-    if (partNode != null) {
-      var scale = KisApi.PartNodeUtils.GetTweakScaleSizeModifier(partNode);
-      if (Math.Abs(1.0 - scale) > double.Epsilon) {
-        DebugEx.Fine("Applying TweakScale size modifier: {0}", scale);
-        var scaleRoot = new GameObject("TweakScale");
-        scaleRoot.transform.localScale = new Vector3((float) scale, (float) scale, (float) scale);
-        modelObj.transform.SetParent(scaleRoot.transform, worldPositionStays: false);
-        modelObj = scaleRoot;
-      }
-    }
-    
-    return modelObj;
-  }
-
   /// <summary>Collects all the models in the part or hierarchy.</summary>
   /// <remarks>
   /// The result of this method only includes meshes and renderers. Any colliders, animations or effects will be
