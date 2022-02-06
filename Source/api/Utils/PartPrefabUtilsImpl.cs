@@ -4,6 +4,9 @@
 
 // ReSharper disable once CheckNamespace
 // ReSharper disable once IdentifierTypo
+
+using KSPDev.PartUtils;
+
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the part prefabs.</summary>
@@ -20,6 +23,37 @@ public class PartPrefabUtilsImpl {
   public ModuleCargoPart GetCargoModule(AvailablePart avPart) {
     var module = avPart.partPrefab.FindModuleImplementing<ModuleCargoPart>();
     return module == null || module.packedVolume > 0 ? module : null;
+  }
+
+  /// <summary>Calculates part's dry mass given the config and the variant.</summary>
+  /// <param name="avPart">The part's proto.</param>
+  /// <param name="variantName">
+  /// The part's variant. This value is ignored if the part doesn't have variants. Otherwise, it must be a valid variant
+  /// name.
+  /// </param>
+  /// <returns>The dry cost of the part.</returns>
+  /// <seealso cref="VariantsUtils2.ExecuteAtPartVariant"/>
+  public double GetPartDryMass(AvailablePart avPart, string variantName) {
+    var itemMass = 0.0f;
+    VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, p => {
+      itemMass = p.mass + p.GetModuleMass(p.mass);
+    });
+    return itemMass;
+  }
+
+  /// <summary>Calculates part's dry cost given the config and the variant.</summary>
+  /// <param name="avPart">The part's proto.</param>
+  /// <param name="variantName">
+  /// The part's variant. This value is ignored if the part doesn't have variants. Otherwise, it must be a valid variant
+  /// name.
+  /// </param>
+  /// <returns>The dry cost of the part.</returns>
+  public double GetPartDryCost(AvailablePart avPart, string variantName) {
+    var itemCost = 0.0f;
+    VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, p => {
+      itemCost = avPart.cost + p.GetModuleCosts(avPart.cost);
+    });
+    return itemCost;
   }
   #endregion
 }

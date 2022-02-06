@@ -51,7 +51,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public double dryMass => snapshot.mass - snapshot.moduleMass;
   
   /// <inheritdoc/>
-  public double dryCost => KisApi.PartNodeUtils.GetPartDryCost(avPart, variant: variant);
+  public double dryCost => KisApi.PartPrefabUtils.GetPartDryCost(avPart, variantName);
   
   /// <inheritdoc/>
   public double fullMass => dryMass + snapshot.moduleMass + resources.Sum(r => r.amount * r.definition.density);

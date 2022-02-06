@@ -169,30 +169,6 @@ public class PartNodeUtilsImpl {
         .ToArray();
   }
 
-  /// <summary>Calculates part's dry mass given the config and the variant.</summary>
-  /// <param name="avPart">The part's proto.</param>
-  /// <param name="variant">
-  /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
-  /// </param>
-  /// <returns>The dry cost of the part.</returns>
-  public double GetPartDryMass(AvailablePart avPart, PartVariant variant = null) {
-    var itemMass = avPart.partPrefab.mass;
-    VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => itemMass += p.GetModuleMass(p.mass));
-    return itemMass;
-  }
-
-  /// <summary>Calculates part's dry cost given the config and the variant.</summary>
-  /// <param name="avPart">The part's proto.</param>
-  /// <param name="variant">
-  /// The part's variant. If it's <c>null</c>, then the variant will be attempted to read from
-  /// </param>
-  /// <returns>The dry cost of the part.</returns>
-  public double GetPartDryCost(AvailablePart avPart, PartVariant variant = null) {
-    var itemCost = avPart.cost;
-    VariantsUtils.ExecuteAtPartVariant(avPart, variant, p => itemCost += p.GetModuleCosts(avPart.cost));
-    return itemCost;
-  }
-
   /// <summary>Makes a part snapshot from the saved part state.</summary>
   /// <param name="refVessel">
   /// The vessel that is an actor. Depending on how this snapshot will be used, the meaning of this argument may be
