@@ -769,18 +769,18 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
       var item = AddPart(partName);
       if (item != null) {
-        DeleteItem(item);
+        item = DeleteItem(item);
         foreach (var resource in item.resources) {
           resource.amount = UnityEngine.Random.Range(minPct, maxPct) * resource.maxAmount;
         }
         if (item.variant != null) {
           var variantIndex = (int) (UnityEngine.Random.value * item.avPart.Variants.Count);
-          item.snapshot.moduleVariantName = item.avPart.Variants[variantIndex].Name;
+          item.mutableSnapshot.moduleVariantName = item.avPart.Variants[variantIndex].Name;
         }
-        item.UpdateItem();
         AddItem(item);
         HostedDebugLog.Warning(
-            this, "DEBUG: added part '{0}': resources={1}, variant={2}", partName,
+            this, "DEBUG: added part '{0}': name={1}, resources={2}, variant={3}",
+            partName, item.avPart.title,
             DbgFormatter.C2S(item.resources.Select(x => x.amount)), item.variantName);
       } else {
         HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}'", partName);
