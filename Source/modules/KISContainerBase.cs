@@ -120,12 +120,12 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public float contentMass =>
-      _contentMass ??= _stockInventoryModule.GetModuleMass(part.mass, ModifierStagingSituation.CURRENT);
+      _contentMass ??= stockInventoryModule.GetModuleMass(part.mass, ModifierStagingSituation.CURRENT);
   float? _contentMass;
 
   /// <inheritdoc/>
   public float contentCost =>
-      _contentCost ??= _stockInventoryModule.GetModuleCost(part.partInfo.cost, ModifierStagingSituation.CURRENT);
+      _contentCost ??= stockInventoryModule.GetModuleCost(part.partInfo.cost, ModifierStagingSituation.CURRENT);
   float? _contentCost;
   #endregion
 
@@ -409,6 +409,9 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public virtual InventoryItem AddItem(InventoryItem item, int stockSlotIndex = -1) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
+    if (item.inventory != null) {
+      throw new InvalidOperationException(Preconditions.MakeContextError(this, "The new item must be detached"));
+    }
     stockSlotIndex = FindStockSlotForItem(item, stockSlotIndex, out var errors);
     if (errors.Count > 0) {
       ReportAndReturnCheckErrors(item, errors, true);
