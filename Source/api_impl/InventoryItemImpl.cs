@@ -18,14 +18,14 @@ namespace KIS2 {
 sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
-  public IKisInventory inventory => _inventory;
-  readonly KisContainerBase _inventory;
+  public IKisInventory inventory => _inventoryBase;
+  readonly KisContainerBase _inventoryBase;
 
   /// <inheritdoc/>
   public string itemId { get; }
 
   /// <inheritdoc/>
-  public int stockSlotIndex => _inventory != null ? _inventory.GetStockSlotForItem(this) : -1;
+  public int stockSlotIndex => _inventoryBase != null ? _inventoryBase.GetStockSlotForItem(this) : -1;
 
   /// <inheritdoc/>
   public Part materialPart { get; set; }
@@ -126,7 +126,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public bool isLocked { get; private set; }
 
   /// <inheritdoc/>
-  public List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; private set; } = new();
+  public List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; } = new();
   #endregion
 
   #region InventoryItem implementation
@@ -218,10 +218,10 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="snapshot">The part's snapshot.</param>
   /// <param name="newItemId">The new item ID.</param>
   InventoryItemImpl(KisContainerBase inventory, ProtoPartSnapshot snapshot, string newItemId) {
-    this._inventory = inventory;
+    _inventoryBase = inventory;
     this.snapshot = snapshot;
     _oldVariantName = snapshot.moduleVariantName ?? "";
-    this.itemId = newItemId;
+    itemId = newItemId;
   }
 
   /// <summary>Verifies if the variant has changed on the item and resets the related caches.</summary>
@@ -252,5 +252,5 @@ sealed class InventoryItemImpl : InventoryItem {
   }
   #endregion
 }
-  
+
 }  // namespace
