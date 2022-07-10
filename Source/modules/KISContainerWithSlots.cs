@@ -1084,20 +1084,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>Triggers when items from the slot are consumed by the target.</summary>
-  /// <remarks>This method may detect a failing condition. If it happens, the state must stay unchanged.</remarks>
   /// <seealso cref="_dragSourceSlot"/>
   bool ConsumeSlotItems() {
-    var leasedItems = KisApi.ItemDragController.leasedItems;
-    // Here we don't expect failures. The caller has to ensure the items can be consumed.
-    foreach (var item in leasedItems) {
-      item.SetLocked(false);
-      if (!DeleteItem(item)) {
-        HostedDebugLog.Error(this, "Cannot consume item: part={0}, itemId={1}", item.avPart.name, item.itemId);
-        item.SetLocked(true); // Just to restore its original state.
-      }
-    }
+    Array.ForEach(KisApi.ItemDragController.leasedItems, i => i.SetLocked(false));
     SetDraggedSlot(null);
-    UpdateInventory();
     return true;
   }
 

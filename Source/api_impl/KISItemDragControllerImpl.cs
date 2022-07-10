@@ -237,15 +237,32 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
     if (_dragTracker.isInCallbackCycle) {
       throw new InvalidOperationException("Cannot consume items from a drag callback!");
     }
-    var consumed = _consumeItemsFn();
-    if (!consumed) {
+    if (!_consumeItemsFn()) {
       DebugEx.Warning("Items not consumed: provider refused the deal");
       return null;
     }
-    var consumedItems = leasedItems;
-    DebugEx.Info("Consume dragged items: count={0}", consumedItems.Length);
+    var consumedItems = new List<InventoryItem>();
+    var affectedInventories = new HashSet<IKisInventory>();
+    foreach (var leasedItem in leasedItems) {
+      if (leasedItem.inventory == null) {
+        consumedItems.Add(leasedItem);
+        continue;
+      }
+      var detachedItem = leasedItem.inventory.DeleteItem(leasedItem);
+      if (detachedItem != null) {
+        affectedInventories.Add(leasedItem.inventory);
+        consumedItems.Add(detachedItem);
+      } else {
+        DebugEx.Warning(
+            "Cannot delete item from inventory: itemId={0}, isLocked={1}", leasedItem.itemId, leasedItem.isLocked);
+      }
+    }
+    foreach (var affectedInventory in affectedInventories) {
+      affectedInventory.UpdateInventory();
+    }
+    DebugEx.Info("Removed {0} items from {1} inventories", consumedItems.Count, affectedInventories.Count);
     ClearLease(isCancelled: false);
-    return consumedItems;
+    return consumedItems.ToArray();
   }
 
   /// <inheritdoc/>

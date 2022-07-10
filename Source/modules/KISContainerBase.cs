@@ -421,24 +421,24 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual bool DeleteItem(InventoryItem item) {
+  public virtual InventoryItem DeleteItem(InventoryItem item) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
     if (!ReferenceEquals(item.inventory, this)) {
       HostedDebugLog.Error(this, "Item doesn't belong to this inventory: name={0}, id={1}, owner={2}",
                            item.avPart.name, item.itemId, item.inventory as PartModule);
-      return false;
+      return null;
     }
     if (!inventoryItems.ContainsKey(item.itemId)) {
       HostedDebugLog.Error(this, "Item not found: name={0}, id={1}", item.avPart.name, item.itemId);
-      return false;
+      return null;
     }
     if (item.isLocked) {
       HostedDebugLog.Error(this, "Cannot delete locked item(s): name={0}, id={1}", item.avPart.name, item.itemId);
-      return false;
+      return null;
     }
     RemoveInventoryItem(item);
     RemoveItemFromStockSlot(item);
-    return true;
+    return InventoryItemImpl.FromItem(null, item);
   }
 
   /// <inheritdoc/>

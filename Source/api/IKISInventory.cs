@@ -139,22 +139,22 @@ public interface IKisInventory {
 
   /// <summary>Removes the specified item from the inventory.</summary>
   /// <remarks>
-  /// <p>
-  /// The action can fail if the item is locked, doesn't exist or there are other conditions that prevent the logic to
-  /// work.
-  /// </p>
+  /// <p>The action can fail if the item is locked or doesn't exist.</p>
   /// <p>
   /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
   /// explicitly call the <see cref="UpdateInventory"/> method at the end of the update sequence to let the
-  /// inventory state synced to the new items list. And it must be done on every inventory update!
+  /// inventory state synced to the new items list.
   /// </p>
   /// </remarks>
-  /// <param name="item">The item to remove. It must belong to this inventory.</param>
-  /// <returns><c>true</c> if removal was successful.</returns>
+  /// <param name="item">
+  /// The item to remove. It must belong to this inventory. This item must not be used once it was removed from the
+  /// inventory.
+  /// </param>
+  /// <returns>The detached item if removal was successful, or NULL otherwise.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="InventoryItem.inventory"/>
   /// <seealso cref="UpdateInventory"/>
-  bool DeleteItem(InventoryItem item);
+  InventoryItem DeleteItem(InventoryItem item);
 
   /// <summary>Forces the container to refresh its state accordingly to the current state of the items.</summary>
   /// <remarks>
