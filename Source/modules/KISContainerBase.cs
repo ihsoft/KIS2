@@ -414,7 +414,7 @@ public class KisContainerBase : AbstractPartModule,
       ReportAndReturnCheckErrors(item, errors, true);
       return null;
     }
-    var newItem = InventoryItemImpl.FromItem(this, item);
+    var newItem = InventoryItemImpl.FromSnapshot(this, item.snapshot);
     AddItemToStockSlot(newItem, stockSlotIndex);
     AddInventoryItem(newItem);
     return newItem;
@@ -438,7 +438,7 @@ public class KisContainerBase : AbstractPartModule,
     }
     RemoveInventoryItem(item);
     RemoveItemFromStockSlot(item);
-    return InventoryItemImpl.FromItem(null, item);
+    return InventoryItemImpl.FromSnapshot(null, item.snapshot);
   }
 
   /// <inheritdoc/>
@@ -551,7 +551,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <returns>A new item that was created.</returns>
   /// <seealso cref="stockInventoryModule"/>
   InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
-    var item = InventoryItemImpl.FromProtoPartSnapshot(
+    var item = InventoryItemImpl.FromSnapshot(
         this, stockInventoryModule.storedParts[stockSlotIndex].snapshot, itemId: itemId);
     UpdateStockSlotIndex(stockSlotIndex, item);
     return item;

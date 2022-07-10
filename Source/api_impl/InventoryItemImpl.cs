@@ -156,26 +156,14 @@ sealed class InventoryItemImpl : InventoryItem {
   #region API methods
   /// <summary>Creates an item from a proto part snapshot.</summary>
   /// <param name="inventory">The inventory to bind the item to.</param>
-  /// <param name="snapshot">The snapshot to make the item from.</param>
+  /// <param name="snapshot">
+  /// The snapshot to make the item from. All items created from the same snapshot will share the instance.
+  /// </param>
   /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromProtoPartSnapshot(
+  public static InventoryItemImpl FromSnapshot(
       KisContainerBase inventory, ProtoPartSnapshot snapshot, string itemId = null) {
-    return new InventoryItemImpl(inventory, snapshot: snapshot, NewItemId(itemId));
-  }
-
-  /// <summary>Creates an item from another item.</summary>
-  /// <remarks>This method makes just  a new wrapper around tey existing item.</remarks>
-  /// <param name="inventory">
-  /// The inventory to bind the item to. It can be <c>null</c> for the intermediate items.
-  /// </param>
-  /// <param name="item">
-  /// The item to copy from. There will be no deep copy made, so the source item must be destroyed in case of the "copy"
-  /// is adopted by any inventory.
-  /// </param>
-  /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromItem(KisContainerBase inventory, InventoryItem item) {
-    return new InventoryItemImpl(inventory, item.snapshot, NewItemId(null));
+    return new InventoryItemImpl(inventory, snapshot, NewItemId(itemId));
   }
 
   /// <summary>Creates an item from an active part.</summary>
