@@ -8,6 +8,7 @@ using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -111,6 +112,24 @@ public class PartNodeUtilsImpl {
 
     return snapshot;
   }
+
+  /// <summary>Makes a proto part copy.</summary>
+  /// <remarks>
+  /// This method must be as fast as possible since it's designed to be used in the bulk operations. For this reason it
+  /// doesn't do a deep copy of all the properties. Only the resources are deeply copied.
+  /// </remarks>
+  /// <param name="srcSnapshot">The snapshot to make copy of.</param>
+  /// <returns>A copy of the snapshot.</returns>
+  public ProtoPartSnapshot FastProtoPartCopy(ProtoPartSnapshot srcSnapshot) {
+    var copyMethod = _copyMethod ??= typeof(ProtoPartSnapshot).GetMethod(
+        "MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic);
+    var copyObj = (ProtoPartSnapshot) copyMethod.Invoke(srcSnapshot, new object[] {});
+    for (var i = 0; i < copyObj.resources.Count; i++) {
+      copyObj.resources[i] = (ProtoPartResourceSnapshot) copyMethod.Invoke(copyObj.resources[i], new object[] {});
+    }
+    return copyObj;
+  }
+  static MethodInfo _copyMethod;
 
   /// <summary>Returns all the resource on the part.</summary>
   /// <param name="partNode">

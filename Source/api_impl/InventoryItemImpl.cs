@@ -43,7 +43,22 @@ sealed class InventoryItemImpl : InventoryItem {
   Texture _iconImage;
 
   /// <inheritdoc/>
-  public ProtoPartSnapshot snapshot { get; }
+  public ProtoPartSnapshot snapshot { get; private set; }
+
+  /// <inheritdoc/>
+  public ProtoPartSnapshot mutableSnapshot {
+    get {
+      if (inventory != null) {
+        throw new InvalidOperationException("Cannot modify item while it belongs to an inventory");
+      }
+      if (_mutableSnapshot == null) {
+        snapshot = KisApi.PartNodeUtils.FastProtoPartCopy(snapshot);
+        _mutableSnapshot = snapshot;
+      }
+      return _mutableSnapshot;
+    }
+  }
+  ProtoPartSnapshot _mutableSnapshot;
 
   /// <inheritdoc/>
   public PartVariant variant {
@@ -122,9 +137,10 @@ sealed class InventoryItemImpl : InventoryItem {
   }
 
   /// <inheritdoc/>
-  public void UpdateItem() {
+  public void SyncToSnapshot() {
     _resources = null;
     _science = null;
+    UpdateVariant();
   }
 
   /// <inheritdoc/>
@@ -206,7 +222,6 @@ sealed class InventoryItemImpl : InventoryItem {
     this.snapshot = snapshot;
     _oldVariantName = snapshot.moduleVariantName ?? "";
     this.itemId = newItemId;
-    UpdateItem();
   }
 
   /// <summary>Verifies if the variant has changed on the item and resets the related caches.</summary>

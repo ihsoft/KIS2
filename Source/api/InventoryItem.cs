@@ -17,13 +17,12 @@ public interface InventoryItem {
   /// <summary>The inventory that owns this item.</summary>
   /// <remarks>
   /// This is the inventory at which the item was initially created or loaded for. It's an immutable property that
-  /// doesn't change even if the item was deleted or moved from that inventory afterwards. If the owner of the instance
-  /// needs to ensure the item still belongs to the inventory, it should verify it by requesting the relevant inventory. 
+  /// doesn't change even if the item was deleted or moved from that inventory afterwards. 
   /// </remarks>
   IKisInventory inventory { get; }
 
   /// <summary>Unique string ID that identifies the item within the inventory.</summary>
-  /// <remarks>The ID is generated when the part is first time added into inventory. It's an immutable value.</remarks>
+  /// <remarks>Once the item is created, its ID cannot change.</remarks>
   string itemId { get; }
 
   /// <summary>Index of slot in the stock inventory.</summary>
@@ -41,78 +40,93 @@ public interface InventoryItem {
   /// <value>The part object or <c>null</c> if no material part relates to the item.</value>
   Part materialPart { get; set; }
 
-  /// <summary>Part proto.</summary>
+  /// <summary>Read-only. Part info.</summary>
+  /// <value>The part info from prefab. It's never NULL.</value>
   AvailablePart avPart { get; }
 
-  /// <summary>Icon that represents this item.</summary>
+  /// <summary>Read-only. Icon that represents this item.</summary>
   /// <remarks>
   /// It's a low resolution icon that is suitable for UI, but may not be good for the bigger elements.
   /// </remarks>
   /// <value>The icon texture. It's never NULL.</value>
   Texture iconImage { get; }
 
-  /// <summary>The variant applied to this item.</summary>
+  /// <summary>Read-only. Cached variant applied to this item.</summary>
+  /// <remarks>The variant instance is taken from the part prefab.</remarks>
   /// <value>The variant or <c>null</c> if the part doesn't have any.</value>
+  /// <seealso cref="SyncToSnapshot"/>
   PartVariant variant { get; }
 
   /// <summary>The name of the current variant.</summary>
   /// <value>The variant name or empty string if the part doesn't have variants.</value>
+  /// <seealso cref="SyncToSnapshot"/>
   string variantName { get; }
 
-  /// <summary>The part's snapshot.</summary>
+  /// <summary>Read-only. The part's snapshot.</summary>
   /// <remarks>
-  /// This instance is a direct reflection from the stock inventory. Its state can be changed but keep in mind that it
-  /// affects the stock logic. If any changes were made to the snapshot, the item must be notified via
-  /// <see cref="UpdateItem"/>. Moreover, the owner inventory must also be notified via
-  /// <see cref="IKisInventory.UpdateInventory"/>.
+  /// This is a SHARED instance of the snapshot. Multiple items from the different inventories can use it at the same
+  /// time. NEVER update it! If the snapshot needs to be changed, use <see cref="mutableSnapshot"/>.
   /// </remarks>
-  /// <seealso cref="UpdateItem"/>
-  /// <seealso cref="IKisInventory.UpdateInventory"/>
   ProtoPartSnapshot snapshot { get; }
+
+  /// <summary>The part's mutable snapshot.</summary>
+  /// <remarks>
+  /// This snapshot can be modified to change the item's config. However, it's only available on a detached item,
+  /// i.e. the item that doesn't belong to any inventory. If an item in inventory needs to be modified, delete it from
+  /// the inventory, update the resulted detached item, and add it back.
+  /// </remarks>
+  /// <exception cref="InvalidOperationException">If the item is not detached.</exception>
+  /// <seealso cref="SyncToSnapshot"/>
+  ProtoPartSnapshot mutableSnapshot { get; }
 
   /// <summary>Cached volume that part would take in its current state.</summary>
   /// <remarks>
   /// The snapshot state can greatly affect the volume. E.g. most part take several times more volume when deployed.
   /// </remarks>
   /// <value>The volume in <c>litres</c>.</value>
-  /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="SyncToSnapshot"/>
   double volume { get; }
 
   /// <summary>Cached boundary size of the current part state.</summary>
   /// <value>The size in metres in each dimension.</value>
-  /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="SyncToSnapshot"/>
   Vector3 size { get; }
 
   /// <summary>Cached mass of the part without resources.</summary>
   /// <value>The mass in <c>tons</c>.</value>
-  /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="SyncToSnapshot"/>
   double dryMass { get; }
 
   /// <summary>Cached cost of the part without resources.</summary>
   /// <value>The cost in <c>credits</c>.</value>
-  /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="SyncToSnapshot"/>
   double dryCost { get; }
 
   /// <summary>Cached mass of the part with all available resources.</summary>
   /// <value>The mass in <c>tons</c>.</value>
-  /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="SyncToSnapshot"/>
   double fullMass { get; }
 
   /// <summary>Cached cost of the part with all available resources.</summary>
   /// <value>The cost in <c>credits</c>.</value>
-  /// <seealso cref="UpdateItem"/>
+  /// <seealso cref="SyncToSnapshot"/>
   double fullCost { get; }
 
   /// <summary>Cached available resources in the part.</summary>
+  /// <remarks>
+  /// This property is mutable. The amount of resources can be changed on the item without removing it from the
+  /// inventory. However, you still need to notify item/inventory about the change.
+  /// </remarks>
   /// <value>The resources from the snapshot.</value>
-  /// <seealso cref="UpdateItem"/>
   /// <seealso cref="snapshot"/>
+  /// <seealso cref="SyncToSnapshot"/>
+  /// <seealso cref="IKisInventory.UpdateInventory"/>
   ProtoPartResourceSnapshot[] resources { get; }
 
-  /// <summary>Cached science data in the part.</summary>
+  /// <summary>Read-only. Cached science data in the part.</summary>
   /// <value>The science data from the snapshot.</value>
-  /// <seealso cref="UpdateItem"/>
   /// <seealso cref="snapshot"/>
+  /// <seealso cref="SyncToSnapshot"/>
   ScienceData[] science { get; }
 
   /// <summary>Tells if this item is currently equipped on the actor.</summary>
@@ -137,23 +151,20 @@ public interface InventoryItem {
 
   /// <summary>Sets locked state.</summary>
   /// <remarks>
-  /// The inventory may need to know if the item's lock stat has updated. The actor, that changes the state, is
+  /// The inventory may need to know if the item's lock state has updated. The actor, that changes the state, is
   /// responsible to notify the inventory via the <see cref="IKisInventory.UpdateInventory"/> method.
   /// </remarks>
   /// <seealso cref="isLocked"/>
   /// <seealso cref="IKisInventory.UpdateInventory"/>
   void SetLocked(bool newState);
 
-  /// <summary>Updates all the cached items values to make them matching the snapshot.</summary>
+  /// <summary>Updates all the item's cached values to make them matching the snapshot.</summary>
   /// <remarks>
-  /// This method only updates a single item. It will not update the inventory. Avoid calling this method directly.
-  /// Instead, call the <see cref="IKisInventory.UpdateInventory"/> on the owner inventory to ensure all the
-  /// changes are accounted.
+  /// Call this method if the item's properties need to be accessed after modifying the snapshot. If the modified item
+  /// needs to be added into an inventory, the sync is not needed. 
   /// </remarks>
-  /// <seealso cref="inventory"/>
-  /// <seealso cref="IKisInventory.UpdateInventory"/>
-  /// <seealso cref="snapshot"/>
-  void UpdateItem();
+  /// <seealso cref="mutableSnapshot"/>
+  void SyncToSnapshot();
 
   /// <summary>
   /// Verifies the item dynamic conditions that may prevent this item to be moved between the inventories or be added
