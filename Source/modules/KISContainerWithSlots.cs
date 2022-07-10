@@ -1461,14 +1461,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     HostedDebugLog.Fine(this, "Update items count in slot: slot=#{0}, requestedDelta={1}, actualDelta={2}",
                         _inventorySlots.IndexOf(slotWithPointerFocus), requestedDelta, actualDelta);
     if (actualDelta > 0) {
+      var newItemTemplate = InventoryItemImpl.FromSnapshot(null, slotWithPointerFocus.slotItems[0].snapshot);
       var checkResult = new List<ErrorReason>();
       for (var i = 0; i < actualDelta; i++) {
-        var itemErrors = CheckCanAddItem(slotWithPointerFocus.slotItems[0]);
+        var itemErrors = CheckCanAddItem(newItemTemplate);
         if (itemErrors.Count > 0) {
           checkResult.AddRange(itemErrors);
           continue;
         }
-        var newItem = AddItem(slotWithPointerFocus.slotItems[0]); // It will get added to a random slot.
+        var newItem = AddItem(newItemTemplate); // It will get added to a random slot.
         MoveItemsToSlot(slotWithPointerFocus, newItem); // Move the item to the the specific slot.
       }
       checkResult = checkResult
@@ -1487,12 +1488,16 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
       }
     } else if (actualDelta < 0) {
-      //FIXME: here we may be more smart and pre-sort the items by their stock slot. The gerater slots must be deleted first.
-      for (var i = slotWithPointerFocus.slotItems.Count - 1; i >= 0 && actualDelta < 0; i--) {
-        var item = slotWithPointerFocus.slotItems[i];
+      var slotItems = slotWithPointerFocus.slotItems.Select(x => new { stockSlotIndex = x.stockSlotIndex, item = x })
+          .OrderByDescending(x => x.stockSlotIndex)
+          .Select(x => x.item)
+          .ToArray();
+      foreach (var item in slotItems) {
         if (!item.isLocked) {
-          if (DeleteItem(item)) {
-            ++actualDelta;
+          if (DeleteItem(item) != null) {
+            if (++actualDelta == 0) {
+              break;
+            }
           } else {
             HostedDebugLog.Error(this, "Cannot delete item: itemPart={0}, itemId={1}", item.avPart.name, item.itemId);
           }
