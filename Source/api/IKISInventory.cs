@@ -2,6 +2,7 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -105,6 +106,7 @@ public interface IKisInventory {
   /// the specific slot will be examined to be compatible with the item, and if doesn't fit the action will fail.
   /// </param>
   /// <returns>The newly created item or <c>null</c> if action failed.</returns>
+  /// <exception cref="InvalidOperationException">If part name is unknown.</exception>
   /// <seealso cref="CheckCanAddPart"/>
   /// <seealso cref="UpdateInventory"/>
   InventoryItem AddPart(string partName, int stockSlotIndex = -1);
@@ -119,22 +121,26 @@ public interface IKisInventory {
   /// <p>
   /// The inventory stats are not automatically updated to let performing the batch actions. The caller has to
   /// explicitly call the <see cref="UpdateInventory"/> method at the end of the update sequence to let the
-  /// inventory state synced to the new items list. And it must be done on every inventory update!
+  /// inventory state synced to the new items list.
   /// </p>
   /// </remarks>
-  /// <param name="item">The item to add.</param>
+  /// <param name="item">
+  /// The item to add. It must be a detached item that doesn't belong to any other inventory. This item must not be used
+  /// or re-used after it was successfully added to the inventory.
+  /// </param>
   /// <param name="stockSlotIndex">
   /// Optional stock slot index. If not specified, the item will be added to any available stock slot. Otherwise,
-  /// the specific slot will be examined to be compatible with the item, and if doesn't fit the action will fail.
+  /// the specific slot will be examined to be compatible with the item, and if it's not, then the action will fail.
   /// </param>
   /// <returns>
   /// The new item from the inventory or <c>null</c> if the action has failed. The ID of the new item will be different
   /// from the source item.
   /// </returns>
+  /// <exception cref="InvalidOperationException">If the item already belongs to some inventory.</exception>
   /// <seealso cref="CheckCanAddItem"/>
   /// <seealso cref="UpdateInventory"/>
   /// <seealso cref="InventoryItem.itemId"/>
-  //InventoryItem AddItem(InventoryItem item);
+  /// <seealso cref="InventoryItem.inventory"/>
   InventoryItem AddItem(InventoryItem item, int stockSlotIndex = -1);
 
   /// <summary>Removes the specified item from the inventory.</summary>
@@ -166,11 +172,15 @@ public interface IKisInventory {
   /// <p>This method is expected to be fast and efficient to allow the client code to call it at the high rate.</p>
   /// </remarks>
   /// <param name="changedItems">
-  /// An optional collection of the items that state has to be updated before updating the inventory's state. If set to
-  /// <c>null</c>, then the inventory state will be updated with the current item states. Note, that if any existing
-  /// item has changed its state, it must must be passed in this argument.
+  /// <p>
+  /// An optional collection of the items which change was the reason of the update call. The inventory will verify
+  /// these items to ensure they are consistent to the inventory.
+  /// </p>
+  /// <p>
+  /// If set to <c>null</c>, then <i>every item in the inventory</i> will be verified against the inventory constraints.
+  /// It may not be fast. Avoid such updates at the high frequencies.
+  /// </p>
   /// </param>
-  /// <seealso cref="InventoryItem.UpdateItem"/>
   void UpdateInventory(ICollection<InventoryItem> changedItems = null);
 
   /// <summary>Finds an item by its unique ID.</summary>
