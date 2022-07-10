@@ -446,12 +446,6 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public virtual void UpdateInventory(ICollection<InventoryItem> changedItems = null) {
-    if (changedItems != null) {
-      HostedDebugLog.Fine(this, "Updating {0} items in the inventory..." , changedItems.Count);
-      foreach (var changedItem in changedItems) {
-        changedItem.UpdateItem();
-      }
-    }
     _contentCost = null;
     _contentMass = null;
   }
