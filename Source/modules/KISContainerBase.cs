@@ -726,6 +726,11 @@ public class KisContainerBase : AbstractPartModule,
         AddInventoryItem(item);
       }
     }
+    if (slotQuantity != indexedItems) {
+      UpdateInventory();
+      // Make a delayed update to catch the stock properties updates in GUI.
+      AsyncCall.CallOnEndOfFrame(this, () => UpdateInventory());
+    }
   }
 
   /// <summary>Ensures that the stock inventory GUI is in sync with the extended inventory slots.</summary>
