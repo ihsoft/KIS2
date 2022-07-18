@@ -113,7 +113,8 @@ public class KisContainerBase : AbstractPartModule,
   public Vessel ownerVessel => vessel;
 
   /// <inheritdoc/>
-  public Dictionary<string, InventoryItem> inventoryItems { get; } = new();
+  public IReadOnlyDictionary<string, InventoryItem> inventoryItems => _mutableInventoryItems;
+  readonly Dictionary<string, InventoryItem> _mutableInventoryItems = new();
 
   /// <inheritdoc/>
   public ModuleInventoryPart stockInventoryModule =>
@@ -490,7 +491,7 @@ public class KisContainerBase : AbstractPartModule,
   /// </remarks>
   /// <param name="item">The item to add.</param>
   protected virtual void AddInventoryItem(InventoryItem item) {
-    inventoryItems.Add(item.itemId, item);
+    _mutableInventoryItems.Add(item.itemId, item);
   }
 
   /// <summary>Removes the item from the <see cref="inventoryItems"/> collection.</summary>
@@ -500,7 +501,7 @@ public class KisContainerBase : AbstractPartModule,
   /// </remarks>
   /// <param name="item">The item to remove.</param>
   protected virtual void RemoveInventoryItem(InventoryItem item) {
-    if (!inventoryItems.Remove(item.itemId)) {
+    if (!_mutableInventoryItems.Remove(item.itemId)) {
       HostedDebugLog.Error(this, "Cannot delete item, not in the index: itemId={0}", item.itemId);
     }
   }

@@ -21,13 +21,11 @@ public interface IKisInventory {
   ModuleInventoryPart stockInventoryModule { get; }
 
   /// <summary>Items in the inventory.</summary>
-  /// <remarks>
-  /// The returned dictionary must not be updated! The implementation is encouraged to make the result readonly.
-  /// </remarks> 
   /// <value>A dictionary of itemId=>item.</value>
   /// <seealso cref="InventoryItem.itemId"/>
-  /// FIXME: return a readonly dictionary
-  Dictionary<string, InventoryItem> inventoryItems { get; }
+  /// <seealso cref="AddItem"/>
+  /// <seealso cref="DeleteItem"/>
+  IReadOnlyDictionary<string, InventoryItem> inventoryItems { get; }
 
   /// <summary>Maximum dimensions of the inner inventory space.</summary>
   /// <remarks>Objects that are larger in any of the dimensions cannot fit the inventory.</remarks>
