@@ -15,6 +15,11 @@ public interface IKisInventory {
   /// <summary>The vessel that holds this inventory.</summary>
   Vessel ownerVessel { get; }
 
+  /// <summary>The stock inventory module to which this inventory is attached.</summary>
+  /// <value>The stock module instance.</value>
+  /// <seealso cref="GetStockSlotIndex"/>
+  ModuleInventoryPart stockInventoryModule { get; }
+
   /// <summary>Items in the inventory.</summary>
   /// <remarks>
   /// The returned dictionary must not be updated! The implementation is encouraged to make the result readonly.

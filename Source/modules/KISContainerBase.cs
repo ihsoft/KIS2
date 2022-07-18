@@ -89,6 +89,12 @@ public class KisContainerBase : AbstractPartModule,
   /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
   [KSPField]
   public Vector3 maxItemSize;
+
+  /// <summary>Index of the stock inventory module ot bind this KIS inventory to.</summary>
+  /// <remarks>Specify it if the part has more than one stock inventory modules.</remarks>
+  /// <include file="../SpecialDocTags.xml" path="Tags/ConfigSetting/*"/>
+  [KSPField]
+  public int stockInventoryModuleIndex;
   #endregion
 
   #region Global settings
@@ -108,6 +114,11 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <inheritdoc/>
   public Dictionary<string, InventoryItem> inventoryItems { get; } = new();
+
+  /// <inheritdoc/>
+  public ModuleInventoryPart stockInventoryModule =>
+      _stockInventoryModule ??= part.Modules.OfType<ModuleInventoryPart>().Skip(stockInventoryModuleIndex).First();
+  ModuleInventoryPart _stockInventoryModule;
 
   /// <inheritdoc/>
   public Vector3 maxInnerSize => maxItemSize;
@@ -174,13 +185,6 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Inhertitable fields and properties
-  /// <summary>Returns the stock inventory module on this part, which KIS is being shadowing.</summary>
-  /// <value>The stock module instance.</value>
-  /// <exception cref="InvalidOperationException"> if no stock module found.</exception>
-  protected ModuleInventoryPart stockInventoryModule =>
-      _stockInventoryModule ??= part.Modules.OfType<ModuleInventoryPart>().First();
-  ModuleInventoryPart _stockInventoryModule;
-
   /// <summary>Returns the stock UI inventory action.</summary>
   /// <remarks>It controls the GUI behavior of the stock inventory PAW.</remarks>
   /// <value>The UI action inventory. It's never <c>null</c>.</value>
