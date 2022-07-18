@@ -456,6 +456,14 @@ public class KisContainerBase : AbstractPartModule,
     inventoryItems.TryGetValue(itemId, out var res);
     return res;
   }
+  
+  /// <inheritdoc/>
+  public int GetStockSlotIndex(InventoryItem item) {
+    if (_itemsToStockSlotMap.TryGetValue(item.itemId, out var stockSlotIndex)) {
+      return stockSlotIndex;
+    }
+    return -1;
+  }
   #endregion
 
   #region API methods
@@ -525,17 +533,6 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Local utility methods
-  /// <summary>Finds the stock slot index for KIS item.</summary>
-  /// <param name="item">The item to get the slot for.</param>
-  /// <returns>The sock slot of this inventory or <c>-1</c> if the item is not stored in this inventory.</returns>
-  /// <seealso cref="InventoryItem.stockSlotIndex"/>
-  internal int GetStockSlotForItem(InventoryItem item) {
-    if (_itemsToStockSlotMap.TryGetValue(item.itemId, out var stockSlotIndex)) {
-      return stockSlotIndex;
-    }
-    return -1;
-  }
-
   /// <summary>Creates an item from a non-empty stock slot and updates stock related indexes.</summary>
   /// <remarks>
   /// The new item is not added to <see cref="inventoryItems"/>, but it's expected that it will be added there by the

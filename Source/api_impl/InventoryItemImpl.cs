@@ -18,14 +18,10 @@ namespace KIS2 {
 sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
-  public IKisInventory inventory => _inventoryBase;
-  readonly KisContainerBase _inventoryBase;
+  public IKisInventory inventory { get; }
 
   /// <inheritdoc/>
   public string itemId { get; }
-
-  /// <inheritdoc/>
-  public int stockSlotIndex => _inventoryBase != null ? _inventoryBase.GetStockSlotForItem(this) : -1;
 
   /// <inheritdoc/>
   public Part materialPart { get; set; }
@@ -206,7 +202,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="snapshot">The part's snapshot.</param>
   /// <param name="newItemId">The new item ID.</param>
   InventoryItemImpl(KisContainerBase inventory, ProtoPartSnapshot snapshot, string newItemId) {
-    _inventoryBase = inventory;
+    this.inventory = inventory;
     this.snapshot = snapshot;
     _oldVariantName = snapshot.moduleVariantName ?? "";
     itemId = newItemId;

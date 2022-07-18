@@ -192,6 +192,15 @@ public interface IKisInventory {
   /// <seealso cref="InventoryItem.itemId"/>
   /// <seealso cref="inventoryItems"/>
   InventoryItem FindItem(string itemId);
+
+  /// <summary>Returns the index of the stock slot in which the KIS item is stored.</summary>
+  /// <remarks>
+  /// Can be handy when performing logic that requires stock inventory interactions. Multiple KIS items can refer the
+  /// same stock slot if the slot maximum amount is greater that 1.
+  /// </remarks>
+  /// <param name="item">The item to get the slot index for.</param>
+  /// <returns>The index of the slot or <c>-1</c> if the item is not stored in this inventory.</returns>
+  int GetStockSlotIndex(InventoryItem item);
 }
 
 }  // namespace

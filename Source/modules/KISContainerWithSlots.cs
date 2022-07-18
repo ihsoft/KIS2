@@ -632,7 +632,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     //FIXME: this can extend inventory slots
 
     var itemToKisSlotMap = StockCompatibilitySettings.isCompatibilityMode
-        ? inventoryItems.Values.ToDictionary(k => k.itemId, v => v.stockSlotIndex)
+        ? inventoryItems.Values.ToDictionary(k => k.itemId, GetStockSlotIndex)
         : node.GetValues(PersistentConfigKisSlotMapping)
             .AsEnumerable()
             .Select(x => x.Split(new[] { '-' }, 2))
@@ -732,7 +732,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   protected override void AddInventoryItem(InventoryItem item) {
     base.AddInventoryItem(item);
     var slot = StockCompatibilitySettings.isCompatibilityMode
-        ? _inventorySlots[item.stockSlotIndex]
+        ? _inventorySlots[GetStockSlotIndex(item)]
         : FindSlotForItem(item, addInvisibleSlot: true);
     AddSlotItem(slot, item);
   }
@@ -1488,7 +1488,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
       }
     } else if (actualDelta < 0) {
-      var slotItems = slotWithPointerFocus.slotItems.Select(x => new { stockSlotIndex = x.stockSlotIndex, item = x })
+      var slotItems = slotWithPointerFocus.slotItems
+          .Select(x => new { stockSlotIndex = GetStockSlotIndex(x), item = x })
           .OrderByDescending(x => x.stockSlotIndex)
           .Select(x => x.item)
           .ToArray();
