@@ -244,21 +244,22 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
     var consumedItems = new List<InventoryItem>();
     var affectedInventories = new HashSet<IKisInventory>();
     foreach (var leasedItem in leasedItems) {
+      // The items that don;t belong to an inventory will get erased on leased items clear.
       if (leasedItem.inventory == null) {
+        // Clearing the lease will erase the item.
         consumedItems.Add(leasedItem);
         continue;
       }
+      // Remove the item from the inventory to have it erase once the lease is released.
       var detachedItem = leasedItem.inventory.DeleteItem(leasedItem);
       if (detachedItem != null) {
-        affectedInventories.Add(leasedItem.inventory);
         consumedItems.Add(detachedItem);
+        affectedInventories.Add(leasedItem.inventory);
       } else {
+        // The inventory can block deletion for any reason, but it's not normally expected in the consume action.
         DebugEx.Warning(
             "Cannot delete item from inventory: itemId={0}, isLocked={1}", leasedItem.itemId, leasedItem.isLocked);
       }
-    }
-    foreach (var affectedInventory in affectedInventories) {
-      affectedInventory.UpdateInventory();
     }
     DebugEx.Info("Removed {0} items from {1} inventories", consumedItems.Count, affectedInventories.Count);
     ClearLease(isCancelled: false);

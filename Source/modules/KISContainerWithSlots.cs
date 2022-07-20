@@ -721,14 +721,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <inheritdoc/>
-  /// FIXME: can be called at high FPS.
-  public override void UpdateInventory(ICollection<InventoryItem> changedItems = null) {
-    base.UpdateInventory(changedItems);
-    ArrangeSlots(); // Optimize the KIS slots usage.
-    UpdateInventoryWindow();
-  }
-
-  /// <inheritdoc/>
   protected override void AddInventoryItem(InventoryItem item) {
     base.AddInventoryItem(item);
     var slot = StockCompatibilitySettings.isCompatibilityMode
@@ -786,7 +778,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}'", partName);
       }
     }
-    UpdateInventory();
   }
   #endregion
 
@@ -1000,7 +991,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.SendMessage(
         nameof(IKspDevUnityControlChanged.ControlUpdated), _unityWindow.gameObject,
         SendMessageOptions.DontRequireReceiver);
-    _unityWindow.StartCoroutine(GuiActionsHandler());
+    _unityWindow.StartCoroutine(GuiUpdater());
   }
 
   /// <summary>Destroys the inventory window.</summary>
@@ -1020,22 +1011,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow = null;
     // Immediately make all slots invisible. Don't rely on Unity cleanup routines.  
     _inventorySlots.ForEach(x => x.BindTo(null));
-  }
-
-  /// <summary>Updates stats in the open inventory window.</summary>
-  /// <remarks>It's safe to call it when the inventory window is not open.</remarks>
-  void UpdateInventoryWindow() {
-    if (!isGuiOpen) {
-      return;
-    }
-    var text = new List<string> {
-        InventoryContentMassStat.Format(contentMass),
-        InventoryContentCostStat.Format(contentCost),
-        MaxVolumeStat.Format(maxVolume),
-        AvailableVolumeStat.Format(Math.Max(maxVolume - usedVolume, 0))
-    };
-    _unityWindow.mainStats = string.Join("\n", text);
-    UpdateEventsHandlerState();
   }
 
   /// <summary>Returns a slot where the item can be stored.</summary>
@@ -1505,7 +1480,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         }
       }
     }
-    UpdateInventory();
   }
 
   /// <summary>Takes items from the focused slot and starts dragging operation.</summary>
@@ -1541,7 +1515,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     dragIconObj.stackSize = KisApi.ItemDragController.leasedItems.Length;
     dragIconObj.resourceStatus = slotWithPointerFocus.resourceStatus;
     UIPartActionController.Instance.partInventory.PlayPartSelectedSFX();
-    UpdateInventory();
   }
 
   /// <summary>Consumes the dragged items and adds them into the hovered slot.</summary>
@@ -1572,7 +1545,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
               this, "Cannot add dragged item: part={0}, itemId={1}", consumedItem.avPart.name, consumedItem.itemId);
         }
       }
-      UpdateInventory();
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     } else {
       UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
@@ -1582,15 +1554,47 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
   }
 
-  /// <summary>Runs on the opened dialog to handle the dialog actions.</summary>
-  /// <remarks>It must be attached to the dialog's game object.</remarks>
-  IEnumerator GuiActionsHandler() {
+  /// <summary>Runs on the opened dialog and updates the GUI related things.</summary>
+  /// <remarks>
+  /// This coroutine handles all the real-time updates on the dialog and _only_ if the dialog is opened. It must be
+  /// attached to the dialog's game object to die with it when the dialog is closed.
+  /// </remarks>
+  IEnumerator GuiUpdater() {
     while (true) {
-      yield return null; // Call on every frame update.
-      if (Time.timeScale > float.Epsilon) {
-        _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
+      if (Time.timeScale <= float.Epsilon) {
+        yield return null;
+        continue;
       }
+
+      // Actions need real-time updates.
+      UpdateEventsHandlerState();
+      _slotEventsHandler.HandleActions(); // This also evaluates the events conditions.
+
+      // GUI representation doesn't need to run on every frame update.
+      if (Time.time >= _lastGuiUpdateTime + GuiUpdatePeriod) {
+        _lastGuiUpdateTime = Time.time;
+        UpdateInventoryWindow();
+      }
+
+      yield return null;
     }
+    // The coroutine dies with the dialog object. The execution never gets here.
+    // ReSharper disable once IteratorNeverReturns
+  }
+  const float GuiUpdatePeriod = 0.1f;  // 100ms
+  float _lastGuiUpdateTime;
+
+  /// <summary>Updates GUI representation of the open inventory window.</summary>
+  /// <remarks>The update may be costly. Avoid calling it from the every frame update.</remarks>
+  void UpdateInventoryWindow() {
+    var text = new List<string> {
+        InventoryContentMassStat.Format(contentMass),
+        InventoryContentCostStat.Format(contentCost),
+        MaxVolumeStat.Format(maxVolume),
+        AvailableVolumeStat.Format(Math.Max(maxVolume - usedVolume, 0))
+    };
+    _unityWindow.mainStats = string.Join("\n", text);
+    _inventorySlots.ForEach(x => x.UpdateUnitySlot());
   }
   #endregion
 }

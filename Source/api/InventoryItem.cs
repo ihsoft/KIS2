@@ -71,7 +71,7 @@ public interface InventoryItem {
   /// <seealso cref="SyncToSnapshot"/>
   ProtoPartSnapshot mutableSnapshot { get; }
 
-  /// <summary>Cached volume that part would take in its current state.</summary>
+  /// <summary>Volume that part would take in its current state.</summary>
   /// <remarks>
   /// The snapshot state can greatly affect the volume. E.g. most part take several times more volume when deployed.
   /// </remarks>
@@ -79,27 +79,27 @@ public interface InventoryItem {
   /// <seealso cref="SyncToSnapshot"/>
   double volume { get; }
 
-  /// <summary>Cached boundary size of the current part state.</summary>
+  /// <summary>Boundary size of the current part state.</summary>
   /// <value>The size in metres in each dimension.</value>
   /// <seealso cref="SyncToSnapshot"/>
   Vector3 size { get; }
 
-  /// <summary>Cached mass of the part without resources.</summary>
+  /// <summary>Mass of the part without resources.</summary>
   /// <value>The mass in <c>tons</c>.</value>
   /// <seealso cref="SyncToSnapshot"/>
   double dryMass { get; }
 
-  /// <summary>Cached cost of the part without resources.</summary>
+  /// <summary>Cost of the part without resources.</summary>
   /// <value>The cost in <c>credits</c>.</value>
   /// <seealso cref="SyncToSnapshot"/>
   double dryCost { get; }
 
-  /// <summary>Cached mass of the part with all available resources.</summary>
+  /// <summary>Mass of the part with all available resources.</summary>
   /// <value>The mass in <c>tons</c>.</value>
   /// <seealso cref="SyncToSnapshot"/>
   double fullMass { get; }
 
-  /// <summary>Cached cost of the part with all available resources.</summary>
+  /// <summary>Cost of the part with all available resources.</summary>
   /// <value>The cost in <c>credits</c>.</value>
   /// <seealso cref="SyncToSnapshot"/>
   double fullCost { get; }
@@ -112,7 +112,6 @@ public interface InventoryItem {
   /// <value>The resources from the snapshot.</value>
   /// <seealso cref="snapshot"/>
   /// <seealso cref="SyncToSnapshot"/>
-  /// <seealso cref="IKisInventory.UpdateInventory"/>
   ProtoPartResourceSnapshot[] resources { get; }
 
   /// <summary>Read-only. Cached science data in the part.</summary>
@@ -142,12 +141,7 @@ public interface InventoryItem {
   List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; }
 
   /// <summary>Sets locked state.</summary>
-  /// <remarks>
-  /// The inventory may need to know if the item's lock state has updated. The actor, that changes the state, is
-  /// responsible to notify the inventory via the <see cref="IKisInventory.UpdateInventory"/> method.
-  /// </remarks>
   /// <seealso cref="isLocked"/>
-  /// <seealso cref="IKisInventory.UpdateInventory"/>
   void SetLocked(bool newState);
 
   /// <summary>Updates all the item's cached values to make them matching the snapshot.</summary>

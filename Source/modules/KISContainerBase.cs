@@ -131,14 +131,10 @@ public class KisContainerBase : AbstractPartModule,
   public double usedVolume => stockInventoryModule.volumeCapacity;
 
   /// <inheritdoc/>
-  public float contentMass =>
-      _contentMass ??= stockInventoryModule.GetModuleMass(part.mass, ModifierStagingSituation.CURRENT);
-  float? _contentMass;
+  public float contentMass => stockInventoryModule.GetModuleMass(part.mass, ModifierStagingSituation.CURRENT);
 
   /// <inheritdoc/>
-  public float contentCost =>
-      _contentCost ??= stockInventoryModule.GetModuleCost(part.partInfo.cost, ModifierStagingSituation.CURRENT);
-  float? _contentCost;
+  public float contentCost => stockInventoryModule.GetModuleCost(part.partInfo.cost, ModifierStagingSituation.CURRENT);
   #endregion
 
   #region Check reasons
@@ -450,12 +446,6 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual void UpdateInventory(ICollection<InventoryItem> changedItems = null) {
-    _contentCost = null;
-    _contentMass = null;
-  }
-
-  /// <inheritdoc/>
   public InventoryItem FindItem(string itemId) {
     ArgumentGuard.NotNullOrEmpty(itemId, nameof(itemId), context: this);
     inventoryItems.TryGetValue(itemId, out var res);
@@ -727,11 +717,6 @@ public class KisContainerBase : AbstractPartModule,
             stockSlotIndex, item.avPart.name, item.itemId);
         AddInventoryItem(item);
       }
-    }
-    if (slotQuantity != indexedItems) {
-      UpdateInventory();
-      // Make a delayed update to catch the stock properties updates in GUI.
-      AsyncCall.CallOnEndOfFrame(this, () => UpdateInventory());
     }
   }
 
