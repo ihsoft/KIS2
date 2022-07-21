@@ -631,7 +631,7 @@ public class KisContainerBase : AbstractPartModule,
     if (StockCompatibilitySettings.isCompatibilityMode) {
       errors = ReturnStockInventoryErrorReasons(
           NoFreeSlotsReasonText,
-          logDetails: string.Format("Cannot find a compatible stock slot and cannot create a new one"));
+          logDetails: "Cannot find a compatible stock slot and cannot create a new one");
       return -1;
     }
 

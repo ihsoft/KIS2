@@ -126,7 +126,7 @@ sealed class InventorySlotImpl {
   public string resourceStatus => isVisible ? _unitySlot.resourceStatus : null;
 
   /// <summary>
-  /// Number of the items that was claimed by the inventory fro the removal. They must be skipped from the UI related
+  /// Number of the items that was claimed by the inventory for the removal. They must be skipped from the UI related
   /// updates.
   /// </summary>
   /// <remarks>The items are always reserved starting from item 0.</remarks>
@@ -165,7 +165,7 @@ sealed class InventorySlotImpl {
   /// <summary>Reflection of <see cref="slotItems"/> in a form of hash set for quick lookup operations.</summary>
   /// <seealso cref="AddItem"/>
   /// <seealso cref="DeleteItem"/>
-  readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
+  readonly HashSet<InventoryItem> _itemsSet = new();
 
   /// <summary>Returns the item which this slot uses as a base for the similarity checks.</summary>
   /// <value>The item or NULL if the slot is empty.</value>

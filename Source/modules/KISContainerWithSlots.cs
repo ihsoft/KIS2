@@ -17,7 +17,6 @@ using KISAPIv2;
 using KIS2.UIKISInventorySlot;
 using KSPDev.ConfigUtils;
 using KSPDev.InputUtils;
-using KSPDev.PartUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -531,7 +530,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     base.OnStart(state);
 
     useGUILayout = false;
-    _slotEventsHandler.ONAfterTransition += (oldState, newState) => {
+    _slotEventsHandler.ONAfterTransition += (_, _) => {
       UpdateTooltip();
     }; 
 
@@ -1078,7 +1077,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// </summary>
   /// <remarks>
   /// This method must be called each time the inventory or unity slots number is changed. It implements a tricky logic
-  /// that tries to adapt to the inventory GUI size change, and adjusts the  slots so that the least number of the
+  /// that tries to adapt to the inventory GUI size change, and adjusts the slots so that the least number of the
   /// visible slots change their positions.
   /// </remarks>
   void ArrangeSlots() {
@@ -1397,14 +1396,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _itemToSlotMap.Remove(item.itemId);
   }
 
-  /// <summary>Moves a set of items to the specified slot.</summary>
+  /// <summary>Moves an item to the specified slot.</summary>
   /// <remarks>
-  /// All items must belong to this inventory. There will be no checking done to figure if the items can be placed into
-  /// the same slot, the caller is responsible to do this check.
+  /// There will be no checking done to figure if the item can be placed into the target slot.
   /// </remarks>
   /// <param name="targetSlot">The slot to put the items into.</param>
   /// <param name="item">The item to put into the slot. It must belong to this inventory!</param>
-  void MoveItemsToSlot(InventorySlotImpl targetSlot, InventoryItem item) {
+  void MoveItemToSlot(InventorySlotImpl targetSlot, InventoryItem item) {
     if (!_itemToSlotMap.TryGetValue(item.itemId, out var slot)) {
       HostedDebugLog.Error(this, "Cannot find slot for item: itemId={0}", item.itemId);
       return;
@@ -1444,7 +1442,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           continue;
         }
         var newItem = AddItem(newItemTemplate); // It will get added to a random slot.
-        MoveItemsToSlot(slotWithPointerFocus, newItem); // Move the item to the the specific slot.
+        MoveItemToSlot(slotWithPointerFocus, newItem); // Move the item to the the specific slot.
       }
       checkResult = checkResult
           .GroupBy(p => p.guiString, StringComparer.OrdinalIgnoreCase)
@@ -1528,7 +1526,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     var kisSlotIndex = _inventorySlots.IndexOf(slotWithPointerFocus);
     if (consumedItems != null) {
       HostedDebugLog.Info(this, "Add items to slot: slot=#{0}, num={1}", kisSlotIndex, consumedItems.Length);
-      var newItems = new List<InventoryItem>(consumedItems.Length);
       foreach (var consumedItem in consumedItems) {
         InventoryItem item;
         if (StockCompatibilitySettings.isCompatibilityMode) {
@@ -1536,7 +1533,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         } else {
           item = AddItem(consumedItem);
           if (item != null) {
-            MoveItemsToSlot(slotWithPointerFocus, item);
+            MoveItemToSlot(slotWithPointerFocus, item);
           }
         }
         if (item == null) {
