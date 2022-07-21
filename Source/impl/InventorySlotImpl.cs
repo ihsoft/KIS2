@@ -145,7 +145,7 @@ sealed class InventorySlotImpl {
 
   /// <summary>Generalized icon of the slot.</summary>
   /// <value>The texture that represents the slot.</value>
-  public Texture iconImage => slotItems.Count > 0 ? slotItems[0].iconImage : null;
+  public Texture iconImage => slotRefItem?.iconImage;
 
   /// <summary>Indicates if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Count == 0;
@@ -156,7 +156,7 @@ sealed class InventorySlotImpl {
   #region Local fields and properties
   /// <summary>Part info of this slot.</summary>
   /// <value>The part info or <c>null</c> if the slot is empty.</value>
-  AvailablePart avPart => !isEmpty ? slotItems[0].avPart : null;
+  AvailablePart avPart => slotRefItem?.avPart;
 
   /// <summary>Unity object that represents the slot.</summary>
   /// <remarks>It can be <c>null</c> if the slot is not shown in the inventory window.</remarks>
@@ -167,9 +167,10 @@ sealed class InventorySlotImpl {
   /// <seealso cref="DeleteItem"/>
   readonly HashSet<InventoryItem> _itemsSet = new HashSet<InventoryItem>();
 
-  /// <summary>Rounded similarity values per resource name.</summary>
+  /// <summary>Returns the item which this slot uses as a base for the similarity checks.</summary>
+  /// <value>The item or NULL if the slot is empty.</value>
   /// <seealso cref="CheckIfSimilar"/>
-  Dictionary<string, int> _resourceSimilarityValues;  
+  InventoryItem slotRefItem => !isEmpty ? slotItems[0] : null;
   #endregion
 
   /// <summary>Makes an inventory slot, bound to its Unity counterpart.</summary>
@@ -187,7 +188,7 @@ sealed class InventorySlotImpl {
   /// <param name="newUnitySlot">The slot or <c>null</c> if slot should become invisible.</param>
   /// <seealso cref="isVisible"/>
   public void BindTo(UIKISInventorySlot.Slot newUnitySlot) {
-    var needUpdate = _unitySlot != newUnitySlot;
+    var needUpdate = newUnitySlot != null && _unitySlot != newUnitySlot;
     _unitySlot = newUnitySlot;
     if (needUpdate) {
       UpdateUnitySlot();
@@ -211,12 +212,8 @@ sealed class InventorySlotImpl {
   /// </param>
   /// <seealso cref="CheckCanAddItems"/>
   public void AddItem(InventoryItem item) {
-    if (_itemsSet.Count == 0) {
-      _resourceSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(item);
-    }
     _itemsSet.Add(item);
     slotItems.Add(item);
-    UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats
   }
 
   /// <summary>Deletes the item from the slot.</summary>
@@ -225,10 +222,23 @@ sealed class InventorySlotImpl {
   public void DeleteItem(InventoryItem item) {
     _itemsSet.Remove(item);
     slotItems.Remove(item); // FIXME: This won't be fast on large sets.
-    if (_itemsSet.Count == 0) {
-      _resourceSimilarityValues = null;
+  }
+
+  /// <summary>Updates the slot's GUI to the current KIS slot state.</summary>
+  public void UpdateUnitySlot() {
+    if (_unitySlot == null) {
+      return;
     }
-    UpdateUnitySlot(); // FIXME: move to inventory.UpdateStats 
+    if (isEmpty) {
+      _unitySlot.ClearContent();
+      return;
+    }
+    _unitySlot.slotImage = iconImage;
+    _unitySlot.stackSize = "x" + (slotItems.Count - reservedItems);
+    _unitySlot.resourceStatus = GetSlotResourceAmountStatus();
+
+    // Slot science data.
+    // FIXME: implement
   }
 
   /// <summary>Verifies if the items can be added to the slot.</summary>
@@ -252,7 +262,7 @@ sealed class InventorySlotImpl {
       return ReturnErrorReasons(
           logErrors, SlotIsFullReason, SlotIsFullReasonText.Format(ownerInventory.maxKisSlotSize));
     }
-    var refItem = isEmpty ? checkItems[0] : slotItems[0];
+    var refItem = slotRefItem ?? checkItems[0];
 
     // The checking algo below is not performance efficient. However, it's stable!
     // The errors are reported based on their severity vs reporting any random error detected.
@@ -263,15 +273,19 @@ sealed class InventorySlotImpl {
     if (checkItems.Any(x => x.variantName != refItem.variantName)) {
       return ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
     }
-    var refSimilarityValues = _resourceSimilarityValues ?? KisContainerWithSlots.CalculateSimilarityValues(refItem);
-    if (checkItems.Any(x => !CheckIfSameResources(x, refSimilarityValues))) {
+    if (checkItems.Any(x => !CheckIfSameResources(refItem, x))) {
       return ReturnErrorReasons(logErrors, DifferentResourcesReason, DifferentResourcesReasonText);
     }
-    if (checkItems.Any(x => !CheckIfSimilar(x, refSimilarityValues))) {
+    if (checkItems.Any(x => !CheckIfSimilar(refItem, x))) {
       return ReturnErrorReasons(logErrors, DifferentResourceAmountsReason, DifferentResourceAmountsReasonText);
     }
 
     return new List<ErrorReason>();
+  }
+
+  /// <summary>Checks if the item can be stacked into this slot.</summary>
+  public bool IsItemFit(InventoryItem checkItem) {
+    return slotItems.Count == 1 || CheckIfSimilar(slotRefItem, checkItem);
   }
   #endregion
 
@@ -281,15 +295,16 @@ sealed class InventorySlotImpl {
   /// The boundary values, 100% and 0%, are only shown if this value is not a default for any of the part resources.
   /// </remarks>
   string GetSlotResourceAmountStatus() {
-    if (_resourceSimilarityValues == null || slotItems[0].resources.Length == 0) {
+    if (slotRefItem.resources.Length == 0) {
       return null;
     }
-    var slotPercent = _resourceSimilarityValues.Sum(x => (double) x.Value) / 100.0
-        / _resourceSimilarityValues.Count;
+    var similarityValues = KisContainerWithSlots.CalculateSimilarityValues(slotRefItem); 
+    var slotPercent = similarityValues.Sum(x => (double) x.Value) / 100.0
+        / similarityValues.Count;
     var amountSlot = KisContainerWithSlots.GetResourceAmountSlot(slotPercent);
     string text;
     if (amountSlot == 0) {
-      var defaultIsEmpty = slotItems[0].resources.Any(r => r.resourceRef?.amount < double.Epsilon); 
+      var defaultIsEmpty = slotRefItem.resources.Any(r => r.resourceRef?.amount < double.Epsilon); 
       text = defaultIsEmpty ? null : "0%";
     } else if (amountSlot == 5) {
       text = "<5%";
@@ -298,41 +313,24 @@ sealed class InventorySlotImpl {
     } else if (amountSlot != 100) {
       text = ">95%";
     } else {
-      var defaultIsFull = slotItems[0].resources.Any(r => r.resourceRef?.amount > double.Epsilon); 
+      var defaultIsFull = slotRefItem.resources.Any(r => r.resourceRef?.amount > double.Epsilon); 
       text = defaultIsFull ? null : "100%";
     }
     return text;
   }
 
-  /// <summary>Updates the slot's GUI to the current KIS slot state.</summary>
-  void UpdateUnitySlot() {
-    if (_unitySlot == null) {
-      return;
-    }
-    if (isEmpty) {
-      _unitySlot.ClearContent();
-      return;
-    }
-    _unitySlot.slotImage = iconImage;
-    _unitySlot.stackSize = "x" + (slotItems.Count - reservedItems);
-    _unitySlot.resourceStatus = GetSlotResourceAmountStatus();
-
-    // Slot science data.
-    // FIXME: implement
-  }
-
   /// <summary>Checks if items resources are the same and the amounts are somewhat close.</summary>
-  static bool CheckIfSimilar(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
+  static bool CheckIfSimilar(InventoryItem refItem, InventoryItem checkItem) {
+    var refSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(refItem);
     var checkSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(checkItem);
-    return similarityValues.Count == checkSimilarityValues.Count
-        && !similarityValues.Except(checkSimilarityValues).Any();
+    return refSimilarityValues.SequenceEqual(checkSimilarityValues); 
   }
 
   /// <summary>Checks if items resources are the same, disregarding the amounts.</summary>
-  static bool CheckIfSameResources(InventoryItem checkItem, Dictionary<string, int> similarityValues) {
-    var checkSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(checkItem);
-    return similarityValues.Count == checkSimilarityValues.Count
-        && !similarityValues.Keys.Except(checkSimilarityValues.Keys).Any();
+  static bool CheckIfSameResources(InventoryItem refItem, InventoryItem checkItem) {
+    var refResources = refItem.resources.Select(r => r.resourceName);
+    var checkResources = checkItem.resources.Select(r => r.resourceName);
+    return refResources.SequenceEqual(checkResources);
   }
 
   /// <summary>Returns a standard error reason response.</summary>

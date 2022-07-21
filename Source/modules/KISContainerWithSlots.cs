@@ -918,10 +918,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
-  static void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip, ICollection<InventoryItem> items,
-                                         Dictionary<string, int> similarityValues = null) {
+  static void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip, ICollection<InventoryItem> items) {
     var refItem = items.First();
-    similarityValues ??= CalculateSimilarityValues(refItem);
+    var similarityValues = CalculateSimilarityValues(refItem);
     tooltip.title = refItem.avPart.title;
 
     // Basic stats.
@@ -1594,7 +1593,23 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         AvailableVolumeStat.Format(Math.Max(maxVolume - usedVolume, 0))
     };
     _unityWindow.mainStats = string.Join("\n", text);
-    _inventorySlots.ForEach(x => x.UpdateUnitySlot());
+
+    // Check if the slots need to be re-arranged to accomodate the changed items.
+    for (var i = 0; i < _inventorySlots.Count; i++) {
+      var slot = _inventorySlots[i];
+      for (var j = slot.slotItems.Count - 1; j >= 0; j--) {
+        var item = slot.slotItems[j];
+        if (!slot.IsItemFit(item)) {
+          RemoveSlotItem(slot, item);
+          var newSlot = FindSlotForItem(item, addInvisibleSlot: true);
+          AddSlotItem(newSlot, item);
+        }
+      }
+      slot.UpdateUnitySlot();
+    }
+
+    ArrangeSlots();
+    UpdateTooltip();
   }
   #endregion
 }
