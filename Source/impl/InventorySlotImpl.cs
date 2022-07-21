@@ -150,14 +150,14 @@ sealed class InventorySlotImpl {
   /// <summary>Indicates if this slot has any part item.</summary>
   public bool isEmpty => slotItems.Count == 0;
 
+  /// <summary>Reference part info of this slot.</summary>
+  /// <value>The part info or <c>null</c> if the slot is empty.</value>
+  public AvailablePart avPart => slotRefItem?.avPart;
+
   // ReSharper enable MemberCanBePrivate.Global
   #endregion
 
   #region Local fields and properties
-  /// <summary>Part info of this slot.</summary>
-  /// <value>The part info or <c>null</c> if the slot is empty.</value>
-  AvailablePart avPart => slotRefItem?.avPart;
-
   /// <summary>Unity object that represents the slot.</summary>
   /// <remarks>It can be <c>null</c> if the slot is not shown in the inventory window.</remarks>
   UIKISInventorySlot.Slot _unitySlot;
