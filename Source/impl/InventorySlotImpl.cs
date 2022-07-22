@@ -304,7 +304,7 @@ sealed class InventorySlotImpl {
     var amountSlot = KisContainerWithSlots.GetResourceAmountSlot(slotPercent);
     string text;
     if (amountSlot == 0) {
-      var defaultIsEmpty = slotRefItem.resources.Any(r => r.resourceRef?.amount < double.Epsilon); 
+      var defaultIsEmpty = slotRefItem.avPart.partPrefab.Resources.Any(r => r.amount < double.Epsilon); 
       text = defaultIsEmpty ? null : "0%";
     } else if (amountSlot == 5) {
       text = "<5%";
@@ -313,7 +313,7 @@ sealed class InventorySlotImpl {
     } else if (amountSlot != 100) {
       text = ">95%";
     } else {
-      var defaultIsFull = slotRefItem.resources.Any(r => r.resourceRef?.amount > double.Epsilon); 
+      var defaultIsFull = slotRefItem.avPart.partPrefab.Resources.Any(r => r.amount > double.Epsilon); 
       text = defaultIsFull ? null : "100%";
     }
     return text;
