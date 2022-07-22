@@ -1433,9 +1433,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     HostedDebugLog.Fine(this, "Update items count in slot: slot=#{0}, requestedDelta={1}, actualDelta={2}",
                         _inventorySlots.IndexOf(slotWithPointerFocus), requestedDelta, actualDelta);
     if (actualDelta > 0) {
-      var newItemTemplate = InventoryItemImpl.FromSnapshot(null, slotWithPointerFocus.slotItems[0].snapshot);
       var checkResult = new List<ErrorReason>();
       for (var i = 0; i < actualDelta; i++) {
+        var newItemTemplate = InventoryItemImpl.FromSnapshot(
+            null, KisApi.PartNodeUtils.FullProtoPartCopy(slotWithPointerFocus.slotItems[0].snapshot));
         var itemErrors = CheckCanAddItem(newItemTemplate);
         if (itemErrors.Count > 0) {
           checkResult.AddRange(itemErrors);

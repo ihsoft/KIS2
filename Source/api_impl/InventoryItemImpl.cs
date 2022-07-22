@@ -48,7 +48,7 @@ sealed class InventoryItemImpl : InventoryItem {
         throw new InvalidOperationException("Cannot modify item while it belongs to an inventory");
       }
       if (_mutableSnapshot == null) {
-        snapshot = KisApi.PartNodeUtils.FastProtoPartCopy(snapshot);
+        snapshot = KisApi.PartNodeUtils.FullProtoPartCopy(snapshot);
         _mutableSnapshot = snapshot;
       }
       return _mutableSnapshot;

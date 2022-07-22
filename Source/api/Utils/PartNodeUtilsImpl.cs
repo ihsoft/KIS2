@@ -131,6 +131,16 @@ public class PartNodeUtilsImpl {
   }
   static MethodInfo _copyMethod;
 
+  /// <summary>Makes a proto part copy.</summary>
+  /// <remarks>This method is slow and triggers game events.</remarks>
+  /// <param name="srcSnapshot">The snapshot to make copy of.</param>
+  /// <returns>A copy of the snapshot.</returns>
+  public ProtoPartSnapshot FullProtoPartCopy(ProtoPartSnapshot srcSnapshot) {
+    var node = new ConfigNode();
+    srcSnapshot.Save(node);
+    return GetProtoPartSnapshotFromNode(null, node);
+  }
+
   /// <summary>Returns all the resource on the part.</summary>
   /// <param name="partNode">
   /// The part's config or a persistent state. It can be a top-level node or the <c>PART</c> node.

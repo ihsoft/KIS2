@@ -122,7 +122,7 @@ public interface IKisInventory {
   /// </remarks>
   /// <param name="item">
   /// The item to add. It must be a detached item that doesn't belong to any other inventory. This item must not be used
-  /// or re-used after it was successfully added to the inventory.
+  /// or re-used after it was successfully added to the inventory since it may affect the inventory.
   /// </param>
   /// <param name="stockSlotIndex">
   /// Optional stock slot index. If not specified, the item will be added to any available stock slot. Otherwise,
@@ -142,7 +142,7 @@ public interface IKisInventory {
   /// <remarks>The action can fail if the item is locked or doesn't exist.</remarks>
   /// <param name="item">
   /// The item to remove. It must belong to this inventory. This item must not be used once it was removed from the
-  /// inventory.
+  /// inventory since it may affect the inventory.
   /// </param>
   /// <returns>The detached item if removal was successful, or NULL otherwise.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
