@@ -11,6 +11,11 @@ using UnityEngine;
 namespace KISAPIv2 {
 
 /// <summary>Basic container for a single inventory item.</summary>
+/// <remarks>
+/// The items are immutable objects. It means that if there was an action performed on an item, then that item won't
+/// change its content. Every updating action on the item is required to return a new instance of the item. The original
+/// item must be considered invalid at this point and never used for any purpose.
+/// </remarks>
 // ReSharper disable once InconsistentNaming
 // ReSharper disable once IdentifierTypo
 public interface InventoryItem {
@@ -59,6 +64,8 @@ public interface InventoryItem {
   /// This is a SHARED instance of the snapshot. Multiple items from the different inventories can use it at the same
   /// time. NEVER update it! If the snapshot needs to be changed, use <see cref="mutableSnapshot"/>.
   /// </remarks>
+  /// <value>The part snapshot.</value>
+  /// <seealso cref="stockSlot"/>
   ProtoPartSnapshot snapshot { get; }
 
   /// <summary>The part's mutable snapshot.</summary>
@@ -70,6 +77,17 @@ public interface InventoryItem {
   /// <exception cref="InvalidOperationException">If the item is not detached.</exception>
   /// <seealso cref="SyncToSnapshot"/>
   ProtoPartSnapshot mutableSnapshot { get; }
+
+  /// <summary>Index of the stock slot where this item is stored into.</summary>
+  /// <value>The index in <see cref="ModuleInventoryPart.storedParts"/> or -1 if the item is detached.</value>
+  /// <seealso cref="stockSlot"/>
+  public int stockSlotIndex { get; }
+
+  /// <summary>Stock inventory slot where this item is stored.</summary>
+  /// <remarks>Multiple items can be stored in the same stock slot.</remarks>
+  /// <value>The stock slot or NULL if item is detached.</value>
+  /// <seealso cref="stockSlotIndex"/>
+  public StoredPart stockSlot { get; }
 
   /// <summary>Volume that part would take in its current state.</summary>
   /// <remarks>

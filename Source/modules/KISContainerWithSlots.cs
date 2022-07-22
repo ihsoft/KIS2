@@ -1436,7 +1436,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       var checkResult = new List<ErrorReason>();
       for (var i = 0; i < actualDelta; i++) {
         var newItemTemplate = InventoryItemImpl.FromSnapshot(
-            null, KisApi.PartNodeUtils.FullProtoPartCopy(slotWithPointerFocus.slotItems[0].snapshot));
+            KisApi.PartNodeUtils.FullProtoPartCopy(slotWithPointerFocus.slotItems[0].snapshot));
         var itemErrors = CheckCanAddItem(newItemTemplate);
         if (itemErrors.Count > 0) {
           checkResult.AddRange(itemErrors);

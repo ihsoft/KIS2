@@ -39,7 +39,17 @@ sealed class InventoryItemImpl : InventoryItem {
   Texture _iconImage;
 
   /// <inheritdoc/>
-  public ProtoPartSnapshot snapshot { get; private set; }
+  public ProtoPartSnapshot snapshot => stockSlot?.snapshot ?? _cachedSnapshot;
+  ProtoPartSnapshot _cachedSnapshot;
+
+  /// <inheritdoc/>
+  public int stockSlotIndex { get; }
+
+  /// <inheritdoc/>
+  public StoredPart stockSlot => _stockSlot != null || inventory?.FindItem(itemId) != null
+      ? _stockSlot ??= inventory.stockInventoryModule.storedParts[stockSlotIndex]
+      : null;
+  StoredPart _stockSlot;
 
   /// <inheritdoc/>
   public ProtoPartSnapshot mutableSnapshot {
@@ -48,8 +58,8 @@ sealed class InventoryItemImpl : InventoryItem {
         throw new InvalidOperationException("Cannot modify item while it belongs to an inventory");
       }
       if (_mutableSnapshot == null) {
-        snapshot = KisApi.PartNodeUtils.FullProtoPartCopy(snapshot);
-        _mutableSnapshot = snapshot;
+        _cachedSnapshot = KisApi.PartNodeUtils.FullProtoPartCopy(_cachedSnapshot);
+        _mutableSnapshot = _cachedSnapshot;
       }
       return _mutableSnapshot;
     }
@@ -106,8 +116,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public double fullCost => dryCost + snapshot.moduleCosts + resources.Sum(r => r.amount * r.definition.unitCost);
 
   /// <inheritdoc/>
-  public ProtoPartResourceSnapshot[] resources => _resources ??= snapshot.resources.ToArray();
-  ProtoPartResourceSnapshot[] _resources;
+  public ProtoPartResourceSnapshot[] resources => snapshot.resources.ToArray();
 
   /// <inheritdoc/>
   public ScienceData[] science => _science ??= snapshot.modules
@@ -134,7 +143,6 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public void SyncToSnapshot() {
-    _resources = null;
     _science = null;
     UpdateVariant();
   }
@@ -150,42 +158,57 @@ sealed class InventoryItemImpl : InventoryItem {
   #endregion
 
   #region API methods
-  /// <summary>Creates an item from a proto part snapshot.</summary>
-  /// <param name="inventory">The inventory to bind the item to.</param>
+  /// <summary>Creates an attached item from a stock slot.</summary>
+  /// <param name="inventory">The inventory to bind the item to. It must not be NULL.</param>
+  /// <param name="stockSlotIndex">
+  /// The stock slot to get the data from and associate with this item. This slot must not be empty.
+  /// </param>
+  /// <param name="itemId">The item ID or NULL if a new random value needs to be made.</param>
+  /// <returns>A new item.</returns>
+  public static InventoryItemImpl FromStockSlot(KisContainerBase inventory, int stockSlotIndex, string itemId = null) {
+    return new InventoryItemImpl(
+        inventory.stockInventoryModule.storedParts[stockSlotIndex].snapshot, inventory, stockSlotIndex, itemId);
+  }
+
+  /// <summary>Creates an attached item from another item.</summary>
+  /// <remarks>The new item inherits the source item ID and shares its snapshot.</remarks>
+  /// <param name="inventory">The inventory to bind the item to. It must not be NULL.</param>
+  /// <param name="item">
+  /// The item to copy from. The new instance will have the same item ID as the source, and the source's snapshot will
+  /// be shared.
+  /// </param>
+  /// <param name="stockSlotIndex">The stock slot to associate with this item.</param>
+  /// <returns>A new item.</returns>
+  public static InventoryItemImpl FromItem(KisContainerBase inventory, InventoryItem item, int stockSlotIndex) {
+    return new InventoryItemImpl(item.snapshot, inventory, stockSlotIndex, item.itemId);
+  }
+
+  /// <summary>Creates a detached item from a proto part snapshot.</summary>
   /// <param name="snapshot">
   /// The snapshot to make the item from. All items created from the same snapshot will share the instance.
   /// </param>
-  /// <param name="itemId">An optional item ID. If not set, a new unique value will be generated.</param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromSnapshot(
-      KisContainerBase inventory, ProtoPartSnapshot snapshot, string itemId = null) {
-    return new InventoryItemImpl(inventory, snapshot, NewItemId(itemId));
+  public static InventoryItemImpl FromSnapshot(ProtoPartSnapshot snapshot) {
+    return new InventoryItemImpl(snapshot);
   }
-
-  /// <summary>Creates an item from an active part.</summary>
+  
+  /// <summary>Creates a detached item from an active part.</summary>
   /// <remarks>The current part's state will be captured.</remarks>
-  /// <param name="inventory">
-  /// The inventory to bind the item to. It can be <c>null</c> for the intermediate items.
-  /// </param>
   /// <param name="part">The part to take a snapshot from.</param>
-  /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromPart(KisContainerBase inventory, Part part) {
-    return new InventoryItemImpl(inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(part), NewItemId(null));
+  /// <returns>A new detached item.</returns>
+  public static InventoryItemImpl FromPart(Part part) {
+    return new InventoryItemImpl(KisApi.PartNodeUtils.GetProtoPartSnapshot(part));
   }
 
-  /// <summary>Creates an item for the given part name.</summary>
+  /// <summary>Creates a detached item for the given part name.</summary>
   /// <remarks>The part state is captured from the prefab. Use <see cref="snapshot"/> to customize the state.</remarks>
-  /// <param name="inventory">
-  /// The inventory to bind the item to. It can be <c>null</c> for the intermediate items.
-  /// </param>
   /// <param name="partName">The name of the part to create.</param>
   /// <returns>A new item.</returns>
   /// <exception cref="InvalidOperationException">If the part name cannot be found.</exception>
-  public static InventoryItemImpl ForPartName(KisContainerBase inventory, string partName) {
+  public static InventoryItemImpl ForPartName(string partName) {
     var partInfo = PartLoader.getPartInfoByName(partName);
     Preconditions.NotNull(partInfo, message: "Part name not found: " + partName);
-    return new InventoryItemImpl(
-        inventory, KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab), NewItemId(null));
+    return new InventoryItemImpl(KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab));
   }
   #endregion
 
@@ -198,14 +221,17 @@ sealed class InventoryItemImpl : InventoryItem {
   #region Local utility methods
 
   /// <summary>Makes a new item from the part snapshot.</summary>
-  /// <param name="inventory">The inventory to bind the item to.</param>
-  /// <param name="snapshot">The part's snapshot.</param>
-  /// <param name="newItemId">The new item ID.</param>
-  InventoryItemImpl(KisContainerBase inventory, ProtoPartSnapshot snapshot, string newItemId) {
+  /// <param name="snapshot">The part's snapshot. It's never NULL.</param>
+  /// <param name="inventory">The inventory to bind the item to or NULL if item is detached.</param>
+  /// <param name="stockSlotIndex">The index of the stock slot or -1 if item is detached.</param>
+  /// <param name="newItemId">The item ID or NULL if a new random value needs to be made.</param>
+  InventoryItemImpl(ProtoPartSnapshot snapshot, KisContainerBase inventory = null, int stockSlotIndex = -1,
+                    string newItemId = null) {
     this.inventory = inventory;
-    this.snapshot = snapshot;
+    this.stockSlotIndex = stockSlotIndex;
+    _cachedSnapshot = snapshot;
     _oldVariantName = snapshot.moduleVariantName ?? "";
-    itemId = newItemId;
+    itemId = NewItemId(newItemId);
   }
 
   /// <summary>Verifies if the variant has changed on the item and resets the related caches.</summary>

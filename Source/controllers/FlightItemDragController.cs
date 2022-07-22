@@ -295,7 +295,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         _targetPickupPart.SetHighlightType(Part.HighlightType.AlwaysOn);
         _targetPickupPart.SetHighlight(true, recursive: true);
         if (_targetPickupPart.children.Count == 0) {
-          _targetPickupItem = InventoryItemImpl.FromPart(null, _targetPickupPart);
+          _targetPickupItem = InventoryItemImpl.FromPart(_targetPickupPart);
           _targetPickupPart.isCargoPart();
           _targetPickupItem.materialPart = _targetPickupPart;
         }

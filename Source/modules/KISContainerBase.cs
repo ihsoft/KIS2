@@ -339,7 +339,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public List<ErrorReason> CheckCanAddPart(string partName, int stockSlotIndex = -1, bool logErrors = false) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return CheckCanAddItem(InventoryItemImpl.ForPartName(null, partName), stockSlotIndex, logErrors);
+    return CheckCanAddItem(InventoryItemImpl.ForPartName(partName), stockSlotIndex, logErrors);
   }
 
   /// <inheritdoc/>
@@ -404,7 +404,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <inheritdoc/>
   public InventoryItem AddPart(string partName, int stockSlotIndex = -1) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return AddItem(InventoryItemImpl.ForPartName(null, partName));
+    return AddItem(InventoryItemImpl.ForPartName(partName));
   }
 
   /// <inheritdoc/>
@@ -418,7 +418,7 @@ public class KisContainerBase : AbstractPartModule,
       ReportAndReturnCheckErrors(item, errors, true);
       return null;
     }
-    var newItem = InventoryItemImpl.FromSnapshot(this, item.snapshot);
+    var newItem = InventoryItemImpl.FromItem(this, item, stockSlotIndex);
     AddItemToStockSlot(newItem, stockSlotIndex);
     AddInventoryItem(newItem);
     return newItem;
@@ -442,7 +442,7 @@ public class KisContainerBase : AbstractPartModule,
     }
     RemoveInventoryItem(item);
     RemoveItemFromStockSlot(item);
-    return InventoryItemImpl.FromSnapshot(null, item.snapshot);
+    return InventoryItemImpl.FromSnapshot(item.snapshot);
   }
 
   /// <inheritdoc/>
@@ -540,8 +540,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <returns>A new item that was created.</returns>
   /// <seealso cref="stockInventoryModule"/>
   InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
-    var item = InventoryItemImpl.FromSnapshot(
-        this, stockInventoryModule.storedParts[stockSlotIndex].snapshot, itemId: itemId);
+    var item = InventoryItemImpl.FromStockSlot(this, stockSlotIndex, itemId);
     UpdateStockSlotIndex(stockSlotIndex, item);
     return item;
   }
