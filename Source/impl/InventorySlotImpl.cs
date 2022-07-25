@@ -243,8 +243,8 @@ sealed class InventorySlotImpl {
 
   /// <summary>Verifies if the items can be added to the slot.</summary>
   /// <remarks>
-  /// The items must be "similar" to the other items in the slot. At the very least, it must be the same part. The
-  /// part's state similarity is implementation dependent and the callers must not be guessing about it.
+  /// The items must be "similar enough" to be added into the slot. The caller must not be guessing on the exact checks
+  /// performed in this method.
   /// </remarks>
   /// <param name="checkItems">The items to check. If it's empty, the reply is always "yes".</param>
   /// <param name="logErrors">
@@ -252,7 +252,7 @@ sealed class InventorySlotImpl {
   /// they don't normally expect any errors.
   /// </param>
   /// <returns>
-  /// An empty list if the item can be added to the slot, or a list of human readable errors otherwise.
+  /// An empty list if the items can be added to the slot, or a list of human readable errors otherwise.
   /// </returns>
   public List<ErrorReason> CheckCanAddItems(InventoryItem[] checkItems, bool logErrors = false) {
     if (checkItems.Length == 0) {
@@ -262,25 +262,25 @@ sealed class InventorySlotImpl {
       return ReturnErrorReasons(
           logErrors, SlotIsFullReason, SlotIsFullReasonText.Format(ownerInventory.maxKisSlotSize));
     }
+
+    // The errors must be logged by priority.
+    List<ErrorReason> err1 = null;
+    List<ErrorReason> err2 = null;
+    List<ErrorReason> err3 = null;
+    List<ErrorReason> err4 = null;
     var refItem = slotRefItem ?? checkItems[0];
-
-    // The checking algo below is not performance efficient. However, it's stable!
-    // The errors are reported based on their severity vs reporting any random error detected.
-    var slotPartName = isEmpty ? refItem.avPart.name : avPart.name;
-    if (checkItems.Any(checkItem => checkItem.avPart.name != slotPartName)) {
-      return ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
+    foreach (var checkItem in checkItems) {
+      if (err1 == null && checkItem.avPart.name != refItem.avPart.name) {
+        err1 = ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
+      } else if (err2 == null && checkItem.variantName != refItem.variantName) {
+        err2 = ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
+      } else if (err3 == null && !CheckIfSameResources(refItem, checkItem)) {
+        err3 = ReturnErrorReasons(logErrors, DifferentResourcesReason, DifferentResourcesReasonText);
+      } else if (err4 == null && !CheckIfSimilar(refItem, checkItem)) {
+        err4 = ReturnErrorReasons(logErrors, DifferentResourceAmountsReason, DifferentResourceAmountsReasonText);
+      }
     }
-    if (checkItems.Any(x => x.variantName != refItem.variantName)) {
-      return ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
-    }
-    if (checkItems.Any(x => !CheckIfSameResources(refItem, x))) {
-      return ReturnErrorReasons(logErrors, DifferentResourcesReason, DifferentResourcesReasonText);
-    }
-    if (checkItems.Any(x => !CheckIfSimilar(refItem, x))) {
-      return ReturnErrorReasons(logErrors, DifferentResourceAmountsReason, DifferentResourceAmountsReasonText);
-    }
-
-    return new List<ErrorReason>();
+    return err1 ?? err2 ?? err3 ?? err4 ?? new List<ErrorReason>();
   }
 
   /// <summary>Checks if the item can be stacked into this slot.</summary>
