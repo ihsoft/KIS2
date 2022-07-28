@@ -1014,7 +1014,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// </param>
   /// <param name="addInvisibleSlot">
   /// If TRUE, then a new invisible slot will be created in the inventory in case of no compatible slot was
-  /// found.
+  /// found. When this parameter is set, the result is never NULL.
   /// </param>
   /// <returns>The available slot or <c>null</c> if none found.</returns>
   /// <seealso cref="_inventorySlots"/>

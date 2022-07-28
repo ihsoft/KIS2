@@ -103,9 +103,8 @@ sealed class InventorySlotImpl {
   public bool isVisible => _unitySlot != null;
 
   /// <summary>
-  /// Tells if the slot is participating in a multi-frame operation and must not get removed from the dialog.
+  /// Tells if the slot is participating in a multi-frame operation and must not get removed or updated.
   /// </summary>
-  /// <remarks>The content of the locked slot can change as long as the affected items are not locked.</remarks>
   public bool isLocked {
     // ReSharper disable once UnusedMember.Global
     get => _isLocked;

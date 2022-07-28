@@ -144,7 +144,7 @@ public class KisContainerBase : AbstractPartModule,
   /// The error reason type in the case when the STOCK  inventory cannot accept the item due to its layout setup.
   /// </summary>
   /// <remarks>
-  /// THis error type relates to the compatibility settings. When all the settings are disabled, this error reason is
+  /// This error type relates to the compatibility settings. When all the settings are disabled, this error reason is
   /// not expected to be seen.
   /// </remarks>
   /// <seealso cref="ErrorReason.errorClass"/>
@@ -158,6 +158,7 @@ public class KisContainerBase : AbstractPartModule,
   /// proper support for the feature yet. This is when this error type may appear.
   /// </remarks>
   /// <seealso cref="ErrorReason.errorClass"/>
+  /// TODO(ihsoft): Drop this reason once the code is complete.
   public const string KisNotImplementedReason = "KisNotImplemented";
 
   /// <summary>The error reason type of the case when the item is too large to be added into the inventory.</summary>
@@ -357,8 +358,7 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // Check if the inventory is being added into self. Obviously, a bad idea.
-    if (part.craftID == item.snapshot.craftID
-        || part.persistentId == item.snapshot.persistentId) {
+    if (part.craftID == item.snapshot.craftID || part.persistentId == item.snapshot.persistentId) {
       errors.Add(new ErrorReason() {
           errorClass = InventoryConsistencyReason,
           guiString = CannotAddIntoSelfErrorText,
@@ -388,7 +388,7 @@ public class KisContainerBase : AbstractPartModule,
       return ReportAndReturnCheckErrors(item, errors, logErrors);
     }
 
-    // Finally, verify the volume limit.
+    // Finally, verify the volume limit. It must be the last check.
     if (!ReferenceEquals(item.inventory, this) && usedVolume + item.volume > maxVolume) {
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {

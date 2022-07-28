@@ -137,7 +137,6 @@ sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem implementation
   /// <inheritdoc/>
   public void SetLocked(bool newState) {
-    //FIXME: notify inventory? or let caller doing it?
     isLocked = newState;
   }
 
