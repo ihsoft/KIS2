@@ -2,6 +2,7 @@
 // Author: igor.zavoychinskiy@gmail.com
 // This software is distributed under Public domain license.
 
+using System;
 using System.Linq;
 
 // ReSharper disable once CheckNamespace
@@ -65,6 +66,38 @@ public static class PartNodeUtils2 {
       partConfig = partConfig.GetNode("PART");
     }
     return partConfig;
+  }
+
+  /// <summary>Efficiently verifies if the nodes are equal.</summary>
+  /// <param name="left">The first node.</param>
+  /// <param name="right">The second node.</param>
+  /// <param name="nodeNameCheckFn">
+  /// The filter to apply on the top level nodes. If not provided, then all subnodes from <paramref name="left"/> and
+  /// <paramref name="right"/> will be recursively checked. This check is not performed in the subnodes.
+  /// </param>
+  /// <returns><c>true</c> if the nodes are equal.</returns>
+  public static bool CompareNodes(ConfigNode left, ConfigNode right, Func<string, bool> nodeNameCheckFn = null) {
+    var leftValues = left.values;
+    var rightValues = right.values;
+    var leftNodes = left.nodes;
+    var rightNodes = right.nodes;
+    if (leftValues.Count != rightValues.Count || leftNodes.Count != rightNodes.Count) {
+      return false;
+    }
+    for (var i = leftValues.Count - 1; i >= 0; i--) {
+      if (leftValues[i].name != rightValues[i].name || leftValues[i].value != rightValues[i].value) {
+        return false;
+      }
+    }
+    for (var i = leftNodes.Count - 1; i >= 0; i--) {
+      if (nodeNameCheckFn != null && !nodeNameCheckFn.Invoke(leftNodes[i].name)) {
+        continue;
+      }
+      if (leftNodes[i].name != rightNodes[i].name || !CompareNodes(leftNodes[i], rightNodes[i], null)) {
+        return false;
+      }
+    }
+    return true;
   }
 }
 
