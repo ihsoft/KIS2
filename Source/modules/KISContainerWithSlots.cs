@@ -726,12 +726,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         ? _inventorySlots[GetStockSlotIndex(item)]
         : FindSlotForItem(item, addInvisibleSlot: true);
     AddSlotItem(slot, item);
+    MarkGuiStateDirty();
   }
 
   /// <inheritdoc/>
   protected override void RemoveInventoryItem(InventoryItem removeItem) {
     base.RemoveInventoryItem(removeItem);
     RemoveSlotItem(_itemToSlotMap[removeItem.itemId], removeItem);
+    MarkGuiStateDirty();
   }
   #endregion
 
@@ -1551,6 +1553,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     }
   }
 
+  const float GuiUpdatePeriod = 0.1f;  // 100ms
+  float _lastGuiUpdateTime;
+
   /// <summary>Runs on the opened dialog and updates the GUI related things.</summary>
   /// <remarks>
   /// This coroutine handles all the real-time updates on the dialog and _only_ if the dialog is opened. It must be
@@ -1578,8 +1583,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     // The coroutine dies with the dialog object. The execution never gets here.
     // ReSharper disable once IteratorNeverReturns
   }
-  const float GuiUpdatePeriod = 0.1f;  // 100ms
-  float _lastGuiUpdateTime;
+
+  /// <summary>Requests GUI update in the next frame.</summary>
+  void MarkGuiStateDirty() {
+    _lastGuiUpdateTime = 0;
+  }
 
   /// <summary>Updates GUI representation of the open inventory window.</summary>
   /// <remarks>The update may be costly. Avoid calling it from the every frame update.</remarks>
