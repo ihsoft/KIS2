@@ -486,14 +486,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <summary>The errors from the last hovered slot check.</summary>
   /// <seealso cref="canAcceptDraggedItems"/>
-  ErrorReason[] canAcceptDraggedItemsCheckResult {
-    get {
-      if (_canAcceptDraggedItemsCheckResult == null) {
-        CheckCanAcceptDrops();
-      }
-      return _canAcceptDraggedItemsCheckResult;
-    }
-  }
+  ErrorReason[] canAcceptDraggedItemsCheckResult => _canAcceptDraggedItemsCheckResult ??= CheckCanAcceptDrops();
   ErrorReason[] _canAcceptDraggedItemsCheckResult;
 
   /// <summary>Shortcut to get the current tooltip.</summary>
@@ -1327,54 +1320,67 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <summary>Verifies if the currently dragged items can be stored into the hovered slot.</summary>
   /// <seealso cref="canAcceptDraggedItemsCheckResult"/>
   /// <seealso cref="canAcceptDraggedItems"/>
-  void CheckCanAcceptDrops() {
+  ErrorReason[] CheckCanAcceptDrops() {
     if (!KisApi.ItemDragController.isDragging || slotWithPointerFocus == null) {
-      _canAcceptDraggedItemsCheckResult = new ErrorReason[0];
-      return;
+      return new ErrorReason[0];
+    }
+    var allItems = KisApi.ItemDragController.leasedItems;
+
+    // Verify if all the items are similar and fail early if they are not.
+    var checkResult = slotWithPointerFocus.CheckCanAddItems(allItems);
+    if (checkResult.Count > 0) {
+      return checkResult.ToArray();
     }
 
-    var allItems = KisApi.ItemDragController.leasedItems;
-    var checkResult = slotWithPointerFocus.CheckCanAddItems(allItems);
-
-    if (checkResult.Count == 0 && StockCompatibilitySettings.isCompatibilityMode) {
+    // In compatibility mode the stock slot must fit.
+    if (StockCompatibilitySettings.isCompatibilityMode) {
       var stockSlotIndex = _inventorySlots.IndexOf(slotWithPointerFocus);
       checkResult = CheckSlotStockForItem(allItems[0], stockSlotIndex, quantity: allItems.Length);
-    }
-
-    if (checkResult.Count == 0) {
-      // For the items from other inventories also check the basic constraints.
-      var extraVolumeNeeded = 0.0;
-      var breakCheckLoop = false;
-      for (var i = 0; i < allItems.Length && !breakCheckLoop; i++) {
-        var item = allItems[i];
-        if (!ReferenceEquals(item.inventory, this)) {
-          extraVolumeNeeded += item.volume;
-        }
-        foreach (var itemCheck in CheckCanAddItem(item)) {
-          if (itemCheck.errorClass == InventoryConsistencyReason
-              || itemCheck.errorClass == StockInventoryLimitReason
-              || itemCheck.errorClass == KisNotImplementedReason) {
-            // It's a fatal error. Stop all the other logic.
-            checkResult.Add(itemCheck);
-            breakCheckLoop = true;
-            break;
-          }
-          // Skip a single item volume check since we have our own batch algo.
-          if (itemCheck.errorClass != ItemVolumeTooLargeReason) {
-            checkResult.Add(itemCheck);
-          }
-        }
-      }
-      if (!breakCheckLoop && extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
-        checkResult.Add(new ErrorReason() {
-            errorClass = ItemVolumeTooLargeReason,
-            guiString = NotEnoughVolumeText.Format(usedVolume + extraVolumeNeeded - maxVolume),
-        });
+      if (checkResult.Count > 0) {
+        return checkResult.ToArray();
       }
     }
 
-    // De-dup the errors by the error class to not spam on multiple items.
-    _canAcceptDraggedItemsCheckResult = checkResult
+    // If reference item can be added, then all items can be added. Except the volume limit check.
+    var refItem = allItems[0];
+    checkResult = CheckCanAddItem(refItem);
+    if (checkResult.Count > 0) {
+      return checkResult.ToArray();
+    }
+
+    // For the items from other inventories also check the basic constraints.
+    var extraVolumeNeeded = 0.0;
+    var breakCheckLoop = false;
+    for (var i = 0; i < allItems.Length && !breakCheckLoop; i++) {
+      var item = allItems[i];
+      if (!ReferenceEquals(item.inventory, this)) {
+        extraVolumeNeeded += item.volume;
+      }
+      // Collect all possible reasons
+      foreach (var itemCheck in CheckCanAddItem(item)) {
+        if (itemCheck.errorClass == InventoryConsistencyReason
+            || itemCheck.errorClass == StockInventoryLimitReason
+            || itemCheck.errorClass == KisNotImplementedReason) {
+          // It's a fatal error. Stop all the other logic.
+          checkResult.Add(itemCheck);
+          breakCheckLoop = true;
+          break;
+        }
+        // Skip a single item volume check since we have our own batch algo.
+        if (itemCheck.errorClass != ItemVolumeTooLargeReason) {
+          checkResult.Add(itemCheck);
+        }
+      }
+    }
+    if (!breakCheckLoop && extraVolumeNeeded > 0 && usedVolume + extraVolumeNeeded > maxVolume) {
+      checkResult.Add(new ErrorReason() {
+          errorClass = ItemVolumeTooLargeReason,
+          guiString = NotEnoughVolumeText.Format(usedVolume + extraVolumeNeeded - maxVolume),
+      });
+    }
+
+    // Dedup the errors by the error class to not spam on multiple items.
+    return checkResult
         .GroupBy(p => p.errorClass, StringComparer.OrdinalIgnoreCase)
         .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase)
         .Values
