@@ -1603,6 +1603,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     // Check if the slots need to be re-arranged to accomodate the changed items.
     for (var i = 0; i < _inventorySlots.Count; i++) {
       var slot = _inventorySlots[i];
+      if (slot.isLocked) {
+        continue;
+      }
       for (var j = slot.slotItems.Count - 1; j >= 0; j--) {
         var item = slot.slotItems[j];
         if (!slot.IsItemFit(item)) {
