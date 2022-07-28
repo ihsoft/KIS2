@@ -285,7 +285,7 @@ sealed class InventorySlotImpl {
 
   /// <summary>Checks if the item can be stacked into this slot.</summary>
   public bool IsItemFit(InventoryItem checkItem) {
-    return slotItems.Count == 1 || CheckIfSimilar(slotRefItem, checkItem);
+    return slotItems.Count <= 1 || CheckIfSimilar(slotRefItem, checkItem);
   }
   #endregion
 

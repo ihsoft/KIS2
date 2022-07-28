@@ -706,7 +706,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   public override List<ErrorReason> CheckCanAddItem(
       InventoryItem item, int stockSlotIndex = -1, bool logErrors = false) {
     var errors = base.CheckCanAddItem(item, stockSlotIndex, logErrors);
-    if (errors.Count> 0) {
+    if (errors.Count > 0) {
       return errors;  // Don't go deeper, it's already failed.
     }
     var slot = FindSlotForItem(item);
@@ -1240,11 +1240,10 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       _slotEventsHandler.currentState = null;
       return;
     }
-    var isDragging = KisApi.ItemDragController.isDragging;
     var isSourceSlotFocused = _dragSourceSlot == slotWithPointerFocus;
     var isEmptySlotFocused = slotWithPointerFocus.slotItems.Count == 0;
     SlotActionMode newState;
-    if (isDragging) {
+    if (KisApi.ItemDragController.isDragging) {
       if (isSourceSlotFocused) {
         newState = SlotActionMode.DraggingOverSourceSlot;
       } else {
@@ -1610,8 +1609,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         var item = slot.slotItems[j];
         if (!slot.IsItemFit(item)) {
           RemoveSlotItem(slot, item);
-          var newSlot = FindSlotForItem(item, addInvisibleSlot: true);
-          AddSlotItem(newSlot, item);
+          AddSlotItem(FindSlotForItem(item, addInvisibleSlot: true), item);
         }
       }
       slot.UpdateUnitySlot();
