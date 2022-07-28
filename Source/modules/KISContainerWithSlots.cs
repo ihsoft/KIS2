@@ -1615,7 +1615,6 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       slot.UpdateUnitySlot();
     }
 
-    ArrangeSlots();
     UpdateTooltip();
   }
   #endregion
