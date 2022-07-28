@@ -114,6 +114,7 @@
     <Compile Include="KSPDev_candidates\ArgumentGuard.cs" />
     <Compile Include="KSPDev_candidates\ClickEvent.cs" />
     <Compile Include="KSPDev_candidates\EventChecker2.cs" />
+    <Compile Include="KSPDev_candidates\Profiler.cs" />
     <Compile Include="KSPDev_candidates\ProfilerScope.cs" />
     <Compile Include="KSPDev_candidates\UIDialogsGridController.cs" />
     <Compile Include="KSPDev_candidates\KspLayer.cs" />
