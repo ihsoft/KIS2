@@ -613,10 +613,8 @@ public class KisContainerBase : AbstractPartModule,
         continue;
       }
 
-      // In the stock inventory the part states in the slot must be exactly the same.
-      var slotState = KisApi.PartNodeUtils.MakeComparablePartNode(slot.snapshot);
-      var itemState = KisApi.PartNodeUtils.MakeComparablePartNode(item.snapshot);
-      if (slotState.ToString() != itemState.ToString()) {
+      // Ensures that parts that have different internal state don't get added into the same stock slot.
+      if (!CheckProtoModulesSame(slot.snapshot, item.snapshot)) {
         continue;
       }
       return existingSlotIndex;  // Found a candidate.
@@ -641,6 +639,21 @@ public class KisContainerBase : AbstractPartModule,
       slotIndex++;
     }
     return slotIndex;
+  }
+
+  /// <summary>Verifies that to proto part have the same module configs.</summary>
+  bool CheckProtoModulesSame(ProtoPartSnapshot part1, ProtoPartSnapshot part2) {
+    var modules1 = part1.modules;
+    var modules2 = part2.modules;
+    if (modules1.Count != modules2.Count) {
+      return false;
+    }
+    for (var i = modules1.Count - 1; i >= 0; i--) {
+      if (!PartNodeUtils2.CompareNodes(modules1[i].moduleValues, modules2[i].moduleValues, x => x == "MODULE")) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /// <summary>Adds the item into the specified stock inventory slot.</summary>

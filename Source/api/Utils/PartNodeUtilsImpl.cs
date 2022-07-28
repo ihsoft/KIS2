@@ -5,10 +5,8 @@
 using System;
 using KSPDev.ConfigUtils;
 using KSPDev.LogUtils;
-using KSPDev.PartUtils;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -114,24 +112,6 @@ public class PartNodeUtilsImpl {
   }
 
   /// <summary>Makes a proto part copy.</summary>
-  /// <remarks>
-  /// This method must be as fast as possible since it's designed to be used in the bulk operations. For this reason it
-  /// doesn't do a deep copy of all the properties. Only the resources are deeply copied.
-  /// </remarks>
-  /// <param name="srcSnapshot">The snapshot to make copy of.</param>
-  /// <returns>A copy of the snapshot.</returns>
-  public ProtoPartSnapshot FastProtoPartCopy(ProtoPartSnapshot srcSnapshot) {
-    var copyMethod = _copyMethod ??= typeof(ProtoPartSnapshot).GetMethod(
-        "MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic);
-    var copyObj = (ProtoPartSnapshot) copyMethod.Invoke(srcSnapshot, new object[] {});
-    for (var i = 0; i < copyObj.resources.Count; i++) {
-      copyObj.resources[i] = (ProtoPartResourceSnapshot) copyMethod.Invoke(copyObj.resources[i], new object[] {});
-    }
-    return copyObj;
-  }
-  static MethodInfo _copyMethod;
-
-  /// <summary>Makes a proto part copy.</summary>
   /// <remarks>This method is slow and triggers game events.</remarks>
   /// <param name="srcSnapshot">The snapshot to make copy of.</param>
   /// <returns>A copy of the snapshot.</returns>
@@ -162,6 +142,7 @@ public class PartNodeUtilsImpl {
   /// Tells if the amount must be added to the current item's amount instead of simply replacing it.
   /// </param>
   /// <returns>The new amount or <c>null</c> if the resource was not found.</returns>
+  /// FIXME: unused
   public double? UpdateResource(ConfigNode partNode, string name, double amount, bool isAmountRelative = false) {
     var node = PartNodeUtils2.GetPartNode(partNode).GetNodes("RESOURCE")
         .FirstOrDefault(r => r.GetValue("name") == name);
@@ -183,6 +164,7 @@ public class PartNodeUtilsImpl {
   /// The persistent part's state. It can be a top-level node or the <c>PART</c> node.
   /// </param>
   /// <returns>The found science data.</returns>
+  /// FIXME: unused
   public IEnumerable<ScienceData> GetPartScience(ConfigNode partNode) {
     return partNode.GetNodes("MODULE")
         .SelectMany(GetModuleScience)
@@ -193,6 +175,7 @@ public class PartNodeUtilsImpl {
   /// <param name="moduleNode">The persistent module's state.</param>
   /// <returns>The found science data.</returns>
   public IEnumerable<ScienceData> GetModuleScience(ConfigNode moduleNode) {
+    //FIXME: use utls
     return moduleNode.GetNodes("ScienceData")
         .Select(n => new ScienceData(n))
         .ToArray();
@@ -287,38 +270,6 @@ public class PartNodeUtilsImpl {
     vesselNode.SetValue("PQSMax", 0, createIfNotFound: true);
 
     return vesselNode;
-  }
-
-  /// <summary>
-  /// Creates a copy of the parts persistent config node that only has the values and nodes that are important for
-  /// comparision.
-  /// </summary>
-  /// <remarks>
-  /// Use this method when two config nodes need to be compared for equality. This method only keeps the values and
-  /// nodes that make sense in this matter.
-  /// </remarks>
-  /// <param name="snapshot">The part to make a copy from.</param>
-  /// <returns>
-  /// The adjusted copy of the config node. It will intentionally have name "PART-SUBNODE". The caller must be sure that
-  /// the right values are being compared.
-  /// </returns>
-  public ConfigNode MakeComparablePartNode(ProtoPartSnapshot snapshot) {
-    var srcNode = new ConfigNode("PART");
-    snapshot.Save(srcNode);
-    var res = new ConfigNode("PART-SUBNODE");
-    res.SetValue("name", srcNode.GetValue("name"), createIfNotFound: true);
-    var checkNodes = new[] { "MODULE", "RESOURCE", "SCIENCE" };
-    for (var i = 0; i < srcNode.nodes.Count; i++) {
-      var node = srcNode.nodes[i];
-      if (!checkNodes.Contains(node.name)) {
-        continue;
-      }
-      node = node.CreateCopy();
-      node.RemoveNodes("EVENTS");
-      node.RemoveNodes("ACTIONS");
-      res.AddNode(node);
-    }
-    return res;
   }
   #endregion
 
