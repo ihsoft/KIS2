@@ -80,12 +80,15 @@ public interface IKisInventory {
   /// <seealso cref="AddPart"/>
   List<ErrorReason> CheckCanAddPart(string partName, int stockSlotIndex = -1, bool logErrors = false);
 
-  /// <summary>Verifies if the item can be added into the inventory.</summary>
+  /// <summary>Verifies if the item can be added into the inventory without breaking its constraints.</summary>
   /// <remarks>
   /// If this method replied "yes", then the <see cref="AddItem"/> method cannot fail. It is an exhaustive check for the
   /// part addition conditions.
   /// </remarks>
-  /// <param name="item">The item to check.</param>
+  /// <param name="item">
+  /// The item to check. It is important who's the owner of this item. The inventory may run extra checks if the item is
+  /// already owned by some other inventory.
+  /// </param>
   /// <param name="stockSlotIndex">
   /// Optional stock slot index. If provided, then the check will only be done for this specific stock slot. If the slot
   /// is full or incompatible with the item, the check will fail. Use this feature only when it's really important to

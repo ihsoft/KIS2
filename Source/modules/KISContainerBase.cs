@@ -349,7 +349,7 @@ public class KisContainerBase : AbstractPartModule,
     var errors = new List<ErrorReason>();
 
     // Check if the item is allowing to change the owner when it's the case.
-    if (!ReferenceEquals(item.inventory, this)) {
+    if (item.inventory != null && !ReferenceEquals(item.inventory, this)) {
       errors.AddRange(item.CheckCanChangeOwnership());
       if (errors.Count > 0) {
         return ReportAndReturnCheckErrors(item, errors, logErrors);
@@ -389,7 +389,7 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // Finally, verify the volume limit.
-    if (usedVolume + item.volume > maxVolume) {
+    if (!ReferenceEquals(item.inventory, this) && usedVolume + item.volume > maxVolume) {
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
           errorClass = ItemVolumeTooLargeReason,
