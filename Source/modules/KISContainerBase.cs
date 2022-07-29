@@ -447,14 +447,6 @@ public class KisContainerBase : AbstractPartModule,
     inventoryItems.TryGetValue(itemId, out var res);
     return res;
   }
-  
-  /// <inheritdoc/>
-  public int GetStockSlotIndex(InventoryItem item) {
-    if (_itemsToStockSlotMap.TryGetValue(item.itemId, out var stockSlotIndex)) {
-      return stockSlotIndex;
-    }
-    return -1;
-  }
   #endregion
 
   #region API methods
