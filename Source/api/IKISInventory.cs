@@ -62,23 +62,16 @@ public interface IKisInventory {
   /// <value>The total cost of the inventory content.</value>
   float contentCost { get; }
 
-  /// <summary>Verifies if the part can be added into the inventory.</summary>
+  /// <summary>Creates a detached inventory item.</summary>
   /// <remarks>
-  /// If this method replied "yes", then the <see cref="AddPart"/> method cannot fail. It is an exhaustive check for the
-  /// part addition conditions.
+  /// This item can be adjusted/modified before adding into the inventory. The destination inventory is not required to
+  /// be the one that made the item.
   /// </remarks>
-  /// <param name="partName">The part name to check.</param>
-  /// <param name="stockSlotIndex">
-  /// Optional stock slot index. If provided, then the check will only be done for this specific stock slot. If the slot
-  /// is full or incompatible with the item, the check will fail. Use this feature only when it's really important to
-  /// store a new item into the specified stock slot.
-  /// </param>
-  /// <param name="logErrors">
-  /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
-  /// </param>
-  /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
-  /// <seealso cref="AddPart"/>
-  List<ErrorReason> CheckCanAddPart(string partName, int stockSlotIndex = -1, bool logErrors = false);
+  /// <param name="partName">The part name to make the item for.</param>
+  /// <returns>An item for the part's prefab state.</returns>
+  /// <seealso cref="CheckCanAddItem"/>
+  /// <seealso cref="AddItem"/>
+  InventoryItem MakeItem(string partName);
 
   /// <summary>Verifies if the item can be added into the inventory without breaking its constraints.</summary>
   /// <remarks>
@@ -100,22 +93,6 @@ public interface IKisInventory {
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddItem"/>
   List<ErrorReason> CheckCanAddItem(InventoryItem item, int stockSlotIndex = -1, bool logErrors = false);
-
-  /// <summary>Adds a new part into the inventory.</summary>
-  /// <remarks>
-  /// This method does <i>not</i> verify if the part can fit the inventory. Doing this check is responsibility of the
-  /// caller. If any compatibility setting is enabled, the add action can fail. The caller must check the output before
-  /// assuming that the action has succeeded.
-  /// </remarks>
-  /// <param name="partName">The part name to add.</param>
-  /// <param name="stockSlotIndex">
-  /// Optional stock slot index. If not specified, the item will be added to any available stock slot. Otherwise,
-  /// the specific slot will be examined to be compatible with the item, and if doesn't fit the action will fail.
-  /// </param>
-  /// <returns>The newly created item or <c>null</c> if action failed.</returns>
-  /// <exception cref="InvalidOperationException">If part name is unknown.</exception>
-  /// <seealso cref="CheckCanAddPart"/>
-  InventoryItem AddPart(string partName, int stockSlotIndex = -1);
 
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>

@@ -197,17 +197,6 @@ sealed class InventoryItemImpl : InventoryItem {
   public static InventoryItemImpl FromPart(Part part) {
     return new InventoryItemImpl(KisApi.PartNodeUtils.GetProtoPartSnapshot(part));
   }
-
-  /// <summary>Creates a detached item for the given part name.</summary>
-  /// <remarks>The part state is captured from the prefab. Use <see cref="snapshot"/> to customize the state.</remarks>
-  /// <param name="partName">The name of the part to create.</param>
-  /// <returns>A new item.</returns>
-  /// <exception cref="InvalidOperationException">If the part name cannot be found.</exception>
-  public static InventoryItemImpl ForPartName(string partName) {
-    var partInfo = PartLoader.getPartInfoByName(partName);
-    Preconditions.NotNull(partInfo, message: "Part name not found: " + partName);
-    return new InventoryItemImpl(KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab));
-  }
   #endregion
 
   #region System overrides

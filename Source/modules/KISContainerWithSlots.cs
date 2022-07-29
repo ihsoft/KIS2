@@ -753,24 +753,19 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         var avPartIndex = (int) (UnityEngine.Random.value * _fuelParts.Length);
         partName = _fuelParts[avPartIndex];
       }
-      var item = AddPart(partName);
-      if (item != null) {
-        item = DeleteItem(item);
-        foreach (var resource in item.resources) {
-          resource.amount = UnityEngine.Random.Range(minPct, maxPct) * resource.maxAmount;
-        }
-        if (item.variant != null) {
-          var variantIndex = (int) (UnityEngine.Random.value * item.avPart.Variants.Count);
-          item.mutableSnapshot.moduleVariantName = item.avPart.Variants[variantIndex].Name;
-        }
-        AddItem(item);
-        HostedDebugLog.Warning(
-            this, "DEBUG: added part '{0}': name={1}, resources={2}, variant={3}",
-            partName, item.avPart.title,
-            DbgFormatter.C2S(item.resources.Select(x => x.amount)), item.variantName);
-      } else {
-        HostedDebugLog.Warning(this, "DEBUG: cannot add part '{0}'", partName);
+      var item = MakeItem(partName);
+      foreach (var resource in item.resources) {
+        resource.amount = UnityEngine.Random.Range(minPct, maxPct) * resource.maxAmount;
       }
+      if (item.variant != null) {
+        var variantIndex = (int) (UnityEngine.Random.value * item.avPart.Variants.Count);
+        item.mutableSnapshot.moduleVariantName = item.avPart.Variants[variantIndex].Name;
+      }
+      AddItem(item);
+      HostedDebugLog.Warning(
+          this, "DEBUG: added part '{0}': name={1}, resources={2}, variant={3}",
+          partName, item.avPart.title,
+          DbgFormatter.C2S(item.resources.Select(x => x.amount)), item.variantName);
     }
   }
   #endregion

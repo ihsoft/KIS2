@@ -338,9 +338,11 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public List<ErrorReason> CheckCanAddPart(string partName, int stockSlotIndex = -1, bool logErrors = false) {
+  public InventoryItem MakeItem(string partName) {
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return CheckCanAddItem(InventoryItemImpl.ForPartName(partName), stockSlotIndex, logErrors);
+    var partInfo = PartLoader.getPartInfoByName(partName);
+    Preconditions.NotNull(partInfo, message: "Part name not found: " + partName);
+    return InventoryItemImpl.FromSnapshot(KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab));
   }
 
   /// <inheritdoc/>
@@ -399,12 +401,6 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     return errors;  // It must be empty at this point.
-  }
-
-  /// <inheritdoc/>
-  public InventoryItem AddPart(string partName, int stockSlotIndex = -1) {
-    ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    return AddItem(InventoryItemImpl.ForPartName(partName));
   }
 
   /// <inheritdoc/>

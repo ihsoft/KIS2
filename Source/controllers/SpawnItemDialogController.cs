@@ -173,9 +173,10 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
     }
     DebugEx.Info("Spawning parts: {0}, qty={1}", partName, quantity);
     for (var i = 0; i < quantity; i++) {
-      var reasons = _tgtInventory.CheckCanAddPart(partName).ToArray();
+      var item = _tgtInventory.MakeItem(partName);
+      var reasons = _tgtInventory.CheckCanAddItem(item).ToArray();
       if (reasons.Length == 0) {
-        _tgtInventory.AddPart(partName);
+        _tgtInventory.AddItem(item);
       } else {
         UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
         ScreenMessaging.ShowPriorityScreenMessage(
