@@ -46,10 +46,9 @@ sealed class InventoryItemImpl : InventoryItem {
   public int stockSlotIndex { get; }
 
   /// <inheritdoc/>
-  public StoredPart stockSlot => _stockSlot != null || inventory?.FindItem(itemId) != null
-      ? _stockSlot ??= inventory.stockInventoryModule.storedParts[stockSlotIndex]
+  public StoredPart stockSlot => inventory?.FindItem(itemId) != null
+      ? inventory.stockInventoryModule.storedParts[stockSlotIndex]
       : null;
-  StoredPart _stockSlot;
 
   /// <inheritdoc/>
   public ProtoPartSnapshot mutableSnapshot {
