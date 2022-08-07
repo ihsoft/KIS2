@@ -656,7 +656,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     // Handle out of sync items to ensure every item is assigned to a slot.
     var itemsWithNoSlot = inventoryItems.Values.Where(x => !_itemToSlotMap.ContainsKey(x.itemId));
     foreach (var item in itemsWithNoSlot) {
-      HostedDebugLog.Warning(this, "Loading non-slot item: {0}", item.itemId);
+      if (!vessel.isEVA) {
+        HostedDebugLog.Warning(this, "Loading non-slot item: {0}", item.itemId);
+      }
       AddSlotItem(FindSlotForItem(item, addInvisibleSlot: true), item);
     }
   }
