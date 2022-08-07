@@ -78,7 +78,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message CannotAddIntoSelfErrorText = new Message(
       "",
-      defaultTemplate: "You cannot store a part into itself. Seriously?!",
+      defaultTemplate: "Cannot store part into itself",
       description: "An error that is presented when the part cannot be added into a KIS container due to the inventory"
       + " is owned by that part.");
 

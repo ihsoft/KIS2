@@ -189,7 +189,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public static InventoryItemImpl FromSnapshot(ProtoPartSnapshot snapshot) {
     return new InventoryItemImpl(snapshot);
   }
-  
+
   /// <summary>Creates a detached item from an active part.</summary>
   /// <remarks>The current part's state will be captured.</remarks>
   /// <param name="part">The part to take a snapshot from.</param>
