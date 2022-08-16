@@ -7,13 +7,33 @@ using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using System.Linq;
 using KISAPIv2;
+using KSPDev.ConfigUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>Class that shows a dialog to spawn an arbitrary item in the inventory.</summary>
+[PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 class SpawnItemDialogController : MonoBehaviour, IHasGUI {
+  #region Configuration
+  // ReSharper disable FieldCanBeMadeReadOnly.Local
+  // ReSharper disable FieldCanBeMadeReadOnly.Global
+  // ReSharper disable ConvertToConstant.Global
+  // ReSharper disable MemberCanBePrivate.Global
+  // ReSharper disable ConvertToConstant.Local
+
+  /// <summary>
+  /// Indicates if the items spawned via the builder GUI should be checked for the inventory eligibility.
+  /// </summary>
+  /// <remarks>
+  /// Be careful when setting it to <c>false</c>. Not all inventories will work fine if there are items added are beyond
+  /// the limits.
+  /// </remarks>
+  [PersistentField("BuilderMode/noChecksForSpawnedItems")]
+  bool _noChecksForSpawnedItems = false;
+  #endregion
+
   #region Local fields and properties
   /// <summary>The dialog that is being currently shown.</summary>
   static SpawnItemDialogController _currentDialog;
@@ -28,7 +48,7 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
   KisContainerWithSlots _tgtInventory;
 
   /// <summary>The text that is being searched for the parts as of now.</summary>
-  string _searchText;
+  string _searchText = "";
 
   /// <summary>The quantity settings from the dialog.</summary>
   /// <remarks>
@@ -36,10 +56,10 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
   /// actually added!
   /// </remarks>
   /// <seealso cref="GuiSpawnItems"/>
-  string _createQuantity;
+  string _createQuantity = "1";
 
   /// <summary>Tracks the current GIO dialog position.</summary>
-  Rect _guiMainWindowPos;
+  Rect _guiMainWindowPos = new(100, 100, 1, 1);
 
   /// <summary>The parts that are found based on th search pattern.</summary>
   /// <seealso cref="_searchText"/>
@@ -100,6 +120,15 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
       _guiMainWindowPos =
           GUILayout.Window(GetInstanceID(), _guiMainWindowPos, GuiMain, "KIS spawn item dialog", GUILayout.Height(0));
     }
+  }
+  #endregion
+
+  #region MonoBehaviour overrides
+  /// <summary>Initializes the dialog.</summary>
+  void Awake() {
+    ConfigAccessor.ReadFieldsInType(GetType(), this);
+    GuiUpdateSearch(_searchText);
+    _guiScaledSkin = new GuiScaledSkin(() => GUI.skin, onSkinUpdatedFn: MakeGuiStyles);
   }
   #endregion
 
@@ -174,7 +203,7 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
     DebugEx.Info("Spawning parts: {0}, qty={1}", partName, quantity);
     for (var i = 0; i < quantity; i++) {
       var item = _tgtInventory.MakeItem(partName);
-      var reasons = _tgtInventory.CheckCanAddItem(item).ToArray();
+      var reasons = !_noChecksForSpawnedItems ? _tgtInventory.CheckCanAddItem(item).ToArray() : new ErrorReason[0];
       if (reasons.Length == 0) {
         _tgtInventory.AddItem(item);
       } else {
@@ -186,15 +215,6 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
         break;
       }
     }
-  }
-
-  /// <summary>Initializes the dialog.</summary>
-  void Awake() {
-    _searchText = "";
-    _createQuantity = "1";
-    GuiUpdateSearch(_searchText);
-    _guiMainWindowPos = new Rect(100, 100, 1, 1);
-    _guiScaledSkin = new GuiScaledSkin(() => GUI.skin, onSkinUpdatedFn: MakeGuiStyles);
   }
 
   /// <summary>Creates the styles when the scale changes or initializes.</summary>
