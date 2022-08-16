@@ -605,6 +605,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <inheritdoc/>
   public override void OnLoad(ConfigNode node) {
+    _itemToSlotMap.Clear();
+    _inventorySlots.Clear();
+
     // Prepare slots before loading.
     if (StockCompatibilitySettings.isCompatibilityMode) {
       var width = 3;
@@ -621,14 +624,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     base.OnLoad(node);
 
-    //FIXME: this can extend inventory slots
-
-    var itemToKisSlotMap = StockCompatibilitySettings.isCompatibilityMode
-        ? inventoryItems.Values.ToDictionary(k => k.itemId, v => v.stockSlotIndex)
-        : node.GetValues(PersistentConfigKisSlotMapping)
-            .AsEnumerable()
-            .Select(x => x.Split(new[] { '-' }, 2))
-            .ToDictionary(k => k[1], v => int.Parse(v[0]));
+    Dictionary<string, int> itemToKisSlotMap;
+    if (StockCompatibilitySettings.isCompatibilityMode) {
+      itemToKisSlotMap = inventoryItems.Values.ToDictionary(k => k.itemId, v => v.stockSlotIndex);
+    } else if (node.name != "") {
+      itemToKisSlotMap = node.GetValues(PersistentConfigKisSlotMapping)
+          .AsEnumerable()
+          .Select(x => x.Split(new[] { '-' }, 2))
+          .ToDictionary(k => k[1], v => int.Parse(v[0]));
+    } else {
+      itemToKisSlotMap = new Dictionary<string, int>();
+    }
 
     // Drop the default layout and move the loaded items to their designated slots.
     foreach (var slot in _inventorySlots) {
@@ -656,7 +662,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     // Handle out of sync items to ensure every item is assigned to a slot.
     var itemsWithNoSlot = inventoryItems.Values.Where(x => !_itemToSlotMap.ContainsKey(x.itemId));
     foreach (var item in itemsWithNoSlot) {
-      if (!vessel.isEVA) {
+      if (node.name != "") {
         HostedDebugLog.Warning(this, "Loading non-slot item: {0}", item.itemId);
       }
       AddSlotItem(FindSlotForItem(item, addInvisibleSlot: true), item);

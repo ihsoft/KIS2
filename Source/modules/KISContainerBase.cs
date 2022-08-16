@@ -295,6 +295,7 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // Restore the inventory items. Ensure every item has a unique ID and is assigned to a stock slot. 
+    _mutableInventoryItems.Clear();
     foreach (var stockSlot in stockInventoryModule.storedParts.Values) {
       var slotIndex = stockSlot.slotIndex;
       var stockSlotItemIds = stockSlotToItemIdsMap.ContainsKey(slotIndex)
@@ -303,7 +304,7 @@ public class KisContainerBase : AbstractPartModule,
       // Add the missing IDs. This is not expected, but we catch up.
       while (stockSlotItemIds.Count < stockSlot.quantity) {
         var newId = Guid.NewGuid().ToString();
-        if (!vessel.isEVA) {
+        if (node.name != "") {
           HostedDebugLog.Warning(
               this, "Stock item doesn't have ID mapping: slotIndex={0}, slotPos={1}, newId={2}", slotIndex,
               stockSlotItemIds.Count, newId);
@@ -781,55 +782,54 @@ public class KisContainerBase : AbstractPartModule,
     return errors;
   }
   #endregion
+}
 
-  /// <summary>
-  /// Handler that waits till the kerbal part is fully initialed and simulates a load method call for it.
-  /// </summary>
-  /// <remarks>
-  /// When kerbal goes EVA in flight, its part doesn't get <c>OnLoad</c> method called. Instead, the game populates
-  /// kerbal's inventory bypassing the generic inventory logic. Thus, it's not possible to react on default items
-  /// addition. This handler resolves it by reacting to EVA event and simulating the <c>OnLoad</c> call on the KIS
-  /// inventory module as it would happen if the game was loaded with a kerbal EVA.    
-  /// </remarks>
-  [KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
-  sealed class SetupEvaHandler : MonoBehaviour {
-    void Awake() {
-      GameEvents.onCrewOnEva.Add(OnCrewOnEvaEvent);
-    }
+/// <summary>
+/// Handler that waits till the kerbal part is fully initialed and simulates a load method call for it.
+/// </summary>
+/// <remarks>
+/// When kerbal goes EVA in flight, its part doesn't get <c>OnLoad</c> method called. Instead, the game populates
+/// kerbal's inventory bypassing the generic inventory logic. Thus, it's not possible to react on default items
+/// addition. This handler resolves it by reacting to EVA event and simulating the <c>OnLoad</c> call on the KIS
+/// inventory module as it would happen if the game was loaded with a kerbal EVA.    
+/// </remarks>
+/// FIXME: not a part of module
+[KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
+sealed class SetupEvaHandler : MonoBehaviour {
+  void Awake() {
+    GameEvents.onCrewOnEva.Add(OnCrewOnEvaEvent);
+  }
 
-    /// <summary>Overridden from MonoBehaviour.</summary>
-    void OnDestroy() {
-      GameEvents.onCrewOnEva.Remove(OnCrewOnEvaEvent);
-    }
+  /// <summary>Overridden from MonoBehaviour.</summary>
+  void OnDestroy() {
+    GameEvents.onCrewOnEva.Remove(OnCrewOnEvaEvent);
+  }
 
-    /// <summary>Reacts on kerbal leaving spacecraft and becoming EVA.</summary>
-    void OnCrewOnEvaEvent(GameEvents.FromToAction<Part, Part> fv) {
-      fv.to.FindModulesImplementing<IKisInventory>().ForEach(x => x.ownerVessel.StartCoroutine(WaitAndLoadModule(x)));
-    }
+  /// <summary>Reacts on kerbal leaving spacecraft and becoming EVA.</summary>
+  void OnCrewOnEvaEvent(GameEvents.FromToAction<Part, Part> fv) {
+    fv.to.FindModulesImplementing<IKisInventory>().ForEach(x => x.ownerVessel.StartCoroutine(WaitAndLoadModule(x)));
+  }
 
-    // ReSharper disable once MemberCanBeMadeStatic.Local
-    IEnumerator WaitAndLoadModule(IKisInventory inventory) {
-      var part = inventory.ownerVessel.rootPart;
-      while (true) {
-        yield return new WaitForEndOfFrame();
-        if (part == null || part.State == PartStates.DEAD) {
-          yield break;  // End coroutine.
-        }
-        if (part.State == PartStates.IDLE
-            && inventory.stockInventoryModule != null
-            && inventory.stockInventoryModule.storedParts != null) {
-          break;  // The part is ready to be loaded.
-        }
+  // ReSharper disable once MemberCanBeMadeStatic.Local
+  IEnumerator WaitAndLoadModule(IKisInventory inventory) {
+    var part = inventory.ownerVessel.rootPart;
+    while (true) {
+      yield return new WaitForEndOfFrame();
+      if (part == null || part.State == PartStates.DEAD) {
+        yield break;  // End coroutine.
       }
-      var module = inventory as PartModule;
-      if (module != null) {
-        HostedDebugLog.Info(module.part, "Simulating OnLoad on the EVA kerbal");
-        var node = new ConfigNode("MODULE");
-        module.OnSave(node);
-        module.OnLoad(node);
-      } else {
-        DebugEx.Error("BAD usage! Cannot get PartModule from: {0}", inventory);
+      if (part.State == PartStates.IDLE
+          && inventory.stockInventoryModule != null
+          && inventory.stockInventoryModule.storedParts != null) {
+        break;  // The part is ready to be loaded.
       }
+    }
+    var module = inventory as PartModule;
+    if (module != null) {
+      HostedDebugLog.Info(module.part, "Simulating OnLoad on the EVA kerbal");
+      module.OnLoad(new ConfigNode(""));
+    } else {
+      DebugEx.Error("BAD usage! Cannot get PartModule from: {0}", inventory);
     }
   }
 }
