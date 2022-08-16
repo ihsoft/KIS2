@@ -92,10 +92,8 @@ public class PartNodeUtilsImpl {
     MaybeFixPrefabPart(part);
 
     // Persist the old part's proto state to not affect it after the snapshot.
-    var oldCrewSnapshot = part.protoModuleCrew;
-    part.protoModuleCrew = null;
     var oldProtoPartSnapshot = part.protoPartSnapshot;
-    var snapshot = new ProtoPartSnapshot(part, null) {
+    var snapshot = new ProtoPartSnapshot(part, part.vessel != null ? part.vessel.protoVessel : null) {
         // We don't need the vessel relations. 
         attachNodes = new List<AttachNodeSnapshot>(),
         srfAttachNode = new AttachNodeSnapshot("None,-1"),
@@ -105,7 +103,6 @@ public class PartNodeUtilsImpl {
         PreFailState = 0,
         attached = false,
     };
-    part.protoModuleCrew = oldCrewSnapshot;
     part.protoPartSnapshot = oldProtoPartSnapshot;
 
     return snapshot;
