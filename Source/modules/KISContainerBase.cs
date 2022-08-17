@@ -82,6 +82,13 @@ public class KisContainerBase : AbstractPartModule,
       description: "An error that is presented when the part cannot be added into a KIS container due to the inventory"
       + " is owned by that part.");
 
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  protected static readonly Message CannotAddCrewedPartErrorText = new Message(
+      "",
+      defaultTemplate: "Part has live crew onboard",
+      description: "An error that is presented when the part cannot be added into a KIS container due to there crew"
+      + " members sitting in it.");
+
   // ReSharper enable MemberCanBePrivate.Global
   #endregion
 
@@ -365,6 +372,15 @@ public class KisContainerBase : AbstractPartModule,
       errors.Add(new ErrorReason() {
           errorClass = InventoryConsistencyReason,
           guiString = CannotAddIntoSelfErrorText,
+      });
+      return ReportAndReturnCheckErrors(item, errors, logErrors);
+    }
+
+    // Parts with crew cannot be stored.
+    if (item.snapshot.protoModuleCrew.Count > 0) {
+      errors.Add(new ErrorReason() {
+          errorClass = InventoryConsistencyReason,
+          guiString = CannotAddCrewedPartErrorText,
       });
       return ReportAndReturnCheckErrors(item, errors, logErrors);
     }
