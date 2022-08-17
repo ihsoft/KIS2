@@ -277,10 +277,6 @@ public class KisContainerBase : AbstractPartModule,
   public override void OnLoad(ConfigNode node) {
     base.OnLoad(node);
     ConfigAccessor.ReadFieldsInType(GetType(), this);
-    if (stockInventoryModule == null || stockInventoryModule.storedParts == null) {
-      HostedDebugLog.Error(this, "Cannot load state due to a bad part state");
-      return;
-    }
 
     // Restore the items to the stock slot mapping.
     var stockSlotToItemIdsMap = new Dictionary<int, HashSet<string>>();
@@ -825,12 +821,8 @@ sealed class SetupEvaHandler : MonoBehaviour {
       }
     }
     var module = inventory as PartModule;
-    if (module != null) {
-      HostedDebugLog.Info(module.part, "Simulating OnLoad on the EVA kerbal");
-      module.OnLoad(new ConfigNode(""));
-    } else {
-      DebugEx.Error("BAD usage! Cannot get PartModule from: {0}", inventory);
-    }
+    HostedDebugLog.Info(module.part, "Simulating OnLoad on the EVA kerbal");
+    module.OnLoad(new ConfigNode(""));
   }
 }
 
