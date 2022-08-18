@@ -17,6 +17,7 @@ using KISAPIv2;
 using KIS2.UIKISInventorySlot;
 using KSPDev.ConfigUtils;
 using KSPDev.InputUtils;
+using KSPDev.MathUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -26,8 +27,11 @@ namespace KIS2 {
 /// A GUI extension above the inventory system that allows grouping parts into slots of (almost) any size.
 /// </summary>
 /// <remarks>
-/// Under the hood all items are kept in the regular KIS inventory, meaning their the state is persisted at the part
-/// level. The parts with different but resource amounts can be placed into the same slot if the difference is not too
+/// <p>It's a purely GUI extension that doesn't add or change any functionality in the KIS inventories.</p>
+/// <p>
+/// The GUI allows storing parts with different amount of resources into the same GUI slot. Under the hood the items are
+/// still stored in separate KIS/stock slots.
+/// </p>
 /// much.
 /// </remarks>
 [PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
@@ -213,13 +217,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           + " The <<1>> argument is the item mass of type MassType.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
-  static readonly Message<MassType, MassType> MassMultipartTooltipText = new(
+  static readonly Message<string, MassType> MassMultipartTooltipText = new(
       "",
-      defaultTemplate: "Mass: <b><<1>></b> (total: <b><<2>></b>)",
-      description: "A slot tooltip string that shows both the mass of an item and the total"
-          + " slot mass. It's used when the slot has more than one item.\n"
-          + " The <<1>> argument is the item mass.\n"
-          + " The <<2>> argument is the slot total mass.");
+      defaultTemplate: "Total mass: <b><<2>></b> (<<1>> EA)",
+      description: "A slot tooltip string that shows both the mass of an item and the total slot mass. It's used when"
+      + " the slot has more than one item.\n"
+      + " The <<1>> argument is the single item mass which may be estimated.\n"
+      + " The <<2>> argument is the slot total mass.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> VolumeTooltipText = new(
@@ -230,13 +234,13 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           + " The <<1>> argument is the item volume.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
-  static readonly Message<VolumeLType, VolumeLType> VolumeMultipartTooltipText = new(
+  static readonly Message<string, VolumeLType> VolumeMultipartTooltipText = new(
       "",
-      defaultTemplate: "Volume: <b><<1>></b> (total: <b><<2>></b>)",
-      description: "A slot tooltip string that shows both the volume of an item and the total"
-          + " slot volume. It's used when the slot has more than one item.\n"
-          + " The <<1>> argument is the item volume.\n"
-          + " The <<2>> argument is the slot total volume.");
+      defaultTemplate: "Total volume: <b><<2>></b> (<<1>> EA)",
+      description: "A slot tooltip string that shows both the volume of an item and the total slot volume. It's used"
+      + " when the slot has more than one item.\n"
+      + " The <<1>> argument is the single item volume which may be estimated.\n"
+      + " The <<2>> argument is the slot total volume.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CostType> CostTooltipText = new(
@@ -247,12 +251,12 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           + " The <<1>> argument is the item cost.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
-  static readonly Message<CostType, CostType> CostMultipartTooltipText = new(
+  static readonly Message<string, CostType> CostMultipartTooltipText = new(
       "",
-      defaultTemplate: "Cost: <b><<1>></b> (total: <b><<2>></b>)",
-      description: "A slot tooltip string that shows both the cost of an item and the total"
-          + " slot cost. It's used when the slot has more than one item.\n"
-      + " The <<1>> argument is the item cost.\n"
+      defaultTemplate: "Total cost: <b><<2>></b> (<<1>> EA)",
+      description: "A slot tooltip string that shows both the cost of an item and the total slot cost. It's used when"
+      + " the slot has more than one item.\n"
+      + " The <<1>> argument is the single item cost which can be an estimated value.\n"
       + " The <<2>> argument is the slot total cost.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -264,30 +268,17 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           + " The <<1>> argument is a localized name of the variant.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
-      ResourceMultipartSpecialValueText = new(
-          "",
-          defaultTemplate:
-          "<<1>>: <b><color=yellow>~<<2>></color></b> / <b><<3>></b> (total: <b><<4>></b>)",
-          description: "Resource status string in the slot tooltip when there are more than one"
-          + " items available in the slot and the resource reserve is varying in the items.\n"
-          + " The <<1>> argument is a localized name of the resource.\n"
-          + " The <<2>> argument is the estimated amount of the resource per item.\n"
-          + " The <<3>> argument is the maximum amount of the resource per item.\n"
-          + " The <<4>> argument is the slot total reserve.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType, CompactNumberType>
+  static readonly Message<ResourceType, string, CompactNumberType, CompactNumberType>
       ResourceMultipartValueText = new(
           "",
-          defaultTemplate: "<<1>>: <b><<2>></b> / <b><<3>></b> (total: <b><<4>></b>)",
+          defaultTemplate: "<<1>>: <b><<4>></b> (<<2>> / <b><<3>></b> EA)",
           description: "Resource status string in the slot tooltip when there are more than one"
           + " items the available in the slot and the resource reserve in all the items is at its"
           + " min or max value (i.e. it's exact).\n"
           + " The <<1>> argument is a localized name of the resource.\n"
           + " The <<2>> argument is the available amount of the resource per item.\n"
           + " The <<3>> argument is the maximum amount of the resource per item.\n"
-          + " The <<4>> argument is the slot total reserve.");
+          + " The <<4>> argument is the slot total amount.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
   static readonly Message<ResourceType, CompactNumberType, CompactNumberType> NormalResourceValueText = new(
@@ -300,17 +291,53 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       + " The <<2>> argument is the current amount of the resource.\n"
       + " The <<3>> argument is the maximum amount of the resource.");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
-  static readonly Message<ResourceType, CompactNumberType, CompactNumberType> SpecialResourceValueText = new(
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<MassType> NormalMassFmt = new(
       "",
-      defaultTemplate: "<<1>>: <b><color=yellow><<2>></color></b> / <b><<3>></b>",
-      description: "Resource status string in the slot tooltip when the available amount is at"
-      + " the level that is not normally expected (e.g. 'full' for the ore tanks or"
-      + " 'empty' for"
-      + " the fuel ones).\n"
-      + " The <<1>> argument is a localized name of the resource.\n"
-      + " The <<2>> argument is the current amount of the resource.\n"
-      + " The <<3>> argument is the maximum amount of the resource.");
+      defaultTemplate: "<b><<1>></b>",
+      description: "Representation of mass value. Used to format the tooltip stats.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<MassType> EstimatedMassFmt = new(
+      "",
+      defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
+      description: "Representation of an imprecise mass value. Used to format the tooltip stats.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<VolumeLType> NormalVolumeFmt = new(
+      "",
+      defaultTemplate: "<b><<1>></b>",
+      description: "Representation of volume value. Used to format the tooltip stats.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<VolumeLType> EstimatedVolumeFmt = new(
+      "",
+      defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
+      description: "Representation of an imprecise volume value. Used to format the tooltip stats.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<CostType> NormalCostFmt = new(
+      "",
+      defaultTemplate: "<b><<1>></b>",
+      description: "Representation of cost value. Used to format the tooltip stats.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<CostType> EstimatedCostFmt = new(
+      "",
+      defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
+      description: "Representation of an imprecise cost value. Used to format the tooltip stats.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<CompactNumberType> NormalResourceFmt = new(
+      "",
+      defaultTemplate: "<b><<1>></b>",
+      description: "Representation of resource amount value. Used to format the tooltip stats.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<CompactNumberType> EstimatedResourceFmt = new(
+      "",
+      defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
+      description: "Representation of an imprecise resource amount value. Used to format the tooltip stats.");
   #endregion
 
   #region Helper classes
@@ -892,20 +919,9 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     // Available resources stats.
     // Populate the available resources on the part. 
     if (item.resources.Length > 0) {
-      var resItems = new List<string>();
-      foreach (var resource in item.resources) {
-        if (Math.Abs(resource.amount - resource.maxAmount) <= double.Epsilon) {
-          resItems.Add(NormalResourceValueText.Format(
-              resource.resourceName,
-              resource.amount,
-              resource.maxAmount));
-        } else {
-          resItems.Add(SpecialResourceValueText.Format(
-              resource.resourceName,
-              resource.amount,
-              resource.maxAmount));
-        }
-      }
+      var resItems = item.resources.Select(
+              resource => NormalResourceValueText.Format(resource.resourceName, resource.amount, resource.maxAmount))
+          .ToList();
       tooltip.availableResourcesInfo.text = string.Join("\n", resItems);
     } else {
       tooltip.availableResourcesInfo.text = null;
@@ -915,17 +931,46 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   }
 
   /// <summary>Fills tooltip with useful information about the items in the slot.</summary>
+  /// <remarks>The items are expected to be of the same kind and variant.</remarks>
   static void UpdateMultipleItemsTooltip(UIKISInventoryTooltip.Tooltip tooltip, ICollection<InventoryItem> items) {
     var refItem = items.First();
-    var similarityValues = CalculateSimilarityValues(refItem);
     tooltip.title = refItem.avPart.title;
+
+    var totalMass = 0.0;
+    var equalMass = true;
+    var totalVolume = 0.0;
+    var equalVolume = true;
+    var totalCost = 0.0;
+    var equalCost = true;
+    var resourceTotal = refItem.resources.ToDictionary(k => k.resourceName, _ => 0.0);
+    var resourceEqual = refItem.resources.ToDictionary(k => k.resourceName, _ => true);
+    foreach (var item in items) {
+      totalMass += item.fullMass;
+      equalMass &= Mathd.AreSame(item.fullMass, refItem.fullMass);
+      totalVolume += item.volume;
+      equalVolume &= Mathd.AreSame(item.volume, refItem.volume);
+      totalCost += item.fullCost;
+      equalCost &= Mathd.AreSame(item.fullCost, refItem.fullCost);
+      for (var i = item.resources.Length - 1; i >= 0; i--) {
+        var resource = item.resources[i];
+        resourceTotal[resource.resourceName] += resource.amount;
+        resourceEqual[resource.resourceName] &= Mathd.AreSame(refItem.resources[i].amount, resource.amount);
+      }
+    }
 
     // Basic stats.
     var infoLines = new List<string> {
-        MassMultipartTooltipText.Format(refItem.fullMass, items.Sum(x => x.fullMass)),
-        VolumeMultipartTooltipText.Format(refItem.volume, items.Sum(x => x.volume)),
-        CostMultipartTooltipText.Format(refItem.fullCost, items.Sum(x => x.fullCost))
+        VolumeMultipartTooltipText.Format(
+            equalVolume ? NormalVolumeFmt.Format(refItem.volume) : EstimatedVolumeFmt.Format(totalVolume / items.Count),
+            totalVolume),
+        MassMultipartTooltipText.Format(
+            equalMass ? NormalMassFmt.Format(refItem.fullMass) : EstimatedMassFmt.Format(totalMass / items.Count),
+            totalMass),
+        CostMultipartTooltipText.Format(
+            equalCost ? NormalCostFmt.Format(refItem.fullCost) : EstimatedCostFmt.Format(totalCost / items.Count),
+            totalCost)
     };
+
     if (refItem.variant != null) {
       infoLines.Add(VariantTooltipText.Format(refItem.variant.DisplayName));
     }
@@ -933,20 +978,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
     // Available resources stats.
     var resourceInfoLines = new List<string>();
-    foreach (var resource in refItem.resources) {
-      var amountSlot = similarityValues[resource.resourceName];
-      var totalAmount = items.Sum(
-          x => x.resources.First(r => r.resourceName == resource.resourceName).amount);
-      if (amountSlot is 0 or 100) { // Show exact values with no highlighting.
-        resourceInfoLines.Add(
-            ResourceMultipartValueText.Format(
-                resource.resourceName, resource.amount, resource.maxAmount, totalAmount));
-      } else {
-        var amountPerItem = resource.maxAmount * amountSlot / 100.0;
-        resourceInfoLines.Add(
-            ResourceMultipartSpecialValueText.Format(
-                resource.resourceName, amountPerItem, resource.maxAmount, totalAmount));
-      }
+    foreach (var refResource in refItem.resources) {
+      var resourceName = refResource.resourceName;
+      var perItem = resourceEqual[resourceName]
+          ? NormalResourceFmt.Format(refResource.amount)
+          : EstimatedResourceFmt.Format(resourceTotal[resourceName] / items.Count);
+      resourceInfoLines.Add(
+          ResourceMultipartValueText.Format(
+              resourceName, perItem, refResource.maxAmount, resourceTotal[resourceName])
+          );
     }
     tooltip.availableResourcesInfo.text = string.Join("\n", resourceInfoLines);
 
