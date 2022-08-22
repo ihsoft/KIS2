@@ -202,7 +202,7 @@ public class KisContainerBase : AbstractPartModule,
             .SelectMany(f => new[] { f.uiControlFlight, f.uiControlEditor })
             .OfType<UI_Grid>()
             .Select(x => x.pawInventory)
-            .First(x => x != null);
+            .FirstOrDefault(x => x != null);
       }
       return _stockInventoryUiAction;
     }
@@ -222,6 +222,10 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <summary>Index to lookup item Id to the stock slot index that holds it.</summary>
   readonly Dictionary<string, int> _itemsToStockSlotMap = new();
+
+  /// <summary>Indicates that the stock update event handlers must not react on the calls.</summary>
+  /// <remarks>This flag is set when the internal state is being updated.</remarks>
+  bool _skipStockInventoryEvents;
   #endregion
 
   #region Helper scope class
@@ -350,7 +354,7 @@ public class KisContainerBase : AbstractPartModule,
     ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
     var partInfo = PartLoader.getPartInfoByName(partName);
     Preconditions.NotNull(partInfo, message: "Part name not found: " + partName);
-    return InventoryItemImpl.FromSnapshot(KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab));
+    return InventoryItemImpl.FromSnapshotDetached(KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab));
   }
 
   /// <inheritdoc/>
@@ -431,8 +435,7 @@ public class KisContainerBase : AbstractPartModule,
       ReportAndReturnCheckErrors(item, errors, true);
       return null;
     }
-    var newItem = InventoryItemImpl.FromItem(this, item, stockSlotIndex);
-    AddItemToStockSlot(newItem, stockSlotIndex);
+    var newItem = AddItemToStockSlot(item.snapshot, stockSlotIndex);//FIXME: flatten
     AddInventoryItem(newItem);
     return newItem;
   }
@@ -454,8 +457,8 @@ public class KisContainerBase : AbstractPartModule,
       return null;
     }
     RemoveInventoryItem(item);
-    RemoveItemFromStockSlot(item);
-    return InventoryItemImpl.FromSnapshot(item.snapshot);
+    var detachedItem = RemoveItemFromStockSlot(item);
+    return detachedItem;
   }
 
   /// <inheritdoc/>
@@ -546,38 +549,41 @@ public class KisContainerBase : AbstractPartModule,
   /// <seealso cref="stockInventoryModule"/>
   InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
     var item = InventoryItemImpl.FromStockSlot(this, stockSlotIndex, itemId);
-    UpdateStockSlotIndex(stockSlotIndex, item);
+    AddToStockSlotIndex(item, stockSlotIndex);
     return item;
   }
 
-  /// <summary>Single point method to update item-to-slot indexes.</summary>
+  /// <summary>Adds the item to the internal index.</summary>
+  /// <param name="item">The item to add. It must be a new unique item.</param>
   /// <param name="stockSlotIndex">The stock slot index to update the index for.</param>
-  /// <param name="item">The item to update the index for.</param>
-  /// <param name="remove">Tells if it's an add or remove action.</param>
-  void UpdateStockSlotIndex(int stockSlotIndex, InventoryItem item, bool remove = false) {
-    if (!remove) {
-      if (!_stockSlotToItemsMap.ContainsKey(stockSlotIndex)) {
-        _stockSlotToItemsMap[stockSlotIndex] = new HashSet<InventoryItem>();
-      }
-      if (!_stockSlotToItemsMap[stockSlotIndex].Add(item)) {
-        HostedDebugLog.Warning(
-            this, "Duplicated record in slot to item index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
-      }
-      if (!_itemsToStockSlotMap.ContainsKey(item.itemId)) {
-        _itemsToStockSlotMap[item.itemId] = stockSlotIndex;
-      } else {
-        HostedDebugLog.Warning(
-            this, "Duplicated record in item to slot index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
-      }
+  void AddToStockSlotIndex(InventoryItem item, int stockSlotIndex) {
+    InitializeStockSlots(stockSlotIndex);
+    if (!_stockSlotToItemsMap.ContainsKey(stockSlotIndex)) {
+      _stockSlotToItemsMap[stockSlotIndex] = new HashSet<InventoryItem>();
+    }
+    if (!_stockSlotToItemsMap[stockSlotIndex].Add(item)) {
+      HostedDebugLog.Warning(
+          this, "Duplicated record in slot to item index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
+    }
+    if (!_itemsToStockSlotMap.ContainsKey(item.itemId)) {
+      _itemsToStockSlotMap[item.itemId] = stockSlotIndex;
     } else {
-      if (!_stockSlotToItemsMap.ContainsKey(stockSlotIndex) || !_stockSlotToItemsMap[stockSlotIndex].Remove(item)) {
-        HostedDebugLog.Warning(
-            this, "Item not found in slot to item index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
-      }
-      if (!_itemsToStockSlotMap.Remove(item.itemId)) {
-        HostedDebugLog.Warning(
-            this, "Item not found in item to slot index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
-      }
+      HostedDebugLog.Warning(
+          this, "Duplicated record in item to slot index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
+    }
+  }
+
+  /// <summary>Removes the item from the internal index.</summary>
+  /// <param name="item">The item to remove. It must be valid and belonging to the inventory.</param>
+  void RemoveFromStockSlotIndex(InventoryItem item) {
+    var stockSlotIndex = item.stockSlotIndex;
+    if (!_stockSlotToItemsMap.ContainsKey(stockSlotIndex) || !_stockSlotToItemsMap[stockSlotIndex].Remove(item)) {
+      HostedDebugLog.Warning(
+          this, "Item not found in slot to item index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
+    }
+    if (!_itemsToStockSlotMap.Remove(item.itemId)) {
+      HostedDebugLog.Warning(
+          this, "Item not found in item to slot index: stockSlot={0}, itemId={1}", stockSlotIndex, item.itemId);
     }
   }
 
@@ -675,39 +681,54 @@ public class KisContainerBase : AbstractPartModule,
   /// <param name="item">The item to add.</param>
   /// <param name="stockSlotIndex">The stock slot index to add into.</param>
   /// <seealso cref="FindStockSlotForItem"/>
-  void AddItemToStockSlot(InventoryItem item, int stockSlotIndex) {
-    UpdateStockSlotIndex(stockSlotIndex, item); // This must go before the stock inventory change.
-    SyncStockSlots(stockSlotIndex);
-    if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
-        || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
-      stockInventoryModule.StoreCargoPartAtSlot(item.snapshot, stockSlotIndex);
-    } else {
-      var slot = stockInventoryModule.storedParts[stockSlotIndex];
-      using (new StackCapacityScope(this, slot, int.MaxValue)) {
-        stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
+  InventoryItem AddItemToStockSlot(ProtoPartSnapshot source, int stockSlotIndex) {
+    var item = InventoryItemImpl.FromSnapshotAttached(this, source, stockSlotIndex);
+    AddToStockSlotIndex(item, stockSlotIndex);
+    try {
+      _skipStockInventoryEvents = true;
+      if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
+          || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
+        stockInventoryModule.StoreCargoPartAtSlot(source, stockSlotIndex);
+      } else {
+        var slot = stockInventoryModule.storedParts[stockSlotIndex];
+        using (new StackCapacityScope(this, slot, int.MaxValue)) {
+          stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, slot.quantity + 1, slot.variantName);
+        }
       }
+    } finally {
+      // We don't want this flag to stick if any problem happens.
+      _skipStockInventoryEvents = false;
     }
+    return item;
   }
 
   /// <summary>Removes the item from a stock inventory slot.</summary>
   /// <param name="item">The item to remove.</param>
-  void RemoveItemFromStockSlot(InventoryItem item) {
-    var stockSlotIndex = _itemsToStockSlotMap[item.itemId];
-    UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
-    SyncStockSlots(stockSlotIndex);
+  InventoryItem RemoveItemFromStockSlot(InventoryItem item) {
+    var stockSlotIndex = item.stockSlotIndex;
+    var detachedItem = InventoryItemImpl.FromSnapshotDetached(item.snapshot);
+    InitializeStockSlots(stockSlotIndex);  // Ensure the state is good up to this index.
     var slot = stockInventoryModule.storedParts[stockSlotIndex];
     var newStackQuantity = slot.quantity - 1;
-    if (newStackQuantity == 0) {
-      stockInventoryModule.ClearPartAtSlot(stockSlotIndex);
-    } else {
-      // Assuming the slot was properly updated to correct the capacity.
-      stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, newStackQuantity, slot.variantName);
+    try {
+      _skipStockInventoryEvents = true;
+      if (newStackQuantity == 0) {
+        stockInventoryModule.ClearPartAtSlot(stockSlotIndex);
+      } else {
+        // Assuming the slot was properly updated to correct the capacity.
+        stockInventoryModule.UpdateStackAmountAtSlot(stockSlotIndex, newStackQuantity, slot.variantName);
+      }
+    } finally {
+      // We don't want this flag to stick if any problem happens.
+      _skipStockInventoryEvents = false;
     }
+    RemoveFromStockSlotIndex(item);
+    return detachedItem;
   }
 
   /// <summary>Reacts on the stock inventory change and updates the KIS inventory accordingly.</summary>
   void OnModuleInventorySlotChangedEvent(ModuleInventoryPart changedStockInventoryModule, int stockSlotIndex) {
-    if (!ReferenceEquals(changedStockInventoryModule, stockInventoryModule)) {
+    if (_skipStockInventoryEvents || !ReferenceEquals(changedStockInventoryModule, stockInventoryModule)) {
       return;
     }
     var slotQuantity = stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
@@ -721,50 +742,46 @@ public class KisContainerBase : AbstractPartModule,
         var item = _stockSlotToItemsMap[stockSlotIndex].Last();
         HostedDebugLog.Info(
             this, "Removing an item due to the stock slot change: slot={0}, itemId={1}", stockSlotIndex, item.itemId);
-        UpdateStockSlotIndex(stockSlotIndex, item, remove: true);
         RemoveInventoryItem(item);
+        RemoveFromStockSlotIndex(item);
       }
     }
     if (slotQuantity > indexedItems) {
       while (!_stockSlotToItemsMap.ContainsKey(stockSlotIndex)
           || slotQuantity > _stockSlotToItemsMap[stockSlotIndex].Count) {
         var item = MakeItemFromStockSlot(stockSlotIndex);
+        AddInventoryItem(item);
         HostedDebugLog.Info(
             this, "Adding an item due to the stock slot change: slot={0}, part={1}, itemId={2}",
             stockSlotIndex, item.avPart.name, item.itemId);
-        AddInventoryItem(item);
       }
     }
   }
 
-  /// <summary>Ensures that the stock inventory GUI is in sync with the extended inventory slots.</summary>
+  /// <summary>Ensures that the stock inventory GUI is in sync with the stock inventory slots.</summary>
   /// <remarks>
-  /// The stock logic only handles the slots within the part settings. This method ensures that the stock logic is ready
-  /// to receive updates to the slots that are <i>beyond</i> the part config. Such slots may be created by KIS when it
-  /// cannot fit a new item into any of the existing stock slots. They are not visible in the stock GUI.
+  /// The stock logic requires that every slot has a GUI handler established, and those handlers are only setup for the
+  /// slots up to the maximum number in the part config. This method ensures that any slots created beyond the part
+  /// config are properly initialized.
   /// </remarks>
-  /// <param name="maxSlotIndex">
+  /// <param name="minSlotIndex">
   /// The slot index up to which the stock logic should be fine in handling the updates.
   /// </param>
-  /// <seealso cref="FindStockSlotForItem"/>
-  /// <seealso cref="AddItemToStockSlot"/>
-  void SyncStockSlots(int maxSlotIndex) {
-    var elementsAdded = 0;
-    while (stockInventoryUiAction.slotPartIcon.Count <= maxSlotIndex) {
-      var newStockSlotUi = MakeStockSlotUiObject(stockInventoryUiAction.slotPartIcon.Count);
+  void InitializeStockSlots(int minSlotIndex = -1) { //FIXME: rename
+    if (stockInventoryUiAction == null) {
+      return;
+    }
+    var needSlots = Math.Max(
+        Math.Max(stockInventoryModule.InventorySlots, stockInventoryModule.storedParts.Count), minSlotIndex + 1);
+    if (stockInventoryUiAction.slotPartIcon.Count == needSlots) {
+      return;
+    }
+    stockInventoryUiAction.slotPartIcon.Clear();
+    stockInventoryUiAction.slotButton.Clear();
+    for (var i = 0; i < needSlots; i++) {
+      var newStockSlotUi = MakeStockSlotUiObject(i);
       stockInventoryUiAction.slotPartIcon.Add(newStockSlotUi.GetComponent<EditorPartIcon>());
       stockInventoryUiAction.slotButton.Add(newStockSlotUi.GetComponent<UIPartActionInventorySlot>());
-      elementsAdded++;
-    }
-    if (elementsAdded > 0) {
-      if (StockCompatibilitySettings.isCompatibilityMode) {
-        HostedDebugLog.Warning(
-            this, "Added extra stock inventory GUI elements in the compatibility mode: elements={0}, refSlot=#{1}",
-            elementsAdded, maxSlotIndex);
-      } else {
-        HostedDebugLog.Fine(
-            this, "Added extra stock inventory GUI elements: elements={0}, refSlot=#{1}", elementsAdded, maxSlotIndex);
-      }
     }
   }
 

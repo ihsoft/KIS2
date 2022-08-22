@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
-using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -39,16 +38,26 @@ sealed class InventoryItemImpl : InventoryItem {
   Texture _iconImage;
 
   /// <inheritdoc/>
-  public ProtoPartSnapshot snapshot => stockSlot?.snapshot ?? _cachedSnapshot;
-  ProtoPartSnapshot _cachedSnapshot;
+  public ProtoPartSnapshot snapshot => _cachedSnapshot ?? stockSlot.snapshot;
+  ProtoPartSnapshot _cachedSnapshot; // Only set if NOT attached to inventory.
 
   /// <inheritdoc/>
   public int stockSlotIndex { get; }
 
   /// <inheritdoc/>
-  public StoredPart stockSlot => inventory?.FindItem(itemId) != null
-      ? inventory.stockInventoryModule.storedParts[stockSlotIndex]
-      : null;
+  public StoredPart stockSlot {
+    get {
+      if (inventory == null) {
+        return null;
+      }
+      var item = inventory.FindItem(itemId);
+      if (item == null) {
+        throw new InvalidOperationException(
+            $"The item is not in inventory: itemId={itemId}, inventory={DebugEx.ObjectToString(inventory)}");
+      }
+      return inventory.stockInventoryModule.storedParts[stockSlotIndex];
+    }
+  }
 
   /// <inheritdoc/>
   public ProtoPartSnapshot mutableSnapshot {
@@ -163,22 +172,9 @@ sealed class InventoryItemImpl : InventoryItem {
   /// </param>
   /// <param name="itemId">The item ID or NULL if a new random value needs to be made.</param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromStockSlot(KisContainerBase inventory, int stockSlotIndex, string itemId = null) {
+  public static InventoryItemImpl FromStockSlot(KisContainerBase inventory, int stockSlotIndex, string itemId) {
     return new InventoryItemImpl(
         inventory.stockInventoryModule.storedParts[stockSlotIndex].snapshot, inventory, stockSlotIndex, itemId);
-  }
-
-  /// <summary>Creates an attached item from another item.</summary>
-  /// <remarks>The new item inherits the source item ID and shares its snapshot.</remarks>
-  /// <param name="inventory">The inventory to bind the item to. It must not be NULL.</param>
-  /// <param name="item">
-  /// The item to copy from. The new instance will have the same item ID as the source, and the source's snapshot will
-  /// be shared.
-  /// </param>
-  /// <param name="stockSlotIndex">The stock slot to associate with this item.</param>
-  /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromItem(KisContainerBase inventory, InventoryItem item, int stockSlotIndex) {
-    return new InventoryItemImpl(item.snapshot, inventory, stockSlotIndex, item.itemId);
   }
 
   /// <summary>Creates a detached item from a proto part snapshot.</summary>
@@ -186,8 +182,20 @@ sealed class InventoryItemImpl : InventoryItem {
   /// The snapshot to make the item from. All items created from the same snapshot will share the instance.
   /// </param>
   /// <returns>A new item.</returns>
-  public static InventoryItemImpl FromSnapshot(ProtoPartSnapshot snapshot) {
+  public static InventoryItemImpl FromSnapshotDetached(ProtoPartSnapshot snapshot) {
     return new InventoryItemImpl(snapshot);
+  }
+
+  /// <summary>Creates an item attached to the inventory from a proto part snapshot.</summary>
+  /// <param name="inventory">The inventory to attach the item to.</param>
+  /// <param name="snapshot">
+  /// The snapshot to make the item from. All items created from the same snapshot will share the instance.
+  /// </param>
+  /// <param name="stockSlotIndex">The stock slot index to associate the item with.</param>
+  /// <returns>A new item.</returns>
+  public static InventoryItemImpl FromSnapshotAttached(
+      KisContainerBase inventory, ProtoPartSnapshot snapshot, int stockSlotIndex) {
+    return new InventoryItemImpl(snapshot, inventory: inventory, stockSlotIndex: stockSlotIndex);
   }
 
   /// <summary>Creates a detached item from an active part.</summary>
@@ -216,7 +224,7 @@ sealed class InventoryItemImpl : InventoryItem {
                     string newItemId = null) {
     this.inventory = inventory;
     this.stockSlotIndex = stockSlotIndex;
-    _cachedSnapshot = snapshot;
+    _cachedSnapshot = inventory == null ? snapshot : null;
     _oldVariantName = snapshot.moduleVariantName ?? "";
     itemId = NewItemId(newItemId);
   }
