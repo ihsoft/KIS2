@@ -1613,7 +1613,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     _unityWindow.mainStats = string.Join("\n", text);
 
     // Check if the slots need to be re-arranged to accomodate the changed items.
-    for (var i = 0; i < _inventorySlots.Count; i++) {
+    for (var i = _inventorySlots.Count - 1; i >= 0; i--) {
       var slot = _inventorySlots[i];
       if (slot.isLocked) {
         continue;
