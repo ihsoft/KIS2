@@ -12,9 +12,9 @@ namespace KISAPIv2 {
 
 /// <summary>Basic container for a single inventory item.</summary>
 /// <remarks>
-/// The items are immutable objects. It means that if there was an action performed on an item, then that item won't
-/// change its content. Every updating action on the item is required to return a new instance of the item. The original
-/// item must be considered invalid at this point and never used for any purpose.
+/// The items are immutable objects. It means that if there was an action performed on an item, then it's state must be
+/// treated as inconsistent. Every updating action on the item is required to return a new instance of it. The original
+/// item must be considered INVALID after this call and never used for any purpose.
 /// </remarks>
 // ReSharper disable once InconsistentNaming
 // ReSharper disable once IdentifierTypo
@@ -154,7 +154,7 @@ public interface InventoryItem {
   /// The item will only be considered to the ownership change if none of the callbacks has replied with a non-empty
   /// error reason. These callbacks let the external actors to have a control over the inventory item's fate.
   /// </remarks>
-  /// <value>The list of checker functions. This list can be modified by the callers.</value>
+  /// <value>The list of checker functions. This list can be modified by the callers in runtime.</value>
   /// <seealso cref="CheckCanChangeOwnership"/>
   List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; }
 

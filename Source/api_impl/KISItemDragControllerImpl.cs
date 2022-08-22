@@ -244,7 +244,7 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
     var consumedItems = new List<InventoryItem>();
     var affectedInventories = new HashSet<IKisInventory>();
     foreach (var leasedItem in leasedItems) {
-      // The items that don;t belong to an inventory will get erased on leased items clear.
+      // The items that don't belong to an inventory will get erased on leased items clear.
       if (leasedItem.inventory == null) {
         // Clearing the lease will erase the item.
         consumedItems.Add(leasedItem);
