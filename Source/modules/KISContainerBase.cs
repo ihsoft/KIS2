@@ -456,8 +456,8 @@ public class KisContainerBase : AbstractPartModule,
       HostedDebugLog.Error(this, "Cannot delete locked item(s): name={0}, id={1}", item.avPart.name, item.itemId);
       return null;
     }
-    RemoveInventoryItem(item);
     var detachedItem = RemoveItemFromStockSlot(item);
+    RemoveInventoryItem(item);
     return detachedItem;
   }
 
