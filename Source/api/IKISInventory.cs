@@ -81,17 +81,12 @@ public interface IKisInventory {
   /// The item to check. It is important who's the owner of this item. The inventory may run extra checks if the item is
   /// already owned by some other inventory.
   /// </param>
-  /// <param name="stockSlotIndex">
-  /// Optional stock slot index. If provided, then the check will only be done for this specific stock slot. If the slot
-  /// is full or incompatible with the item, the check will fail. Use this feature only when it's really important to
-  /// store a new item into the specified stock slot.
-  /// </param>
   /// <param name="logErrors">
   /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
   /// </param>
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddItem"/>
-  List<ErrorReason> CheckCanAddItem(InventoryItem item, int stockSlotIndex = -1, bool logErrors = false);
+  List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false);
 
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>
@@ -103,10 +98,6 @@ public interface IKisInventory {
   /// The item to add. It must be a detached item that doesn't belong to any other inventory. This item must not be used
   /// or re-used after it was successfully added to the inventory since it may affect the inventory.
   /// </param>
-  /// <param name="stockSlotIndex">
-  /// Optional stock slot index. If not specified, the item will be added to any available stock slot. Otherwise,
-  /// the specific slot will be examined to be compatible with the item, and if it's not, then the action will fail.
-  /// </param>
   /// <returns>
   /// The new item from the inventory or <c>null</c> if the action has failed. The ID of the new item will be different
   /// from the source item.
@@ -115,7 +106,7 @@ public interface IKisInventory {
   /// <seealso cref="CheckCanAddItem"/>
   /// <seealso cref="InventoryItem.itemId"/>
   /// <seealso cref="InventoryItem.inventory"/>
-  InventoryItem AddItem(InventoryItem item, int stockSlotIndex = -1);
+  InventoryItem AddItem(InventoryItem item);
 
   /// <summary>Removes the specified item from the inventory.</summary>
   /// <remarks>The action can fail if the item is locked or doesn't exist.</remarks>

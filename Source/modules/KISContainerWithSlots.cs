@@ -731,9 +731,8 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   #region KISContainerBase overrides
   /// <inheritdoc/>
-  public override List<ErrorReason> CheckCanAddItem(
-      InventoryItem item, int stockSlotIndex = -1, bool logErrors = false) {
-    var errors = base.CheckCanAddItem(item, stockSlotIndex, logErrors);
+  public override List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
+    var errors = base.CheckCanAddItem(item, logErrors);
     if (errors.Count > 0) {
       return errors;  // Don't go deeper, it's already failed.
     }
@@ -1544,7 +1543,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       foreach (var consumedItem in consumedItems) {
         InventoryItem item;
         if (StockCompatibilitySettings.isCompatibilityMode) {
-          item = AddItem(consumedItem, stockSlotIndex: kisSlotIndex);
+          item = AddItemInternal(consumedItem, kisSlotIndex);
         } else {
           item = AddItem(consumedItem);
           if (item != null) {

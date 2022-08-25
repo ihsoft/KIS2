@@ -358,8 +358,7 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual List<ErrorReason> CheckCanAddItem(
-      InventoryItem item, int stockSlotIndex = -1, bool logErrors = false) {
+  public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
     ArgumentGuard.NotNull(item, nameof(item), context: this);
     var errors = new List<ErrorReason>();
 
@@ -407,7 +406,7 @@ public class KisContainerBase : AbstractPartModule,
         return ReportAndReturnCheckErrors(item, errors, logErrors);
       }
     }
-    if (FindStockSlotForItem(item, stockSlotIndex, out errors) == -1) {
+    if (FindStockSlotForItem(item, -1, out errors) == -1) {
       return ReportAndReturnCheckErrors(item, errors, logErrors);
     }
 
@@ -425,19 +424,8 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem AddItem(InventoryItem item, int stockSlotIndex = -1) {
-    ArgumentGuard.NotNull(item, nameof(item), context: this);
-    if (item.inventory != null) {
-      throw new InvalidOperationException(Preconditions.MakeContextError(this, "The new item must be detached"));
-    }
-    stockSlotIndex = FindStockSlotForItem(item, stockSlotIndex, out var errors);
-    if (errors.Count > 0) {
-      ReportAndReturnCheckErrors(item, errors, true);
-      return null;
-    }
-    var newItem = AddItemToStockSlot(item.snapshot, stockSlotIndex);//FIXME: flatten
-    AddInventoryItem(newItem);
-    return newItem;
+  public virtual InventoryItem AddItem(InventoryItem item) {
+    return AddItemInternal(item, -1);
   }
 
   /// <inheritdoc/>
@@ -502,6 +490,29 @@ public class KisContainerBase : AbstractPartModule,
     if (!_mutableInventoryItems.Remove(item.itemId)) {
       HostedDebugLog.Error(this, "Cannot delete item, not in the index: itemId={0}", item.itemId);
     }
+  }
+
+  /// <summary>Internal implementation of the item add logic.</summary>
+  /// <param name="item">The item to add.</param>
+  /// <param name="stockSlotIndex">
+  /// The stock slot index to store the new item into. If set to <c>-1</c>, then a proper slot will be found
+  /// automatically. Otherwise, the indicated slot must be compatible or empty.
+  /// </param>
+  /// <returns>A new attached item.</returns>
+  /// <exception cref="InvalidOperationException">if the source item is not detached.</exception>
+  protected InventoryItem AddItemInternal(InventoryItem item, int stockSlotIndex) {
+    ArgumentGuard.NotNull(item, nameof(item), context: this);
+    if (item.inventory != null) {
+      throw new InvalidOperationException(Preconditions.MakeContextError(this, "The new item must be detached"));
+    }
+    stockSlotIndex = FindStockSlotForItem(item, stockSlotIndex, out var errors);
+    if (errors.Count > 0) {
+      ReportAndReturnCheckErrors(item, errors, true);
+      return null;
+    }
+    var newItem = AddItemToStockSlot(item.snapshot, stockSlotIndex);
+    AddInventoryItem(newItem);
+    return newItem;
   }
 
   /// <summary>Verifies if the item can fit the stock slot.</summary>
