@@ -333,7 +333,9 @@ public class KisContainerBase : AbstractPartModule,
       }
       // Make items and update the stock slot indexes.
       for (var i = 0; i < stockSlot.quantity; i++) {
-        AddInventoryItem(MakeItemFromStockSlot(slotIndex, itemId: stockSlotItemIds[i]));
+        var item = InventoryItemImpl.FromStockSlot(this, slotIndex, stockSlotItemIds[i]);
+        AddToStockSlotIndex(item, slotIndex);
+        AddInventoryItem(item);
       }
     }
   }
@@ -555,24 +557,6 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Local utility methods
-  /// <summary>Creates an item from a non-empty stock slot and updates stock related indexes.</summary>
-  /// <remarks>
-  /// The new item is not added to <see cref="inventoryItems"/>, but it's expected that it will be added there by the
-  /// calling code. A normal way of doing it is calling <see cref="AddInventoryItem"/> or <see cref="DeleteItem"/>.
-  /// </remarks>
-  /// <param name="stockSlotIndex">The slot index in the stock inventory module.</param>
-  /// <param name="itemId">
-  /// An optional ID to assign to the new item. If omitted, then a new unique ID will be generated.
-  /// </param>
-  /// <returns>A new item that was created.</returns>
-  /// <seealso cref="stockInventoryModule"/>
-  /// <seealso cref="AddInventoryItem"/>
-  InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
-    var item = InventoryItemImpl.FromStockSlot(this, stockSlotIndex, itemId);
-    AddToStockSlotIndex(item, stockSlotIndex);
-    return item;
-  }
-
   /// <summary>Adds the item to the internal index.</summary>
   /// <param name="item">The item to add. It must be a new unique item.</param>
   /// <param name="stockSlotIndex">The stock slot index to update the index for.</param>
@@ -761,7 +745,8 @@ public class KisContainerBase : AbstractPartModule,
     if (slotQuantity > indexedItems) {
       while (!_stockSlotToItemsMap.ContainsKey(stockSlotIndex)
           || slotQuantity > _stockSlotToItemsMap[stockSlotIndex].Count) {
-        var item = MakeItemFromStockSlot(stockSlotIndex);
+        var item = InventoryItemImpl.FromStockSlot(this, stockSlotIndex, null);
+        AddToStockSlotIndex(item, stockSlotIndex);
         AddInventoryItem(item);
         HostedDebugLog.Info(
             this, "Adding an item due to the stock slot change: slot={0}, part={1}, itemId={2}",
