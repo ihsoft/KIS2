@@ -89,6 +89,19 @@ public class KisContainerBase : AbstractPartModule,
       description: "An error that is presented when the part cannot be added into a KIS container due to there crew"
       + " members sitting in it.");
 
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  public static readonly Message CannotAddPartWithChildrenErrorText = new(
+      "#autoLOC_6005091",
+      defaultTemplate: "Part has other parts attached, can't add to inventory",
+      description: "An error that is presented when a hierarchy of parts if being tried to be added into the"
+      + " inventory.");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  public static readonly Message CannotAddRootPartErrorText = new(
+      "",
+      defaultTemplate: "Cannot add root part into inventory",
+      description: "An error that is presented when the part cannot be added into a KIS container due to the part being"
+      + " added is a root part in the editor. It only makes sense in the editor mode.");
   // ReSharper enable MemberCanBePrivate.Global
   #endregion
 
@@ -118,7 +131,7 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory properties
   /// <inheritdoc/>
-  public Vessel ownerVessel => vessel;
+  public Part ownerPart => part;
 
   /// <inheritdoc/>
   public IReadOnlyDictionary<string, InventoryItem> inventoryItems => _mutableInventoryItems;
@@ -350,110 +363,64 @@ public class KisContainerBase : AbstractPartModule,
 
   #region IKISInventory implementation
   /// <inheritdoc/>
-  public InventoryItem MakeItem(string partName) {
-    ArgumentGuard.NotNullOrEmpty(partName, nameof(partName), context: this);
-    var partInfo = PartLoader.getPartInfoByName(partName);
-    Preconditions.NotNull(partInfo, message: "Part name not found: " + partName);
-    return InventoryItemImpl.FromSnapshotDetached(KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab));
-  }
-
-  /// <inheritdoc/>
-  public virtual List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false) {
-    ArgumentGuard.NotNull(item, nameof(item), context: this);
+  public virtual List<ErrorReason> CheckCanAddPart(ProtoPartSnapshot partSnapshot, bool logErrors = false) {
+    ArgumentGuard.NotNull(partSnapshot, nameof(partSnapshot), context: this);
     var errors = new List<ErrorReason>();
-
-    // Check if the item is allowing to change the owner when it's the case.
-    if (item.inventory != null && !ReferenceEquals(item.inventory, this)) {
-      errors.AddRange(item.CheckCanChangeOwnership());
-      if (errors.Count > 0) {
-        return ReportAndReturnCheckErrors(item, errors, logErrors);
-      }
-    }
-
-    // Check if the inventory is being added into self. Obviously, a bad idea.
-    if (part.craftID == item.snapshot.craftID || part.persistentId == item.snapshot.persistentId) {
-      errors.Add(new ErrorReason() {
-          errorClass = InventoryConsistencyReason,
-          guiString = CannotAddIntoSelfErrorText,
-      });
-      return ReportAndReturnCheckErrors(item, errors, logErrors);
-    }
-
-    // Parts with crew cannot be stored.
-    if (item.snapshot.protoModuleCrew.Count > 0) {
-      errors.Add(new ErrorReason() {
-          errorClass = InventoryConsistencyReason,
-          guiString = CannotAddCrewedPartErrorText,
-      });
-      return ReportAndReturnCheckErrors(item, errors, logErrors);
-    }
 
     // Check if the compatibility settings restrict item adding/moving.
     if (StockCompatibilitySettings.isCompatibilityMode) {
-      var cargoModule = item.avPart.partPrefab.GetComponent<ModuleCargoPart>();
+      var cargoModule = partSnapshot.partPrefab.GetComponent<ModuleCargoPart>();
       if (cargoModule == null) {
         errors.Add(new ErrorReason() {
             errorClass = StockInventoryLimitReason,
             guiString = NonCargoPartErrorText,
         });
-        return ReportAndReturnCheckErrors(item, errors, logErrors);
+        return ReportAddCheckErrors(partSnapshot, errors, logErrors);
       }
       if (cargoModule.packedVolume < 0.0f) {
         errors.Add(new ErrorReason() {
             errorClass = StockInventoryLimitReason,
             guiString = ConstructionOnlyPartErrorText,
         });
-        return ReportAndReturnCheckErrors(item, errors, logErrors);
+        return ReportAddCheckErrors(partSnapshot, errors, logErrors);
       }
     }
-    if (FindStockSlotForItem(item, -1, out errors) == -1) {
-      return ReportAndReturnCheckErrors(item, errors, logErrors);
+    if (FindStockSlotForPart(partSnapshot, -1, out errors) == -1) {
+      return ReportAddCheckErrors(partSnapshot, errors, logErrors);
     }
 
-    // Finally, verify the volume limit. It must be the last check.
-    if (!ReferenceEquals(item.inventory, this) && usedVolume + item.volume > maxVolume) {
+    // Finally, verify the volume limit. It must be the last check since it's not a critical condition.
+    var partVolume = KisApi.PartModelUtils.GetPartVolume(partSnapshot.partInfo, partSnapshot.moduleVariantName);
+    if (usedVolume + partVolume > maxVolume) {
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {
           errorClass = ItemVolumeTooLargeReason,
-          guiString = NotEnoughVolumeText.Format(item.volume - freeVolume),
+          guiString = NotEnoughVolumeText.Format(partVolume - freeVolume),
       });
-      return ReportAndReturnCheckErrors(item, errors, logErrors);
+      return ReportAddCheckErrors(partSnapshot, errors, logErrors);
     }
 
     return errors;  // It must be empty at this point.
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem AddItem(InventoryItem item) {
-    return AddItemInternal(item, -1);
+  public virtual InventoryItem AddPart(ProtoPartSnapshot partSnapshot) {
+    return AddPartInternal(partSnapshot, -1);
   }
 
   /// <inheritdoc/>
-  public virtual InventoryItem DeleteItem(InventoryItem item) {
-    ArgumentGuard.NotNull(item, nameof(item), context: this);
-    if (!ReferenceEquals(item.inventory, this)) {
-      HostedDebugLog.Error(this, "Item doesn't belong to this inventory: name={0}, id={1}, owner={2}",
-                           item.avPart.name, item.itemId, item.inventory as PartModule);
-      return null;
-    }
-    if (!inventoryItems.ContainsKey(item.itemId)) {
-      HostedDebugLog.Error(this, "Item not found: name={0}, id={1}", item.avPart.name, item.itemId);
+  public virtual InventoryItem DeleteItem(string itemId) {
+    ArgumentGuard.NotNull(itemId, nameof(itemId), context: this);
+    if (!inventoryItems.TryGetValue(itemId, out var item)) {
+      HostedDebugLog.Error(this, "Item not found: id={0}", itemId);
       return null;
     }
     if (item.isLocked) {
-      HostedDebugLog.Error(this, "Cannot delete locked item(s): name={0}, id={1}", item.avPart.name, item.itemId);
-      return null;
+      HostedDebugLog.Error(this, "Cannot delete locked item: id={0}", itemId);
     }
     var detachedItem = RemoveItemFromStockSlot(item);
     RemoveInventoryItem(item);
     return detachedItem;
-  }
-
-  /// <inheritdoc/>
-  public InventoryItem FindItem(string itemId) {
-    ArgumentGuard.NotNullOrEmpty(itemId, nameof(itemId), context: this);
-    inventoryItems.TryGetValue(itemId, out var res);
-    return res;
   }
   #endregion
 
@@ -470,6 +437,50 @@ public class KisContainerBase : AbstractPartModule,
   #endregion
 
   #region Inheritable methods
+  /// <summary>Verifies if the material part can be added into inventory.</summary>
+  /// <remarks>
+  /// Snapshots can be used to create multiple instances of the part. "Material part" is one specific instance of a part
+  /// that is associated with an inventory item. This method verifies if inventory can accept a specific part as an item
+  /// with respect to the part's state and its relations with the other parts and the world.
+  /// </remarks>
+  /// FIXME: move to item's SetMaterialPart
+  protected virtual List<ErrorReason> CheckCanAddMaterialPart(Part materialPart) {
+    var errors = new List<ErrorReason>();
+    if (EditorLogic.RootPart != null && EditorLogic.RootPart == materialPart) {
+      errors.Add(
+          new ErrorReason {
+              errorClass = InventoryConsistencyReason,
+              guiString = CannotAddRootPartErrorText,
+          });
+      return errors;
+    }
+    if (materialPart.children.Count > 0) {
+      errors.Add(
+          new ErrorReason {
+              errorClass = KisNotImplementedReason,
+              guiString = CannotAddPartWithChildrenErrorText,
+          });
+      return errors;
+    }
+    if (materialPart == part) {
+      errors.Add(
+          new ErrorReason {
+              errorClass = InventoryConsistencyReason,
+              guiString = CannotAddIntoSelfErrorText,
+          });
+      return errors;
+    }
+    if (materialPart.protoModuleCrew.Count > 0) {
+      errors.Add(
+          new ErrorReason {
+              errorClass = InventoryConsistencyReason,
+              guiString = CannotAddCrewedPartErrorText,
+          });
+      return errors;
+    }
+    return errors;
+  }
+  
   /// <summary>Adds the item into <see cref="inventoryItems"/> collection.</summary>
   /// <remarks>
   /// This method doesn't deal with the stock inventory update and only serves the purpose of the internal KIS state
@@ -492,35 +503,32 @@ public class KisContainerBase : AbstractPartModule,
     }
   }
 
-  /// <summary>Internal implementation of the item add logic.</summary>
-  /// <param name="item">The item to add.</param>
+  /// <summary>Internal implementation of the part add logic.</summary>
+  /// <param name="partSnapshot">The part to add.</param>
   /// <param name="stockSlotIndex">
-  /// The stock slot index to store the new item into. If set to <c>-1</c>, then a proper slot will be found
+  /// The stock slot index to store the new part into. If set to <c>-1</c>, then a proper slot will be found
   /// automatically. Otherwise, the indicated slot must be compatible or empty.
   /// </param>
   /// <returns>A new attached item.</returns>
-  /// <exception cref="InvalidOperationException">if the source item is not detached.</exception>
-  protected InventoryItem AddItemInternal(InventoryItem item, int stockSlotIndex) {
-    ArgumentGuard.NotNull(item, nameof(item), context: this);
-    if (item.inventory != null) {
-      throw new InvalidOperationException(Preconditions.MakeContextError(this, "The new item must be detached"));
-    }
-    stockSlotIndex = FindStockSlotForItem(item, stockSlotIndex, out var errors);
+  protected InventoryItem AddPartInternal(ProtoPartSnapshot partSnapshot, int stockSlotIndex) {
+    ArgumentGuard.NotNull(partSnapshot, nameof(partSnapshot), context: this);
+    stockSlotIndex = FindStockSlotForPart(partSnapshot, stockSlotIndex, out var errors);
     if (errors.Count > 0) {
-      ReportAndReturnCheckErrors(item, errors, true);
+      ReportAddCheckErrors(partSnapshot, errors, true);
       return null;
     }
-    var newItem = AddItemToStockSlot(item.snapshot, stockSlotIndex);
+    var newItem = AddItemToStockSlot(partSnapshot, stockSlotIndex);
     AddInventoryItem(newItem);
     return newItem;
   }
 
-  /// <summary>Verifies if the item can fit the stock slot.</summary>
-  /// <param name="item">The item to check.</param>
+  /// <summary>Verifies if the part can fit the stock slot.</summary>
+  /// <param name="partSnapshot">The part to check.</param>
   /// <param name="stockSlotIndex">The stock slot to check for.</param>
-  /// <param name="quantity">The quantity of the items to try to fit into the slot.</param>
+  /// <param name="quantity">The quantity of the parts to try to fit into the slot.</param>
   /// <returns>The list of check errors. It's empty if items can be stored into the slot.</returns>
-  protected List<ErrorReason> CheckSlotStockForItem(InventoryItem item, int stockSlotIndex, int quantity = 1) {
+  protected List<ErrorReason> CheckSlotStockForPart(
+      ProtoPartSnapshot partSnapshot, int stockSlotIndex, int quantity = 1) {
     var errors = new List<ErrorReason>();
     if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)) {
       return errors;
@@ -536,7 +544,7 @@ public class KisContainerBase : AbstractPartModule,
             logDetails: string.Format("Stack capacity reached in stock slot: index={0}, quantity={1}, stackLimit={2}",
                                       stockSlotIndex, stockSlot.quantity, stockSlot.stackCapacity));
       }
-      if (!stockInventoryModule.CanStackInSlot(item.avPart, item.variantName, stockSlotIndex)) {
+      if (!stockInventoryModule.CanStackInSlot(partSnapshot.partInfo, partSnapshot.moduleVariantName, stockSlotIndex)) {
         return ReturnStockInventoryErrorReasons(
             DifferentPartInSlotReasonText,
             logDetails: $"Incompatible stock slot: index={stockSlotIndex}, slotPart={stockSlot.partName}");
@@ -550,7 +558,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Creates an item from a non-empty stock slot and updates stock related indexes.</summary>
   /// <remarks>
   /// The new item is not added to <see cref="inventoryItems"/>, but it's expected that it will be added there by the
-  /// calling code. A normal way of doing it is calling <see cref="AddItem"/> or <see cref="DeleteItem"/>.
+  /// calling code. A normal way of doing it is calling <see cref="AddInventoryItem"/> or <see cref="DeleteItem"/>.
   /// </remarks>
   /// <param name="stockSlotIndex">The slot index in the stock inventory module.</param>
   /// <param name="itemId">
@@ -558,6 +566,7 @@ public class KisContainerBase : AbstractPartModule,
   /// </param>
   /// <returns>A new item that was created.</returns>
   /// <seealso cref="stockInventoryModule"/>
+  /// <seealso cref="AddInventoryItem"/>
   InventoryItem MakeItemFromStockSlot(int stockSlotIndex, string itemId = null) {
     var item = InventoryItemImpl.FromStockSlot(this, stockSlotIndex, itemId);
     AddToStockSlotIndex(item, stockSlotIndex);
@@ -598,12 +607,13 @@ public class KisContainerBase : AbstractPartModule,
     }
   }
 
-  /// <summary>Gets a stock inventory slot that can accept the given item.</summary>
-  /// <remarks>This method may modify the stock module state if an extra slot needs to be added.</remarks>
-  /// <param name="item">The item to verify.</param>
+  /// <summary>Finds a stock inventory slot that can accept the given part.</summary>
+  /// <remarks>This method may modify the stock module state if the existing slots cannot hold the part.</remarks>
+  /// <param name="partSnapshot">The part to verify.</param>
   /// <param name="stockSlotIndex">
   /// Optional stock slot index to place the item into. If provided, then the other slots will not be considered to find
-  /// a suitable slot. To enable searching set this parameter to <c>-1</c>.
+  /// a suitable slot, but the provided slot still will be checked for the compatibility. To enable searching set this
+  /// parameter to <c>-1</c>.
   /// </param>
   /// <param name="errors">The list of errors that were detected during searching the compatible slot.</param>
   /// <returns>
@@ -611,13 +621,13 @@ public class KisContainerBase : AbstractPartModule,
   /// <paramref name="errors"/> list will not be empty.
   /// </returns>
   /// <seealso cref="StockCompatibilitySettings"/>
-  int FindStockSlotForItem(InventoryItem item, int stockSlotIndex, out List<ErrorReason> errors) {
+  int FindStockSlotForPart(ProtoPartSnapshot partSnapshot, int stockSlotIndex, out List<ErrorReason> errors) {
     errors = new List<ErrorReason>(); 
     var maxSlotIndex = -1;
 
     // When the stock slot is provided, only run the checks.
     if (stockSlotIndex >= 0) {
-      errors = CheckSlotStockForItem(item, stockSlotIndex);
+      errors = CheckSlotStockForPart(partSnapshot, stockSlotIndex);
       return errors.Count == 0 ? stockSlotIndex : -1;
     }
 
@@ -625,18 +635,18 @@ public class KisContainerBase : AbstractPartModule,
     foreach (var existingSlotIndex in stockInventoryModule.storedParts.Keys) {
       maxSlotIndex = Math.Max(existingSlotIndex, maxSlotIndex);
       var slot = stockInventoryModule.storedParts[existingSlotIndex];
-      if (!slot.partName.Equals(item.avPart.name) || item.resources.Length > 0) {
+      if (!slot.partName.Equals(partSnapshot.partName) || partSnapshot.resources.Count > 0) {
         // Absolutely no stacking for different parts or parts with resources.
         continue;
       }
 
       // Verify if the slot cannot be used due to the stock inventory limit.
-      if (CheckSlotStockForItem(item, existingSlotIndex).Count > 0) {
+      if (CheckSlotStockForPart(partSnapshot, existingSlotIndex).Count > 0) {
         continue;
       }
 
       // Ensures that parts that have different internal state don't get added into the same stock slot.
-      if (!CheckProtoModulesSame(slot.snapshot, item.snapshot)) {
+      if (!CheckProtoModulesSame(slot.snapshot, partSnapshot)) {
         continue;
       }
       return existingSlotIndex;  // Found a candidate.
@@ -678,28 +688,19 @@ public class KisContainerBase : AbstractPartModule,
     return true;
   }
 
-  /// <summary>Adds the item into the specified stock inventory slot.</summary>
-  /// <remarks>
-  /// <p>
-  /// The caller must ensure the item can be added into the slot. It includes (but is not limited to) the check for the
-  /// variant or resources on the part.
-  /// </p>
-  /// <p>
-  /// This method <i>always</i> fit the item into the slot. If the slot is not stock compatible for the item, then the
-  /// needed adjustments are made to the inventory.
-  /// </p> 
-  /// </remarks>
-  /// <param name="item">The item to add.</param>
+  /// <summary>Adds part into the specified stock inventory slot.</summary>
+  /// <remarks>This method doesn't verify if the slot is compatible with the part.</remarks>
+  /// <param name="partSnapshot">The part to add.</param>
   /// <param name="stockSlotIndex">The stock slot index to add into.</param>
-  /// <seealso cref="FindStockSlotForItem"/>
-  InventoryItem AddItemToStockSlot(ProtoPartSnapshot source, int stockSlotIndex) {
-    var item = InventoryItemImpl.FromSnapshotAttached(this, source, stockSlotIndex);
+  /// <seealso cref="FindStockSlotForPart"/>
+  InventoryItem AddItemToStockSlot(ProtoPartSnapshot partSnapshot, int stockSlotIndex) {
+    var item = InventoryItemImpl.FromSnapshotAttached(this, partSnapshot, stockSlotIndex);
     AddToStockSlotIndex(item, stockSlotIndex);
     try {
       _skipStockInventoryEvents = true;
       if (!stockInventoryModule.storedParts.ContainsKey(stockSlotIndex)
           || stockInventoryModule.storedParts[stockSlotIndex].IsEmpty) {
-        stockInventoryModule.StoreCargoPartAtSlot(source, stockSlotIndex);
+        stockInventoryModule.StoreCargoPartAtSlot(partSnapshot, stockSlotIndex);
       } else {
         var slot = stockInventoryModule.storedParts[stockSlotIndex];
         using (new StackCapacityScope(this, slot, int.MaxValue)) {
@@ -778,7 +779,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <param name="minSlotIndex">
   /// The slot index up to which the stock logic should be fine in handling the updates.
   /// </param>
-  void InitializeStockSlots(int minSlotIndex = -1) { //FIXME: rename
+  void InitializeStockSlots(int minSlotIndex = -1) {
     if (stockInventoryUiAction == null) {
       return;
     }
@@ -809,14 +810,15 @@ public class KisContainerBase : AbstractPartModule,
   }
 
   /// <summary>Reports the check errors if requested.</summary>
-  /// <param name="item">The item for which the checks are being made.</param>
+  /// <param name="partSnapshot">The part for which the checks are being made.</param>
   /// <param name="errors">The detected errors. Can be an empty list.</param>
   /// <param name="logErrors">Indicates of the errors must be logged.</param>
   /// <returns>The <paramref name="errors"/> provided in the call.</returns>
-  protected List<ErrorReason> ReportAndReturnCheckErrors(InventoryItem item, List<ErrorReason> errors, bool logErrors) {
+  protected List<ErrorReason> ReportAddCheckErrors(
+      ProtoPartSnapshot partSnapshot, List<ErrorReason> errors, bool logErrors) {
     if (logErrors && errors.Count > 0) {
       HostedDebugLog.Error(
-          this, "Cannot add '{0}' part:\n{1}", item.avPart.name,
+          this, "Cannot add '{0}' part:\n{1}", partSnapshot.partName,
           DbgFormatter.C2S(errors, separator: "\n", predicate: x => x.logDetails ?? x.guiString));
     }
     return errors;
@@ -847,12 +849,12 @@ sealed class SetupEvaHandler : MonoBehaviour {
 
   /// <summary>Reacts on kerbal leaving spacecraft and becoming EVA.</summary>
   void OnCrewOnEvaEvent(GameEvents.FromToAction<Part, Part> fv) {
-    fv.to.FindModulesImplementing<IKisInventory>().ForEach(x => x.ownerVessel.StartCoroutine(WaitAndLoadModule(x)));
+    fv.to.FindModulesImplementing<IKisInventory>().ForEach(x => x.ownerPart.StartCoroutine(WaitAndLoadModule(x)));
   }
 
   // ReSharper disable once MemberCanBeMadeStatic.Local
   IEnumerator WaitAndLoadModule(IKisInventory inventory) {
-    var part = inventory.ownerVessel.rootPart;
+    var part = inventory.ownerPart;
     while (true) {
       yield return new WaitForEndOfFrame();
       if (part == null || part.State == PartStates.DEAD) {

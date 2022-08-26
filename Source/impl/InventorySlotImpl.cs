@@ -209,7 +209,7 @@ sealed class InventorySlotImpl {
   /// <param name="item">
   /// An item to add. The item is not copied, it's added as a reference. It must be already added into the inventory.
   /// </param>
-  /// <seealso cref="CheckCanAddItems"/>
+  /// <seealso cref="CheckCanAddParts"/>
   public void AddItem(InventoryItem item) {
     _itemsSet.Add(item);
     slotItems.Add(item);
@@ -240,24 +240,21 @@ sealed class InventorySlotImpl {
     // FIXME: implement
   }
 
-  /// <summary>Verifies if the items can be added to the slot.</summary>
-  /// <remarks>
-  /// The items must be "similar enough" to be added into the slot. The caller must not be guessing on the exact checks
-  /// performed in this method.
-  /// </remarks>
-  /// <param name="checkItems">The items to check. If it's empty, the reply is always "yes".</param>
+  /// <summary>Verifies if the parts can be added into the slot.</summary>
+  /// <remarks>The parts must be "similar enough" to be added into the same slot.</remarks>
+  /// <param name="checkSnapshots">The parts to check. If it's empty, the reply is always "yes".</param>
   /// <param name="logErrors">
   /// If <c>true</c>, then all the found errors will be written to the system log. Callers may use this option when
   /// they don't normally expect any errors.
   /// </param>
   /// <returns>
-  /// An empty list if the items can be added to the slot, or a list of human readable errors otherwise.
+  /// An empty list if the parts can be added to the slot, or a list of human readable errors otherwise.
   /// </returns>
-  public List<ErrorReason> CheckCanAddItems(InventoryItem[] checkItems, bool logErrors = false) {
-    if (checkItems.Length == 0) {
+  public List<ErrorReason> CheckCanAddParts(ProtoPartSnapshot[] checkSnapshots, bool logErrors = false) {
+    if (checkSnapshots.Length == 0) {
       return new List<ErrorReason>();
     }
-    if (slotItems.Count + checkItems.Length > ownerInventory.maxKisSlotSize) {
+    if (slotItems.Count + checkSnapshots.Length > ownerInventory.maxKisSlotSize) {
       return ReturnErrorReasons(
           logErrors, SlotIsFullReason, SlotIsFullReasonText.Format(ownerInventory.maxKisSlotSize));
     }
@@ -267,15 +264,15 @@ sealed class InventorySlotImpl {
     List<ErrorReason> err2 = null;
     List<ErrorReason> err3 = null;
     List<ErrorReason> err4 = null;
-    var refItem = slotRefItem ?? checkItems[0];
-    foreach (var checkItem in checkItems) {
-      if (err1 == null && checkItem.avPart.name != refItem.avPart.name) {
+    var refSnapshot = slotRefItem?.snapshot ?? checkSnapshots[0];
+    foreach (var checkSnapshot in checkSnapshots) {
+      if (err1 == null && checkSnapshot.partName != refSnapshot.partName) {
         err1 = ReturnErrorReasons(logErrors, DifferentPartReason, DifferentPartsReasonText);
-      } else if (err2 == null && checkItem.variantName != refItem.variantName) {
+      } else if (err2 == null && checkSnapshot.moduleVariantName != refSnapshot.moduleVariantName) {
         err2 = ReturnErrorReasons(logErrors, DifferentVariantReason, DifferentVariantReasonText);
-      } else if (err3 == null && !CheckIfSameResources(refItem, checkItem)) {
+      } else if (err3 == null && !CheckIfSameResources(refSnapshot, checkSnapshot)) {
         err3 = ReturnErrorReasons(logErrors, DifferentResourcesReason, DifferentResourcesReasonText);
-      } else if (err4 == null && !CheckIfSimilar(refItem, checkItem)) {
+      } else if (err4 == null && !CheckIfSimilar(refSnapshot, checkSnapshot)) {
         err4 = ReturnErrorReasons(logErrors, DifferentResourceAmountsReason, DifferentResourceAmountsReasonText);
       }
     }
@@ -283,8 +280,8 @@ sealed class InventorySlotImpl {
   }
 
   /// <summary>Checks if the item can be stacked into this slot.</summary>
-  public bool IsItemFit(InventoryItem checkItem) {
-    return slotItems.Count <= 1 || CheckIfSimilar(slotRefItem, checkItem);
+  public bool IsPartFit(ProtoPartSnapshot checkSnapshot) {
+    return slotItems.Count <= 1 || CheckIfSimilar(slotRefItem.snapshot, checkSnapshot);
   }
   #endregion
 
@@ -297,7 +294,7 @@ sealed class InventorySlotImpl {
     if (slotRefItem.resources.Length == 0) {
       return null;
     }
-    var similarityValues = KisContainerWithSlots.CalculateSimilarityValues(slotRefItem); 
+    var similarityValues = KisContainerWithSlots.CalculateSimilarityValues(slotRefItem.snapshot); 
     var slotPercent = similarityValues.Sum(x => (double) x.Value) / 100.0
         / similarityValues.Count;
     var amountSlot = KisContainerWithSlots.GetResourceAmountSlot(slotPercent);
@@ -319,16 +316,16 @@ sealed class InventorySlotImpl {
   }
 
   /// <summary>Checks if items resources are the same and the amounts are somewhat close.</summary>
-  static bool CheckIfSimilar(InventoryItem refItem, InventoryItem checkItem) {
-    var refSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(refItem);
-    var checkSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(checkItem);
+  static bool CheckIfSimilar(ProtoPartSnapshot refSnapshot, ProtoPartSnapshot checkSnapshot) {
+    var refSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(refSnapshot);
+    var checkSimilarityValues = KisContainerWithSlots.CalculateSimilarityValues(checkSnapshot);
     return refSimilarityValues.SequenceEqual(checkSimilarityValues); 
   }
 
   /// <summary>Checks if items resources are the same, disregarding the amounts.</summary>
-  static bool CheckIfSameResources(InventoryItem refItem, InventoryItem checkItem) {
-    var refResources = refItem.resources.Select(r => r.resourceName);
-    var checkResources = checkItem.resources.Select(r => r.resourceName);
+  static bool CheckIfSameResources(ProtoPartSnapshot refSnapshot, ProtoPartSnapshot checkSnapshot) {
+    var refResources = refSnapshot.resources.Select(r => r.resourceName);
+    var checkResources = checkSnapshot.resources.Select(r => r.resourceName);
     return refResources.SequenceEqual(checkResources);
   }
 

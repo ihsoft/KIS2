@@ -12,8 +12,9 @@ namespace KISAPIv2 {
 
 /// <summary>Basic interface that every inventory must implement to work with KIS.</summary>
 public interface IKisInventory {
-  /// <summary>The vessel that holds this inventory.</summary>
-  Vessel ownerVessel { get; }
+  /// <summary>The part that holds this inventory.</summary>
+  /// <remarks>A part can have multiple inventories.</remarks>
+  Part ownerPart { get; }
 
   /// <summary>The stock inventory module to which this inventory is attached.</summary>
   /// <value>The stock module instance.</value>
@@ -61,17 +62,6 @@ public interface IKisInventory {
   /// <value>The total cost of the inventory content.</value>
   float contentCost { get; }
 
-  /// <summary>Creates a detached inventory item.</summary>
-  /// <remarks>
-  /// This item can be adjusted/modified before adding into the inventory. The destination inventory is not required to
-  /// be the one that made the item.
-  /// </remarks>
-  /// <param name="partName">The part name to make the item for.</param>
-  /// <returns>An item for the part's prefab state.</returns>
-  /// <seealso cref="CheckCanAddItem"/>
-  /// <seealso cref="AddItem"/>
-  InventoryItem MakeItem(string partName);
-
   /// <summary>Verifies if the item can be added into the inventory without breaking its constraints.</summary>
   /// <remarks>
   /// If this method replied "yes", then the <see cref="AddItem"/> method cannot fail. It is an exhaustive check for the
@@ -86,13 +76,12 @@ public interface IKisInventory {
   /// </param>
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
   /// <seealso cref="AddItem"/>
-  List<ErrorReason> CheckCanAddItem(InventoryItem item, bool logErrors = false);
+  List<ErrorReason> CheckCanAddPart(ProtoPartSnapshot partSnapshot, bool logErrors = false);
 
   /// <summary>Adds an item from another inventory.</summary>
   /// <remarks>
   /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is responsibility of the
-  /// caller. If any compatibility setting is enabled, the add action can fail. The caller must check the output before
-  /// assuming that the action has succeeded.
+  /// caller. The caller must check the output before assuming that the action has succeeded.
   /// </remarks>
   /// <param name="item">
   /// The item to add. It must be a detached item that doesn't belong to any other inventory. This item must not be used
@@ -106,7 +95,7 @@ public interface IKisInventory {
   /// <seealso cref="CheckCanAddItem"/>
   /// <seealso cref="InventoryItem.itemId"/>
   /// <seealso cref="InventoryItem.inventory"/>
-  InventoryItem AddItem(InventoryItem item);
+  InventoryItem AddPart(ProtoPartSnapshot partSnapshot);
 
   /// <summary>Removes the specified item from the inventory.</summary>
   /// <remarks>The action can fail if the item is locked or doesn't exist.</remarks>
@@ -117,17 +106,7 @@ public interface IKisInventory {
   /// <returns>The detached item if removal was successful, or NULL otherwise.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
   /// <seealso cref="InventoryItem.inventory"/>
-  InventoryItem DeleteItem(InventoryItem item);
-
-  /// <summary>Finds an item by its unique ID.</summary>
-  /// <remarks>
-  /// This method is expected to be efficient. So, it can be called from the performance demanding applications.
-  /// </remarks>
-  /// <param name="itemId">The item ID to find.</param>
-  /// <returns>The item or <c>null</c> if not found.</returns>
-  /// <seealso cref="InventoryItem.itemId"/>
-  /// <seealso cref="inventoryItems"/>
-  InventoryItem FindItem(string itemId);
+  InventoryItem DeleteItem(string itemId);
 }
 
 }  // namespace

@@ -2,9 +2,7 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System.Linq;
 using KISAPIv2;
-using KSPDev.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using KSPDev.ProcessingUtils;
@@ -16,26 +14,6 @@ namespace KIS2 {
 /// <summary>Controller that deals with dragged items in the editor scenes.</summary>
 [KSPAddon(KSPAddon.Startup.EditorAny, false /*once*/)]
 sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
-
-  #region Localizable GUI strings
-  // ReSharper disable MemberCanBePrivate.Global
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  public static readonly Message CannotAddPartWithChildrenErrorText = new(
-      "#autoLOC_6005091",
-      defaultTemplate: "Part has other parts attached, can't add to inventory",
-      description: "An error that is presented when a hierarchy of parts if being tried to be added into the"
-      + " inventory.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  public static readonly Message CannotAddRootPartErrorText = new(
-      "",
-      defaultTemplate: "Cannot add root part into inventory",
-      description: "An error that is presented when the part cannot be added into a KIS container due to the part being"
-      + " added is a root part in the editor. It only makes sense in the editor mode.");
-
-  // ReSharper enable MemberCanBePrivate.Global
-  #endregion
 
   #region MonoBehaviour overrides
   void Awake() {
@@ -77,23 +55,6 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       // So, always start the dragging, but indicate if the item cannot be added anywhere.
       var draggedItem = InventoryItemImpl.FromPart(EditorLogic.SelectedPart);
       draggedItem.materialPart = EditorLogic.SelectedPart;
-      draggedItem.checkChangeOwnershipPreconditions.Add(
-          (item) => {
-            if (EditorLogic.RootPart != null && EditorLogic.RootPart == item.materialPart) {
-              return new ErrorReason {
-                  errorClass = KisContainerBase.InventoryConsistencyReason,
-                  guiString = CannotAddRootPartErrorText,
-              };
-            }
-            if (item.materialPart.children.Count > 0) {
-              return new ErrorReason {
-                  errorClass = KisContainerBase.KisNotImplementedReason,
-                  guiString = CannotAddPartWithChildrenErrorText,
-              };
-            }
-            return null;
-          });
-
       KisApi.ItemDragController.LeaseItems(
           KisApi.PartIconUtils.MakeDefaultIcon(draggedItem.materialPart),
           new InventoryItem[] { draggedItem },

@@ -4,7 +4,6 @@
 
 using KISAPIv2;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
@@ -17,7 +16,15 @@ namespace KIS2 {
 sealed class InventoryItemImpl : InventoryItem {
   #region InventoryItem properties
   /// <inheritdoc/>
-  public IKisInventory inventory { get; }
+  public IKisInventory inventory {
+    get {
+      if (_inventory != null) {
+        AssertAttached();
+      }
+      return _inventory;
+    }
+  }
+  readonly IKisInventory _inventory;
 
   /// <inheritdoc/>
   public string itemId { get; }
@@ -39,10 +46,18 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public ProtoPartSnapshot snapshot => _cachedSnapshot ?? stockSlot.snapshot;
-  ProtoPartSnapshot _cachedSnapshot; // Only set if NOT attached to inventory.
+  readonly ProtoPartSnapshot _cachedSnapshot; // Only set if NOT attached to inventory.
 
   /// <inheritdoc/>
-  public int stockSlotIndex { get; }
+  public int stockSlotIndex {
+    get {
+      if (inventory != null) {
+        AssertAttached();
+      }
+      return _stockSlotIndex;
+    }
+  }
+  readonly int _stockSlotIndex;
 
   /// <inheritdoc/>
   public StoredPart stockSlot {
@@ -50,29 +65,10 @@ sealed class InventoryItemImpl : InventoryItem {
       if (inventory == null) {
         return null;
       }
-      var item = inventory.FindItem(itemId);
-      if (item == null) {
-        throw new InvalidOperationException(
-            $"The item is not in inventory: itemId={itemId}, inventory={DebugEx.ObjectToString(inventory)}");
-      }
+      AssertAttached();
       return inventory.stockInventoryModule.storedParts[stockSlotIndex];
     }
   }
-
-  /// <inheritdoc/>
-  public ProtoPartSnapshot mutableSnapshot {
-    get {
-      if (inventory != null) {
-        throw new InvalidOperationException("Cannot modify item while it belongs to an inventory");
-      }
-      if (_mutableSnapshot == null) {
-        _cachedSnapshot = KisApi.PartNodeUtils.FullProtoPartCopy(_cachedSnapshot);
-        _mutableSnapshot = _cachedSnapshot;
-      }
-      return _mutableSnapshot;
-    }
-  }
-  ProtoPartSnapshot _mutableSnapshot;
 
   /// <inheritdoc/>
   public PartVariant variant {
@@ -133,35 +129,7 @@ sealed class InventoryItemImpl : InventoryItem {
   ScienceData[] _science;
   
   /// <inheritdoc/>
-  public bool isEquipped => false;
-
-  /// <inheritdoc/>
-  public bool isLocked { get; private set; }
-
-  /// <inheritdoc/>
-  public List<Func<InventoryItem, ErrorReason?>> checkChangeOwnershipPreconditions { get; } = new();
-  #endregion
-
-  #region InventoryItem implementation
-  /// <inheritdoc/>
-  public void SetLocked(bool newState) {
-    isLocked = newState;
-  }
-
-  /// <inheritdoc/>
-  public void SyncToSnapshot() {
-    _science = null;
-    UpdateVariant();
-  }
-
-  /// <inheritdoc/>
-  public List<ErrorReason> CheckCanChangeOwnership() {
-    return checkChangeOwnershipPreconditions
-        .Select(fn => fn(this))
-        .Where(x => x.HasValue)
-        .Select(x => x.Value)
-        .ToList();
-  }
+  public bool isLocked { get; set; }
   #endregion
 
   #region API methods
@@ -222,8 +190,8 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="newItemId">The item ID or NULL if a new random value needs to be made.</param>
   InventoryItemImpl(ProtoPartSnapshot snapshot, KisContainerBase inventory = null, int stockSlotIndex = -1,
                     string newItemId = null) {
-    this.inventory = inventory;
-    this.stockSlotIndex = stockSlotIndex;
+    _inventory = inventory;
+    _stockSlotIndex = stockSlotIndex;
     _cachedSnapshot = inventory == null ? snapshot : null;
     _oldVariantName = snapshot.moduleVariantName ?? "";
     itemId = NewItemId(newItemId);
@@ -254,6 +222,15 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <summary>Returns a unique item ID if none was provided.</summary>
   static string NewItemId(string providedId) {
     return providedId ?? Guid.NewGuid().ToString();
+  }
+
+  /// <summary>Throws if item is not more owned by the inventory.</summary>
+  /// <exception cref="InvalidOperationException">if the owner inventory doesn't have this item.</exception>
+  void AssertAttached() {
+    if (!_inventory.inventoryItems.ContainsKey(itemId)) {
+      throw new InvalidOperationException(
+          $"The item is not in inventory: itemId={itemId}, inventory={DebugEx.ObjectToString(_inventory)}");
+    }
   }
   #endregion
 }

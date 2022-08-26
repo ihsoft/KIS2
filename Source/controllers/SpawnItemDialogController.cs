@@ -202,10 +202,10 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
     }
     DebugEx.Info("Spawning parts: {0}, qty={1}", partName, quantity);
     for (var i = 0; i < quantity; i++) {
-      var item = _tgtInventory.MakeItem(partName);
-      var reasons = !_noChecksForSpawnedItems ? _tgtInventory.CheckCanAddItem(item).ToArray() : new ErrorReason[0];
+      var partSnapshot = KisApi.PartNodeUtils.GetProtoPartSnapshot(PartLoader.getPartInfoByName(partName).partPrefab);
+      var reasons = !_noChecksForSpawnedItems ? _tgtInventory.CheckCanAddPart(partSnapshot).ToArray() : new ErrorReason[0];
       if (reasons.Length == 0) {
-        _tgtInventory.AddItem(item);
+        _tgtInventory.AddPart(partSnapshot);
       } else {
         UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
         ScreenMessaging.ShowPriorityScreenMessage(
