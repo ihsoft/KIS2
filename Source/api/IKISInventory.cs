@@ -22,7 +22,7 @@ public interface IKisInventory {
   /// <summary>Items in the inventory.</summary>
   /// <value>A dictionary of itemId=>item.</value>
   /// <seealso cref="InventoryItem.itemId"/>
-  /// <seealso cref="AddItem"/>
+  /// <seealso cref="AddPart"/>
   /// <seealso cref="DeleteItem"/>
   IReadOnlyDictionary<string, InventoryItem> inventoryItems { get; }
 
@@ -61,50 +61,34 @@ public interface IKisInventory {
   /// <value>The total cost of the inventory content.</value>
   float contentCost { get; }
 
-  /// <summary>Verifies if the item can be added into the inventory without breaking its constraints.</summary>
+  /// <summary>Verifies if the part can be added into the inventory without breaking its constraints.</summary>
   /// <remarks>
-  /// If this method replied "yes", then the <see cref="AddItem"/> method cannot fail. It is an exhaustive check for the
+  /// If this method replied "yes", then the <see cref="AddPart"/> method cannot fail. It is an exhaustive check for the
   /// part addition conditions.
   /// </remarks>
-  /// <param name="item">
-  /// The item to check. It is important who's the owner of this item. The inventory may run extra checks if the item is
-  /// already owned by some other inventory.
-  /// </param>
+  /// <param name="partSnapshot">The part to check.</param>
   /// <param name="logErrors">
   /// If <c>true</c>, then the checking errors will be logged. Use it when calling this method as a precondition.
   /// </param>
   /// <returns>An empty list if the part can be added, or a list of reasons why not.</returns>
-  /// <seealso cref="AddItem"/>
+  /// <seealso cref="AddPart"/>
   List<ErrorReason> CheckCanAddPart(ProtoPartSnapshot partSnapshot, bool logErrors = false);
 
-  /// <summary>Adds an item from another inventory.</summary>
+  /// <summary>Adds a part into inventory.</summary>
   /// <remarks>
-  /// This method does <i>not</i> verify if the item can fit the inventory. Doing this check is responsibility of the
-  /// caller. The caller must check the output before assuming that the action has succeeded.
+  /// This method does <i>not</i> verify if the part can fit the inventory. Doing this check is responsibility of the
+  /// caller.
   /// </remarks>
-  /// <param name="item">
-  /// The item to add. It must be a detached item that doesn't belong to any other inventory. This item must not be used
-  /// or re-used after it was successfully added to the inventory since it may affect the inventory.
-  /// </param>
-  /// <returns>
-  /// The new item from the inventory or <c>null</c> if the action has failed. The ID of the new item will be different
-  /// from the source item.
-  /// </returns>
-  /// <exception cref="InvalidOperationException">If the item already belongs to some inventory.</exception>
-  /// <seealso cref="CheckCanAddItem"/>
-  /// <seealso cref="InventoryItem.itemId"/>
-  /// <seealso cref="InventoryItem.inventory"/>
-  InventoryItem AddPart(ProtoPartSnapshot partSnapshot);
+  /// <param name="partSnapshot">The part to add.</param>
+  /// <returns>The new item from the inventory or <c>null</c> if the action has failed.</returns>
+  /// <seealso cref="CheckCanAddPart"/>
+ InventoryItem AddPart(ProtoPartSnapshot partSnapshot);
 
   /// <summary>Removes the specified item from the inventory.</summary>
   /// <remarks>The action can fail if the item is locked or doesn't exist.</remarks>
-  /// <param name="item">
-  /// The item to remove. It must belong to this inventory. This item must not be used once it was removed from the
-  /// inventory since it may affect the inventory.
-  /// </param>
+  /// <param name="itemId">The ID of the item to remove.</param>
   /// <returns>The detached item if removal was successful, or NULL otherwise.</returns>
   /// <seealso cref="InventoryItem.isLocked"/>
-  /// <seealso cref="InventoryItem.inventory"/>
   InventoryItem DeleteItem(string itemId);
 }
 
