@@ -738,8 +738,8 @@ public class KisContainerBase : AbstractPartModule,
         var item = _stockSlotToItemsMap[stockSlotIndex].Last();
         HostedDebugLog.Info(
             this, "Removing an item due to the stock slot change: slot={0}, itemId={1}", stockSlotIndex, item.itemId);
-        RemoveInventoryItem(item);
         RemoveFromStockSlotIndex(item);
+        RemoveInventoryItem(item);
       }
     }
     if (slotQuantity > indexedItems) {
