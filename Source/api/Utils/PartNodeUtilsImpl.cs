@@ -1,4 +1,4 @@
-﻿// Kerbal Inventory System
+﻿// Kerbal Inventory System v2
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
@@ -192,8 +192,7 @@ public class PartNodeUtilsImpl {
   /// <exception cref="ArgumentException">if the game scene or the reference inventory are not good.</exception>
   public ProtoPartSnapshot GetProtoPartSnapshotFromNode(
       Vessel refVessel, ConfigNode node, bool keepPersistentId = false) {
-    ProtoPartSnapshot pPart = null;
-    pPart = new ProtoPartSnapshot(node, refVessel != null ? refVessel.protoVessel : null, HighLogic.CurrentGame);
+    var pPart = new ProtoPartSnapshot(node, refVessel != null ? refVessel.protoVessel : null, HighLogic.CurrentGame);
 
     if (keepPersistentId) {
       var originalPartId = uint.Parse(node.GetValue("persistentId"));

@@ -491,8 +491,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         .Where(c => c.gameObject.layer == (int)KspLayer.Part)
         .Select(c => c.ClosestPoint(c.transform.position + -_draggedModel.up * 100).y)
         .Min();
-    _touchPointTransform.position += _draggedModel.up * dist3;
-    _touchPointTransform.rotation = Quaternion.LookRotation(-_draggedModel.up, -_draggedModel.forward);
+    var upwards = _draggedModel.up;
+    _touchPointTransform.position += upwards * dist3;
+    _touchPointTransform.rotation = Quaternion.LookRotation(-upwards, -_draggedModel.forward);
     Hierarchy.SafeDestroy(draggedPart);
   }
 

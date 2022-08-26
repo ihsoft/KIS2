@@ -1,4 +1,4 @@
-﻿// Kerbal Inventory System
+﻿// Kerbal Inventory System v2
 // Author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 

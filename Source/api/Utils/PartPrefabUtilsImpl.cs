@@ -1,4 +1,4 @@
-﻿// Kerbal Inventory System
+﻿// Kerbal Inventory System v2
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
@@ -7,6 +7,8 @@
 
 using KSPDev.PartUtils;
 
+// ReSharper disable once CheckNamespace
+// ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the part prefabs.</summary>
