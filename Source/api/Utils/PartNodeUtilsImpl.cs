@@ -86,7 +86,7 @@ public class PartNodeUtilsImpl {
   /// <summary>Makes a proto part snapshot from the part.</summary>
   /// <remarks>It erases all the vessel related info from the snapshot as well as any crew related info.</remarks>
   /// <param name="part">The part to capture.</param>
-  /// <returns>A snapshot fo the part's current state.</returns>
+  /// <returns>A snapshot for the part's current state.</returns>
   public ProtoPartSnapshot GetProtoPartSnapshot(Part part) {
     DebugEx.Fine("Make a proto part snapshot for: {0}", part);
     MaybeFixPrefabPart(part);

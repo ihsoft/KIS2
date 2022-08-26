@@ -72,7 +72,7 @@ static class StockCompatibilitySettings {
   /// settings. 
   /// </summary>
   /// <remarks>
-  /// Cargo module settings are not subject to the variant override. And there are pats that may significantly change
+  /// Cargo module settings are not subject to the variant override. And there are parts that may significantly change
   /// their model (and volume) based on the variant selected. For such parts it's recommended to exclude them from the
   /// regular logic and always use KIS geometric based calculation.
   /// </remarks>
