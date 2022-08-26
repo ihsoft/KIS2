@@ -3,7 +3,6 @@
 // License: Public Domain
 
 using System.Collections;
-using KISAPIv2;
 using KSP.Localization;
 using KSPDev.GUIUtils;
 using KSPDev.LogUtils;

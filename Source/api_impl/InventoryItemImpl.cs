@@ -182,7 +182,6 @@ sealed class InventoryItemImpl : InventoryItem {
   #endregion
 
   #region Local utility methods
-
   /// <summary>Makes a new item from the part snapshot.</summary>
   /// <param name="snapshot">The part's snapshot. It's never NULL.</param>
   /// <param name="inventory">The inventory to bind the item to or NULL if item is detached.</param>

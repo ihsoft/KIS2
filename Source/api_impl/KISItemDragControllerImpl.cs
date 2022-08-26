@@ -310,7 +310,7 @@ sealed class KisItemDragControllerImpl : IKisItemDragController  {
     if (isDragging) {
       SafeCallbacks.Action(() => target.OnKisDragEnd(isCancelled: true));
     }
-    _dragTargets = _dragTargets.Where((t, i) => t != target).ToArray();
+    _dragTargets = _dragTargets.Where((t, _) => t != target).ToArray();
   }
   #endregion
 

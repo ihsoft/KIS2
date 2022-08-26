@@ -7,7 +7,6 @@ using KSPDev.GUIUtils;
 using KSPDev.LogUtils;
 using KSPDev.PartUtils;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using KSP.UI.Screens;
@@ -90,14 +89,14 @@ public class KisContainerBase : AbstractPartModule,
       + " members sitting in it.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  public static readonly Message CannotAddPartWithChildrenErrorText = new(
+  protected static readonly Message CannotAddPartWithChildrenErrorText = new(
       "#autoLOC_6005091",
       defaultTemplate: "Part has other parts attached, can't add to inventory",
       description: "An error that is presented when a hierarchy of parts if being tried to be added into the"
       + " inventory.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  public static readonly Message CannotAddRootPartErrorText = new(
+  protected static readonly Message CannotAddRootPartErrorText = new(
       "",
       defaultTemplate: "Cannot add root part into inventory",
       description: "An error that is presented when the part cannot be added into a KIS container due to the part being"
@@ -543,6 +542,7 @@ public class KisContainerBase : AbstractPartModule,
       if (stockSlot.stackCapacity - stockSlot.quantity < quantity) {
         return ReturnStockInventoryErrorReasons(
             CannotStackInSlotReasonText,
+            // ReSharper disable once UseStringInterpolation
             logDetails: string.Format("Stack capacity reached in stock slot: index={0}, quantity={1}, stackLimit={2}",
                                       stockSlotIndex, stockSlot.quantity, stockSlot.stackCapacity));
       }

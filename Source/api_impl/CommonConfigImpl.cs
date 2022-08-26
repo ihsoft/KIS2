@@ -2,8 +2,6 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
-using System.Collections.Generic;
-using KIS2;
 using KSPDev.ConfigUtils;
 using UnityEngine;
 

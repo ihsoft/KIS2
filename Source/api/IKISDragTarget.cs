@@ -5,7 +5,6 @@
 // ReSharper disable once CheckNamespace
 // ReSharper disable once IdentifierTypo
 
-using JetBrains.Annotations;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace

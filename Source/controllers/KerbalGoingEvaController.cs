@@ -7,6 +7,7 @@ using KISAPIv2;
 using KSPDev.LogUtils;
 using UnityEngine;
 
+// ReSharper disable once CheckNamespace
 namespace KIS2 {
 
 /// <summary>
@@ -52,6 +53,7 @@ public class KerbalGoingEvaController : MonoBehaviour {
       }
     }
     var module = inventory as PartModule;
+    // ReSharper disable once PossibleNullReferenceException
     HostedDebugLog.Info(module.part, "Simulating OnLoad on the EVA kerbal");
     module.OnLoad(new ConfigNode(""));
   }
