@@ -370,30 +370,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region Drop state handling
-  /// <summary>The material part that was a source for the drag operation.</summary>
-  /// <remarks>
-  /// This part will be considered "being dragged". It'll stay being material and (maybe) physical, but it may change
-  /// its visual appearance to indicate its new status.
-  /// </remarks>
-  /// <value>The part or <c>null</c> if no part is being a source of the dragging operation.</value>
-  Part sourceDraggedPart {
-    get => _sourceDraggedPart;
-    set {
-      if (_sourceDraggedPart == value) {
-        return;
-      }
-      if (_sourceDraggedPart != null) {
-        RestorePartState(_sourceDraggedPart, _sourceDraggedPartSavedState);
-      }
-      _sourceDraggedPart = value;
-      if (_sourceDraggedPart != null) {
-        _sourceDraggedPartSavedState = MakeDraggedPartGhost(_sourceDraggedPart);
-      }
-    }
-  }
-  Part _sourceDraggedPart;
-  Dictionary<int, Material[]> _sourceDraggedPartSavedState;
-
   /// <summary>Model of the part or assembly that is being dragged.</summary>
   /// <seealso cref="_touchPointTransform"/>
   /// <seealso cref="_hitPointTransform"/>
@@ -424,7 +400,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var singleItem = KisApi.ItemDragController.leasedItems.Length == 1
         ? KisApi.ItemDragController.leasedItems[0]
         : null;
-    sourceDraggedPart = singleItem?.materialPart;
+    SetDraggedMaterialPart(singleItem?.materialPart);
 
     // Handle the dragging operation.
     while (_controllerStateMachine.currentState == ControllerState.DraggingItems) {
@@ -460,7 +436,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   void CleanupTrackDraggingState() {
     CrewHatchController.fetch.EnableInterface();
     _dropTargetEventsHandler.currentState = null;
-    sourceDraggedPart = null;
+    SetDraggedMaterialPart(null);
     DestroyDraggedModel();
     if (_trackDraggingStateCoroutine != null) {
       StopCoroutine(_trackDraggingStateCoroutine);
@@ -704,6 +680,26 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
           leasedItem.materialPart = null; // It's a cleanup just in case.
         });
   }
+
+  /// <summary>Sets the material part that was a source for the drag operation.</summary>
+  /// <remarks>
+  /// This part will be considered "being dragged". It'll stay being material and (maybe) physical, but it may change
+  /// its visual appearance to indicate its new status.
+  /// </remarks>
+  void SetDraggedMaterialPart(Part materialPart) {
+    if (_sourceDraggedPart == materialPart) {
+      return;
+    }
+    if (_sourceDraggedPart != null) {
+      RestorePartState(_sourceDraggedPart, _sourceDraggedPartSavedState);
+    }
+    _sourceDraggedPart = materialPart;
+    if (_sourceDraggedPart != null) {
+      _sourceDraggedPartSavedState = MakeDraggedPartGhost(_sourceDraggedPart);
+    }
+  }
+  Part _sourceDraggedPart;
+  Dictionary<int, Material[]> _sourceDraggedPartSavedState;
 
   /// <summary>Returns the total number of the parts in the hierarchy.</summary>
   static int CountChildrenInHierarchy(Part p) {
