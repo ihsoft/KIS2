@@ -4,7 +4,6 @@
 
 using System.Collections;
 using System.Collections.Generic;
-using Experience.Effects;
 using KISAPIv2;
 using KSPDev.InputUtils;
 using KSPDev.LogUtils;
@@ -781,48 +780,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         DebugEx.Error("The part's renderer is not found in the saved state: {0}", renderer);
       }
     }
-  }
-  #endregion
-
-  #region API/Utility candidates
-  /// <summary>Calculates ground experiment part power production modifier.</summary>
-  /// <remarks>
-  /// When the part is deployed by a kerbal, it's power generation can be adjusted by the kerbal's
-  /// traits.
-  /// </remarks>
-  /// <param name="avPart">The part info.</param>
-  /// <param name="actorVessel">The kerbal vessel to get traits from.</param>
-  /// <returns>The delta to the power production of the part.</returns>
-  static float GetExperimentPartPowerProductionModifier(AvailablePart avPart, Vessel actorVessel) {
-    var sciencePart = avPart.partPrefab.FindModuleImplementing<ModuleGroundSciencePart>();
-    if (sciencePart != null && sciencePart.PowerUnitsProduced > 0
-        && actorVessel.rootPart.protoModuleCrew[0].HasEffect<DeployedSciencePowerSkill>()) {
-      var effect = actorVessel.rootPart.protoModuleCrew[0].GetEffect<DeployedSciencePowerSkill>();
-      if (effect != null) {
-        return effect.GetValue();
-      }
-    }
-    return 0;
-  }
-
-  /// <summary>Calculates ground experiment part science production modifier.</summary>
-  /// <remarks>
-  /// When the part is deployed by a kerbal, it's science output can be adjusted by the kerbal's
-  /// traits.
-  /// </remarks>
-  /// <param name="avPart">The part info.</param>
-  /// <param name="actorVessel">The kerbal vessel to get traits from.</param>
-  /// <returns>The rate adjustment of the part.</returns>
-  static float GetExperimentPartScienceModifier(AvailablePart avPart, Vessel actorVessel) {
-    var experimentPart = avPart.partPrefab.FindModuleImplementing<ModuleGroundExperiment>();
-    if (experimentPart != null
-        && actorVessel.rootPart.protoModuleCrew[0].HasEffect<DeployedScienceExpSkill>()) {
-      var effect = actorVessel.rootPart.protoModuleCrew[0].GetEffect<DeployedScienceExpSkill>();
-      if (effect != null) {
-        return effect.GetValue() * 100f;
-      }
-    }
-    return 0;
   }
   #endregion
 }
