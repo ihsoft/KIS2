@@ -24,10 +24,12 @@ namespace KIS2 {
 public class KerbalGoingEvaController : MonoBehaviour {
   #region MonoBehaviour messages
   void Awake() {
+    DebugEx.Fine("[{0}] Controller started", nameof(KerbalGoingEvaController));
     GameEvents.onCrewOnEva.Add(OnCrewOnEvaEvent);
   }
 
   void OnDestroy() {
+    DebugEx.Fine("[{0}] Controller stopped", nameof(KerbalGoingEvaController));
     GameEvents.onCrewOnEva.Remove(OnCrewOnEvaEvent);
   }
   #endregion

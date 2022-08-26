@@ -126,6 +126,7 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
   #region MonoBehaviour overrides
   /// <summary>Initializes the dialog.</summary>
   void Awake() {
+    DebugEx.Fine("[{0}] Controller started", nameof(SpawnItemDialogController));
     ConfigAccessor.ReadFieldsInType(GetType(), this);
     GuiUpdateSearch(_searchText);
     _guiScaledSkin = new GuiScaledSkin(() => GUI.skin, onSkinUpdatedFn: MakeGuiStyles);

@@ -110,6 +110,7 @@ class KisLoadController: LoadingSystem {
 [KSPAddon(KSPAddon.Startup.Instantly, true)]
 sealed class KisLoadControllerRunner : MonoBehaviour {
   void Awake() {
+    DebugEx.Fine("[{0}] Controller started", nameof(KisLoadControllerRunner));
     var list = LoadingScreen.Instance.loaders;
     for (var i = 0; i < list.Count; i++) {
       if (list[i] is PartLoader) {

@@ -17,12 +17,12 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region MonoBehaviour overrides
   void Awake() {
-    DebugEx.Fine("[{0}] Started", nameof(EditorItemDragController));
+    DebugEx.Fine("[{0}] Controller started", nameof(EditorItemDragController));
     KisApi.ItemDragController.RegisterTarget(this);
   }
 
   void OnDestroy() {
-    DebugEx.Fine("[{0}] Stopped", nameof(EditorItemDragController));
+    DebugEx.Fine("[{0}] Controller stopped", nameof(EditorItemDragController));
     KisApi.ItemDragController.UnregisterTarget(this);
   }
   #endregion
