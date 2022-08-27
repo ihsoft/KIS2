@@ -1001,6 +1001,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (isGuiOpen) {
       return; // Nothing to do.
     }
+
+    // TODO(ihsoft): Fix it in the prefab via TMPro. Exact pixels break text wrapping.
+    // // Prevent blurring of the GUI dialogs. 
+    // if (!UIMasterController.Instance.actionCanvas.pixelPerfect) {
+    //   DebugEx.Warning("WORKAROUND: Enabling PerfectPixel mode on the root UI canvas");
+    //   UIMasterController.Instance.actionCanvas.pixelPerfect = true;
+    // }
+
     HostedDebugLog.Fine(this, "Creating inventory window");
     _unityWindow = UnityPrefabController.CreateInstance<UiKisInventoryWindow>(
         "KISInventoryDialog-" + part.persistentId, UIMasterController.Instance.actionCanvas.transform);
