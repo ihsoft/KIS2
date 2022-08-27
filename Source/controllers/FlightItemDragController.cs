@@ -748,6 +748,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         resetRenderer.materials = newMaterials;
       }
     }
+    p.SetHighlight(false, recursive: true);
+    p.SetHighlightType(Part.HighlightType.Disabled);
     return res;
   }
 
@@ -773,6 +775,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         DebugEx.Error("The part's renderer is not found in the saved state: {0}", renderer);
       }
     }
+    p.RefreshHighlighter();
+    p.SetHighlightType(Part.HighlightType.OnMouseOver);
+    p.SetHighlightDefault();
   }
   #endregion
 }
