@@ -242,8 +242,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <inheritdoc/>
   bool IKisDragTarget.OnKisDrag(bool pointerMoved) {
-    if (_dropTargetEventsHandler.currentState == DropTarget.Nothing
-        || _dropTargetEventsHandler.currentState == DropTarget.KisTarget) {
+    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.KisTarget) {
       // In these states the controller doesn't deal with the dragged item(s).
       return false;
     }
@@ -295,7 +294,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         _targetPickupPart.SetHighlight(true, recursive: true);
         if (_targetPickupPart.children.Count == 0) {
           _targetPickupItem = InventoryItemImpl.FromPart(_targetPickupPart);
-          _targetPickupPart.isCargoPart();
           _targetPickupItem.materialPart = _targetPickupPart;
         }
       }
@@ -377,9 +375,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <summary>Transform of the point which received the pointer hit.</summary>
   /// <remarks>
-  /// It can be attached to part if a part has been hit, or be a static object if it was surface.
-  /// This transform, is dynamically created when something is hit, and destroyed when there is
-  /// nothing.
+  /// It can be attached to part if a part has been hit, or be a static object if it was surface. This transform is
+  /// dynamically created when something is hit and destroyed when there is nothing.
   /// </remarks>
   /// <seealso cref="_touchPointTransform"/>
   Transform _hitPointTransform;
@@ -655,7 +652,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <p>If the part being consumed is attached to a vessel, it will get decoupled first.</p>
   /// <p>
   /// The consumed part will <i>DIE</i>. Which will break the link between the part and the item. And it may have effect
-  /// on the contracts state, if the part was a part of any.
+  /// on the contracts state if the part was a part of any.
   /// </p>
   /// </remarks>
   void HandleScenePartPickupAction() {
