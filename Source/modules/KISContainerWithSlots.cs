@@ -787,11 +787,15 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         partName = _fuelParts[avPartIndex];
       }
       var partInfo = PartLoader.getPartInfoByName(partName);
+      if (partInfo == null) {
+        HostedDebugLog.Error(this, "Cannot find part: {0}", partName);
+        continue;
+      }
       var partSnapshot = KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab);
       foreach (var resource in partSnapshot.resources) {
         resource.amount = UnityEngine.Random.Range(minPct, maxPct) * resource.maxAmount;
       }
-      if (partInfo.Variants.Count > 0) {
+      if (partInfo.Variants is { Count: > 0 }) {
         var variantIndex = (int) (UnityEngine.Random.value * partInfo.Variants.Count);
         partSnapshot.moduleVariantName = partInfo.Variants[variantIndex].Name;
       }
