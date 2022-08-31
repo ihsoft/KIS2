@@ -42,7 +42,43 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> DraggedPartDropSurfaceHint = new(
       "",
-      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop on the surface",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Put on the ground",
+      description: "TBD");
+  
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message VesselPlacementModeHint = new(
+      "",
+      defaultTemplate: "Vessel placement mode",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> ShowCursorTooltipHint = new(
+      "",
+      defaultTemplate: "[<<1>>]: Show tooltip",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> HideCursorTooltipHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Hide tooltip",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy30DegreesHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 30 degrees",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy5DegreesHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 5 degrees",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message<KeyboardEventType> RotateResetHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Reset rotation",
       description: "TBD");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message/*"/>
@@ -56,6 +92,18 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       "",
       defaultTemplate: "<<1>> part(s) attached",
       description: "It's a temp string. DO NOT localize it!");
+  
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message PutOnTheGroundHint = new(
+      "",
+      defaultTemplate: "Put on the ground",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message AlignAtThePartHint = new(
+      "",
+      defaultTemplate: "Drop at the part",
+      description: "TBD");
   #endregion
 
   #region Configuration
@@ -97,6 +145,14 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   [PersistentField("PickupMode/actionKey")]
   static string _flightActionKey = "j";
 
+  /// <summary>The key that toggles dragging tooltip visibility.</summary>
+  /// <remarks>
+  /// It's a standard keyboard event definition. Even though it can have modifiers, avoid specifying them since it may
+  /// affect the UX experience.
+  /// </remarks>
+  [PersistentField("PickupMode/toggleTooltipKey")]
+  static string _toggleTooltipKey = "t";
+
   // ReSharper enable FieldCanBeMadeReadOnly.Local
   // ReSharper enable FieldCanBeMadeReadOnly.Global
   // ReSharper enable ConvertToConstant.Global
@@ -108,6 +164,14 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static readonly ClickEvent DropItemToSceneEvent = new(Event.KeyboardEvent("mouse0"));
   static readonly ClickEvent PickupItemFromSceneEvent = new(Event.KeyboardEvent("mouse0"));
   static Event _pickupModeSwitchEvent = Event.KeyboardEvent(_flightActionKey);
+  static ClickEvent _toggleTooltipEvent = new(Event.KeyboardEvent(_toggleTooltipKey));
+
+  // TODO(ihsoft): Make all values below configurable. 
+  static readonly ClickEvent _rotate30LeftEvent = new(Event.KeyboardEvent("a"));
+  static readonly ClickEvent _rotate30RightEvent = new(Event.KeyboardEvent("d"));
+  static readonly ClickEvent _rotate5LeftEvent = new(Event.KeyboardEvent("q"));
+  static readonly ClickEvent _rotate5RightEvent = new(Event.KeyboardEvent("e"));
+  static readonly ClickEvent _rotateResetEvent = new(Event.KeyboardEvent("space"));
   #endregion
 
   #region Local fields and properties
@@ -171,6 +235,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
     ConfigAccessor.ReadFieldsInType(GetType(), null); // Read the static fields.
     _pickupModeSwitchEvent = Event.KeyboardEvent(_flightActionKey);
+    _toggleTooltipEvent = new ClickEvent(Event.KeyboardEvent(_toggleTooltipKey));
 
     // Setup the controller state machine.
     _controllerStateMachine.onAfterTransition += (before, after) => {
@@ -398,9 +463,11 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         ? KisApi.ItemDragController.leasedItems[0]
         : null;
     SetDraggedMaterialPart(singleItem?.materialPart);
+    _rotateAngle = 0;
 
     // Handle the dragging operation.
     while (_controllerStateMachine.currentState == ControllerState.DraggingItems) {
+      UpdateDropActions();
       CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the drop location!
 
       // Track the mouse cursor position and update the view.
@@ -415,6 +482,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         _dropTargetEventsHandler.currentState = DropTarget.KisTarget;
         DestroyDraggedModel();
       }
+      UpdateDropTooltip();
 
       // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
       yield return null;
@@ -439,6 +507,77 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       StopCoroutine(_trackDraggingStateCoroutine);
       _trackDraggingStateCoroutine = null;
     }
+    CleanupDropTooltip();
+  }
+
+  /// <summary>Handles actions to rotate the dragged part around it's Z-axis.</summary>
+  /// <remarks>
+  /// The actions change rotation at the touch point level. If there are multiple points, the rotation should be reset
+  /// before switching.
+  /// </remarks>
+  void UpdateDropActions() {
+    if (_rotate30LeftEvent.CheckClick()) {
+      _rotateAngle -= 30;
+      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, -30);
+    }
+    if (_rotate30RightEvent.CheckClick()) {
+      _rotateAngle += 30;
+      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, 30);
+    }
+    if (_rotate5LeftEvent.CheckClick()) {
+      _rotateAngle -= 5;
+      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, -5);
+    }
+    if (_rotate5RightEvent.CheckClick()) {
+      _rotateAngle += 5;
+      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, 5);
+    }
+    if (_rotateResetEvent.CheckClick()) {
+      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, -_rotateAngle);
+      _rotateAngle = 0;
+    }
+  }
+  float _rotateAngle;
+
+  /// <summary>Updates or creates the in-flight tooltip with the drop info.</summary>
+  /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
+  /// <seealso cref="DestroyCurrentTooltip"/>
+  /// <seealso cref="_dropTargetEventsHandler"/>
+  void UpdateDropTooltip() {
+    if (_toggleTooltipEvent.CheckClick()) {
+      _showTooltip = !_showTooltip;
+    }
+    if (!_showTooltip) {
+      _showTooltipMessage.message = ShowCursorTooltipHint.Format(_toggleTooltipEvent.unityEvent);
+      ScreenMessages.PostScreenMessage(_showTooltipMessage);
+      DestroyCurrentTooltip();
+      return;
+    }
+    ScreenMessages.RemoveMessage(_showTooltipMessage);
+    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.KisTarget) {
+      DestroyCurrentTooltip();
+      return;
+    }
+    CreateTooltip();
+    _currentTooltip.title = _dropTargetEventsHandler.currentState == DropTarget.Surface
+        ? PutOnTheGroundHint
+        : AlignAtThePartHint;
+    _currentTooltip.baseInfo.text = VesselPlacementModeHint;
+    var hints = _dropTargetEventsHandler.GetHintsList();
+    hints.Add(RotateBy30DegreesHint.Format(_rotate30LeftEvent.unityEvent, _rotate30RightEvent.unityEvent));
+    hints.Add(RotateBy5DegreesHint.Format(_rotate5LeftEvent.unityEvent, _rotate5RightEvent.unityEvent));
+    hints.Add(RotateResetHint.Format(_rotateResetEvent.unityEvent));
+    hints.Add(HideCursorTooltipHint.Format(_toggleTooltipEvent.unityEvent));
+    _currentTooltip.hints = string.Join("\n", hints);
+    _currentTooltip.UpdateLayout();
+  }
+  bool _showTooltip = true;
+  readonly ScreenMessage _showTooltipMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
+
+  /// <summary>Cleanups anything related to the tooltip.</summary>
+  void CleanupDropTooltip() {
+    DestroyCurrentTooltip();
+    ScreenMessages.RemoveMessage(_showTooltipMessage);
   }
 
   /// <summary>Creates a part model, given there is only one item is being dragged.</summary>
@@ -456,17 +595,28 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var draggedPart = MakeSamplePart(item);
     var dragModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart);
     dragModel.transform.SetParent(_draggedModel, worldPositionStays: false);
-    dragModel.transform.rotation = draggedPart.initRotation;
-    _touchPointTransform = new GameObject("surfaceTouchPoint").transform;
-    _touchPointTransform.SetParent(_draggedModel, worldPositionStays: false);
-    var dist3 = draggedPart.FindModelComponents<Collider>()
-        .Where(c => c.gameObject.layer == (int)KspLayer.Part)
-        .Select(c => c.ClosestPoint(c.transform.position + -_draggedModel.up * 100).y)
-        .Min();
-    var upwards = _draggedModel.up;
-    _touchPointTransform.position += upwards * dist3;
-    _touchPointTransform.rotation = Quaternion.LookRotation(-upwards, -_draggedModel.forward);
+    _touchPointTransform =
+        MakeTouchPoint("surfaceTouchPoint", draggedPart, _draggedModel, Vector3.up, _draggedModel.forward);
     Hierarchy.SafeDestroy(draggedPart);
+  }
+
+  /// <summary>Adds a transform for the requested vessel orientation.</summary>
+  /// <param name="tpName">The name of the transform.</param>
+  /// <param name="srcPart">The part to capture colliders from. It must be in the default position and rotation.</param>
+  /// <param name="tgtModel">The part model to attach the transform to.</param>
+  /// <param name="direction">The main (forward) direction.</param>
+  /// <param name="upwards">The "upwards" direction of the orientation.</param>
+  /// <returns></returns>
+  Transform MakeTouchPoint(string tpName, Part srcPart, Transform tgtModel, Vector3 direction, Vector3 upwards) {
+    var ptTransform = new GameObject(tpName).transform;
+    ptTransform.SetParent(tgtModel, worldPositionStays: false);
+    var distance = srcPart.FindModelComponents<Collider>()
+        .Where(c => c.gameObject.layer == (int)KspLayer.Part)
+        .Select(c => c.ClosestPoint(c.transform.position + -direction * 100).y)
+        .Min();
+    ptTransform.position += direction * distance;
+    ptTransform.rotation = Quaternion.LookRotation(-direction, -upwards);
+    return ptTransform;
   }
 
   /// <summary>Cleans up the dragged model.</summary>
@@ -557,12 +707,16 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// many dynamic behavior on the part as possible, but there are compromises.
   /// </remarks>
   /// <param name="item">The item to create the part from.</param>
-  /// <returns>The sample part. It <i>must</i> be destroyed before the next frame starts!</returns>
+  /// <returns>
+  /// A sample part with the default position and rotation. It <i>must</i> be destroyed before the next frame starts!
+  /// </returns>
   static Part MakeSamplePart(InventoryItem item) {
     var part = item.snapshot.CreatePart();
     part.gameObject.SetLayerRecursive(
         (int)KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int)KspLayerMask.TriggerCollider);
     part.gameObject.SetActive(true);
+    part.transform.position = Vector3.zero;
+    part.transform.rotation = part.initRotation;
     part.InitializeModules();
 
     return part;
