@@ -122,7 +122,6 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   /// be always active.
   /// </param>
   public void DefineAction(
-      //T state, Message<KeyboardEventType> hintText, Event actionEvent, Action actionFn,
       T state, Message<KeyboardEventType> hintText, ClickEvent actionEvent, Action actionFn,
       Func<bool> checkIfAvailable = null) {
     if (!_stateHandlers.TryGetValue(state, out var stateHandlers)) {
@@ -137,20 +136,31 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
     });
   }
 
-  /// <summary>Returns a user friendly string that describes all the available events in the current state.</summary>
+  /// <summary>
+  /// Returns a list of user friendly strings that describe all the available events in the current state.
+  /// </summary>
   /// <remarks>If the action doesn't have a hint string, then it will be ignored.</remarks>
+  /// <returns>The event hints.</returns>
+  /// <seealso cref="HandlerDef.checkFn"/>
+  /// <seealso cref="HandlerDef.actionHint"/>
+  public List<string> GetHintsList() {
+    return _currentStateHandlers
+        .Where(handler => handler.checkFn == null || handler.checkFn())
+        .Select(x => x.actionHint)
+        .Where(x => !string.IsNullOrEmpty(x))
+        .ToList();
+  }
+
+  /// <summary>Returns a user friendly string that describes all the available events in the current state.</summary>
+  /// <remarks>It's a syntax sugar to <see cref="GetHintsList"/>.</remarks>
   /// <param name="separator">The string to use to join hints for multiple events.</param>
   /// <returns>The event hints, joined with the separator.</returns>
   /// <seealso cref="HandlerDef.checkFn"/>
   /// <seealso cref="HandlerDef.actionHint"/>
+  /// <seealso cref="GetHintsList"/>
+  /// FIXME: do we need it?
   public string GetHints(string separator = "\n") {
-    return string.Join(
-        separator,
-        _currentStateHandlers
-            .Where(handler => handler.checkFn == null || handler.checkFn())
-            .Select(x => x.actionHint)
-            .Where(x => !string.IsNullOrEmpty(x))
-            .ToList());
+    return string.Join(separator, GetHintsList());
   }
 
   /// <summary>
