@@ -714,6 +714,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _draggedModel = null;
   }
 
+  /// <summary>
+  /// The maximum angle between the surface and hit point normals to assume the normals were "about the same". 
+  /// </summary>
+  /// <remarks>This angle must be big enough to make the Cross vectors calculation significant.</remarks>
+  const float FlatSurfaceThreshold = 1;
+
   /// <summary>Aligns the dragged model to the pointer.</summary>
   /// <remarks>
   /// If pointer hits the surface, then a drop mode is engaged, and the attach mode is disallowed.
@@ -755,15 +761,25 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     // Find out what was hit.
     _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.gameObject);
     if (_hitPart == null) {
-      // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
-      // Align the model to the celestial body normal and rely on the game's logic on the vessel
-      // positioning. It may (and, likely, will) not match to what we may have presented in GUI.
+      // The hit that is not a part is a surface. It cannot happen in orbit.
       if (_hitPointTransform.parent != null || freshHitTransform) {
         DebugEx.Fine(
             "Hit surface: collider={0}, celestialBody={1}", hit.collider.transform,
             FlightGlobals.ActiveVessel.mainBody);
         _hitPointTransform.SetParent(null);
       }
+      var surfaceNormal = FlightGlobals.getUpAxis(FlightGlobals.fetch.activeVessel.mainBody, hit.point);
+      Vector3 fwd;
+      if (Vector3.Angle(surfaceNormal, hit.normal) > FlatSurfaceThreshold) {
+        // If placed on a slope, the "uphill" direction is assumed to be the base for the sake of rotation.
+        var left = Vector3.Cross(hit.normal, surfaceNormal);
+        fwd = Vector3.Cross(left, hit.normal);
+      } else {
+        // On a flat surface assume an arbitrary "default direction".
+        fwd = Vector3.up;  // Default.
+      }
+      _hitPointTransform.rotation =
+          Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, fwd);
       AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
       return DropTarget.Surface;
     }
