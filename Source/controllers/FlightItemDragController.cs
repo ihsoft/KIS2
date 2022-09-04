@@ -431,6 +431,61 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _trackPickupStateCoroutine = null;
     }
   }
+
+  /// <summary>Updates or creates the in-flight tooltip with the part data.</summary>
+  /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
+  /// <seealso cref="DestroyCurrentTooltip"/>
+  /// <seealso cref="targetPickupPart"/>
+  void UpdatePickupTooltip() {
+    if (targetPickupPart == null) {
+      DestroyCurrentTooltip();
+      return;
+    }
+    CreateTooltip();
+    if (_pickupTargetEventsHandler.currentState == PickupTarget.SinglePart) {
+      KisContainerWithSlots.UpdateTooltip(_currentTooltip, new[] { _targetPickupItem });
+    } else if (_pickupTargetEventsHandler.currentState == PickupTarget.PartAssembly) {
+      // TODO(ihsoft): Implement!
+      _currentTooltip.ClearInfoFields();
+      _currentTooltip.title = CannotGrabHierarchyTooltipMsg;
+      _currentTooltip.baseInfo.text =
+          CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
+    }
+    _currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
+    _currentTooltip.UpdateLayout();
+  }
+
+  /// <summary>Handles the in-flight part/hierarchy pick up event action.</summary>
+  /// <remarks>
+  /// <p>It's required that there is a part being hovered. This part will be offered for the KIS dragging action.</p>
+  /// <p>If the part being consumed is attached to a vessel, it will get decoupled first.</p>
+  /// <p>
+  /// The consumed part will <i>DIE</i>. Which will break the link between the part and the item. And it may have effect
+  /// on the contracts state if the part was a part of any.
+  /// </p>
+  /// </remarks>
+  void HandleScenePartPickupAction() {
+    var leasedItem = _targetPickupItem;
+    KisApi.ItemDragController.LeaseItems(
+        KisApi.PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
+        new[] { leasedItem },
+        () => { // The consume action.
+          var consumedPart = leasedItem.materialPart;
+          if (consumedPart != null) {
+            if (consumedPart.parent != null) {
+              DebugEx.Fine("Detaching on KIS move: part={0}, parent={1}", consumedPart, consumedPart.parent);
+              consumedPart.decouple();
+            }
+            DebugEx.Info("Kill the part consumed by KIS in-flight pickup: {0}", consumedPart);
+            consumedPart.Die();
+            leasedItem.materialPart = null;
+          }
+          return true;
+        },
+        () => { // The cancel action.
+          leasedItem.materialPart = null; // It's a cleanup just in case.
+        });
+  }
   #endregion
 
   #region Drop state handling
@@ -801,61 +856,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
           "inFlightControllerTooltip", UIMasterController.Instance.actionCanvas.transform);
     }
-  }
-
-  /// <summary>Updates or creates the in-flight tooltip with the part data.</summary>
-  /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
-  /// <seealso cref="DestroyCurrentTooltip"/>
-  /// <seealso cref="targetPickupPart"/>
-  void UpdatePickupTooltip() {
-    if (targetPickupPart == null) {
-      DestroyCurrentTooltip();
-      return;
-    }
-    CreateTooltip();
-    if (_pickupTargetEventsHandler.currentState == PickupTarget.SinglePart) {
-      KisContainerWithSlots.UpdateTooltip(_currentTooltip, new[] { _targetPickupItem });
-    } else if (_pickupTargetEventsHandler.currentState == PickupTarget.PartAssembly) {
-      // TODO(ihsoft): Implement!
-      _currentTooltip.ClearInfoFields();
-      _currentTooltip.title = CannotGrabHierarchyTooltipMsg;
-      _currentTooltip.baseInfo.text =
-          CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
-    }
-    _currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
-    _currentTooltip.UpdateLayout();
-  }
-
-  /// <summary>Handles the in-flight part/hierarchy pick up event action.</summary>
-  /// <remarks>
-  /// <p>It's required that there is a part being hovered. This part will be offered for the KIS dragging action.</p>
-  /// <p>If the part being consumed is attached to a vessel, it will get decoupled first.</p>
-  /// <p>
-  /// The consumed part will <i>DIE</i>. Which will break the link between the part and the item. And it may have effect
-  /// on the contracts state if the part was a part of any.
-  /// </p>
-  /// </remarks>
-  void HandleScenePartPickupAction() {
-    var leasedItem = _targetPickupItem;
-    KisApi.ItemDragController.LeaseItems(
-        KisApi.PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
-        new[] { leasedItem },
-        () => { // The consume action.
-          var consumedPart = leasedItem.materialPart;
-          if (consumedPart != null) {
-            if (consumedPart.parent != null) {
-              DebugEx.Fine("Detaching on KIS move: part={0}, parent={1}", consumedPart, consumedPart.parent);
-              consumedPart.decouple();
-            }
-            DebugEx.Info("Kill the part consumed by KIS in-flight pickup: {0}", consumedPart);
-            consumedPart.Die();
-            leasedItem.materialPart = null;
-          }
-          return true;
-        },
-        () => { // The cancel action.
-          leasedItem.materialPart = null; // It's a cleanup just in case.
-        });
   }
 
   /// <summary>Sets the material part that was a source for the drag operation.</summary>

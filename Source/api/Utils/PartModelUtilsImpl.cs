@@ -109,7 +109,7 @@ public class PartModelUtilsImpl {
     if (goThroughChildren) {
       foreach (var childPart in rootPart.children) {
         var childObj = GetSceneAssemblyModel(childPart, goThroughChildren: true);
-        childObj.transform.parent = modelObj.transform;
+        childObj.transform.parent = modelObj.transform;//FIXME world pos stay
         var childTransform = childPart.transform;
         childObj.transform.localRotation = rootPart.transform.rotation.Inverse() * childTransform.rotation;
         childObj.transform.localPosition = rootPart.transform.InverseTransformPoint(childTransform.position);
