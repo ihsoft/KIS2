@@ -726,13 +726,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var camera = FlightCamera.fetch.mainCamera;
     var ray = camera.ScreenPointToRay(Input.mousePosition);
 
-    var hitsBuffer = new RaycastHit[100];  // 100 is an empiric value.
     var hitsCount = Physics.RaycastNonAlloc(
-        ray, hitsBuffer,
+        ray, _hitsBuffer,
         maxDistance: _maxRaycastDistance,
         layerMask: (int)(KspLayerMask.Part | KspLayerMask.Kerbal | KspLayerMask.SurfaceCollider),
         queryTriggerInteraction: QueryTriggerInteraction.Ignore);
-    var hit = hitsBuffer.Take(hitsCount)
+    var hit = _hitsBuffer.Take(hitsCount)
         .OrderBy(x => x.distance) // Unity doesn't sort the result.
         .FirstOrDefault(
             x => draggedItem.materialPart == null || x.transform.gameObject != draggedItem.materialPart.gameObject);
@@ -781,6 +780,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
     return _hitPart.HasModuleImplementing<IKisInventory>() ? DropTarget.KisInventory : DropTarget.Part;
   }
+  RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits number.
 
   /// <summary>Makes a part from the saved config for the purpose of the part model capture.</summary>
   /// <remarks>
