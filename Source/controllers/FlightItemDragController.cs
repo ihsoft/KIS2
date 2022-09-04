@@ -746,8 +746,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _draggedModel.rotation = cameraTransform.rotation;
       return DropTarget.Nothing;
     }
-    var needNewHitTransform = _hitPointTransform == null; // Will be used for logging.
-    if (needNewHitTransform) {
+    var freshHitTransform = _hitPointTransform == null; // Will be used for logging.
+    if (freshHitTransform) {
       _hitPointTransform = new GameObject("KISHitTarget").transform;
     }
     _hitPointTransform.position = hit.point;
@@ -759,7 +759,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       // We've hit the surface. A lot of things may get wrong if the surface is not leveled!
       // Align the model to the celestial body normal and rely on the game's logic on the vessel
       // positioning. It may (and, likely, will) not match to what we may have presented in GUI.
-      if (_hitPointTransform.parent != null || needNewHitTransform) {
+      if (_hitPointTransform.parent != null || freshHitTransform) {
         DebugEx.Fine(
             "Hit surface: collider={0}, celestialBody={1}", hit.collider.transform,
             FlightGlobals.ActiveVessel.mainBody);
@@ -770,7 +770,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
 
     // We've hit a part. Bind to this point!
-    if (_hitPointTransform.parent != _hitPart.transform || needNewHitTransform) {
+    if (_hitPointTransform.parent != _hitPart.transform || freshHitTransform) {
       DebugEx.Fine("Hit part: part={0}", _hitPart);
       _hitPointTransform.SetParent(_hitPart.transform);
     }
