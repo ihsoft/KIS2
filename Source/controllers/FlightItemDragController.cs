@@ -2,6 +2,7 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using KISAPIv2;
@@ -463,7 +464,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         ? KisApi.ItemDragController.leasedItems[0]
         : null;
     SetDraggedMaterialPart(singleItem?.materialPart);
-    _rotateAngle = 0;
 
     // Handle the dragging operation.
     while (_controllerStateMachine.currentState == ControllerState.DraggingItems) {
@@ -518,26 +518,51 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   void UpdateDropActions() {
     if (_rotate30LeftEvent.CheckClick()) {
       _rotateAngle -= 30;
-      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, -30);
     }
     if (_rotate30RightEvent.CheckClick()) {
       _rotateAngle += 30;
-      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, 30);
     }
     if (_rotate5LeftEvent.CheckClick()) {
       _rotateAngle -= 5;
-      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, -5);
     }
     if (_rotate5RightEvent.CheckClick()) {
       _rotateAngle += 5;
-      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, 5);
     }
     if (_rotateResetEvent.CheckClick()) {
-      _touchPointTransform.localRotation *= Quaternion.Euler(0, 0, -_rotateAngle);
       _rotateAngle = 0;
     }
   }
   float _rotateAngle;
+
+  /// <summary>Returns the rotation angle of the provided part.</summary>
+  /// <remarks>
+  /// <p>
+  /// The angle is calculated the projected part placement as if it was put at the hit point via UI. It's a way to
+  /// preserve the rotation when moving a material part in the scene.
+  /// </p>
+  /// <p>If the angle looks very close to the construction mode rotation, it gets rounded to the closest value.</p>
+  /// </remarks>
+  /// <param name="p">The part to get the angle for. If it's <c>null</c>, then the angle will be zero.</param>
+  /// <returns>The angle in degrees.</returns>
+  float CalcPickupRotation(Part p) {
+    if (p == null) {
+      return 0;
+    }
+    //FIXME: it's specific to the parent part's parent.
+    var partTransform = p.transform;
+    var goldenDir = Quaternion.LookRotation(partTransform.up) * Vector3.up;
+    var partDir = partTransform.forward;
+    var dir = Vector3.Dot(partTransform.up, Vector3.Cross(partDir, goldenDir)) < 0 ? 1.0f : -1.0f;
+    var rawAngle = Vector3.Angle(partDir, goldenDir) * dir;
+    
+    var baseValue = (int) Math.Truncate(rawAngle * 100) % 100;
+    return baseValue switch {
+        0 => (float)Math.Truncate(rawAngle),
+        99 => (float)Math.Truncate(rawAngle + 1),
+        -99 => (float)Math.Truncate(rawAngle - 1),
+        _ => rawAngle
+    };
+  }
 
   /// <summary>Updates or creates the in-flight tooltip with the drop info.</summary>
   /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
@@ -589,6 +614,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return; // The model already exists.
     }
     DebugEx.Fine("Creating flight scene dragging model...");
+    _rotateAngle = CalcPickupRotation(item.materialPart);
     KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
     _draggedModel = new GameObject("KisDragModel").transform;
     _draggedModel.gameObject.SetActive(true);
@@ -670,7 +696,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _hitPointTransform = new GameObject("KISHitTarget").transform;
     }
     _hitPointTransform.position = hit.point;
-    _hitPointTransform.rotation = Quaternion.LookRotation(hit.normal, hit.transform.up);
+    _hitPointTransform.rotation = Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal);
 
     // Find out what was hit.
     _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.gameObject);
