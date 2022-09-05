@@ -523,6 +523,13 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_vesselPlacementTouchPoint"/>
   Transform _hitPointTransform;
 
+  /// <summary>The rotation angle of the dragged part athe point of attachment.</summary>
+  /// <remarks>
+  /// It rotates the model around the normal at the attachment point. This angle applies to
+  /// <see cref="_hitPointTransform"/> to make all the further transformations accounting it.
+  /// </remarks>
+  float _rotateAngle;
+
   /// <summary>The part that is being hit with the current drag.</summary>
   /// <seealso cref="_hitPointTransform"/>
   Part _hitPart;
@@ -619,14 +626,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   void UpdateDropActions() {
     if (Rotate30LeftEvent.CheckClick()) {
       _rotateAngle -= 30;
-    }
-    if (Rotate30RightEvent.CheckClick()) {
+    } else if (Rotate30RightEvent.CheckClick()) {
       _rotateAngle += 30;
     }
     if (Rotate5LeftEvent.CheckClick()) {
       _rotateAngle -= 5;
-    }
-    if (Rotate5RightEvent.CheckClick()) {
+    } else if (Rotate5RightEvent.CheckClick()) {
       _rotateAngle += 5;
     }
     if (RotateResetEvent.CheckClick()) {
@@ -645,7 +650,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       }
     }
   }
-  float _rotateAngle;
 
   /// <summary>Returns the rotation angle of the provided part.</summary>
   /// <remarks>
@@ -661,7 +665,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     if (p == null) {
       return 0;
     }
-    //FIXME: it's specific to the parent part's parent.
     var partTransform = p.transform;
     var partUp = partTransform.up;
     var goldenDir = Quaternion.LookRotation(partUp) * Vector3.up;
