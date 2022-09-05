@@ -975,7 +975,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <summary>Verifies if two vector are "almost parallel".</summary>
   bool CheckIfParallel(Vector3 v1, Vector3 v2) {
-    return Vector3.Angle(v1, v2) < 1.0f;
+    var angle = Vector3.Angle(v1, v2);
+    return angle is < 1.0f or > 179.0f;
   }
   #endregion
 }
