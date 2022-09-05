@@ -756,7 +756,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _hitPointTransform = new GameObject("KISHitTarget").transform;
     }
     _hitPointTransform.position = hit.point;
-    _hitPointTransform.rotation = Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal);
 
     // Find out what was hit.
     _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.gameObject);
@@ -789,14 +788,20 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       DebugEx.Fine("Hit part: part={0}", _hitPart);
       _hitPointTransform.SetParent(_hitPart.transform);
     }
-    //FIXME: choose "not-up" when hitting the up/down plane of the target part.
+    var partUp = _hitPart.transform.up;
+    var partFwd = Vector3.Angle(partUp, hit.normal) > FlatSurfaceThreshold
+        ? partUp
+        : Vector3.up;
+    _hitPointTransform.rotation =
+        Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, partFwd);
     AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
+
     if (_hitPart.isVesselEVA && _hitPart.HasModuleImplementing<IKisInventory>()) {
       return DropTarget.KerbalInventory;
     }
     return _hitPart.HasModuleImplementing<IKisInventory>() ? DropTarget.KisInventory : DropTarget.Part;
   }
-  RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits number.
+  RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits count.
 
   /// <summary>Makes a part from the saved config for the purpose of the part model capture.</summary>
   /// <remarks>
