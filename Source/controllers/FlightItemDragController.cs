@@ -605,9 +605,10 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
     //FIXME: it's specific to the parent part's parent.
     var partTransform = p.transform;
-    var goldenDir = Quaternion.LookRotation(partTransform.up) * Vector3.up;
+    var partUp = partTransform.up;
+    var goldenDir = Quaternion.LookRotation(partUp) * Vector3.up;
     var partDir = partTransform.forward;
-    var dir = Vector3.Dot(partTransform.up, Vector3.Cross(partDir, goldenDir)) < 0 ? 1.0f : -1.0f;
+    var dir = Vector3.Dot(partUp, Vector3.Cross(partDir, goldenDir)) < 0 ? 1.0f : -1.0f;
     var rawAngle = Vector3.Angle(partDir, goldenDir) * dir;
     
     var baseValue = (int) Math.Truncate(rawAngle * 100) % 100;
