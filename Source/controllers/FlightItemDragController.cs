@@ -168,11 +168,11 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static ClickEvent _toggleTooltipEvent = new(Event.KeyboardEvent(_toggleTooltipKey));
 
   // TODO(ihsoft): Make all values below configurable. 
-  static readonly ClickEvent _rotate30LeftEvent = new(Event.KeyboardEvent("a"));
-  static readonly ClickEvent _rotate30RightEvent = new(Event.KeyboardEvent("d"));
-  static readonly ClickEvent _rotate5LeftEvent = new(Event.KeyboardEvent("q"));
-  static readonly ClickEvent _rotate5RightEvent = new(Event.KeyboardEvent("e"));
-  static readonly ClickEvent _rotateResetEvent = new(Event.KeyboardEvent("space"));
+  static readonly ClickEvent Rotate30LeftEvent = new(Event.KeyboardEvent("a"));
+  static readonly ClickEvent Rotate30RightEvent = new(Event.KeyboardEvent("d"));
+  static readonly ClickEvent Rotate5LeftEvent = new(Event.KeyboardEvent("q"));
+  static readonly ClickEvent Rotate5RightEvent = new(Event.KeyboardEvent("e"));
+  static readonly ClickEvent RotateResetEvent = new(Event.KeyboardEvent("space"));
   #endregion
 
   #region Local fields and properties
@@ -571,19 +571,19 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// before switching.
   /// </remarks>
   void UpdateDropActions() {
-    if (_rotate30LeftEvent.CheckClick()) {
+    if (Rotate30LeftEvent.CheckClick()) {
       _rotateAngle -= 30;
     }
-    if (_rotate30RightEvent.CheckClick()) {
+    if (Rotate30RightEvent.CheckClick()) {
       _rotateAngle += 30;
     }
-    if (_rotate5LeftEvent.CheckClick()) {
+    if (Rotate5LeftEvent.CheckClick()) {
       _rotateAngle -= 5;
     }
-    if (_rotate5RightEvent.CheckClick()) {
+    if (Rotate5RightEvent.CheckClick()) {
       _rotateAngle += 5;
     }
-    if (_rotateResetEvent.CheckClick()) {
+    if (RotateResetEvent.CheckClick()) {
       _rotateAngle = 0;
     }
   }
@@ -644,9 +644,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         : AlignAtThePartHint;
     _currentTooltip.baseInfo.text = VesselPlacementModeHint;
     var hints = _dropTargetEventsHandler.GetHintsList();
-    hints.Add(RotateBy30DegreesHint.Format(_rotate30LeftEvent.unityEvent, _rotate30RightEvent.unityEvent));
-    hints.Add(RotateBy5DegreesHint.Format(_rotate5LeftEvent.unityEvent, _rotate5RightEvent.unityEvent));
-    hints.Add(RotateResetHint.Format(_rotateResetEvent.unityEvent));
+    hints.Add(RotateBy30DegreesHint.Format(Rotate30LeftEvent.unityEvent, Rotate30RightEvent.unityEvent));
+    hints.Add(RotateBy5DegreesHint.Format(Rotate5LeftEvent.unityEvent, Rotate5RightEvent.unityEvent));
+    hints.Add(RotateResetHint.Format(RotateResetEvent.unityEvent));
     hints.Add(HideCursorTooltipHint.Format(_toggleTooltipEvent.unityEvent));
     _currentTooltip.hints = string.Join("\n", hints);
     _currentTooltip.UpdateLayout();
