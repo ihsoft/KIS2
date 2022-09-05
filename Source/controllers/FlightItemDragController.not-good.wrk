@@ -52,6 +52,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       defaultTemplate: "Vessel placement mode",
       description: "TBD");
 
+  // /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  // static readonly Message PartAttachmentNodePlacementModeHint = new(
+  //     "",
+  //     defaultTemplate: "Part attachment node: <<1>>",
+  //     description: "TBD");
+
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> ShowCursorTooltipHint = new(
       "",
@@ -81,6 +87,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Reset rotation",
       description: "TBD");
+
+  // /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  // static readonly Message<KeyboardEventType> TogglePositioningModeHint = new(
+  //     "",
+  //     defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Toggle positioning mode",
+  //     description: "TBD");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message CannotGrabHierarchyTooltipMsg = new(
@@ -168,11 +180,14 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static ClickEvent _toggleTooltipEvent = new(Event.KeyboardEvent(_toggleTooltipKey));
 
   // TODO(ihsoft): Make all values below configurable. 
+  // static readonly ClickEvent _orientationCycleLeftEvent = new(Event.KeyboardEvent("w"));
+  // static readonly ClickEvent _orientationCycleRightEvent = new(Event.KeyboardEvent("s"));
   static readonly ClickEvent _rotate30LeftEvent = new(Event.KeyboardEvent("a"));
   static readonly ClickEvent _rotate30RightEvent = new(Event.KeyboardEvent("d"));
   static readonly ClickEvent _rotate5LeftEvent = new(Event.KeyboardEvent("q"));
   static readonly ClickEvent _rotate5RightEvent = new(Event.KeyboardEvent("e"));
   static readonly ClickEvent _rotateResetEvent = new(Event.KeyboardEvent("space"));
+  // static readonly ClickEvent _toggleDropModeEvent = new(Event.KeyboardEvent("r"));
   #endregion
 
   #region Local fields and properties
@@ -604,11 +619,26 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return 0;
     }
     //FIXME: it's specific to the parent part's parent.
+    Vector3 partDir;
+    Vector3 goldenDir;
     var partTransform = p.transform;
-    var goldenDir = Quaternion.LookRotation(partTransform.up) * Vector3.up;
-    var partDir = partTransform.forward;
+    //var goldenDir = Quaternion.LookRotation(partTransform.up) * Vector3.up;
+    if (p.parent != null) {
+      partDir = partTransform.forward;
+      DebugEx.Warning("*** norm angle: {0}", Vector3.Angle(partTransform.up, p.parent.transform.up));
+      if (Vector3.Angle(partTransform.up, p.parent.transform.up) > FlatSurfaceThreshold) {
+        goldenDir = p.parent.transform.up;
+      } else {
+        goldenDir = p.parent.transform.forward;
+      }
+    } else {
+      partDir = partTransform.forward;
+      goldenDir = Quaternion.LookRotation(partTransform.up) * Vector3.up;
+    }
+    //var partDir = partTransform.forward;
     var dir = Vector3.Dot(partTransform.up, Vector3.Cross(partDir, goldenDir)) < 0 ? 1.0f : -1.0f;
     var rawAngle = Vector3.Angle(partDir, goldenDir) * dir;
+    DebugEx.Warning("*** captured angle: {0}", rawAngle);
     
     var baseValue = (int) Math.Truncate(rawAngle * 100) % 100;
     return baseValue switch {
@@ -619,10 +649,15 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     };
   }
 
+  bool CheckIfParallel(Vector3 v1, Vector3 v2) {
+    return Vector3.Angle(v1, v2) > 1.0f;
+  }
+
   /// <summary>Updates or creates the in-flight tooltip with the drop info.</summary>
   /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
   /// <seealso cref="DestroyCurrentTooltip"/>
   /// <seealso cref="_dropTargetEventsHandler"/>
+  /// FIXME: show rotation angle?
   void UpdateDropTooltip() {
     if (_toggleTooltipEvent.CheckClick()) {
       _showTooltip = !_showTooltip;
@@ -673,6 +708,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
     _draggedModel = new GameObject("KisDragModel").transform;
     _draggedModel.gameObject.SetActive(true);
+    //FIXME: grab only colliders here, we don't need the part.
+    //FIXME: can be material part, don;t create a sample part then (ad don;t destroy).
     var draggedPart = MakeSamplePart(item);
     var dragModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart);
     dragModel.transform.SetParent(_draggedModel, worldPositionStays: false);
@@ -713,6 +750,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     Hierarchy.SafeDestroy(_draggedModel);
     _draggedModel = null;
   }
+
+  /// <summary>
+  /// The maximum angle between the surface and hit point normals to assume the normals were "about the same". 
+  /// </summary>
+  /// <remarks>This angle must be big enough to make the Cross vectors calculation significant.</remarks>
+  const float FlatSurfaceThreshold = 1;
 
   /// <summary>Aligns the dragged model to the pointer.</summary>
   /// <remarks>
@@ -763,7 +806,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       }
       var surfaceNormal = FlightGlobals.getUpAxis(FlightGlobals.fetch.activeVessel.mainBody, hit.point);
       Vector3 fwd;
-      if (!CheckIfParallel(surfaceNormal, hit.normal)) {
+      if (Vector3.Angle(surfaceNormal, hit.normal) > FlatSurfaceThreshold) {
         // If placed on a slope, the "uphill" direction is assumed to be the base for the sake of rotation.
         var left = Vector3.Cross(hit.normal, surfaceNormal);
         fwd = Vector3.Cross(left, hit.normal);
@@ -783,7 +826,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _hitPointTransform.SetParent(_hitPart.transform);
     }
     var partUp = _hitPart.transform.up;
-    var partFwd = !CheckIfParallel(partUp, hit.normal) ? partUp : Vector3.up;
+    var partFwd = Vector3.Angle(partUp, hit.normal) > FlatSurfaceThreshold
+        ? partUp
+        : _hitPart.transform.forward;
     _hitPointTransform.rotation =
         Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, partFwd);
     AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
@@ -805,6 +850,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// A sample part with the default position and rotation. It <i>must</i> be destroyed before the next frame starts!
   /// </returns>
   static Part MakeSamplePart(InventoryItem item) {
+    //FIXME: throws in OnInitialize on some parts (e.g. harpoon).
     var part = item.snapshot.CreatePart();
     part.gameObject.SetLayerRecursive(
         (int)KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int)KspLayerMask.TriggerCollider);
@@ -971,11 +1017,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     p.RefreshHighlighter();
     p.SetHighlightType(Part.HighlightType.OnMouseOver);
     p.SetHighlightDefault();
-  }
-
-  /// <summary>Verifies if two vector are "almost parallel".</summary>
-  bool CheckIfParallel(Vector3 v1, Vector3 v2) {
-    return Vector3.Angle(v1, v2) < 1.0f;
   }
   #endregion
 }
