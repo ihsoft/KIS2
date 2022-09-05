@@ -49,7 +49,13 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message VesselPlacementModeHint = new(
       "",
-      defaultTemplate: "Vessel placement mode",
+      defaultTemplate: "Place as a vessel",
+      description: "TBD");
+
+  // /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<string> PartAttachmentNodePlacementModeHint = new(
+      "",
+      defaultTemplate: "Place at attachment node: <<1>>",
       description: "TBD");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -62,6 +68,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static readonly Message<KeyboardEventType> HideCursorTooltipHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Hide tooltip",
+      description: "TBD");
+
+  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType, KeyboardEventType> CycleAttachNodesHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Select attach node",
       description: "TBD");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -80,6 +92,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static readonly Message<KeyboardEventType> RotateResetHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Reset rotation",
+      description: "TBD");
+
+  // /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> TogglePlacementModeHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Toggle placement mode",
       description: "TBD");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message/*"/>
@@ -173,6 +191,9 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static readonly ClickEvent Rotate5LeftEvent = new(Event.KeyboardEvent("q"));
   static readonly ClickEvent Rotate5RightEvent = new(Event.KeyboardEvent("e"));
   static readonly ClickEvent RotateResetEvent = new(Event.KeyboardEvent("space"));
+  static readonly ClickEvent ToggleDropModeEvent = new(Event.KeyboardEvent("r"));
+  static readonly ClickEvent NodeCycleLeftEvent = new(Event.KeyboardEvent("w"));
+  static readonly ClickEvent NodeCycleRightEvent = new(Event.KeyboardEvent("s"));
   #endregion
 
   #region Local fields and properties
@@ -490,7 +511,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region Drop state handling
   /// <summary>Model of the part or assembly that is being dragged.</summary>
-  /// <seealso cref="_touchPointTransform"/>
+  /// <seealso cref="_vesselPlacementTouchPoint"/>
   /// <seealso cref="_hitPointTransform"/>
   Transform _draggedModel;
 
@@ -499,17 +520,42 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// It can be attached to part if a part has been hit, or be a static object if it was surface. This transform is
   /// dynamically created when something is hit and destroyed when there is nothing.
   /// </remarks>
-  /// <seealso cref="_touchPointTransform"/>
+  /// <seealso cref="_vesselPlacementTouchPoint"/>
   Transform _hitPointTransform;
 
   /// <summary>The part that is being hit with the current drag.</summary>
   /// <seealso cref="_hitPointTransform"/>
   Part _hitPart;
 
-  /// <summary>Transform in the dragged model that should contact with the hit point.</summary>
+  /// <summary>Indicates if the current mode is a vessel placement.</summary>
+  /// <remarks>
+  /// In the vessel placement mode the dragged parts are considered to be a vessel that should be "properly" placed on
+  /// the ground. It means, that the assembly's logical "UP" should match the current situation "UP" meaning. On the
+  /// surface of a celestial body the "UP" is usually defined by the gravitation normal vector.
+  /// </remarks>
+  bool _vesselPlacementMode = true;
+
+  /// <summary>Transform in the dragged model for the vessel placement mode.</summary>
   /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
   /// <seealso cref="_hitPointTransform"/>
-  Transform _touchPointTransform;
+  /// <seealso cref="_vesselPlacementMode"/>
+  Transform _vesselPlacementTouchPoint;
+
+  /// <summary>Transforms for all of the attach nodes of the currently held assembly.</summary>
+  /// <remarks>The names must be unique.</remarks>
+  /// <seealso cref="_hitPointTransform"/>
+  readonly Dictionary<string, Transform> _attachNodeTouchPoints = new();
+
+  /// <summary>The list of attach node names to iterate over in the dragging GUI.</summary>
+  /// <remarks>
+  /// The list must be stably sorted to give a repeatable experience. The values have to be the keys from
+  /// <see cref="_attachNodeTouchPoints"/>.
+  /// </remarks>
+  List<string> _attachNodeNames;
+
+  /// <summary>The currently selected attach node if the placement node is not "vessel".</summary>
+  /// <seealso cref="_vesselPlacementMode"/>
+  string _currentAttachNodeName;
 
   /// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
   /// <seealso cref="_controllerStateMachine"/>
@@ -586,6 +632,18 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     if (RotateResetEvent.CheckClick()) {
       _rotateAngle = 0;
     }
+    if (ToggleDropModeEvent.CheckClick()) {
+      _vesselPlacementMode = !_vesselPlacementMode;
+    }
+    if (!_vesselPlacementMode) {
+      if (NodeCycleLeftEvent.CheckClick()) {
+        var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
+        _currentAttachNodeName = _attachNodeNames[(_attachNodeNames.Count + idx - 1) % _attachNodeNames.Count];
+      } else if (NodeCycleRightEvent.CheckClick()) {
+        var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
+        _currentAttachNodeName = _attachNodeNames[(idx + 1) % _attachNodeNames.Count];
+      }
+    }
   }
   float _rotateAngle;
 
@@ -643,8 +701,14 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _currentTooltip.title = _dropTargetEventsHandler.currentState == DropTarget.Surface
         ? PutOnTheGroundHint
         : AlignAtThePartHint;
-    _currentTooltip.baseInfo.text = VesselPlacementModeHint;
+    _currentTooltip.baseInfo.text = _vesselPlacementMode
+        ? VesselPlacementModeHint
+        : PartAttachmentNodePlacementModeHint.Format(_currentAttachNodeName);
     var hints = _dropTargetEventsHandler.GetHintsList();
+    hints.Add(TogglePlacementModeHint.Format(ToggleDropModeEvent.unityEvent));
+    if (!_vesselPlacementMode) {
+      hints.Add(CycleAttachNodesHint.Format(NodeCycleLeftEvent.unityEvent, NodeCycleRightEvent.unityEvent));
+    }
     hints.Add(RotateBy30DegreesHint.Format(Rotate30LeftEvent.unityEvent, Rotate30RightEvent.unityEvent));
     hints.Add(RotateBy5DegreesHint.Format(Rotate5LeftEvent.unityEvent, Rotate5RightEvent.unityEvent));
     hints.Add(RotateResetHint.Format(RotateResetEvent.unityEvent));
@@ -677,8 +741,33 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var draggedPart = MakeSamplePart(item);
     var dragModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart);
     dragModel.transform.SetParent(_draggedModel, worldPositionStays: false);
-    _touchPointTransform =
+    _vesselPlacementTouchPoint =
         MakeTouchPoint("surfaceTouchPoint", draggedPart, _draggedModel, Vector3.up, _draggedModel.forward);
+
+    // Add touch points for every attach node.
+    _attachNodeTouchPoints.Clear();
+    foreach (var an in draggedPart.attachNodes) {
+      var nodeTransform = new GameObject("attachNode-" + an.id).transform;
+      nodeTransform.SetParent(_draggedModel, worldPositionStays: true);
+      nodeTransform.localPosition = an.position / draggedPart.rescaleFactor;
+      nodeTransform.localRotation = CheckIfParallel(an.orientation, Vector3.up)
+          ? Quaternion.LookRotation(an.orientation, -Vector3.forward)
+          : Quaternion.LookRotation(an.orientation, -Vector3.up);
+      _attachNodeTouchPoints.Add(an.id, nodeTransform);
+    }
+    _attachNodeNames = new List<string>(_attachNodeTouchPoints.Keys);
+    _attachNodeNames.Sort();
+    _currentAttachNodeName = _attachNodeNames.IndexOf("bottom") != -1 ? "bottom" : _attachNodeNames[0];
+    _vesselPlacementMode = true;
+    if (item.materialPart != null && item.materialPart.parent != null) {
+      var parentAttach = item.materialPart.FindAttachNodeByPart(item.materialPart.parent);
+      if (parentAttach != null) {
+        _currentAttachNodeName = parentAttach.id;
+        _vesselPlacementMode = false;
+      } else {
+        DebugEx.Warning("Cannot find parent attach node on; {0}", item.materialPart);
+      }
+    }
     Hierarchy.SafeDestroy(draggedPart);
   }
 
@@ -752,6 +841,8 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
     _hitPointTransform.position = hit.point;
 
+    var touchPoint = _vesselPlacementMode ? _vesselPlacementTouchPoint : _attachNodeTouchPoints[_currentAttachNodeName];
+
     // Find out what was hit.
     _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.gameObject);
     if (_hitPart == null) {
@@ -774,7 +865,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       }
       _hitPointTransform.rotation =
           Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, fwd);
-      AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
+      AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
       return DropTarget.Surface;
     }
 
@@ -787,7 +878,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var partFwd = !CheckIfParallel(partUp, hit.normal) ? partUp : Vector3.up;
     _hitPointTransform.rotation =
         Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, partFwd);
-    AlignTransforms.SnapAlign(_draggedModel, _touchPointTransform, _hitPointTransform);
+    AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
 
     if (_hitPart.isVesselEVA && _hitPart.HasModuleImplementing<IKisInventory>()) {
       return DropTarget.KerbalInventory;
