@@ -638,7 +638,11 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       _rotateAngle = 0;
     }
     if (ToggleDropModeEvent.CheckClick()) {
-      _vesselPlacementMode = !_vesselPlacementMode;
+      if (_attachNodeNames.Count > 0) {
+        _vesselPlacementMode = !_vesselPlacementMode;
+      } else {
+        _vesselPlacementMode = true;
+      }
     }
     if (!_vesselPlacementMode) {
       if (NodeCycleLeftEvent.CheckClick()) {
@@ -760,8 +764,11 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
     _attachNodeNames = new List<string>(_attachNodeTouchPoints.Keys);
     _attachNodeNames.Sort();
-    _currentAttachNodeName = _attachNodeNames.IndexOf("bottom") != -1 ? "bottom" : _attachNodeNames[0];
     _vesselPlacementMode = true;
+    _currentAttachNodeName = "";
+    if (_attachNodeNames.Count > 0) {
+      _currentAttachNodeName = _attachNodeNames.IndexOf("bottom") != -1 ? "bottom" : _attachNodeNames[0];
+    }
     if (item.materialPart != null && item.materialPart.parent != null) {
       var parentAttach = item.materialPart.FindAttachNodeByPart(item.materialPart.parent);
       if (parentAttach != null) {
