@@ -6,13 +6,9 @@ using System.Collections;
 using System.Linq;
 using System.Reflection;
 using KISAPIv2;
-using KSP.UI;
-using KSPDev.ConfigUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
-using KSPDev.InputUtils;
 using KSPDev.LogUtils;
-using KSPDev.Unity;
 using UnityEngine;
 
 namespace KIS2.controllers.flight_dragging {
@@ -26,7 +22,6 @@ namespace KIS2.controllers.flight_dragging {
 /// on the contracts state if the part was a part of any.
 /// </p>
 /// </remarks>
-[PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 sealed class PickupStateHandler : AbstractStateHandler {
   #region Localizable strings
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -47,27 +42,6 @@ sealed class PickupStateHandler : AbstractStateHandler {
       "",
       defaultTemplate: "<<1>> part(s) attached",
       description: "It's a temp string. DO NOT localize it!");
-  #endregion
-
-  #region Configuration
-  // ReSharper disable FieldCanBeMadeReadOnly.Local
-  // ReSharper disable ConvertToConstant.Local
-
-  /// <summary>The key that activates the in-flight pickup mode.</summary>
-  /// <remarks>
-  /// It's a standard keyboard event definition. Even though it can have modifiers, avoid specifying them since it may
-  /// affect the UX experience.
-  /// </remarks>
-  [PersistentField("PickupMode/actionKey")]
-  static string _flightActionKey = "j";
-
-  // ReSharper enable FieldCanBeMadeReadOnly.Local
-  // ReSharper enable ConvertToConstant.Local
-  #endregion
-
-  #region Key bindings
-  static readonly ClickEvent PickupItemFromSceneEvent = new(Event.KeyboardEvent("mouse0"));
-  static ClickEvent _pickupModeSwitchEvent = new(Event.KeyboardEvent(_flightActionKey));
   #endregion
 
   #region Local fields
@@ -116,14 +90,12 @@ sealed class PickupStateHandler : AbstractStateHandler {
   /// <inheritdoc/>
   public override void Init(FlightItemDragController aHostObj) {
     base.Init(aHostObj);
-    ConfigAccessor.ReadFieldsInType(GetType(), null); // All config fields are static.
-    _pickupModeSwitchEvent = new ClickEvent(Event.KeyboardEvent(_flightActionKey));
 
     _pickupTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Pickup target state changed: {0} => {1}", oldState, newState);
     };
     _pickupTargetEventsHandler.DefineAction(
-        PickupTarget.SinglePart, TakeFocusedPartHint, PickupItemFromSceneEvent, HandleScenePartPickupAction);
+        PickupTarget.SinglePart, TakeFocusedPartHint, hostObj.pickupItemFromSceneEvent, HandleScenePartPickupAction);
   }
 
   /// <inheritdoc/>
@@ -162,7 +134,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
       } else {
         _pickupTargetEventsHandler.currentState = PickupTarget.PartAssembly;
       }
-      if (!Input.anyKey || !_pickupModeSwitchEvent.isEventActive) {
+      if (!Input.anyKey || !hostObj.pickupModeSwitchEvent.isEventActive) {
         hostObj.ToIdleState();
         break;
       }
@@ -180,7 +152,6 @@ sealed class PickupStateHandler : AbstractStateHandler {
   #region Local utility methods
   /// <summary>Updates or creates the in-flight tooltip with the part data.</summary>
   /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
-  /// <seealso cref="DestroyCurrentTooltip"/>
   /// <seealso cref="targetPickupPart"/>
   void UpdateTooltip() {
     if (targetPickupPart == null) {

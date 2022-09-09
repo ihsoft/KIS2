@@ -7,10 +7,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using KISAPIv2;
-using KSPDev.ConfigUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
-using KSPDev.InputUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
 using UnityEngine;
@@ -18,7 +16,6 @@ using UnityEngine;
 namespace KIS2.controllers.flight_dragging {
 
 /// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
-[PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 sealed class DraggingStateHandler : AbstractStateHandler {
   #region Localizable strings
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -92,57 +89,6 @@ sealed class DraggingStateHandler : AbstractStateHandler {
       "",
       defaultTemplate: "Drop at the part",
       description: "TBD");
-  #endregion
-
-  #region Configuration
-  // ReSharper disable FieldCanBeMadeReadOnly.Local
-  // ReSharper disable ConvertToConstant.Local
-
-  /// <summary>The renderer to apply to the scene part that is being dragged.</summary>
-  /// <remarks>If it's an empty string, than the shader on the part won't be changed.</remarks>
-  [PersistentField("PickupMode/holoPartShader")]
-  static string _stdTransparentRenderer = "Transparent/Diffuse";
-
-  /// <summary>The color and transparency of the holo model of the part being dragged.</summary>
-  [PersistentField("PickupMode/holoColor")]
-  static Color _holoColor = new(0f, 1f, 1f, 0.7f);
-
-  /// <summary>Distance from the camera of the object that cannot be placed anywhere.</summary>
-  /// <remarks>If an item cannot be dropped, it will be "hanging" at the camera at this distance.</remarks>
-  /// <seealso cref="_maxRaycastDistance"/>
-  [PersistentField("PickupMode/hangingObjectDistance")]
-  static float _hangingObjectDistance = 10.0f;
-
-  /// <summary>Maximum distance from the current camera to the hit point, where an item can be dropped.</summary>
-  /// <remarks>
-  /// This setting limits how far the mod will be looking for the possible placement location, but it doesn't define the
-  /// maximum interaction distance.
-  /// </remarks>
-  /// <seealso cref="_hangingObjectDistance"/>
-  [PersistentField("PickupMode/maxRaycastDistance")]
-  static float _maxRaycastDistance = 50;
-
-  /// <summary>The key that toggles dragging tooltip visibility.</summary>
-  /// <remarks>
-  /// It's a standard keyboard event definition. Even though it can have modifiers, avoid specifying them since it may
-  /// affect the UX experience.
-  /// </remarks>
-  [PersistentField("PickupMode/toggleTooltipKey")]
-  static string _toggleTooltipKey = "j";
-
-  // ReSharper enable FieldCanBeMadeReadOnly.Local
-  // ReSharper enable ConvertToConstant.Local
-  #endregion
-
-  #region Key bindings
-  static ClickEvent _toggleTooltipEvent = new(Event.KeyboardEvent(_toggleTooltipKey));
-  static readonly ClickEvent DropItemToSceneEvent = new(Event.KeyboardEvent("mouse0"));
-  static readonly ClickEvent RotateLeftEvent = new(Event.KeyboardEvent("a"));
-  static readonly ClickEvent RotateRightEvent = new(Event.KeyboardEvent("d"));
-  static readonly ClickEvent RotateResetEvent = new(Event.KeyboardEvent("space"));
-  static readonly ClickEvent ToggleDropModeEvent = new(Event.KeyboardEvent("r"));
-  static readonly ClickEvent NodeCycleLeftEvent = new(Event.KeyboardEvent("w"));
-  static readonly ClickEvent NodeCycleRightEvent = new(Event.KeyboardEvent("s"));
   #endregion
 
   #region Local fields
@@ -223,7 +169,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   string _currentAttachNodeName;
 
   /// <summary>Screen message to present at the top when tooltip is disabled.</summary>
-  /// <seealso cref="_toggleTooltipEvent"/>
+  /// <seealso cref="FlightItemDragController.toggleTooltipEvent"/>
   readonly ScreenMessage _showTooltipMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
   #endregion
 
@@ -231,20 +177,18 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// <inheritdoc/>
   public override void Init(FlightItemDragController aHostObj) {
     base.Init(aHostObj);
-    ConfigAccessor.ReadFieldsInType(GetType(), null); // All config fields are static.
-    _toggleTooltipEvent = new ClickEvent(Event.KeyboardEvent(_toggleTooltipKey));
 
     _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Drop target state changed: {0} => {1}", oldState, newState);
     };
     _dropTargetEventsHandler.DefineAction(
-        DropTarget.Surface, DraggedPartDropSurfaceHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+        DropTarget.Surface, DraggedPartDropSurfaceHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
     _dropTargetEventsHandler.DefineAction(
-        DropTarget.Part, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+        DropTarget.Part, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
     _dropTargetEventsHandler.DefineAction(
-        DropTarget.KerbalInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+        DropTarget.KerbalInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
     _dropTargetEventsHandler.DefineAction(
-        DropTarget.KisInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+        DropTarget.KisInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
   }
 
   /// <inheritdoc/>
@@ -312,14 +256,14 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// before switching.
   /// </remarks>
   void UpdateDropActions() {
-    if (RotateLeftEvent.CheckClick()) {
+    if (hostObj.rotateLeftEvent.CheckClick()) {
       _rotateAngle -= 15;
-    } else if (RotateRightEvent.CheckClick()) {
+    } else if (hostObj.rotateRightEvent.CheckClick()) {
       _rotateAngle += 15;
-    } else if (RotateResetEvent.CheckClick()) {
+    } else if (hostObj.rotateResetEvent.CheckClick()) {
       _rotateAngle = 0;
     }
-    if (ToggleDropModeEvent.CheckClick()) {
+    if (hostObj.toggleDropModeEvent.CheckClick()) {
       if (_attachNodeNames.Count > 0) {
         _vesselPlacementMode = !_vesselPlacementMode;
       } else {
@@ -327,10 +271,10 @@ sealed class DraggingStateHandler : AbstractStateHandler {
       }
     }
     if (!_vesselPlacementMode) {
-      if (NodeCycleLeftEvent.CheckClick()) {
+      if (hostObj.nodeCycleLeftEvent.CheckClick()) {
         var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
         _currentAttachNodeName = _attachNodeNames[(_attachNodeNames.Count + idx - 1) % _attachNodeNames.Count];
-      } else if (NodeCycleRightEvent.CheckClick()) {
+      } else if (hostObj.nodeCycleRightEvent.CheckClick()) {
         var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
         _currentAttachNodeName = _attachNodeNames[(idx + 1) % _attachNodeNames.Count];
       }
@@ -370,11 +314,11 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
   /// <seealso cref="_dropTargetEventsHandler"/>
   void UpdateDropTooltip() {
-    if (_toggleTooltipEvent.CheckClick()) {
+    if (hostObj.toggleTooltipEvent.CheckClick()) {
       _showTooltip = !_showTooltip;
     }
     if (!_showTooltip) {
-      _showTooltipMessage.message = ShowCursorTooltipHint.Format(_toggleTooltipEvent.unityEvent);
+      _showTooltipMessage.message = ShowCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent);
       ScreenMessages.PostScreenMessage(_showTooltipMessage);
       DestroyCurrentTooltip();
       return;
@@ -392,13 +336,14 @@ sealed class DraggingStateHandler : AbstractStateHandler {
         ? VesselPlacementModeHint
         : PartAttachmentNodePlacementModeHint.Format(_currentAttachNodeName);
     var hints = _dropTargetEventsHandler.GetHintsList();
-    hints.Add(TogglePlacementModeHint.Format(ToggleDropModeEvent.unityEvent));
+    hints.Add(TogglePlacementModeHint.Format(hostObj.toggleDropModeEvent.unityEvent));
     if (!_vesselPlacementMode) {
-      hints.Add(CycleAttachNodesHint.Format(NodeCycleLeftEvent.unityEvent, NodeCycleRightEvent.unityEvent));
+      hints.Add(
+          CycleAttachNodesHint.Format(hostObj.nodeCycleLeftEvent.unityEvent, hostObj.nodeCycleRightEvent.unityEvent));
     }
-    hints.Add(RotateBy15DegreesHint.Format(RotateLeftEvent.unityEvent, RotateRightEvent.unityEvent));
-    hints.Add(RotateResetHint.Format(RotateResetEvent.unityEvent));
-    hints.Add(HideCursorTooltipHint.Format(_toggleTooltipEvent.unityEvent));
+    hints.Add(RotateBy15DegreesHint.Format(hostObj.rotateLeftEvent.unityEvent, hostObj.rotateRightEvent.unityEvent));
+    hints.Add(RotateResetHint.Format(hostObj.rotateResetEvent.unityEvent));
+    hints.Add(HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent));
     currentTooltip.hints = string.Join("\n", hints);
     currentTooltip.UpdateLayout();
   }
@@ -499,7 +444,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
 
     var hitsCount = Physics.RaycastNonAlloc(
         ray, _hitsBuffer,
-        maxDistance: _maxRaycastDistance,
+        maxDistance: hostObj.maxRaycastDistance,
         layerMask: (int)(KspLayerMask.Part | KspLayerMask.Kerbal | KspLayerMask.SurfaceCollider),
         queryTriggerInteraction: QueryTriggerInteraction.Ignore);
     var hit = _hitsBuffer.Take(hitsCount)
@@ -512,7 +457,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
       Hierarchy.SafeDestroy(_hitPointTransform);
       _hitPointTransform = null;
       var cameraTransform = camera.transform;
-      _draggedModel.position = cameraTransform.position + ray.direction * _hangingObjectDistance;
+      _draggedModel.position = cameraTransform.position + ray.direction * hostObj.hangingObjectDistance;
       _draggedModel.rotation = cameraTransform.rotation;
       return DropTarget.Nothing;
     }
@@ -566,7 +511,8 @@ sealed class DraggingStateHandler : AbstractStateHandler {
     }
     return _hitPart.HasModuleImplementing<IKisInventory>() ? DropTarget.KisInventory : DropTarget.Part;
   }
-  RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits count.
+
+  readonly RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits count.
 
   /// <summary>Makes a part from the saved config for the purpose of the part model capture.</summary>
   /// <remarks>
@@ -671,14 +617,14 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// </p>
   /// </returns>
   /// <seealso cref="RestorePartState"/>
-  static Dictionary<int, Material[]> MakeDraggedPartGhost(Part p) {
+  Dictionary<int, Material[]> MakeDraggedPartGhost(Part p) {
     var resetRenderers = p.GetComponentsInChildren<Renderer>();
     var res = resetRenderers.ToDictionary(x => x.GetHashCode(), x => x.materials);
     Shader holoShader = null;
-    if (_stdTransparentRenderer != "") {
-      holoShader = Shader.Find(_stdTransparentRenderer);
+    if (hostObj.stdTransparentRenderer != "") {
+      holoShader = Shader.Find(hostObj.stdTransparentRenderer);
       if (holoShader == null) {
-        DebugEx.Error("Cannot find standard transparent renderer: {0}", _stdTransparentRenderer);
+        DebugEx.Error("Cannot find standard transparent renderer: {0}", hostObj.stdTransparentRenderer);
       }
     }
     if (holoShader != null) {
@@ -687,7 +633,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
         var newMaterials = new Material[resetRenderer.materials.Length];
         for (var i = 0; i < resetRenderer.materials.Length; ++i) {
           newMaterials[i] = new Material(holoShader) {
-              color = _holoColor
+              color = hostObj.holoColor
           };
         }
         resetRenderer.materials = newMaterials;
