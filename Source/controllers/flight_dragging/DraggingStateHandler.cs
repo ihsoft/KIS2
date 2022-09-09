@@ -66,15 +66,9 @@ sealed class DraggingStateHandler : AbstractStateHandler {
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy30DegreesHint = new(
+  static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy15DegreesHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 30 degrees",
-      description: "TBD");
-
-  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy5DegreesHint = new(
-      "",
-      defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 5 degrees",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
@@ -145,10 +139,8 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   #region Key bindings
   static ClickEvent _toggleTooltipEvent = new(Event.KeyboardEvent(_toggleTooltipKey));
   static readonly ClickEvent DropItemToSceneEvent = new(Event.KeyboardEvent("mouse0"));
-  static readonly ClickEvent Rotate30LeftEvent = new(Event.KeyboardEvent("a"));
-  static readonly ClickEvent Rotate30RightEvent = new(Event.KeyboardEvent("d"));
-  static readonly ClickEvent Rotate5LeftEvent = new(Event.KeyboardEvent("q"));
-  static readonly ClickEvent Rotate5RightEvent = new(Event.KeyboardEvent("e"));
+  static readonly ClickEvent RotateLeftEvent = new(Event.KeyboardEvent("a"));
+  static readonly ClickEvent RotateRightEvent = new(Event.KeyboardEvent("d"));
   static readonly ClickEvent RotateResetEvent = new(Event.KeyboardEvent("space"));
   static readonly ClickEvent ToggleDropModeEvent = new(Event.KeyboardEvent("r"));
   static readonly ClickEvent NodeCycleLeftEvent = new(Event.KeyboardEvent("w"));
@@ -322,17 +314,11 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// before switching.
   /// </remarks>
   void UpdateDropActions() {
-    if (Rotate30LeftEvent.CheckClick()) {
-      _rotateAngle -= 30;
-    } else if (Rotate30RightEvent.CheckClick()) {
-      _rotateAngle += 30;
-    }
-    if (Rotate5LeftEvent.CheckClick()) {
-      _rotateAngle -= 5;
-    } else if (Rotate5RightEvent.CheckClick()) {
-      _rotateAngle += 5;
-    }
-    if (RotateResetEvent.CheckClick()) {
+    if (RotateLeftEvent.CheckClick()) {
+      _rotateAngle -= 15;
+    } else if (RotateRightEvent.CheckClick()) {
+      _rotateAngle += 15;
+    } else if (RotateResetEvent.CheckClick()) {
       _rotateAngle = 0;
     }
     if (ToggleDropModeEvent.CheckClick()) {
@@ -413,8 +399,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
     if (!_vesselPlacementMode) {
       hints.Add(CycleAttachNodesHint.Format(NodeCycleLeftEvent.unityEvent, NodeCycleRightEvent.unityEvent));
     }
-    hints.Add(RotateBy30DegreesHint.Format(Rotate30LeftEvent.unityEvent, Rotate30RightEvent.unityEvent));
-    hints.Add(RotateBy5DegreesHint.Format(Rotate5LeftEvent.unityEvent, Rotate5RightEvent.unityEvent));
+    hints.Add(RotateBy15DegreesHint.Format(RotateLeftEvent.unityEvent, RotateRightEvent.unityEvent));
     hints.Add(RotateResetHint.Format(RotateResetEvent.unityEvent));
     hints.Add(HideCursorTooltipHint.Format(_toggleTooltipEvent.unityEvent));
     currentTooltip.hints = string.Join("\n", hints);
