@@ -71,8 +71,8 @@ public class ClickEvent {
 
   #region Local utlity fields and properties
   /// <summary>The moment when the event was detected as "pressed".</summary>
-
   float _eventDownTs;
+
   /// <summary>The timestamp of the click event that happen before the latest one.</summary>
   /// <seealso cref="_lastClickEventTs"/>
   /// <seealso cref="CheckDoubleClick"/>

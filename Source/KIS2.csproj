@@ -103,7 +103,11 @@
     <Compile Include="api_impl\InventoryItemImpl.cs" />
     <Compile Include="api_impl\KisItemDragControllerImpl.cs" />
     <Compile Include="controllers\EditorItemDragController.cs" />
-    <Compile Include="controllers\FlightItemDragController.cs" />
+    <Compile Include="controllers\flight_dragging\AbstractStateHandler.cs" />
+    <Compile Include="controllers\flight_dragging\DraggingStateHandler.cs" />
+    <Compile Include="controllers\flight_dragging\FlightItemDragController.cs" />
+    <Compile Include="controllers\flight_dragging\IdleStateHandler.cs" />
+    <Compile Include="controllers\flight_dragging\PickupStateHandler.cs" />
     <Compile Include="controllers\GameLoadController.cs" />
     <Compile Include="controllers\KerbalGoingEvaController.cs" />
     <Compile Include="controllers\KisModLoadController.cs" />

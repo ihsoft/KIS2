@@ -5,120 +5,97 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using KISAPIv2;
-using KSPDev.InputUtils;
-using KSPDev.LogUtils;
-using KSPDev.ModelUtils;
 using System.Linq;
-using System.Reflection;
+using KISAPIv2;
 using KSP.UI;
 using KSPDev.ConfigUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
-using KSPDev.ProcessingUtils;
+using KSPDev.InputUtils;
+using KSPDev.LogUtils;
+using KSPDev.ModelUtils;
 using KSPDev.Unity;
 using UnityEngine;
 
-// ReSharper disable once CheckNamespace
-namespace KIS2 {
+namespace KIS2.controllers.flight_dragging {
 
-/// <summary>Controller that deals with dragged items in the flight scenes.</summary>
-[KSPAddon(KSPAddon.Startup.Flight, false /*once*/)]
+/// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
 [PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
-sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
+sealed class DraggingStateHandler : AbstractStateHandler {
   #region Localizable strings
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> TakeFocusedPartHint = new(
-      "",
-      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab the part",
-      description: "The tooltip status to present when the KIS grabbing mode is activated, but no part is being"
-      + " focused.");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> DraggedPartDropPartHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop at the part",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> DraggedPartDropSurfaceHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Put on the ground",
       description: "TBD");
-  
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message VesselPlacementModeHint = new(
       "",
       defaultTemplate: "Place as a vessel",
       description: "TBD");
 
-  // /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<string> PartAttachmentNodePlacementModeHint = new(
       "",
       defaultTemplate: "Place at attachment node: <<1>>",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> ShowCursorTooltipHint = new(
       "",
       defaultTemplate: "[<<1>>]: Show tooltip",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> HideCursorTooltipHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Hide tooltip",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType, KeyboardEventType> CycleAttachNodesHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Select attach node",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy30DegreesHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 30 degrees",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy5DegreesHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 5 degrees",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message<KeyboardEventType> RotateResetHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Reset rotation",
       description: "TBD");
 
-  // /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  // /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TogglePlacementModeHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Toggle placement mode",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message/*"/>
-  static readonly Message CannotGrabHierarchyTooltipMsg = new(
-      "",
-      defaultTemplate: "Cannot grab a hierarchy",
-      description: "It's a temp string. DO NOT localize it!");
-
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<int> CannotGrabHierarchyTooltipDetailsMsg = new(
-      "",
-      defaultTemplate: "<<1>> part(s) attached",
-      description: "It's a temp string. DO NOT localize it!");
-  
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message PutOnTheGroundHint = new(
       "",
       defaultTemplate: "Put on the ground",
       description: "TBD");
 
-  /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message AlignAtThePartHint = new(
       "",
       defaultTemplate: "Drop at the part",
@@ -127,9 +104,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region Configuration
   // ReSharper disable FieldCanBeMadeReadOnly.Local
-  // ReSharper disable FieldCanBeMadeReadOnly.Global
-  // ReSharper disable ConvertToConstant.Global
-  // ReSharper disable MemberCanBePrivate.Global
   // ReSharper disable ConvertToConstant.Local
 
   /// <summary>The renderer to apply to the scene part that is being dragged.</summary>
@@ -156,14 +130,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   [PersistentField("PickupMode/maxRaycastDistance")]
   static float _maxRaycastDistance = 50;
 
-  /// <summary>The key that activates the in-flight pickup mode.</summary>
-  /// <remarks>
-  /// It's a standard keyboard event definition. Even though it can have modifiers, avoid specifying them since it may
-  /// affect the UX experience.
-  /// </remarks>
-  [PersistentField("PickupMode/actionKey")]
-  static string _flightActionKey = "j";
-
   /// <summary>The key that toggles dragging tooltip visibility.</summary>
   /// <remarks>
   /// It's a standard keyboard event definition. Even though it can have modifiers, avoid specifying them since it may
@@ -173,19 +139,12 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static string _toggleTooltipKey = "t";
 
   // ReSharper enable FieldCanBeMadeReadOnly.Local
-  // ReSharper enable FieldCanBeMadeReadOnly.Global
-  // ReSharper enable ConvertToConstant.Global
-  // ReSharper enable MemberCanBePrivate.Global
   // ReSharper enable ConvertToConstant.Local
   #endregion
 
-  #region Event static configs
-  static readonly ClickEvent DropItemToSceneEvent = new(Event.KeyboardEvent("mouse0"));
-  static readonly ClickEvent PickupItemFromSceneEvent = new(Event.KeyboardEvent("mouse0"));
-  static Event _pickupModeSwitchEvent = Event.KeyboardEvent(_flightActionKey);
+  #region Key bindings
   static ClickEvent _toggleTooltipEvent = new(Event.KeyboardEvent(_toggleTooltipKey));
-
-  // TODO(ihsoft): Make all values below configurable. 
+  static readonly ClickEvent DropItemToSceneEvent = new(Event.KeyboardEvent("mouse0"));
   static readonly ClickEvent Rotate30LeftEvent = new(Event.KeyboardEvent("a"));
   static readonly ClickEvent Rotate30RightEvent = new(Event.KeyboardEvent("d"));
   static readonly ClickEvent Rotate5LeftEvent = new(Event.KeyboardEvent("q"));
@@ -196,36 +155,7 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   static readonly ClickEvent NodeCycleRightEvent = new(Event.KeyboardEvent("s"));
   #endregion
 
-  #region Local fields and properties
-  /// <summary>The exhaustive definition of the controller states.</summary>
-  enum ControllerState {
-    /// <summary>The controller isn't handling anything.</summary>
-    Idle,
-    /// <summary>The controller is in a pickup mode and expects user's input.</summary>
-    PickupModePending,
-    /// <summary>The items are being dragged.</summary>
-    DraggingItems,
-  }
-
-  /// <summary>The state machine of the controller.</summary>
-  /// <remarks>
-  /// If the state needs to be changed from the user input, use a delayed change (by one frame). Or else, the handlers
-  /// from the different states may detect the same mouse/keyboard event.
-  /// </remarks>
-  readonly SimpleStateMachine<ControllerState> _controllerStateMachine = new(strict: false);
-
-  /// <summary>Defines the currently focused pickup target.</summary>
-  /// <remarks>The <c>null</c> state is used to indicate that nothing of the interest is being focused.</remarks>
-  enum PickupTarget {
-    /// <summary>A lone part or the last child of a vessel is being hovered.</summary>
-    SinglePart,
-    /// <summary>The part focused has some children.</summary>
-    PartAssembly,
-  }
-
-  /// <summary>The events state machine to control the pickup stage.</summary>
-  readonly EventsHandlerStateMachine<PickupTarget> _pickupTargetEventsHandler = new();
-
+  #region Local fields
   /// <summary>Defines the currently focused drop target.</summary>
   /// <remarks>The <c>null</c> state is used to indicate that nothing of the interest is being focused.</remarks>
   enum DropTarget {
@@ -248,268 +178,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <summary>The events state machine to control the drop stage.</summary>
   readonly EventsHandlerStateMachine<DropTarget> _dropTargetEventsHandler = new();
 
-  /// <summary>The tooltip that is currently being presented.</summary>
-  UIKISInventoryTooltip.Tooltip _currentTooltip;
-  #endregion
-
-  #region MonoBehaviour overrides
-  void Awake() {
-    DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
-    ConfigAccessor.ReadFieldsInType(GetType(), null); // Read the static fields.
-    _pickupModeSwitchEvent = Event.KeyboardEvent(_flightActionKey);
-    _toggleTooltipEvent = new ClickEvent(Event.KeyboardEvent(_toggleTooltipKey));
-
-    // Setup the controller state machine.
-    _controllerStateMachine.onAfterTransition += (before, after) => {
-      DebugEx.Fine("In-flight controller state changed: {0} => {1}", before, after);
-    };
-    _controllerStateMachine.AddStateHandlers(
-        ControllerState.Idle,
-        _ => { _trackIdleStateCoroutine = StartCoroutine(TrackIdleStateCoroutine()); },
-        _ => {
-          if (_trackIdleStateCoroutine != null) {
-            StopCoroutine(_trackIdleStateCoroutine);
-          }
-        });
-    _controllerStateMachine.AddStateHandlers(
-        ControllerState.PickupModePending,
-        _ => { _trackPickupStateCoroutine = StartCoroutine(TrackPickupStateCoroutine()); },
-        _ => CleanupTrackPickupState());
-    _controllerStateMachine.AddStateHandlers(
-        ControllerState.DraggingItems,
-        _ => { _trackDraggingStateCoroutine = StartCoroutine(TrackDraggingStateCoroutine()); },
-        _ => CleanupTrackDraggingState());
-    _controllerStateMachine.currentState = ControllerState.Idle;
-
-    // Setup the pickup target state machine.
-    _pickupTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
-      DebugEx.Fine("Pickup target state changed: {0} => {1}", oldState, newState);
-    };
-    _pickupTargetEventsHandler.DefineAction(
-        PickupTarget.SinglePart, TakeFocusedPartHint, PickupItemFromSceneEvent, HandleScenePartPickupAction);
-
-    // Setup the drop target state machine.
-    _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
-      DebugEx.Fine("Drop target state changed: {0} => {1}", oldState, newState);
-    };
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.Surface, DraggedPartDropSurfaceHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.Part, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.KerbalInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.KisInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
-    KisApi.ItemDragController.RegisterTarget(this);
-  }
-
-  void OnDestroy() {
-    DebugEx.Fine("[{0}] Controller stopped", nameof(FlightItemDragController));
-    KisApi.ItemDragController.UnregisterTarget(this);
-
-    // Ensure the state machines did their cleanups.
-    _controllerStateMachine.currentState = null;
-    _pickupTargetEventsHandler.currentState = null;
-  }
-  #endregion
-
-  #region IKisDragTarget implementation
-  /// <inheritdoc/>
-  public Component unityComponent => this;
-
-  /// <inheritdoc/>
-  void IKisDragTarget.OnKisDragStart() {
-    _controllerStateMachine.currentState = ControllerState.DraggingItems;
-  }
-
-  /// <inheritdoc/>
-  void IKisDragTarget.OnKisDragEnd(bool isCancelled) {
-    _controllerStateMachine.currentState = ControllerState.Idle;
-  }
-
-  /// <inheritdoc/>
-  bool IKisDragTarget.OnKisDrag(bool pointerMoved) {
-    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.KisTarget) {
-      // In these states the controller doesn't deal with the dragged item(s).
-      return false;
-    }
-    return KisApi.ItemDragController.leasedItems.Length == 1;
-  }
-
-  /// <inheritdoc/>
-  void IKisDragTarget.OnFocusTarget(IKisDragTarget newTarget) {
-  }
-  #endregion
-
-  #region Idle state handling
-  /// <summary>Handles the keyboard/mouse events when the controller is idle.</summary>
-  /// <seealso cref="_pickupModeSwitchEvent"/>
-  /// <seealso cref="_controllerStateMachine"/>
-  IEnumerator TrackIdleStateCoroutine() {
-    while (_controllerStateMachine.currentState == ControllerState.Idle) {
-      // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
-      yield return null;
-
-      if (Input.anyKey && EventChecker2.CheckEventActive(_pickupModeSwitchEvent)) {
-        _controllerStateMachine.currentState = ControllerState.PickupModePending;
-        break;
-      }
-    }
-    // No code beyond this point! The coroutine is explicitly killed from the state machine.
-  }
-  Coroutine _trackIdleStateCoroutine;
-  #endregion
-
-  #region Pickup state handling
-  /// <summary>The part that is currently hovered over in the part pickup mode.</summary>
-  /// <remarks>Setting this property affects the hovered part(s) highlighting</remarks>
-  /// <value>The part or <c>null</c> if no acceptable part is being hovered over.</value>
-  Part targetPickupPart {
-    get => _targetPickupPart;
-    set {
-      if (_targetPickupPart == value) {
-        return;
-      }
-      if (_targetPickupPart != null) {
-        _targetPickupPart.SetHighlight(false, recursive: true);
-        _targetPickupPart.SetHighlightDefault();
-        _targetPickupItem = null;
-      }
-      _targetPickupPart = value;
-      if (_targetPickupPart != null) {
-        _targetPickupPart.SetHighlightType(Part.HighlightType.AlwaysOn);
-        _targetPickupPart.SetHighlight(true, recursive: true);
-        if (_targetPickupPart.children.Count == 0) {
-          _targetPickupItem = InventoryItemImpl.FromPart(_targetPickupPart);
-          _targetPickupItem.materialPart = _targetPickupPart;
-        }
-      }
-    }
-  }
-  Part _targetPickupPart;
-  InventoryItem _targetPickupItem;
-
-  /// <summary>Handles the keyboard and mouse events when KIS pickup mode is enabled in flight.</summary>
-  /// <remarks>
-  /// It checks if the modifier key is released and brings the controller to the idle state if that's the case.
-  /// </remarks>
-  /// <seealso cref="_pickupModeSwitchEvent"/>
-  /// <seealso cref="_controllerStateMachine"/>
-  /// <seealso cref="_pickupTargetEventsHandler"/>
-  IEnumerator TrackPickupStateCoroutine() {
-    var beingSettledField = typeof(ModuleCargoPart).GetField(
-        "beingSettled", BindingFlags.Instance | BindingFlags.NonPublic);
-    if (beingSettledField == null) {
-      DebugEx.Error("Cannot find beingSettled field in cargo module");
-    }
-    while (_controllerStateMachine.currentState == ControllerState.PickupModePending) {
-      CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the part!
-
-      var hoveredPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
-      if (hoveredPart != null && hoveredPart.isCargoPart() && beingSettledField != null) {
-        var cargoModule = hoveredPart.FindModuleImplementing<ModuleCargoPart>();
-        var isBeingSettling = (bool) beingSettledField.GetValue(cargoModule);
-        if (isBeingSettling) {
-          hoveredPart = null;
-        }
-      }
-      targetPickupPart = hoveredPart;
-      
-      if (targetPickupPart == null) {
-        _pickupTargetEventsHandler.currentState = null;
-      } else if (targetPickupPart.children.Count == 0) {
-        _pickupTargetEventsHandler.currentState = PickupTarget.SinglePart;
-      } else {
-        _pickupTargetEventsHandler.currentState = PickupTarget.PartAssembly;
-      }
-      if (!Input.anyKey || !EventChecker2.CheckEventActive(_pickupModeSwitchEvent)) {
-        _controllerStateMachine.currentState = ControllerState.Idle;
-        break;
-      }
-      UpdatePickupTooltip();
-
-      // Don't handle the keys in the same frame as the coroutine has started in to avoid the double actions.
-      yield return null;
-
-      _pickupTargetEventsHandler.HandleActions();
-    }
-    // No code beyond this point! The coroutine may be explicitly killed from the state machine.
-  }
-  Coroutine _trackPickupStateCoroutine;
-
-  /// <summary>Cleans ups any state created in <see cref="TrackPickupStateCoroutine"/>.</summary>
-  /// <remarks>
-  /// Doing the cleanup in the coroutine itself is a bad idea due to it can die at any moment. Instead, the
-  /// <see cref="_controllerStateMachine"/> should take care about it when the state is changed.
-  /// </remarks>
-  void CleanupTrackPickupState() {
-    CrewHatchController.fetch.EnableInterface();
-    _pickupTargetEventsHandler.currentState = null;
-    targetPickupPart = null;
-    DestroyCurrentTooltip();
-    if (_trackPickupStateCoroutine != null) {
-      StopCoroutine(_trackPickupStateCoroutine);
-      _trackPickupStateCoroutine = null;
-    }
-  }
-
-  /// <summary>Updates or creates the in-flight tooltip with the part data.</summary>
-  /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
-  /// <seealso cref="DestroyCurrentTooltip"/>
-  /// <seealso cref="targetPickupPart"/>
-  void UpdatePickupTooltip() {
-    if (targetPickupPart == null) {
-      DestroyCurrentTooltip();
-      return;
-    }
-    CreateTooltip();
-    if (_pickupTargetEventsHandler.currentState == PickupTarget.SinglePart) {
-      KisContainerWithSlots.UpdateTooltip(_currentTooltip, new[] { _targetPickupItem });
-    } else if (_pickupTargetEventsHandler.currentState == PickupTarget.PartAssembly) {
-      // TODO(ihsoft): Implement!
-      _currentTooltip.ClearInfoFields();
-      _currentTooltip.title = CannotGrabHierarchyTooltipMsg;
-      _currentTooltip.baseInfo.text =
-          CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
-    }
-    _currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
-    _currentTooltip.UpdateLayout();
-  }
-
-  /// <summary>Handles the in-flight part/hierarchy pick up event action.</summary>
-  /// <remarks>
-  /// <p>It's required that there is a part being hovered. This part will be offered for the KIS dragging action.</p>
-  /// <p>If the part being consumed is attached to a vessel, it will get decoupled first.</p>
-  /// <p>
-  /// The consumed part will <i>DIE</i>. Which will break the link between the part and the item. And it may have effect
-  /// on the contracts state if the part was a part of any.
-  /// </p>
-  /// </remarks>
-  void HandleScenePartPickupAction() {
-    var leasedItem = _targetPickupItem;
-    KisApi.ItemDragController.LeaseItems(
-        KisApi.PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
-        new[] { leasedItem },
-        () => { // The consume action.
-          var consumedPart = leasedItem.materialPart;
-          if (consumedPart != null) {
-            if (consumedPart.parent != null) {
-              DebugEx.Fine("Detaching on KIS move: part={0}, parent={1}", consumedPart, consumedPart.parent);
-              consumedPart.decouple();
-            }
-            DebugEx.Info("Kill the part consumed by KIS in-flight pickup: {0}", consumedPart);
-            consumedPart.Die();
-            leasedItem.materialPart = null;
-          }
-          return true;
-        },
-        () => { // The cancel action.
-          leasedItem.materialPart = null; // It's a cleanup just in case.
-        });
-  }
-  #endregion
-
-  #region Drop state handling
   /// <summary>Model of the part or assembly that is being dragged.</summary>
   /// <seealso cref="_vesselPlacementTouchPoint"/>
   /// <seealso cref="_hitPointTransform"/>
@@ -564,17 +232,50 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <seealso cref="_vesselPlacementMode"/>
   string _currentAttachNodeName;
 
-  /// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
-  /// <seealso cref="_controllerStateMachine"/>
-  /// <seealso cref="_dropTargetEventsHandler"/>
-  IEnumerator TrackDraggingStateCoroutine() {
+  /// <summary>Screen message to present at the top when tooltip is disabled.</summary>
+  /// <seealso cref="_toggleTooltipEvent"/>
+  readonly ScreenMessage _showTooltipMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
+  #endregion
+
+  #region AbstractStateHandler implementation
+  /// <inheritdoc/>
+  public override void Init(FlightItemDragController aHostObj) {
+    base.Init(aHostObj);
+    ConfigAccessor.ReadFieldsInType(GetType(), null); // All config fields are static.
+    _toggleTooltipEvent = new ClickEvent(Event.KeyboardEvent(_toggleTooltipKey));
+
+    _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
+      DebugEx.Fine("Drop target state changed: {0} => {1}", oldState, newState);
+    };
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.Surface, DraggedPartDropSurfaceHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.Part, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.KerbalInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.KisInventory, DraggedPartDropPartHint, DropItemToSceneEvent, CreateVesselFromDraggedItem);
+  }
+
+  /// <inheritdoc/>
+  public override void Stop() {
+    base.Stop();
+    CrewHatchController.fetch.EnableInterface();
+    _dropTargetEventsHandler.currentState = null;
+    SetDraggedMaterialPart(null);
+    DestroyDraggedModel();
+    ScreenMessages.RemoveMessage(_showTooltipMessage);
+  }
+
+  /// <inheritdoc/>
+  protected override IEnumerator StateTrackingCoroutine() {
     var singleItem = KisApi.ItemDragController.leasedItems.Length == 1
         ? KisApi.ItemDragController.leasedItems[0]
         : null;
     SetDraggedMaterialPart(singleItem?.materialPart);
 
     // Handle the dragging operation.
-    while (_controllerStateMachine.currentState == ControllerState.DraggingItems) {
+    while (isStarted) {
       UpdateDropActions();
       CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the drop location!
 
@@ -584,7 +285,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
         if (singleItem != null) {
           MakeDraggedModelFromItem(singleItem);
           _dropTargetEventsHandler.currentState = PositionModelInTheScene(singleItem);
-          //FIXME: highlight cannot drop cases.
         }
       } else {
         _dropTargetEventsHandler.currentState = DropTarget.KisTarget;
@@ -599,25 +299,23 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
     // No code beyond this point! The coroutine may be explicitly killed from the state machine.
   }
-  Coroutine _trackDraggingStateCoroutine;
+  #endregion
 
-  /// <summary>Cleans ups any state created in <see cref="TrackDraggingStateCoroutine"/>.</summary>
-  /// <remarks>
-  /// Doing the cleanup in the coroutine itself is a bad idea due to it can die at any moment. Instead, the
-  /// <see cref="_controllerStateMachine"/> should take care about it when the state is changed.
-  /// </remarks>
-  void CleanupTrackDraggingState() {
-    CrewHatchController.fetch.EnableInterface();
-    _dropTargetEventsHandler.currentState = null;
-    SetDraggedMaterialPart(null);
-    DestroyDraggedModel();
-    if (_trackDraggingStateCoroutine != null) {
-      StopCoroutine(_trackDraggingStateCoroutine);
-      _trackDraggingStateCoroutine = null;
+  #region API methods
+
+  /// <summary>Indicates if the currently dragged items can be handled by this handler.</summary>
+  /// <seealso cref="IKisDragTarget.OnKisDrag"/>
+  public bool CanHandleDraggedItems() {
+    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.KisTarget) {
+      // In these states the controller doesn't deal with the dragged item(s).
+      return false;
     }
-    CleanupDropTooltip();
+    return KisApi.ItemDragController.leasedItems.Length == 1;
   }
 
+  #endregion
+
+  #region Local utility methods
   /// <summary>Handles actions to rotate the dragged part around it's Z-axis.</summary>
   /// <remarks>
   /// The actions change rotation at the touch point level. If there are multiple points, the rotation should be reset
@@ -675,7 +373,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     var partDir = partTransform.forward;
     var dir = Vector3.Dot(partUp, Vector3.Cross(partDir, goldenDir)) < 0 ? 1.0f : -1.0f;
     var rawAngle = Vector3.Angle(partDir, goldenDir) * dir;
-    
     var baseValue = (int) Math.Truncate(rawAngle * 100) % 100;
     return baseValue switch {
         0 => (float)Math.Truncate(rawAngle),
@@ -705,10 +402,10 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
       return;
     }
     CreateTooltip();
-    _currentTooltip.title = _dropTargetEventsHandler.currentState == DropTarget.Surface
+    currentTooltip.title = _dropTargetEventsHandler.currentState == DropTarget.Surface
         ? PutOnTheGroundHint
         : AlignAtThePartHint;
-    _currentTooltip.baseInfo.text = _vesselPlacementMode
+    currentTooltip.baseInfo.text = _vesselPlacementMode
         ? VesselPlacementModeHint
         : PartAttachmentNodePlacementModeHint.Format(_currentAttachNodeName);
     var hints = _dropTargetEventsHandler.GetHintsList();
@@ -720,17 +417,10 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     hints.Add(RotateBy5DegreesHint.Format(Rotate5LeftEvent.unityEvent, Rotate5RightEvent.unityEvent));
     hints.Add(RotateResetHint.Format(RotateResetEvent.unityEvent));
     hints.Add(HideCursorTooltipHint.Format(_toggleTooltipEvent.unityEvent));
-    _currentTooltip.hints = string.Join("\n", hints);
-    _currentTooltip.UpdateLayout();
+    currentTooltip.hints = string.Join("\n", hints);
+    currentTooltip.UpdateLayout();
   }
   bool _showTooltip = true;
-  readonly ScreenMessage _showTooltipMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
-
-  /// <summary>Cleanups anything related to the tooltip.</summary>
-  void CleanupDropTooltip() {
-    DestroyCurrentTooltip();
-    ScreenMessages.RemoveMessage(_showTooltipMessage);
-  }
 
   /// <summary>Creates a part model, given there is only one item is being dragged.</summary>
   /// <remarks>
@@ -787,7 +477,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <param name="tgtModel">The part model to attach the transform to.</param>
   /// <param name="direction">The main (forward) direction.</param>
   /// <param name="upwards">The "upwards" direction of the orientation.</param>
-  /// <returns></returns>
   Transform MakeTouchPoint(string tpName, Part srcPart, Transform tgtModel, Vector3 direction, Vector3 upwards) {
     var ptTransform = new GameObject(tpName).transform;
     ptTransform.SetParent(tgtModel, worldPositionStays: false);
@@ -957,22 +646,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     }
   }
 
-  /// <summary>Destroys any tooltip that is existing in the controller.</summary>
-  /// <remarks>It's a cleanup method and it's safe to call it from any state.</remarks>
-  void DestroyCurrentTooltip() {
-    if (_currentTooltip != null) {
-      HierarchyUtils.SafeDestroy(_currentTooltip);
-      _currentTooltip = null;
-    }
-  }
-
-  void CreateTooltip() {
-    if (_currentTooltip == null) {
-      _currentTooltip = UnityPrefabController.CreateInstance<UIKISInventoryTooltip.Tooltip>(
-          "inFlightControllerTooltip", UIMasterController.Instance.actionCanvas.transform);
-    }
-  }
-
   /// <summary>Sets the material part that was a source for the drag operation.</summary>
   /// <remarks>
   /// This part will be considered "being dragged". It'll stay being material and (maybe) physical, but it may change
@@ -992,11 +665,6 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   }
   Part _sourceDraggedPart;
   Dictionary<int, Material[]> _sourceDraggedPartSavedState;
-
-  /// <summary>Returns the total number of the parts in the hierarchy.</summary>
-  static int CountChildrenInHierarchy(Part p) {
-    return p.children.Count + p.children.Sum(CountChildrenInHierarchy);
-  }
 
   /// <summary>Turns the designated part into a "holo".</summary>
   /// <remarks>
@@ -1082,5 +750,4 @@ sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   }
   #endregion
 }
-
 }
