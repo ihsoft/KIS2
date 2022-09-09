@@ -175,9 +175,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
 
   #region AbstractStateHandler implementation
   /// <inheritdoc/>
-  public override void Init(FlightItemDragController aHostObj) {
-    base.Init(aHostObj);
-
+  public DraggingStateHandler(FlightItemDragController hostObj) : base(hostObj) {
     _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Drop target state changed: {0} => {1}", oldState, newState);
     };

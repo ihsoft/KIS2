@@ -88,9 +88,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
 
   #region AbstractStateHandler implementation
   /// <inheritdoc/>
-  public override void Init(FlightItemDragController aHostObj) {
-    base.Init(aHostObj);
-
+  public PickupStateHandler(FlightItemDragController hostObj) : base(hostObj) {
     _pickupTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Pickup target state changed: {0} => {1}", oldState, newState);
     };

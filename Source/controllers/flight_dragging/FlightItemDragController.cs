@@ -99,17 +99,19 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region State handlers
-  readonly IdleStateHandler _idleStateHandlerHandler = new();
-  readonly PickupStateHandler _pickupStateHandlerHandler = new();
-  readonly DraggingStateHandler _draggingStateHandlerHandler = new();
+  readonly IdleStateHandler _idleStateHandlerHandler;
+  readonly PickupStateHandler _pickupStateHandlerHandler;
+  readonly DraggingStateHandler _draggingStateHandlerHandler;
+  public FlightItemDragController() {
+    _idleStateHandlerHandler = new(this);
+    _pickupStateHandlerHandler = new(this);
+    _draggingStateHandlerHandler = new(this);
+  }
   #endregion
 
   #region MonoBehaviour overrides
   void Awake() {
     DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
-    _idleStateHandlerHandler.Init(this);
-    _pickupStateHandlerHandler.Init(this);
-    _draggingStateHandlerHandler.Init(this);
 
     ConfigAccessor.ReadFieldsInType(GetType(), this);
     pickupModeSwitchEvent = new ClickEvent(Event.KeyboardEvent(_flightActionKey));

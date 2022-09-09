@@ -12,6 +12,10 @@ namespace KIS2.controllers.flight_dragging {
 sealed class IdleStateHandler : AbstractStateHandler {
   #region AbstractStateHandler implementation
   /// <inheritdoc/>
+  public IdleStateHandler(FlightItemDragController hostObj) : base(hostObj) {
+  }
+
+  /// <inheritdoc/>
   protected override IEnumerator StateTrackingCoroutine() {
     while (isStarted) {
       // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.

@@ -23,7 +23,7 @@ namespace KIS2.controllers.flight_dragging {
 abstract class AbstractStateHandler {
   #region Inheritable fields
   /// <summary>The flight dragging controller that owns this handler.</summary>
-  protected FlightItemDragController hostObj;
+  protected readonly FlightItemDragController hostObj;
 
   /// <summary>The current state of the handler.</summary>
   protected bool isStarted;
@@ -39,8 +39,8 @@ abstract class AbstractStateHandler {
   #region API methods
   /// <summary>Attaches this handler to the host.</summary>
   /// <remarks>It's a good place to do the handler state initialization.</remarks>
-  public virtual void Init(FlightItemDragController aHostObj) {
-    hostObj = aHostObj;
+  protected AbstractStateHandler(FlightItemDragController hostObj) {
+    this.hostObj = hostObj;
   }
 
   /// <summary>Requests this handler to become active and start handling GUI actions.</summary>
