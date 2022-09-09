@@ -7,14 +7,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using KISAPIv2;
-using KSP.UI;
 using KSPDev.ConfigUtils;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.InputUtils;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
-using KSPDev.Unity;
 using UnityEngine;
 
 namespace KIS2.controllers.flight_dragging {
@@ -68,7 +66,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy15DegreesHint = new(
       "",
-      defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 30 degrees",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 15 degrees",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
@@ -130,7 +128,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// affect the UX experience.
   /// </remarks>
   [PersistentField("PickupMode/toggleTooltipKey")]
-  static string _toggleTooltipKey = "t";
+  static string _toggleTooltipKey = "j";
 
   // ReSharper enable FieldCanBeMadeReadOnly.Local
   // ReSharper enable ConvertToConstant.Local
@@ -370,7 +368,6 @@ sealed class DraggingStateHandler : AbstractStateHandler {
 
   /// <summary>Updates or creates the in-flight tooltip with the drop info.</summary>
   /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
-  /// <seealso cref="DestroyCurrentTooltip"/>
   /// <seealso cref="_dropTargetEventsHandler"/>
   void UpdateDropTooltip() {
     if (_toggleTooltipEvent.CheckClick()) {
