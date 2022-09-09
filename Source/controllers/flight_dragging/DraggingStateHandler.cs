@@ -369,7 +369,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
     }
     var partTransform = p.transform;
     var partUp = partTransform.up;
-    var goldenDir = Quaternion.LookRotation(partUp) * Vector3.up;
+    var goldenDir = Quaternion.LookRotation(partUp) * Vector3.down;
     var partDir = partTransform.forward;
     var dir = Vector3.Dot(partUp, Vector3.Cross(partDir, goldenDir)) < 0 ? 1.0f : -1.0f;
     var rawAngle = Vector3.Angle(partDir, goldenDir) * dir;
@@ -448,8 +448,8 @@ sealed class DraggingStateHandler : AbstractStateHandler {
       nodeTransform.SetParent(_draggedModel, worldPositionStays: true);
       nodeTransform.localPosition = an.position / draggedPart.rescaleFactor;
       nodeTransform.localRotation = CheckIfParallel(an.orientation, Vector3.up)
-          ? Quaternion.LookRotation(an.orientation, -Vector3.forward)
-          : Quaternion.LookRotation(an.orientation, -Vector3.up);
+          ? Quaternion.LookRotation(an.orientation, Vector3.forward)
+          : Quaternion.LookRotation(an.orientation, Vector3.up);
       _attachNodeTouchPoints.Add(an.id, nodeTransform);
     }
     _attachNodeNames = new List<string>(_attachNodeTouchPoints.Keys);
@@ -485,7 +485,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
         .Select(c => c.ClosestPoint(c.transform.position + -direction * 100).y)
         .Min();
     ptTransform.position += direction * distance;
-    ptTransform.rotation = Quaternion.LookRotation(-direction, -upwards);
+    ptTransform.rotation = Quaternion.LookRotation(-direction, upwards);
     return ptTransform;
   }
 
