@@ -85,10 +85,15 @@ public class ClickEvent {
   #endregion
 
   #region API methods
-  /// <summary>Creates the click event instance from, a Unity event.</summary>
+  /// <summary>Creates the click event instance from a Unity event.</summary>
   /// <param name="unityEvent">The Unity event to create from.</param>
   public ClickEvent(Event unityEvent) {
     this.unityEvent = unityEvent;
+  }
+
+  /// <summary>Creates the click event instance from a Unity event.</summary>
+  /// <param name="action">The action string of the event.</param>
+  public ClickEvent(string action) : this(Event.KeyboardEvent(action)) {
   }
 
   /// <summary>Checks if the click event happen.</summary>
