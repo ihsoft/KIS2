@@ -229,12 +229,11 @@ sealed class DraggingStateHandler : AbstractStateHandler {
 
       _dropTargetEventsHandler.HandleActions();
     }
-    // No code beyond this point! The coroutine may be explicitly killed from the state machine.
+    // No logic beyond this point! The coroutine can be explicitly killed.
   }
   #endregion
 
   #region API methods
-
   /// <summary>Indicates if the currently dragged items can be handled by this handler.</summary>
   /// <seealso cref="IKisDragTarget.OnKisDrag"/>
   public bool CanHandleDraggedItems() {
@@ -244,7 +243,6 @@ sealed class DraggingStateHandler : AbstractStateHandler {
     }
     return KisApi.ItemDragController.leasedItems.Length == 1;
   }
-
   #endregion
 
   #region Local utility methods
