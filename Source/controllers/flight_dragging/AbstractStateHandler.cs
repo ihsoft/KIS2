@@ -26,7 +26,7 @@ abstract class AbstractStateHandler {
   protected readonly FlightItemDragController hostObj;
 
   /// <summary>The current state of the handler.</summary>
-  protected bool isStarted;
+  public bool isStarted { get; protected set; }
 
   /// <summary>The tooltip that is currently being presented.</summary>
   protected UIKISInventoryTooltip.Tooltip currentTooltip;
@@ -44,10 +44,12 @@ abstract class AbstractStateHandler {
   }
 
   /// <summary>Requests this handler to become active and start handling GUI actions.</summary>
-  public virtual void Start() {
+  /// <remarks>The overrides can prevent the action.</remarks>
+  public virtual bool Start() {
     Stop();
     isStarted = true;
     _coroutine = hostObj.StartCoroutine(StateTrackingCoroutine());
+    return true;
   }
 
   /// <summary>Requests this handler to stop any activity.</summary>
