@@ -43,7 +43,9 @@ public interface IKisItemDragController {
   /// <summary>Target that currently has the pointer focus.</summary>
   /// <remarks>
   /// This property reflects what target is currently being hovered over by the mouse pointer. Any Unity game object can
-  /// be that target if it has at least one component that implements the interface.  
+  /// be that target if it has at least one component that implements the interface. When an object sets itself as a
+  /// target it's assumed that object will control all the dragging logic, and the other drag listeners should stop
+  /// acting.
   /// </remarks>
   /// <value>The target or <c>null</c> of there is none.</value>
   /// <seealso cref="SetFocusedTarget"/>
