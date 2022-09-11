@@ -9,10 +9,10 @@ namespace KIS2.controllers.flight_dragging {
 
 /// <summary>Handles the keyboard/mouse events when the controller is idle.</summary>
 /// <remarks>Keep this handler as simple as possible to not consume CPU when KIS logic is not needed.</remarks>
-sealed class IdleStateHandler : AbstractStateHandler {
+sealed class WaitingForPickupStateHandler : AbstractStateHandler {
   #region AbstractStateHandler implementation
   /// <inheritdoc/>
-  public IdleStateHandler(FlightItemDragController hostObj) : base(hostObj) {
+  public WaitingForPickupStateHandler(FlightItemDragController hostObj) : base(hostObj) {
   }
 
   /// <inheritdoc/>

@@ -68,11 +68,15 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// <summary>The exhaustive definition of the controller states.</summary>
   enum ControllerState {
     /// <summary>The controller isn't handling anything.</summary>
-    Idle,
+    None,
+    /// <summary>The controller is ready to process a pickup command.</summary>
+    WaitingForPickup,
     /// <summary>The controller is in a pickup mode and expects user's input.</summary>
     PickupModePending,
-    /// <summary>The items are being dragged.</summary>
-    DraggingItems,
+    /// <summary>The is exactly one item being dragged.</summary>
+    DraggingOneItem,
+    /// <summary>The are _some_ items being dragged.</summary>
+    DraggingMultipleItems,
   }
 
   /// <summary>The state machine of the controller.</summary>
@@ -99,13 +103,13 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #endregion
 
   #region State handlers
-  readonly IdleStateHandler _idleStateHandlerHandler;
+  readonly WaitingForPickupStateHandler _waitingForPickupStateHandlerHandler;
   readonly PickupStateHandler _pickupStateHandlerHandler;
-  readonly DraggingStateHandler _draggingStateHandlerHandler;
+  readonly DraggingOneItemStateHandler _draggingOneItemOneItemStateHandler;
   public FlightItemDragController() {
-    _idleStateHandlerHandler = new(this);
+    _waitingForPickupStateHandlerHandler = new(this);
     _pickupStateHandlerHandler = new(this);
-    _draggingStateHandlerHandler = new(this);
+    _draggingOneItemOneItemStateHandler = new(this);
   }
   #endregion
 
@@ -121,19 +125,21 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _controllerStateMachine.onAfterTransition += (before, after) => {
       DebugEx.Fine("In-flight controller state changed: {0} => {1}", before, after);
     };
+    _controllerStateMachine.AddStateHandlers(ControllerState.None);
     _controllerStateMachine.AddStateHandlers(
-        ControllerState.Idle,
-        _ => _idleStateHandlerHandler.Start(),
-        _ => _idleStateHandlerHandler.Stop());
+        ControllerState.WaitingForPickup,
+        _ => _waitingForPickupStateHandlerHandler.Start(),
+        _ => _waitingForPickupStateHandlerHandler.Stop());
     _controllerStateMachine.AddStateHandlers(
         ControllerState.PickupModePending,
         _ => _pickupStateHandlerHandler.Start(),
         _ => _pickupStateHandlerHandler.Stop());
     _controllerStateMachine.AddStateHandlers(
-        ControllerState.DraggingItems,
-        _ => _draggingStateHandlerHandler.Start(),
-        _ => _draggingStateHandlerHandler.Stop());
-    _controllerStateMachine.currentState = ControllerState.Idle;
+        ControllerState.DraggingOneItem,
+        _ => _draggingOneItemOneItemStateHandler.Start(),
+        _ => _draggingOneItemOneItemStateHandler.Stop());
+    _controllerStateMachine.AddStateHandlers(ControllerState.DraggingMultipleItems);
+    _controllerStateMachine.currentState = ControllerState.WaitingForPickup;
 
     KisApi.ItemDragController.RegisterTarget(this);
   }
@@ -153,35 +159,51 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   /// <inheritdoc/>
   void IKisDragTarget.OnKisDragStart() {
-    _controllerStateMachine.currentState = ControllerState.DraggingItems;
+    UpdateControllerState();
   }
 
   /// <inheritdoc/>
   void IKisDragTarget.OnKisDragEnd(bool isCancelled) {
-    _controllerStateMachine.currentState = ControllerState.Idle;
+    UpdateControllerState();
   }
 
   /// <inheritdoc/>
   bool IKisDragTarget.OnKisDrag(bool pointerMoved) {
-    return _draggingStateHandlerHandler.CanHandleDraggedItems();
+    return _controllerStateMachine.currentState == ControllerState.DraggingOneItem;
   }
 
   /// <inheritdoc/>
   void IKisDragTarget.OnFocusTarget(IKisDragTarget newTarget) {
+    UpdateControllerState();
   }
   #endregion
 
   #region API methods
   public void ToIdleState() {
-    _controllerStateMachine.currentState = ControllerState.Idle;
+    _controllerStateMachine.currentState = ControllerState.WaitingForPickup;
   }
   
   public void ToPickupState() {
     _controllerStateMachine.currentState = ControllerState.PickupModePending;
   }
 
-  public void ToDropState() {
-    _controllerStateMachine.currentState = ControllerState.DraggingItems;
+  public void ToDropOneItemState() {
+    _controllerStateMachine.currentState = ControllerState.DraggingOneItem;
+  }
+  #endregion
+
+  #region Local utility methods
+  /// <summary>Updates flight controller state to match the current drag controller state.</summary>
+  void UpdateControllerState() {
+    if (KisApi.ItemDragController.focusedTarget != null) {
+      _controllerStateMachine.currentState = ControllerState.None;
+    } else if (!KisApi.ItemDragController.isDragging) {
+      _controllerStateMachine.currentState = ControllerState.WaitingForPickup;
+    } else if (KisApi.ItemDragController.leasedItems.Length == 1) {
+      _controllerStateMachine.currentState = ControllerState.DraggingOneItem;
+    } else {
+      _controllerStateMachine.currentState = ControllerState.DraggingMultipleItems;
+    }
   }
   #endregion
 }

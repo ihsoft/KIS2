@@ -11,12 +11,13 @@ using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
+using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 namespace KIS2.controllers.flight_dragging {
 
 /// <summary>Handles the keyboard and mouse events when KIS drop mode is active in flight.</summary>
-sealed class DraggingStateHandler : AbstractStateHandler {
+sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   #region Localizable strings
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> DraggedPartDropPartHint = new(
@@ -111,7 +112,11 @@ sealed class DraggingStateHandler : AbstractStateHandler {
     KisTarget,
   }
 
+  /// <summary>The state machine to control the drop stage.</summary>
+  readonly SimpleStateMachine<DropTarget> _dropTargetStateMachine = new(strict: false);
+  
   /// <summary>The events state machine to control the drop stage.</summary>
+  /// <seealso cref="_dropTargetStateMachine"/>
   readonly EventsHandlerStateMachine<DropTarget> _dropTargetEventsHandler = new();
 
   /// <summary>Model of the part or assembly that is being dragged.</summary>
@@ -175,7 +180,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
 
   #region AbstractStateHandler implementation
   /// <inheritdoc/>
-  public DraggingStateHandler(FlightItemDragController hostObj) : base(hostObj) {
+  public DraggingOneItemStateHandler(FlightItemDragController hostObj) : base(hostObj) {
     _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Drop target state changed: {0} => {1}", oldState, newState);
     };
@@ -187,6 +192,11 @@ sealed class DraggingStateHandler : AbstractStateHandler {
         DropTarget.KerbalInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
     _dropTargetEventsHandler.DefineAction(
         DropTarget.KisInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
+
+    _dropTargetStateMachine.onAfterTransition += (oldState, newState) => {
+      DebugEx.Fine("Drop target changed: {0} => {1}", oldState, newState);
+      _dropTargetEventsHandler.currentState = newState;
+    };
   }
 
   /// <inheritdoc/>
@@ -201,26 +211,23 @@ sealed class DraggingStateHandler : AbstractStateHandler {
 
   /// <inheritdoc/>
   protected override IEnumerator StateTrackingCoroutine() {
-    var singleItem = KisApi.ItemDragController.leasedItems.Length == 1
-        ? KisApi.ItemDragController.leasedItems[0]
-        : null;
-    SetDraggedMaterialPart(singleItem?.materialPart);
+    var draggedItem = KisApi.ItemDragController.leasedItems[0];
+    SetDraggedMaterialPart(draggedItem.materialPart);
+    MakeDraggedModelFromItem(draggedItem);
 
     // Handle the dragging operation.
     while (isStarted) {
       UpdateDropActions();
       CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the drop location!
 
-      // Track the mouse cursor position and update the view.
       if (KisApi.ItemDragController.focusedTarget == null) {
-        // The cursor is in a free space, the controller deals with it.
-        if (singleItem != null) {
-          MakeDraggedModelFromItem(singleItem);
-          _dropTargetEventsHandler.currentState = PositionModelInTheScene(singleItem);
-        }
+        // The holo model is hovering in the scene.
+        _draggedModel.gameObject.SetActive(true);
+        _dropTargetStateMachine.currentState = PositionModelInTheScene(draggedItem);
       } else {
-        _dropTargetEventsHandler.currentState = DropTarget.KisTarget;
-        DestroyDraggedModel();
+        // The mouse pointer is over a KIS inventory dialog. It will handle the behavior on itself.
+        _draggedModel.gameObject.SetActive(false);
+        _dropTargetStateMachine.currentState = DropTarget.KisTarget;
       }
       UpdateDropTooltip();
 
@@ -230,18 +237,6 @@ sealed class DraggingStateHandler : AbstractStateHandler {
       _dropTargetEventsHandler.HandleActions();
     }
     // No logic beyond this point! The coroutine can be explicitly killed.
-  }
-  #endregion
-
-  #region API methods
-  /// <summary>Indicates if the currently dragged items can be handled by this handler.</summary>
-  /// <seealso cref="IKisDragTarget.OnKisDrag"/>
-  public bool CanHandleDraggedItems() {
-    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.KisTarget) {
-      // In these states the controller doesn't deal with the dragged item(s).
-      return false;
-    }
-    return KisApi.ItemDragController.leasedItems.Length == 1;
   }
   #endregion
 
@@ -287,7 +282,7 @@ sealed class DraggingStateHandler : AbstractStateHandler {
   /// </remarks>
   /// <param name="p">The part to get the angle for. If it's <c>null</c>, then the angle will be zero.</param>
   /// <returns>The angle in degrees.</returns>
-  float CalcPickupRotation(Part p) {
+  static float CalcPickupRotation(Component p) {
     if (p == null) {
       return 0;
     }
@@ -524,8 +519,9 @@ sealed class DraggingStateHandler : AbstractStateHandler {
     part.gameObject.SetLayerRecursive(
         (int)KspLayer.Part, filterTranslucent: true, ignoreLayersMask: (int)KspLayerMask.TriggerCollider);
     part.gameObject.SetActive(true);
-    part.transform.position = Vector3.zero;
-    part.transform.rotation = part.initRotation;
+    var transform = part.transform;
+    transform.position = Vector3.zero;
+    transform.rotation = part.initRotation;
     part.InitializeModules();
 
     return part;
