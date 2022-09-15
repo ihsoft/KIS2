@@ -412,18 +412,18 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #endregion
 
   #region Event static configs
-  static readonly ClickEvent TakeSlotEvent = new(Event.KeyboardEvent("&mouse0"));
-  static readonly ClickEvent TakeOneItemEvent = new(Event.KeyboardEvent("mouse0"));
-  static readonly ClickEvent TakeTenItemsEvent = new(Event.KeyboardEvent("#mouse0"));
-  static readonly ClickEvent AddToStackEvent = new(Event.KeyboardEvent("mouse0"));
-  static readonly ClickEvent StoreIntoSlotEvent = new(Event.KeyboardEvent("mouse0"));
-  static readonly ClickEvent AddOneItemEvent = new(Event.KeyboardEvent("^mouse0"));
-  static readonly ClickEvent AddTenItemsEvent = new(Event.KeyboardEvent("#mouse0"));
-  static readonly ClickEvent RemoveOneItemEvent = new(Event.KeyboardEvent("^mouse1"));
-  static readonly ClickEvent RemoveTenItemsEvent = new(Event.KeyboardEvent("#mouse1"));
-  static readonly ClickEvent SpawnNewItemEvent = new(Event.KeyboardEvent("mouse1"));
-  static readonly ClickEvent SpawnExtraItemEvent = new(Event.KeyboardEvent("mouse1"));
-  static readonly ClickEvent DropOneItemEvent = new(Event.KeyboardEvent("&mouse1"));
+  static readonly ClickEvent TakeSlotEvent = new("&mouse0");
+  static readonly ClickEvent TakeOneItemEvent = new("mouse0");
+  static readonly ClickEvent TakeTenItemsEvent = new("#mouse0");
+  static readonly ClickEvent AddToStackEvent = new("mouse0");
+  static readonly ClickEvent StoreIntoSlotEvent = new("mouse0");
+  static readonly ClickEvent AddOneItemEvent = new("^mouse0");
+  static readonly ClickEvent AddTenItemsEvent = new("#mouse0");
+  static readonly ClickEvent RemoveOneItemEvent = new("^mouse1");
+  static readonly ClickEvent RemoveTenItemsEvent = new("#mouse1");
+  static readonly ClickEvent SpawnNewItemEvent = new("mouse1");
+  static readonly ClickEvent SpawnExtraItemEvent = new("mouse1");
+  static readonly ClickEvent DropOneItemEvent = new("&mouse1");
   #endregion
 
   #region Persistent node names

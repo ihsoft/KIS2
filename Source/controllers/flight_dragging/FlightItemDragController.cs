@@ -26,15 +26,11 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   /// affect the UX experience.
   /// </remarks>
   [PersistentField("PickupMode/actionKey")]
-  string _flightActionKey = "j";
-
+  public readonly ClickEvent pickupModeSwitchEvent = new("j");
+  
   /// <summary>The key that toggles dragging tooltip visibility.</summary>
-  /// <remarks>
-  /// It's a standard keyboard event definition. Even though it can have modifiers, avoid specifying them since it may
-  /// affect the UX experience.
-  /// </remarks>
   [PersistentField("PickupMode/toggleTooltipKey")]
-  string _toggleTooltipKey = "j";
+  public readonly ClickEvent toggleTooltipEvent = new("j");
 
   /// <summary>The renderer to apply to the scene part that is being dragged.</summary>
   /// <remarks>If it's an empty string, than the shader on the part won't be changed.</remarks>
@@ -87,19 +83,15 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   readonly SimpleStateMachine<ControllerState> _controllerStateMachine = new(strict: false);
   #endregion
 
-  #region Key bindings for all handlers
-  // Configurable.
-  public ClickEvent toggleTooltipEvent;
-  public ClickEvent pickupModeSwitchEvent;
-  // Static.
-  public readonly ClickEvent pickupItemFromSceneEvent = new(Event.KeyboardEvent("mouse0"));
-  public readonly ClickEvent dropItemToSceneEvent = new(Event.KeyboardEvent("mouse0"));
-  public readonly ClickEvent rotateLeftEvent = new(Event.KeyboardEvent("a"));
-  public readonly ClickEvent rotateRightEvent = new(Event.KeyboardEvent("d"));
-  public readonly ClickEvent rotateResetEvent = new(Event.KeyboardEvent("space"));
-  public readonly ClickEvent toggleDropModeEvent = new(Event.KeyboardEvent("r"));
-  public readonly ClickEvent nodeCycleLeftEvent = new(Event.KeyboardEvent("w"));
-  public readonly ClickEvent nodeCycleRightEvent = new(Event.KeyboardEvent("s"));
+  #region Static key bindings for all handlers
+  public readonly ClickEvent pickupItemFromSceneEvent = new("mouse0");
+  public readonly ClickEvent dropItemToSceneEvent = new("mouse0");
+  public readonly ClickEvent rotateLeftEvent = new("a");
+  public readonly ClickEvent rotateRightEvent = new("d");
+  public readonly ClickEvent rotateResetEvent = new("space");
+  public readonly ClickEvent toggleDropModeEvent = new("r");
+  public readonly ClickEvent nodeCycleLeftEvent = new("w");
+  public readonly ClickEvent nodeCycleRightEvent = new("s");
   #endregion
 
   #region State handlers
@@ -116,10 +108,7 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region MonoBehaviour overrides
   void Awake() {
     DebugEx.Fine("[{0}] Controller started", nameof(FlightItemDragController));
-
     ConfigAccessor.ReadFieldsInType(GetType(), this);
-    pickupModeSwitchEvent = new ClickEvent(Event.KeyboardEvent(_flightActionKey));
-    toggleTooltipEvent = new(Event.KeyboardEvent(_toggleTooltipKey));
     
     // Setup the controller state machine.
     _controllerStateMachine.onAfterTransition += (before, after) => {

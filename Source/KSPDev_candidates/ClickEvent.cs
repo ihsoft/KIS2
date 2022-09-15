@@ -2,6 +2,7 @@
 // Author: igor.zavoychinskiy@gmail.com
 // This software is distributed under Public domain license.
 
+using KSPDev.ConfigUtils;
 using UnityEngine;
 
 namespace KSPDev.InputUtils {
@@ -34,17 +35,27 @@ namespace KSPDev.InputUtils {
 /// it. All the other callers that may request the check in the same frame will get the "false" response.
 /// </p>
 /// </remarks>
-public class ClickEvent {
+public sealed class ClickEvent : IPersistentField {
   #region API fields and properties
   /// <summary>The maximum delay between press and release events to consider it was a "click event".</summary>
   /// <remarks>
   /// This is a global setting that will be applied to any new instance. Use it to override the system wide settings.
   /// </remarks>
   /// <seealso cref="maxClickDelay"/>
-  public static float maxClickDelayGlobal = 0.3f; // It relates to 4 FPS. We assume, nobody seriously play at this FPS.
+  public static float maxClickDelayGlobal = 0.3f; // 300ms, an empiric value based on a regular human experience.
+
+  /// <summary>String representation of the action.</summary>
+  public string eventKey {
+    get => _eventKey;
+    private set {
+      _eventKey = value;
+      unityEvent = Event.KeyboardEvent(_eventKey);
+    }
+  }
+  string _eventKey;
 
   /// <summary>The wrapped Unity event.</summary>
-  public readonly Event unityEvent;
+  public Event unityEvent { get; private set; }
 
   /// <summary>The maximum delay between press and release events to consider it was a "click event".</summary>
   /// <remarks>Use it to override the behavior of a single instance.</remarks>
@@ -62,7 +73,7 @@ public class ClickEvent {
   /// <seealso cref="canMakeClick"/>
   public bool isEventActive => EventChecker2.CheckEventActive(unityEvent);
 
-  /// <summary>Tells if the click event is still possible.</summary>
+  /// <summary>Indicates if the click event is still possible should the key be released.</summary>
   /// <remarks>The result of this property only makes sense when <see cref="isEventActive"/> is <c>true</c>.</remarks>
   /// <value><c>true</c> if the delay between press and release actions has not yet expired.</value>
   /// <seealso cref="maxClickDelay"/>
@@ -85,15 +96,11 @@ public class ClickEvent {
   #endregion
 
   #region API methods
-  /// <summary>Creates the click event instance from a Unity event.</summary>
-  /// <param name="unityEvent">The Unity event to create from.</param>
-  public ClickEvent(Event unityEvent) {
-    this.unityEvent = unityEvent;
-  }
-
-  /// <summary>Creates the click event instance from a Unity event.</summary>
-  /// <param name="action">The action string of the event.</param>
-  public ClickEvent(string action) : this(Event.KeyboardEvent(action)) {
+  /// <summary>Creates the click event instance.</summary>
+  /// <param name="eventKey">The key string of the event. It can have modifiers and special key names.</param>
+  /// <seealso cref="Event.KeyboardEvent"/>
+  public ClickEvent(string eventKey) {
+    this.eventKey = eventKey;
   }
 
   /// <summary>Checks if the click event happen.</summary>
@@ -154,6 +161,18 @@ public class ClickEvent {
       return res;
     }
     return false;
+  }
+  #endregion
+
+  #region IConfigNode overrides
+  /// <inheritdoc/>
+  public string SerializeToString() {
+    return eventKey;
+  }
+
+  /// <inheritdoc/>
+  public void ParseFromString(string value) {
+    eventKey = value;
   }
   #endregion
 }
