@@ -112,11 +112,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     KisTarget,
   }
 
-  /// <summary>The state machine to control the drop stage.</summary>
-  readonly SimpleStateMachine<DropTarget> _dropTargetStateMachine = new(strict: false);
-  
   /// <summary>The events state machine to control the drop stage.</summary>
-  /// <seealso cref="_dropTargetStateMachine"/>
   readonly EventsHandlerStateMachine<DropTarget> _dropTargetEventsHandler = new();
 
   /// <summary>Model of the part or assembly that is being dragged.</summary>
@@ -182,7 +178,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <inheritdoc/>
   public DraggingOneItemStateHandler(FlightItemDragController hostObj) : base(hostObj) {
     _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
-      DebugEx.Fine("Drop target state changed: {0} => {1}", oldState, newState);
+      DebugEx.Fine("Actions handler state changed: {0} => {1}", oldState, newState);
     };
     _dropTargetEventsHandler.DefineAction(
         DropTarget.Surface, DraggedPartDropSurfaceHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
@@ -192,11 +188,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         DropTarget.KerbalInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
     _dropTargetEventsHandler.DefineAction(
         DropTarget.KisInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
-
-    _dropTargetStateMachine.onAfterTransition += (oldState, newState) => {
-      DebugEx.Fine("Drop target changed: {0} => {1}", oldState, newState);
-      _dropTargetEventsHandler.currentState = newState;
-    };
   }
 
   /// <inheritdoc/>
@@ -223,11 +214,11 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       if (KisApi.ItemDragController.focusedTarget == null) {
         // The holo model is hovering in the scene.
         _draggedModel.gameObject.SetActive(true);
-        _dropTargetStateMachine.currentState = PositionModelInTheScene(draggedItem);
+        _dropTargetEventsHandler.currentState = PositionModelInTheScene(draggedItem);
       } else {
         // The mouse pointer is over a KIS inventory dialog. It will handle the behavior on itself.
         _draggedModel.gameObject.SetActive(false);
-        _dropTargetStateMachine.currentState = DropTarget.KisTarget;
+        _dropTargetEventsHandler.currentState = DropTarget.KisTarget;
       }
       UpdateDropTooltip();
 
