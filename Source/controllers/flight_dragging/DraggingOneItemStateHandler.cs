@@ -11,7 +11,6 @@ using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
-using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 namespace KIS2.controllers.flight_dragging {
@@ -503,7 +502,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     }
     return _hitPart.HasModuleImplementing<IKisInventory>() ? DropTarget.KisInventory : DropTarget.Part;
   }
-
   readonly RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits count.
 
   /// <summary>Makes a part from the saved config for the purpose of the part model capture.</summary>
@@ -527,9 +525,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
     return part;
   }
-  #endregion
 
-  #region Local utility methods
   /// <summary>Consumes the item being dragged and makes a scene vessel from it.</summary>
   void CreateVesselFromDraggedItem() {
     var pos = _draggedModel.position;
