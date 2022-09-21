@@ -21,13 +21,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> DraggedPartDropPartHint = new(
       "",
-      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop at the part",
-      description: "TBD");
-
-  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType> DraggedPartDropSurfaceHint = new(
-      "",
-      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Put on the ground",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop the part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
@@ -61,7 +55,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<KeyboardEventType, KeyboardEventType> RotateBy15DegreesHint = new(
+  static readonly Message<KeyboardEventType, KeyboardEventType> RotateByDegreesHint = new(
       "",
       defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 15 degrees",
       description: "TBD");
@@ -93,22 +87,20 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
   #region Local fields
   /// <summary>Defines the currently focused drop target.</summary>
-  /// <remarks>The <c>null</c> state is used to indicate that nothing of the interest is being focused.</remarks>
   enum DropTarget {
     /// <summary>The mouse cursor doesn't hit anything reasonable.</summary>
     Nothing,
-    /// <summary>The mouse cursor hovers over the surface.</summary>
-    Surface,
-    /// <summary>The mouse cursor hovers over a part.</summary>
-    Part,
-    /// <summary>The mouse cursor hovers over a KIS inventory part.</summary>
-    KisInventory,
-    /// <summary>The mouse cursor hovers over a kerbal (they always have KIS inventory).</summary>
-    /// <remarks>This state is favored over the <see cref="KisInventory"/> when a kerbal is being focused.</remarks>
-    KerbalInventory,
+    /// <summary>The mouse cursor hovers over the surface or a part, and it's ok to drop.</summary>
+    DropActionAllowed,
+    /// <summary>The mouse cursor hovers over the surface or a part, and it's NOT ok to drop.</summary>
+    DropActionImpossible,
+    /// <summary>The attach mode selected and the mouse cursor hovers over a part which can be attached to.</summary>
+    AttachActionAllowed,
+    /// <summary>The attach mode selected, but the attach mode is not possible.</summary>
+    AttachActionImpossible,
     /// <summary>The mouse cursor hovers over a KIS target.</summary>
     /// <remarks>Such targets handle the drop logic themselves. So, the controller just stops interfering.</remarks>
-    KisTarget,
+    OverKisTarget,
   }
 
   /// <summary>The events state machine to control the drop stage.</summary>
@@ -182,14 +174,26 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Actions handler state changed: {0} => {1}", oldState, newState);
     };
+
+    // Free mode. Place teh dragged assembly at any place within the distance.
     _dropTargetEventsHandler.DefineAction(
-        DropTarget.Surface, DraggedPartDropSurfaceHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
+        DropTarget.DropActionAllowed, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent,
+        CreateVesselFromDraggedItem);
+    _dropTargetEventsHandler.DefineCustomHandler(
+        DropTarget.DropActionAllowed, 
+        RotateByDegreesHint.Format(hostObj.rotateLeftEvent.unityEvent, hostObj.rotateRightEvent.unityEvent),
+        HandleRotateEvents);
     _dropTargetEventsHandler.DefineAction(
-        DropTarget.Part, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
+        DropTarget.DropActionAllowed, RotateResetHint, hostObj.rotateResetEvent, () => _rotateAngle = 0);
+    _dropTargetEventsHandler.DefineCustomHandler(
+        DropTarget.DropActionAllowed, 
+        CycleAttachNodesHint.Format(hostObj.nodeCycleLeftEvent.unityEvent, hostObj.nodeCycleRightEvent.unityEvent),
+        HandleCycleNodesEvents,
+        checkIfAvailable: () => !_vesselPlacementMode && _attachNodeNames.Count > 1);
     _dropTargetEventsHandler.DefineAction(
-        DropTarget.KerbalInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.KisInventory, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent, CreateVesselFromDraggedItem);
+        DropTarget.DropActionAllowed, TogglePlacementModeHint, hostObj.toggleDropModeEvent,
+        () => _vesselPlacementMode = !_vesselPlacementMode,
+        checkIfAvailable: () => _attachNodeNames.Count > 0);
   }
 
   /// <inheritdoc/>
@@ -210,7 +214,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
     // Handle the dragging operation.
     while (isStarted) {
-      UpdateDropActions();
       CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the drop location!
 
       if (KisApi.ItemDragController.focusedTarget == null) {
@@ -220,7 +223,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       } else {
         // The mouse pointer is over a KIS inventory dialog. It will handle the behavior on itself.
         _draggedModel.gameObject.SetActive(false);
-        _dropTargetEventsHandler.currentState = DropTarget.KisTarget;
+        _dropTargetEventsHandler.currentState = DropTarget.OverKisTarget;
       }
       UpdateDropTooltip();
 
@@ -234,37 +237,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   #endregion
 
   #region Local utility methods
-  /// <summary>Handles actions to rotate the dragged part around it's Z-axis.</summary>
-  /// <remarks>
-  /// The actions change rotation at the touch point level. If there are multiple points, the rotation should be reset
-  /// before switching.
-  /// </remarks>
-  void UpdateDropActions() {
-    if (hostObj.rotateLeftEvent.CheckClick()) {
-      _rotateAngle -= 15;
-    } else if (hostObj.rotateRightEvent.CheckClick()) {
-      _rotateAngle += 15;
-    } else if (hostObj.rotateResetEvent.CheckClick()) {
-      _rotateAngle = 0;
-    }
-    if (hostObj.toggleDropModeEvent.CheckClick()) {
-      if (_attachNodeNames.Count > 0) {
-        _vesselPlacementMode = !_vesselPlacementMode;
-      } else {
-        _vesselPlacementMode = true;
-      }
-    }
-    if (!_vesselPlacementMode) {
-      if (hostObj.nodeCycleLeftEvent.CheckClick()) {
-        var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
-        _currentAttachNodeName = _attachNodeNames[(_attachNodeNames.Count + idx - 1) % _attachNodeNames.Count];
-      } else if (hostObj.nodeCycleRightEvent.CheckClick()) {
-        var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
-        _currentAttachNodeName = _attachNodeNames[(idx + 1) % _attachNodeNames.Count];
-      }
-    }
-  }
-
   /// <summary>Returns the rotation angle of the provided part.</summary>
   /// <remarks>
   /// <p>
@@ -308,25 +280,18 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       return;
     }
     ScreenMessages.RemoveMessage(_showTooltipMessage);
-    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.KisTarget) {
+    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.OverKisTarget) {
       DestroyCurrentTooltip();
       return;
     }
     CreateTooltip();
-    currentTooltip.title = _dropTargetEventsHandler.currentState == DropTarget.Surface
+    currentTooltip.title = _dropTargetEventsHandler.currentState == DropTarget.DropActionAllowed && _hitPart == null
         ? PutOnTheGroundHint
         : AlignAtThePartHint;
     currentTooltip.baseInfo.text = _vesselPlacementMode
         ? VesselPlacementModeHint
         : PartAttachmentNodePlacementModeHint.Format(_currentAttachNodeName);
     var hints = _dropTargetEventsHandler.GetHintsList();
-    hints.Add(TogglePlacementModeHint.Format(hostObj.toggleDropModeEvent.unityEvent));
-    if (!_vesselPlacementMode) {
-      hints.Add(
-          CycleAttachNodesHint.Format(hostObj.nodeCycleLeftEvent.unityEvent, hostObj.nodeCycleRightEvent.unityEvent));
-    }
-    hints.Add(RotateBy15DegreesHint.Format(hostObj.rotateLeftEvent.unityEvent, hostObj.rotateRightEvent.unityEvent));
-    hints.Add(RotateResetHint.Format(hostObj.rotateResetEvent.unityEvent));
     hints.Add(HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent));
     currentTooltip.hints = string.Join("\n", hints);
     currentTooltip.UpdateLayout();
@@ -483,7 +448,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       _hitPointTransform.rotation =
           Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, -fwd);
       AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
-      return DropTarget.Surface;
+      return DropTarget.DropActionAllowed;
     }
 
     // We've hit a part. Bind to this point!
@@ -497,10 +462,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, -partFwd);
     AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
 
-    if (_hitPart.isVesselEVA && _hitPart.HasModuleImplementing<IKisInventory>()) {
-      return DropTarget.KerbalInventory;
-    }
-    return _hitPart.HasModuleImplementing<IKisInventory>() ? DropTarget.KisInventory : DropTarget.Part;
+    return DropTarget.DropActionAllowed;
   }
   readonly RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits count.
 
@@ -674,6 +636,36 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     if (p.srfAttachNode?.id == SrfAttachNodeName) {
       yield return p.srfAttachNode;
     }
+  }
+
+  /// <summary>Handles part rotation events.</summary>
+  /// <seealso cref="_dropTargetEventsHandler"/>
+  bool HandleRotateEvents() {
+    if (hostObj.rotateLeftEvent.CheckClick()) {
+      _rotateAngle -= 15;
+      return true;
+    }
+    if (hostObj.rotateRightEvent.CheckClick()) {
+      _rotateAngle += 15;
+      return true;
+    }
+    return false;
+  }
+
+  /// <summary>Handles drop attach node selection events.</summary>
+  /// <seealso cref="_dropTargetEventsHandler"/>
+  bool HandleCycleNodesEvents() {
+    if (hostObj.nodeCycleLeftEvent.CheckClick()) {
+      var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
+      _currentAttachNodeName = _attachNodeNames[(_attachNodeNames.Count + idx - 1) % _attachNodeNames.Count];
+      return true;
+    }
+    if (hostObj.nodeCycleRightEvent.CheckClick()) {
+      var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
+      _currentAttachNodeName = _attachNodeNames[(idx + 1) % _attachNodeNames.Count];
+      return true;
+    }
+    return false;
   }
   #endregion
 }
