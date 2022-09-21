@@ -5,7 +5,6 @@
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.InputUtils;
-using KSPDev.LogUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,18 +73,13 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
   /// Keep it <c>struct</c> for the performance reasons. This element will be accessed from the <c>Update</c> method.
   /// </remarks>
   struct HandlerDef {
-    /// <summary>Action that triggers the handler.</summary>
+    /// <summary>Function that verifies if the action has triggered.</summary>
     /// <seealso cref="HandleActions"/>
-    public ClickEvent actionEvent;
+    public Func<bool> actionEventFn;
 
     /// <summary>Hint string for the action.</summary>
-    /// FIXME: use message
     /// <seealso cref="GetHints"/>
     public string actionHint;
-
-    /// <summary>Callback to call when the action is activated.</summary>
-    /// <seealso cref="HandleActions"/>
-    public Action actionFn;
 
     /// <summary>Runtime check function that tells if the action should be available at the particular moment.</summary>
     /// <remarks>
@@ -129,9 +123,40 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
       _stateHandlers[state] = stateHandlers;
     }
     stateHandlers.Add(new HandlerDef() {
-        actionEvent = actionEvent,
+        actionEventFn = () => {
+          if (!actionEvent.CheckClick()) {
+            return false;
+          }
+          actionFn();
+          return true;
+        },
         actionHint = hintText.Format(actionEvent.unityEvent),
-        actionFn = actionFn,
+        checkFn = checkIfAvailable,
+    });
+  }
+
+  /// <summary>Defines a handler that controls the event checking by itself.</summary>
+  /// <param name="state">The state to apply the action to.</param>
+  /// <param name="hintText">
+  /// The event hint message. If it's <c>null</c> or empty, then it won't show up in the <see cref="GetHints"/> result.
+  /// </param>
+  /// <param name="actionFn">
+  /// The function that verifies the trigger condition and handles it. It should return <c>true</c> if the event should
+  /// be consumed and the further handling stopped.
+  /// </param>
+  /// <param name="checkIfAvailable">
+  /// The callback that tells if the action is available in the current game state. This function called in every
+  /// <see cref="HandleActions"/> call, so it has to be performance optimized. If not set, then the action is assumed to
+  /// be always active.
+  /// </param>
+  public void DefineCustomHandler(T state, string hintText, Func<bool> actionFn, Func<bool> checkIfAvailable = null) {
+    if (!_stateHandlers.TryGetValue(state, out var stateHandlers)) {
+      stateHandlers = new List<HandlerDef>();
+      _stateHandlers[state] = stateHandlers;
+    }
+    stateHandlers.Add(new HandlerDef() {
+        actionEventFn = actionFn,
+        actionHint = hintText,
         checkFn = checkIfAvailable,
     });
   }
@@ -178,12 +203,12 @@ public sealed class EventsHandlerStateMachine<T> where T : struct {
     var handlersNum = _currentStateHandlers.Count;
     for (var i = 0; i < handlersNum; i++) {
       var handler = _currentStateHandlers[i];
-      if ((handler.checkFn != null && !handler.checkFn()) || !handler.actionEvent.CheckClick()) {
+      if (handler.checkFn != null && !handler.checkFn()) {
         continue;
       }
-      DebugEx.Fine("Trigger action: event={0}, index={1}", KeyboardEventType.Format(handler.actionEvent.unityEvent), i);
-      handler.actionFn();
-      return true;
+      if (handler.actionEventFn.Invoke()) {
+        return true;
+      }
     }
     return false;
   }
