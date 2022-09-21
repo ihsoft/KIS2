@@ -472,7 +472,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         fwd = Vector3.up;  // Default.
       }
       _hitPointTransform.rotation =
-          Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, fwd);
+          Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, -fwd);
       AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
       return DropTarget.Surface;
     }
@@ -485,7 +485,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     var partUp = _hitPart.transform.up;
     var partFwd = !CheckIfParallel(partUp, hit.normal) ? partUp : Vector3.up;
     _hitPointTransform.rotation =
-        Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, partFwd);
+        Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, -partFwd);
     AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
 
     if (_hitPart.isVesselEVA && _hitPart.HasModuleImplementing<IKisInventory>()) {
