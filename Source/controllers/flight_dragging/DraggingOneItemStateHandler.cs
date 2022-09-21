@@ -172,6 +172,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <summary>Screen message to present at the top when tooltip is disabled.</summary>
   /// <seealso cref="FlightItemDragController.toggleTooltipEvent"/>
   readonly ScreenMessage _showTooltipMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
+
+  /// <summary>Name of the surface attach node.</summary>
+  const string SrfAttachNodeName = "srfAttach";
   #endregion
 
   #region AbstractStateHandler implementation
@@ -339,35 +342,40 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     if (_draggedModel != null) {
       return; // The model already exists.
     }
-    DebugEx.Fine("Creating flight scene dragging model...");
-    _rotateAngle = CalcPickupRotation(item.materialPart);
+    DebugEx.Fine("Creating flight scene dragging model: root={0}", item.snapshot.partName);
     KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
-    _draggedModel = new GameObject("KisDragModel").transform;
-    _draggedModel.gameObject.SetActive(true);
     var draggedPart = MakeSamplePart(item);
-    var dragModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart);
-    dragModel.transform.SetParent(_draggedModel, worldPositionStays: false);
+    _draggedModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart).transform;
     _vesselPlacementTouchPoint =
         MakeTouchPoint("surfaceTouchPoint", draggedPart, _draggedModel, Vector3.up, _draggedModel.forward);
 
+    _vesselPlacementMode = true;
+    _currentAttachNodeName = "";
+    _rotateAngle = CalcPickupRotation(item.materialPart);
+
     // Add touch points for every attach node.
     _attachNodeTouchPoints.Clear();
-    foreach (var an in draggedPart.attachNodes) {
+    foreach (var an in GetAllAttachNodes(draggedPart)) {
       var nodeTransform = new GameObject("attachNode-" + an.id).transform;
-      nodeTransform.SetParent(_draggedModel, worldPositionStays: true);
+      nodeTransform.SetParent(_draggedModel, worldPositionStays: false);
+      var orientation = an.nodeType != AttachNode.NodeType.Surface ? an.orientation : -an.orientation;
+      //FIXME: Up is screwed.
+      nodeTransform.localRotation = CheckIfParallel(orientation, Vector3.up)
+          ? Quaternion.LookRotation(orientation, Vector3.forward)
+          : Quaternion.LookRotation(orientation, Vector3.up);
       nodeTransform.localPosition = an.position / draggedPart.rescaleFactor;
-      nodeTransform.localRotation = CheckIfParallel(an.orientation, Vector3.up)
-          ? Quaternion.LookRotation(an.orientation, Vector3.forward)
-          : Quaternion.LookRotation(an.orientation, Vector3.up);
+      nodeTransform.localScale = Vector3.one;
       _attachNodeTouchPoints.Add(an.id, nodeTransform);
+
+      // Pick the best default mode.
+      if (an.id == SrfAttachNodeName || _currentAttachNodeName == "" && an.id == "bottom") {
+        _vesselPlacementMode = false;
+        _currentAttachNodeName = an.id;
+        _rotateAngle = 0;
+      }
     }
     _attachNodeNames = new List<string>(_attachNodeTouchPoints.Keys);
     _attachNodeNames.Sort();
-    _vesselPlacementMode = true;
-    _currentAttachNodeName = "";
-    if (_attachNodeNames.Count > 0) {
-      _currentAttachNodeName = _attachNodeNames.IndexOf("bottom") != -1 ? "bottom" : _attachNodeNames[0];
-    }
     if (item.materialPart != null && item.materialPart.parent != null) {
       var parentAttach = item.materialPart.FindAttachNodeByPart(item.materialPart.parent);
       if (parentAttach != null) {
@@ -376,6 +384,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       } else {
         DebugEx.Warning("Cannot find parent attach node on; {0}", item.materialPart);
       }
+    } else if (_attachNodeNames.Count > 0) {
+      _currentAttachNodeName = _attachNodeNames[0];
     }
     Hierarchy.SafeDestroy(draggedPart);
   }
@@ -658,6 +668,16 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   bool CheckIfParallel(Vector3 v1, Vector3 v2) {
     var angle = Vector3.Angle(v1, v2);
     return angle is < 1.0f or > 179.0f;
+  }
+
+  /// <summary>Returns all attach nodes on the part as a plain list.</summary>
+  static IEnumerable<AttachNode> GetAllAttachNodes(Part p) {
+    foreach (var an in p.attachNodes) {
+      yield return an;
+    }
+    if (p.srfAttachNode?.id == SrfAttachNodeName) {
+      yield return p.srfAttachNode;
+    }
   }
   #endregion
 }
