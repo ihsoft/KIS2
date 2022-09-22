@@ -103,9 +103,21 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
-  static readonly Message CannotAttachNoPartSelected = new(
+  static readonly Message CannotAttachNoPartSelectedHint = new(
       "",
-      defaultTemplate: "Select a part to attach to",
+      defaultTemplate: "Highlight a part",
+      description: "TBD");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotAttachGenericHint = new(
+      "",
+      defaultTemplate: "Cannot attach part",
+      description: "TBD");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotAttachToKerbalError = new(
+      "",
+      defaultTemplate: "Kerbal is not a good target",
       description: "TBD");
   #endregion
 
@@ -120,8 +132,10 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     DropActionImpossible,
     /// <summary>The attach mode selected and the mouse cursor hovers over a part which can be attached to.</summary>
     AttachActionAllowed,
-    /// <summary>The attach mode selected, but the attach mode is not possible.</summary>
+    /// <summary>The attach mode selected, but the attach action is not possible.</summary>
     AttachActionImpossible,
+    /// <summary>The attach mode selected, but no target part selected.</summary>
+    NoPartSelectedForAttach,
     /// <summary>The mouse cursor hovers over a KIS target.</summary>
     /// <remarks>Such targets handle the drop logic themselves. So, the controller just stops interfering.</remarks>
     OverKisTarget,
@@ -164,6 +178,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
   /// <summary>Indicates that the part should be attached on drop.</summary>
   bool _attachModeRequested;
+
+  /// <summary>User friendly string that explains why the attachment cannot be done.</summary>
+  string _cannotAttachDetails;
 
   /// <summary>Transform in the dragged model for the vessel placement mode.</summary>
   /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
@@ -242,9 +259,14 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         DropAction.AttachActionAllowed, HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent),
         () => false);  // Only for the hints.
 
-    // No focus attach mode.
+    // Attach action is not possible.
     _dropActionEventsHandler.DefineCustomHandler(
         DropAction.AttachActionImpossible, null,
+        () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive);
+
+    // No focus part for attach mode.
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.NoPartSelectedForAttach, null,
         () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive);
   }
 
@@ -277,9 +299,12 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         } else if (!_attachModeRequested) {
           _dropActionEventsHandler.currentState = DropAction.DropActionAllowed;
         } else {
-          _dropActionEventsHandler.currentState = !_vesselPlacementMode && _hitPart != null
-              ? DropAction.AttachActionAllowed
-              : DropAction.AttachActionImpossible;
+          if (_hitPart == null) {
+            _dropActionEventsHandler.currentState = DropAction.NoPartSelectedForAttach;
+          } else {
+            _dropActionEventsHandler.currentState =
+                CheckIfCanAttach() ? DropAction.AttachActionAllowed : DropAction.AttachActionImpossible;
+          }
         }
       } else {
         // The mouse pointer is over a KIS inventory dialog. It will handle the behavior on itself.
@@ -369,10 +394,15 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
             ? VesselPlacementModeHint
             : AttachmentNodeSelectedHint.Format(_currentAttachNodeName);
         break;
+      case DropAction.NoPartSelectedForAttach:
+        CreateTooltip();
+        currentTooltip.title = CannotAttachNoPartSelectedHint;
+        currentTooltip.baseInfo.text = null;
+        break;
       case DropAction.AttachActionImpossible:
         CreateTooltip();
-        currentTooltip.title = CannotAttachNoPartSelected;
-        currentTooltip.baseInfo.text = null;
+        currentTooltip.title = CannotAttachGenericHint;
+        currentTooltip.baseInfo.text = _cannotAttachDetails;
         break;
     }
 
@@ -750,6 +780,22 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       return true;
     }
     return false;
+  }
+
+  /// <summary>Verifies if currently dragged part can be attached to the target.</summary>
+  /// <remarks>
+  /// The exhaustive set of conditions must be checked. The user friendly details should be listed in
+  /// <see cref="_cannotAttachDetails"/> field. This information will be shown in the tooltip.
+  /// </remarks>
+  /// <returns><c>true</c> if the attachment can be made.</returns>
+  /// <seealso cref="_hitPart"/>
+  /// <seealso cref="_currentAttachNodeName"/>
+  bool CheckIfCanAttach() {
+    _cannotAttachDetails = null;
+    if (_hitPart.isVesselEVA) {
+      _cannotAttachDetails = CannotAttachToKerbalError;
+    }
+    return _cannotAttachDetails == null;
   }
   #endregion
 }
