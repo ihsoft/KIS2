@@ -32,6 +32,10 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   [PersistentField("PickupMode/toggleTooltipKey")]
   public readonly ClickEvent toggleTooltipEvent = new("j");
 
+  /// <summary>The key that activates the part attach mode.</summary>
+  [PersistentField("PickupMode/attachKey")]
+  public readonly ClickEvent switchAttachModeKey = new("k");
+
   /// <summary>The renderer to apply to the scene part that is being dragged.</summary>
   /// <remarks>If it's an empty string, than the shader on the part won't be changed.</remarks>
   [PersistentField("PickupMode/holoPartShader")]

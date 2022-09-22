@@ -31,9 +31,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
-  static readonly Message<string> PartAttachmentNodePlacementModeHint = new(
+  static readonly Message<string> AttachmentNodeSelectedHint = new(
       "",
-      defaultTemplate: "Place at attachment node: <<1>>",
+      defaultTemplate: "Attachment node selected: <color=yellow><b><<1>></b></color>",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
@@ -82,6 +82,30 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   static readonly Message AlignAtThePartHint = new(
       "",
       defaultTemplate: "Drop at the part",
+      description: "TBD");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> EnterAttachModeHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Hold to start the attach mode",
+      description: "TBD");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> AttachModeActionHint = new(
+      "",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Attach the part",
+      description: "TBD");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message AttachToThePartHint = new(
+      "",
+      defaultTemplate: "Attach to part",
+      description: "TBD");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotAttachNoPartSelected = new(
+      "",
+      defaultTemplate: "Select a part to attach to",
       description: "TBD");
   #endregion
 
@@ -138,6 +162,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// </remarks>
   bool _vesselPlacementMode = true;
 
+  /// <summary>Indicates that the part should be attached on drop.</summary>
+  bool _attachModeRequested;
+
   /// <summary>Transform in the dragged model for the vessel placement mode.</summary>
   /// <remarks>It's always a child of the <see cref="_draggedModel"/>.</remarks>
   /// <seealso cref="_hitPointTransform"/>
@@ -173,6 +200,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   public DraggingOneItemStateHandler(FlightItemDragController hostObj) : base(hostObj) {
     _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Actions handler state changed: {0} => {1}", oldState, newState);
+      _attachModeRequested = false;  // The relevant handlers should update it to the actual state.
     };
 
     // Free mode. Place teh dragged assembly at any place within the distance.
@@ -180,7 +208,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         DropTarget.DropActionAllowed, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent,
         CreateVesselFromDraggedItem);
     _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.DropActionAllowed, 
+        DropTarget.DropActionAllowed,
         RotateByDegreesHint.Format(hostObj.rotateLeftEvent.unityEvent, hostObj.rotateRightEvent.unityEvent),
         HandleRotateEvents);
     _dropTargetEventsHandler.DefineAction(
@@ -194,6 +222,30 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         DropTarget.DropActionAllowed, TogglePlacementModeHint, hostObj.toggleDropModeEvent,
         () => _vesselPlacementMode = !_vesselPlacementMode,
         checkIfAvailable: () => _attachNodeNames.Count > 0);
+    _dropTargetEventsHandler.DefineCustomHandler(
+        DropTarget.DropActionAllowed, 
+        EnterAttachModeHint.Format(hostObj.switchAttachModeKey.unityEvent),
+        () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive,
+        checkIfAvailable: () => !_vesselPlacementMode);
+    _dropTargetEventsHandler.DefineCustomHandler(
+        DropTarget.DropActionAllowed, HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent),
+        () => false);  // Only for the hints.
+
+    // Attach mode.
+    _dropTargetEventsHandler.DefineAction(
+        DropTarget.AttachActionAllowed, AttachModeActionHint, hostObj.attachPartEvent,
+        HandleAttachPartEvent);
+    _dropTargetEventsHandler.DefineCustomHandler(
+        DropTarget.AttachActionAllowed, null,
+        () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive);
+    _dropTargetEventsHandler.DefineCustomHandler(
+        DropTarget.AttachActionAllowed, HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent),
+        () => false);  // Only for the hints.
+
+    // No focus attach mode.
+    _dropTargetEventsHandler.DefineCustomHandler(
+        DropTarget.AttachActionImpossible, null,
+        () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive);
   }
 
   /// <inheritdoc/>
@@ -219,7 +271,16 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       if (KisApi.ItemDragController.focusedTarget == null) {
         // The holo model is hovering in the scene.
         _draggedModel.gameObject.SetActive(true);
-        _dropTargetEventsHandler.currentState = PositionModelInTheScene(draggedItem);
+        PositionModelInTheScene(draggedItem);
+        if (_hitPointTransform == null) {
+          _dropTargetEventsHandler.currentState = DropTarget.Nothing;
+        } else if (!_attachModeRequested) {
+          _dropTargetEventsHandler.currentState = DropTarget.DropActionAllowed;
+        } else {
+          _dropTargetEventsHandler.currentState = !_vesselPlacementMode && _hitPart != null
+              ? DropTarget.AttachActionAllowed
+              : DropTarget.AttachActionImpossible;
+        }
       } else {
         // The mouse pointer is over a KIS inventory dialog. It will handle the behavior on itself.
         _draggedModel.gameObject.SetActive(false);
@@ -276,25 +337,49 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     if (!_showTooltip) {
       _showTooltipMessage.message = ShowCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent);
       ScreenMessages.PostScreenMessage(_showTooltipMessage);
+    } else {
+      ScreenMessages.RemoveMessage(_showTooltipMessage);
+    }
+    var isErrorTooltip =
+        _dropTargetEventsHandler.currentState is DropTarget.AttachActionImpossible or DropTarget.DropActionImpossible;
+    if (!isErrorTooltip && !_showTooltip) {
       DestroyCurrentTooltip();
       return;
     }
-    ScreenMessages.RemoveMessage(_showTooltipMessage);
-    if (_dropTargetEventsHandler.currentState is DropTarget.Nothing or DropTarget.OverKisTarget) {
-      DestroyCurrentTooltip();
-      return;
+
+    switch (_dropTargetEventsHandler.currentState) {
+      case DropTarget.Nothing or DropTarget.OverKisTarget:
+        DestroyCurrentTooltip();
+        break;
+      case DropTarget.DropActionAllowed:
+        CreateTooltip();
+        currentTooltip.title = _hitPart == null ? PutOnTheGroundHint : AlignAtThePartHint;
+        currentTooltip.baseInfo.text = _vesselPlacementMode
+            ? VesselPlacementModeHint
+            : AttachmentNodeSelectedHint.Format(_currentAttachNodeName);
+        break;
+      case DropTarget.DropActionImpossible:
+        // TODO(ihsoft): Implement!
+        DestroyCurrentTooltip();
+        break;
+      case DropTarget.AttachActionAllowed:
+        CreateTooltip();
+        currentTooltip.title = AttachToThePartHint;
+        currentTooltip.baseInfo.text = _vesselPlacementMode
+            ? VesselPlacementModeHint
+            : AttachmentNodeSelectedHint.Format(_currentAttachNodeName);
+        break;
+      case DropTarget.AttachActionImpossible:
+        CreateTooltip();
+        currentTooltip.title = CannotAttachNoPartSelected;
+        currentTooltip.baseInfo.text = null;
+        break;
     }
-    CreateTooltip();
-    currentTooltip.title = _dropTargetEventsHandler.currentState == DropTarget.DropActionAllowed && _hitPart == null
-        ? PutOnTheGroundHint
-        : AlignAtThePartHint;
-    currentTooltip.baseInfo.text = _vesselPlacementMode
-        ? VesselPlacementModeHint
-        : PartAttachmentNodePlacementModeHint.Format(_currentAttachNodeName);
-    var hints = _dropTargetEventsHandler.GetHintsList();
-    hints.Add(HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent));
-    currentTooltip.hints = string.Join("\n", hints);
-    currentTooltip.UpdateLayout();
+
+    if (currentTooltip != null) {
+      currentTooltip.hints = _dropTargetEventsHandler.GetHints();
+      currentTooltip.UpdateLayout();
+    }
   }
   bool _showTooltip = true;
 
@@ -394,7 +479,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// constant distance from the camera.
   /// </remarks>
   /// <returns>The target type being hit by the ray cast.</returns>
-  DropTarget? PositionModelInTheScene(InventoryItem draggedItem) {
+  void PositionModelInTheScene(InventoryItem draggedItem) {
     var camera = FlightCamera.fetch.mainCamera;
     var ray = camera.ScreenPointToRay(Input.mousePosition);
 
@@ -415,7 +500,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       var cameraTransform = camera.transform;
       _draggedModel.position = cameraTransform.position + ray.direction * hostObj.hangingObjectDistance;
       _draggedModel.rotation = cameraTransform.rotation;
-      return DropTarget.Nothing;
+      return;
     }
     var freshHitTransform = _hitPointTransform == null; // Will be used for logging.
     if (freshHitTransform) {
@@ -448,7 +533,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       _hitPointTransform.rotation =
           Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, -fwd);
       AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
-      return DropTarget.DropActionAllowed;
+      return;
     }
 
     // We've hit a part. Bind to this point!
@@ -461,8 +546,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     _hitPointTransform.rotation =
         Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, -partFwd);
     AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
-
-    return DropTarget.DropActionAllowed;
   }
   readonly RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits count.
 
