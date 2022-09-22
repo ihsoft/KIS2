@@ -110,10 +110,10 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   #endregion
 
   #region Local fields
-  /// <summary>Defines the currently focused drop target.</summary>
-  enum DropTarget {
+  /// <summary>Defines the drop action that is currently in effect.</summary>
+  enum DropAction {
     /// <summary>The mouse cursor doesn't hit anything reasonable.</summary>
-    Nothing,
+    NothingHit,
     /// <summary>The mouse cursor hovers over the surface or a part, and it's ok to drop.</summary>
     DropActionAllowed,
     /// <summary>The mouse cursor hovers over the surface or a part, and it's NOT ok to drop.</summary>
@@ -128,7 +128,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   }
 
   /// <summary>The events state machine to control the drop stage.</summary>
-  readonly EventsHandlerStateMachine<DropTarget> _dropTargetEventsHandler = new();
+  readonly EventsHandlerStateMachine<DropAction> _dropActionEventsHandler = new();
 
   /// <summary>Model of the part or assembly that is being dragged.</summary>
   /// <seealso cref="_vesselPlacementTouchPoint"/>
@@ -198,53 +198,53 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   #region AbstractStateHandler implementation
   /// <inheritdoc/>
   public DraggingOneItemStateHandler(FlightItemDragController hostObj) : base(hostObj) {
-    _dropTargetEventsHandler.ONAfterTransition += (oldState, newState) => {
+    _dropActionEventsHandler.ONAfterTransition += (oldState, newState) => {
       DebugEx.Fine("Actions handler state changed: {0} => {1}", oldState, newState);
       _attachModeRequested = false;  // The relevant handlers should update it to the actual state.
     };
 
-    // Free mode. Place teh dragged assembly at any place within the distance.
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.DropActionAllowed, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent,
+    // Free mode. Place the dragged assembly at any place within the distance.
+    _dropActionEventsHandler.DefineAction(
+        DropAction.DropActionAllowed, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent,
         CreateVesselFromDraggedItem);
-    _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.DropActionAllowed,
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.DropActionAllowed,
         RotateByDegreesHint.Format(hostObj.rotateLeftEvent.unityEvent, hostObj.rotateRightEvent.unityEvent),
         HandleRotateEvents);
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.DropActionAllowed, RotateResetHint, hostObj.rotateResetEvent, () => _rotateAngle = 0);
-    _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.DropActionAllowed, 
+    _dropActionEventsHandler.DefineAction(
+        DropAction.DropActionAllowed, RotateResetHint, hostObj.rotateResetEvent, () => _rotateAngle = 0);
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.DropActionAllowed, 
         CycleAttachNodesHint.Format(hostObj.nodeCycleLeftEvent.unityEvent, hostObj.nodeCycleRightEvent.unityEvent),
         HandleCycleNodesEvents,
         checkIfAvailable: () => !_vesselPlacementMode && _attachNodeNames.Count > 1);
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.DropActionAllowed, TogglePlacementModeHint, hostObj.toggleDropModeEvent,
+    _dropActionEventsHandler.DefineAction(
+        DropAction.DropActionAllowed, TogglePlacementModeHint, hostObj.toggleDropModeEvent,
         () => _vesselPlacementMode = !_vesselPlacementMode,
         checkIfAvailable: () => _attachNodeNames.Count > 0);
-    _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.DropActionAllowed, 
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.DropActionAllowed, 
         EnterAttachModeHint.Format(hostObj.switchAttachModeKey.unityEvent),
         () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive,
         checkIfAvailable: () => !_vesselPlacementMode);
-    _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.DropActionAllowed, HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent),
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.DropActionAllowed, HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent),
         () => false);  // Only for the hints.
 
     // Attach mode.
-    _dropTargetEventsHandler.DefineAction(
-        DropTarget.AttachActionAllowed, AttachModeActionHint, hostObj.attachPartEvent,
-        HandleAttachPartEvent);
-    _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.AttachActionAllowed, null,
+    _dropActionEventsHandler.DefineAction(
+        DropAction.AttachActionAllowed, AttachModeActionHint, hostObj.attachPartEvent,
+        () => {});
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.AttachActionAllowed, null,
         () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive);
-    _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.AttachActionAllowed, HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent),
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.AttachActionAllowed, HideCursorTooltipHint.Format(hostObj.toggleTooltipEvent.unityEvent),
         () => false);  // Only for the hints.
 
     // No focus attach mode.
-    _dropTargetEventsHandler.DefineCustomHandler(
-        DropTarget.AttachActionImpossible, null,
+    _dropActionEventsHandler.DefineCustomHandler(
+        DropAction.AttachActionImpossible, null,
         () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive);
   }
 
@@ -252,7 +252,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   public override void Stop() {
     base.Stop();
     CrewHatchController.fetch.EnableInterface();
-    _dropTargetEventsHandler.currentState = null;
+    _dropActionEventsHandler.currentState = null;
     SetDraggedMaterialPart(null);
     DestroyDraggedModel();
     ScreenMessages.RemoveMessage(_showTooltipMessage);
@@ -273,25 +273,25 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         _draggedModel.gameObject.SetActive(true);
         PositionModelInTheScene(draggedItem);
         if (_hitPointTransform == null) {
-          _dropTargetEventsHandler.currentState = DropTarget.Nothing;
+          _dropActionEventsHandler.currentState = DropAction.NothingHit;
         } else if (!_attachModeRequested) {
-          _dropTargetEventsHandler.currentState = DropTarget.DropActionAllowed;
+          _dropActionEventsHandler.currentState = DropAction.DropActionAllowed;
         } else {
-          _dropTargetEventsHandler.currentState = !_vesselPlacementMode && _hitPart != null
-              ? DropTarget.AttachActionAllowed
-              : DropTarget.AttachActionImpossible;
+          _dropActionEventsHandler.currentState = !_vesselPlacementMode && _hitPart != null
+              ? DropAction.AttachActionAllowed
+              : DropAction.AttachActionImpossible;
         }
       } else {
         // The mouse pointer is over a KIS inventory dialog. It will handle the behavior on itself.
         _draggedModel.gameObject.SetActive(false);
-        _dropTargetEventsHandler.currentState = DropTarget.OverKisTarget;
+        _dropActionEventsHandler.currentState = DropAction.OverKisTarget;
       }
       UpdateDropTooltip();
 
       // Don't handle the keys in the same frame as the coroutine has started in to avoid double actions.
       yield return null;
 
-      _dropTargetEventsHandler.HandleActions();
+      _dropActionEventsHandler.HandleActions();
     }
     // No logic beyond this point! The coroutine can be explicitly killed.
   }
@@ -329,7 +329,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
   /// <summary>Updates or creates the in-flight tooltip with the drop info.</summary>
   /// <remarks>It's intended to be called on every frame update. This method must be efficient.</remarks>
-  /// <seealso cref="_dropTargetEventsHandler"/>
+  /// <seealso cref="_dropActionEventsHandler"/>
   void UpdateDropTooltip() {
     if (hostObj.toggleTooltipEvent.CheckClick()) {
       _showTooltip = !_showTooltip;
@@ -341,35 +341,35 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       ScreenMessages.RemoveMessage(_showTooltipMessage);
     }
     var isErrorTooltip =
-        _dropTargetEventsHandler.currentState is DropTarget.AttachActionImpossible or DropTarget.DropActionImpossible;
+        _dropActionEventsHandler.currentState is DropAction.AttachActionImpossible or DropAction.DropActionImpossible;
     if (!isErrorTooltip && !_showTooltip) {
       DestroyCurrentTooltip();
       return;
     }
 
-    switch (_dropTargetEventsHandler.currentState) {
-      case DropTarget.Nothing or DropTarget.OverKisTarget:
+    switch (_dropActionEventsHandler.currentState) {
+      case DropAction.NothingHit or DropAction.OverKisTarget:
         DestroyCurrentTooltip();
         break;
-      case DropTarget.DropActionAllowed:
+      case DropAction.DropActionAllowed:
         CreateTooltip();
         currentTooltip.title = _hitPart == null ? PutOnTheGroundHint : AlignAtThePartHint;
         currentTooltip.baseInfo.text = _vesselPlacementMode
             ? VesselPlacementModeHint
             : AttachmentNodeSelectedHint.Format(_currentAttachNodeName);
         break;
-      case DropTarget.DropActionImpossible:
+      case DropAction.DropActionImpossible:
         // TODO(ihsoft): Implement!
         DestroyCurrentTooltip();
         break;
-      case DropTarget.AttachActionAllowed:
+      case DropAction.AttachActionAllowed:
         CreateTooltip();
         currentTooltip.title = AttachToThePartHint;
         currentTooltip.baseInfo.text = _vesselPlacementMode
             ? VesselPlacementModeHint
             : AttachmentNodeSelectedHint.Format(_currentAttachNodeName);
         break;
-      case DropTarget.AttachActionImpossible:
+      case DropAction.AttachActionImpossible:
         CreateTooltip();
         currentTooltip.title = CannotAttachNoPartSelected;
         currentTooltip.baseInfo.text = null;
@@ -377,7 +377,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     }
 
     if (currentTooltip != null) {
-      currentTooltip.hints = _dropTargetEventsHandler.GetHints();
+      currentTooltip.hints = _dropActionEventsHandler.GetHints();
       currentTooltip.UpdateLayout();
     }
   }
@@ -722,7 +722,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   }
 
   /// <summary>Handles part rotation events.</summary>
-  /// <seealso cref="_dropTargetEventsHandler"/>
+  /// <seealso cref="_dropActionEventsHandler"/>
   bool HandleRotateEvents() {
     if (hostObj.rotateLeftEvent.CheckClick()) {
       _rotateAngle -= 15;
@@ -736,7 +736,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   }
 
   /// <summary>Handles drop attach node selection events.</summary>
-  /// <seealso cref="_dropTargetEventsHandler"/>
+  /// <seealso cref="_dropActionEventsHandler"/>
   bool HandleCycleNodesEvents() {
     if (hostObj.nodeCycleLeftEvent.CheckClick()) {
       var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
