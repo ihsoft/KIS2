@@ -705,8 +705,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     p.SetHighlightDefault();
   }
 
-  /// <summary>Verifies if two vector are "almost parallel".</summary>
-  bool CheckIfParallel(Vector3 v1, Vector3 v2) {
+  /// <summary>Verifies if two vectors are "almost parallel" regardless to their relative direction.</summary>
+  static bool CheckIfParallel(Vector3 v1, Vector3 v2) {
     var angle = Vector3.Angle(v1, v2);
     return angle is < 1.0f or > 179.0f;
   }
@@ -717,6 +717,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       yield return an;
     }
     if (p.srfAttachNode?.id == SrfAttachNodeName) {
+      // The name check is required! Sometimes the surface attach node objects exist when they shouldn't.
       yield return p.srfAttachNode;
     }
   }
