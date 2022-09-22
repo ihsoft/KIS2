@@ -193,16 +193,17 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <seealso cref="_hitPointTransform"/>
   readonly Dictionary<string, Transform> _attachNodeTouchPoints = new();
 
-  /// <summary>The list of attach node names to iterate over in the dragging GUI.</summary>
+  /// <summary>The list of attach nodes to iterate over in the dragging GUI.</summary>
   /// <remarks>
-  /// The list must be stably sorted to give a repeatable experience. The values have to be the keys from
+  /// The list must be stably sorted to give a repeatable experience. The node IDs have to be the keys from
   /// <see cref="_attachNodeTouchPoints"/>.
   /// </remarks>
-  List<string> _attachNodeNames;
+  AttachNode[] _attachNodes;
 
-  /// <summary>The currently selected attach node if the placement node is not "vessel".</summary>
+  /// <summary>The currently selected attach node if the placement mode is not "vessel".</summary>
   /// <seealso cref="_vesselPlacementMode"/>
-  string _currentAttachNodeName;
+  /// <seealso cref="_attachNodes"/>
+  AttachNode _currentAttachNode;
 
   /// <summary>Screen message to present at the top when tooltip is disabled.</summary>
   /// <seealso cref="FlightItemDragController.toggleTooltipEvent"/>
@@ -234,11 +235,11 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         DropAction.DropActionAllowed, 
         CycleAttachNodesHint.Format(hostObj.nodeCycleLeftEvent.unityEvent, hostObj.nodeCycleRightEvent.unityEvent),
         HandleCycleNodesEvents,
-        checkIfAvailable: () => !_vesselPlacementMode && _attachNodeNames.Count > 1);
+        checkIfAvailable: () => !_vesselPlacementMode && _attachNodes.Length > 1);
     _dropActionEventsHandler.DefineAction(
         DropAction.DropActionAllowed, TogglePlacementModeHint, hostObj.toggleDropModeEvent,
         () => _vesselPlacementMode = !_vesselPlacementMode,
-        checkIfAvailable: () => _attachNodeNames.Count > 0);
+        checkIfAvailable: () => _attachNodes.Length > 0);
     _dropActionEventsHandler.DefineCustomHandler(
         DropAction.DropActionAllowed, 
         EnterAttachModeHint.Format(hostObj.switchAttachModeKey.unityEvent),
@@ -381,7 +382,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         currentTooltip.title = _hitPart == null ? PutOnTheGroundHint : AlignAtThePartHint;
         currentTooltip.baseInfo.text = _vesselPlacementMode
             ? VesselPlacementModeHint
-            : AttachmentNodeSelectedHint.Format(_currentAttachNodeName);
+            : AttachmentNodeSelectedHint.Format(_currentAttachNode.id);
         break;
       case DropAction.DropActionImpossible:
         // TODO(ihsoft): Implement!
@@ -392,7 +393,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         currentTooltip.title = AttachToThePartHint;
         currentTooltip.baseInfo.text = _vesselPlacementMode
             ? VesselPlacementModeHint
-            : AttachmentNodeSelectedHint.Format(_currentAttachNodeName);
+            : AttachmentNodeSelectedHint.Format(_currentAttachNode.id);
         break;
       case DropAction.NoPartSelectedForAttach:
         CreateTooltip();
@@ -429,12 +430,13 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         MakeTouchPoint("surfaceTouchPoint", draggedPart, _draggedModel, Vector3.up, _draggedModel.forward);
 
     _vesselPlacementMode = true;
-    _currentAttachNodeName = "";
+    _currentAttachNode = null;
     _rotateAngle = CalcPickupRotation(item.materialPart);
 
     // Add touch points for every attach node.
     _attachNodeTouchPoints.Clear();
-    foreach (var an in GetAllAttachNodes(draggedPart)) {
+    _attachNodes = GetAllAttachNodes(draggedPart).OrderBy(x => x.id).ToArray();
+    foreach (var an in _attachNodes) {
       var nodeTransform = new GameObject("attachNode-" + an.id).transform;
       nodeTransform.SetParent(_draggedModel, worldPositionStays: false);
       var orientation = an.nodeType != AttachNode.NodeType.Surface ? an.orientation : -an.orientation;
@@ -447,24 +449,22 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       _attachNodeTouchPoints.Add(an.id, nodeTransform);
 
       // Pick the best default mode.
-      if (an.id == SrfAttachNodeName || _currentAttachNodeName == "" && an.id == "bottom") {
+      if (an.id == SrfAttachNodeName || _currentAttachNode == null && an.id == "bottom") {
         _vesselPlacementMode = false;
-        _currentAttachNodeName = an.id;
+        _currentAttachNode = an;
         _rotateAngle = 0;
       }
     }
-    _attachNodeNames = new List<string>(_attachNodeTouchPoints.Keys);
-    _attachNodeNames.Sort();
     if (item.materialPart != null && item.materialPart.parent != null) {
       var parentAttach = item.materialPart.FindAttachNodeByPart(item.materialPart.parent);
       if (parentAttach != null) {
-        _currentAttachNodeName = parentAttach.id;
+        _currentAttachNode = parentAttach;
         _vesselPlacementMode = false;
       } else {
         DebugEx.Warning("Cannot find parent attach node on; {0}", item.materialPart);
       }
-    } else if (_attachNodeNames.Count > 0) {
-      _currentAttachNodeName = _attachNodeNames[0];
+    } else if (_attachNodes.Length > 0) {
+      _currentAttachNode = _attachNodes[0];
     }
     Hierarchy.SafeDestroy(draggedPart);
   }
@@ -538,7 +538,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     }
     _hitPointTransform.position = hit.point;
 
-    var touchPoint = _vesselPlacementMode ? _vesselPlacementTouchPoint : _attachNodeTouchPoints[_currentAttachNodeName];
+    var touchPoint = _vesselPlacementMode ? _vesselPlacementTouchPoint : _attachNodeTouchPoints[_currentAttachNode.id];
 
     // Find out what was hit.
     _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.gameObject);
@@ -770,13 +770,13 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <seealso cref="_dropActionEventsHandler"/>
   bool HandleCycleNodesEvents() {
     if (hostObj.nodeCycleLeftEvent.CheckClick()) {
-      var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
-      _currentAttachNodeName = _attachNodeNames[(_attachNodeNames.Count + idx - 1) % _attachNodeNames.Count];
+      var idx = _attachNodes.IndexOf(_currentAttachNode);
+      _currentAttachNode = _attachNodes[(_attachNodes.Length + idx - 1) % _attachNodes.Length];
       return true;
     }
     if (hostObj.nodeCycleRightEvent.CheckClick()) {
-      var idx = _attachNodeNames.IndexOf(_currentAttachNodeName);
-      _currentAttachNodeName = _attachNodeNames[(idx + 1) % _attachNodeNames.Count];
+      var idx = _attachNodes.IndexOf(_currentAttachNode);
+      _currentAttachNode = _attachNodes[(idx + 1) % _attachNodes.Length];
       return true;
     }
     return false;
@@ -789,7 +789,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// </remarks>
   /// <returns><c>true</c> if the attachment can be made.</returns>
   /// <seealso cref="_hitPart"/>
-  /// <seealso cref="_currentAttachNodeName"/>
+  /// <seealso cref="_currentAttachNode"/>
   bool CheckIfCanAttach() {
     _cannotAttachDetails = null;
     if (_hitPart.isVesselEVA) {
