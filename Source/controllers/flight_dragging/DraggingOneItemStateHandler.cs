@@ -105,7 +105,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotAttachNoPartSelectedHint = new(
       "",
-      defaultTemplate: "Highlight a part",
+      defaultTemplate: "Select target part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
