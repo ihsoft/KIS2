@@ -366,50 +366,47 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     } else {
       ScreenMessages.RemoveMessage(_showTooltipMessage);
     }
-    var isErrorTooltip =
-        _dropActionEventsHandler.currentState is DropAction.AttachActionImpossible or DropAction.DropActionImpossible;
-    if (!isErrorTooltip && !_showTooltip) {
-      DestroyCurrentTooltip();
-      return;
-    }
 
+    string title = null;
+    string baseInfo = null;
+    var overrideVisibility = false;
     switch (_dropActionEventsHandler.currentState) {
       case DropAction.NothingHit or DropAction.OverKisTarget:
-        DestroyCurrentTooltip();
         break;
       case DropAction.DropActionAllowed:
-        CreateTooltip();
-        currentTooltip.title = _hitPart == null ? PutOnTheGroundHint : AlignAtThePartHint;
-        currentTooltip.baseInfo.text = _vesselPlacementMode
+        title = _hitPart == null ? PutOnTheGroundHint : AlignAtThePartHint;
+        baseInfo = _vesselPlacementMode
             ? VesselPlacementModeHint
             : AttachmentNodeSelectedHint.Format(_currentAttachNode.id);
         break;
       case DropAction.DropActionImpossible:
         // TODO(ihsoft): Implement!
-        DestroyCurrentTooltip();
         break;
       case DropAction.AttachActionAllowed:
-        CreateTooltip();
-        currentTooltip.title = AttachToThePartHint;
-        currentTooltip.baseInfo.text = _vesselPlacementMode
+        title = AttachToThePartHint;
+        baseInfo = _vesselPlacementMode
             ? VesselPlacementModeHint
             : AttachmentNodeSelectedHint.Format(_currentAttachNode.id);
         break;
       case DropAction.NoPartSelectedForAttach:
-        CreateTooltip();
-        currentTooltip.title = CannotAttachNoPartSelectedHint;
-        currentTooltip.baseInfo.text = null;
+        title = CannotAttachNoPartSelectedHint;
+        overrideVisibility = true;
         break;
       case DropAction.AttachActionImpossible:
-        CreateTooltip();
-        currentTooltip.title = CannotAttachGenericHint;
-        currentTooltip.baseInfo.text = _cannotAttachDetails;
+        title = CannotAttachGenericHint;
+        baseInfo = _cannotAttachDetails;
+        overrideVisibility = true;
         break;
     }
 
-    if (currentTooltip != null) {
+    if (title != null && (_showTooltip || overrideVisibility)) {
+      CreateTooltip();
+      currentTooltip.title = title;
+      currentTooltip.baseInfo.text = baseInfo;
       currentTooltip.hints = _dropActionEventsHandler.GetHints();
       currentTooltip.UpdateLayout();
+    } else {
+      DestroyCurrentTooltip();
     }
   }
   bool _showTooltip = true;
