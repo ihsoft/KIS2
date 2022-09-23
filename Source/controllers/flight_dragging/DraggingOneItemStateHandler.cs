@@ -209,8 +209,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <seealso cref="FlightItemDragController.toggleTooltipEvent"/>
   readonly ScreenMessage _showTooltipMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
 
-  /// <summary>Name of the surface attach node.</summary>
-  const string SrfAttachNodeName = "srfAttach";
   #endregion
 
   #region AbstractStateHandler implementation
@@ -446,7 +444,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       _attachNodeTouchPoints.Add(an.id, nodeTransform);
 
       // Pick the best default mode.
-      if (an.id == SrfAttachNodeName || _currentAttachNode == null && an.id == "bottom") {
+      if (an.nodeType == AttachNode.NodeType.Surface || _currentAttachNode == null && an.id == "bottom") {
         _vesselPlacementMode = false;
         _currentAttachNode = an;
         _rotateAngle = 0;
@@ -743,7 +741,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     foreach (var an in p.attachNodes) {
       yield return an;
     }
-    if (p.srfAttachNode?.id == SrfAttachNodeName) {
+    if (p.attachRules.srfAttach) {
       // The name check is required! Sometimes the surface attach node objects exist when they shouldn't.
       yield return p.srfAttachNode;
     }
