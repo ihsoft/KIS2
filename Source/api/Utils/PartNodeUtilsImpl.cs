@@ -206,20 +206,20 @@ public class PartNodeUtilsImpl {
     return pPart;
   }
 
-  /// <summary>Makes a fully populated node fo part based on the snapshot.</summary>
+  /// <summary>Makes a fully populated part node based on the snapshot.</summary>
   /// <remarks>
-  /// All IDs in the node will be updated to be universe unique. The returned node is safe to be sued when creating
+  /// All IDs in the node will be updated to be universe unique. The returned node is safe to be used when creating
   /// vessel nodes via <see cref="ProtoVessel.CreateVesselNode"/>.
   /// </remarks>
   /// <param name="actorVessel">The vessel to get the situation from. The resulted vessel will inherit it.</param>
-  /// <param name="partNode">The parts saved state.</param>
+  /// <param name="snapshot">The part's snapshot.</param>
   /// <returns>The resulted config node.</returns>
   /// <seealso cref="MakeNewVesselNode"/>
-  public ConfigNode MakeNewPartConfig(Vessel actorVessel, ConfigNode partNode) {
+  public ConfigNode MakeNewPartConfig(Vessel actorVessel, ProtoPartSnapshot snapshot) {
     var configNode = new ConfigNode("PART");
-    var snapshot = new ProtoPartSnapshot(partNode, null, null);
     snapshot.Save(configNode);
     configNode.SetValue("flag", actorVessel.rootPart.flagURL, createIfNotFound: true);
+    configNode.SetValue("persistentId", FlightGlobals.GetUniquepersistentId(), createIfNotFound: true);
     var flightId = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
     configNode.SetValue("uid", flightId, createIfNotFound: true);
     configNode.SetValue("mid", flightId, createIfNotFound: true);
@@ -235,13 +235,10 @@ public class PartNodeUtilsImpl {
   /// <returns>The node that can be used to restore a vessel.</returns>
   public ConfigNode MakeNewVesselNode(
       Vessel actorVessel, InventoryItem rootItem, Vector3 partPosition, Quaternion rotation) {
-    //CheckGroundCollision()
     var orbit = new Orbit(actorVessel.orbit);
     var vesselName = rootItem.avPart.title;
-    var itemConfig = new ConfigNode();
-    rootItem.snapshot.Save(itemConfig);
     var vesselNode = ProtoVessel.CreateVesselNode(
-        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, itemConfig) });
+        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, rootItem.snapshot) });
 
     //FIXME: need more than one part to skip repositioning! !vesselSpawning && skipGroundPositioning
     vesselNode.SetValue("skipGroundPositioning", newValue: true, createIfNotFound: true);
