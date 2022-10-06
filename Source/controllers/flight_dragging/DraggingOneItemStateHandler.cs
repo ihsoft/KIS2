@@ -739,9 +739,12 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <summary>Returns all attach nodes on the part as a plain list.</summary>
   static IEnumerable<AttachNode> GetAllAttachNodes(Part p) {
     foreach (var an in p.attachNodes) {
+      if (an.attachedPart != null && an.owner.parent != an.attachedPart) {
+        continue;  // Skip occupied nodes, but allow the parent node since this link will be broken on move.        
+      }
       yield return an;
     }
-    if (p.attachRules.srfAttach) {
+    if (p.attachRules.srfAttach && p.srfAttachNode.attachedPart == null) {
       // The name check is required! Sometimes the surface attach node objects exist when they shouldn't.
       yield return p.srfAttachNode;
     }
