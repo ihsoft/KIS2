@@ -144,6 +144,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <summary>The events state machine to control the drop stage.</summary>
   readonly EventsHandlerStateMachine<DropAction> _dropActionEventsHandler = new();
 
+  /// <summary>Item that is currently being dragged.</summary>
+  InventoryItem _draggedItem;
+
   /// <summary>Model of the part or assembly that is being dragged.</summary>
   /// <seealso cref="_vesselPlacementTouchPoint"/>
   /// <seealso cref="_hitPointTransform"/>
@@ -281,9 +284,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
   /// <inheritdoc/>
   protected override IEnumerator StateTrackingCoroutine() {
-    var draggedItem = KisApi.ItemDragController.leasedItems[0];
-    SetDraggedMaterialPart(draggedItem.materialPart);
-    MakeDraggedModelFromItem(draggedItem);
+    _draggedItem = KisApi.ItemDragController.leasedItems[0];
+    SetDraggedMaterialPart(_draggedItem.materialPart);
+    MakeDraggedModelFromItem(_draggedItem);
 
     // Handle the dragging operation.
     while (isStarted) {
@@ -292,7 +295,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       if (KisApi.ItemDragController.focusedTarget == null) {
         // The holo model is hovering in the scene.
         _draggedModel.gameObject.SetActive(true);
-        PositionModelInTheScene(draggedItem);
+        PositionModelInTheScene(_draggedItem);
         if (_hitPointTransform == null) {
           _dropActionEventsHandler.currentState = DropAction.NothingHit;
         } else if (!_attachModeRequested) {
@@ -601,17 +604,16 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     var pos = _draggedModel.position;
     var rot = _draggedModel.rotation;
 
-    var canConsumeItem = KisApi.ItemDragController.leasedItems[0];
-    var materialPart = canConsumeItem.materialPart;
+    var materialPart = _draggedItem.materialPart;
     if (materialPart != null) {
-      canConsumeItem.materialPart = null; // From here we'll be handling the material part.
+      _draggedItem.materialPart = null; // From here we'll be handling the material part.
     }
 
     // Consuming items will change the state, so capture all the important values before doing it.
     var consumedItems = KisApi.ItemDragController.ConsumeItems();
     if (consumedItems == null || consumedItems.Length == 0) {
       DebugEx.Error("The leased item cannot be consumed");
-      canConsumeItem.materialPart = materialPart; // It didn't work, return the part back to the item.
+      _draggedItem.materialPart = materialPart; // It didn't work, return the part back to the item.
       return;
     }
 
