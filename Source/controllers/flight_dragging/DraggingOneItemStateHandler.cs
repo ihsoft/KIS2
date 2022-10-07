@@ -119,6 +119,11 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       "",
       defaultTemplate: "Kerbal is not a good target",
       description: "TBD");
+
+  static readonly Message CreatingNewPartStatus = new(
+      "",
+      defaultTemplate: "Creating new part...",
+      description: "TBD");
   #endregion
 
   #region Local fields
@@ -225,7 +230,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     // Free mode. Place the dragged assembly at any place within the distance.
     _dropActionEventsHandler.DefineAction(
         DropAction.DropActionAllowed, DraggedPartDropPartHint, hostObj.dropItemToSceneEvent,
-        CreateVesselFromDraggedItem);
+        PlaceDraggedItem);
     _dropActionEventsHandler.DefineCustomHandler(
         DropAction.DropActionAllowed,
         RotateByDegreesHint.Format(hostObj.rotateLeftEvent.unityEvent, hostObj.rotateRightEvent.unityEvent),
@@ -599,18 +604,23 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     return part;
   }
 
-  /// <summary>Consumes the item being dragged and makes a scene vessel from it.</summary>
-  void CreateVesselFromDraggedItem() {
-    var pos = _draggedModel.position;
-    var rot = _draggedModel.rotation;
-
+  /// <summary>
+  /// Consumes the item being dragged and either creates a new scene vessel from the item, or moves a material part in
+  /// the scene.
+  /// </summary>
+  void PlaceDraggedItem() {
     var materialPart = _draggedItem.materialPart;
     if (materialPart != null) {
       _draggedItem.materialPart = null; // From here we'll be handling the material part.
     }
 
     // Consuming items will change the state, so capture all the important values before doing it.
-    var consumedItems = KisApi.ItemDragController.ConsumeItems();
+    var refPart = _tgtPart ? _tgtPart : _hitPart;
+    var refTransform = UnityEngine.Object.Instantiate(_hitPointTransform);
+    var refPosition = _draggedModel.position;
+    var refRotation = _draggedModel.rotation;
+
+    var consumedItems = KisApi.ItemDragController.ConsumeItems(); // This changes the controller state!
     if (consumedItems == null || consumedItems.Length == 0) {
       DebugEx.Error("The leased item cannot be consumed");
       _draggedItem.materialPart = materialPart; // It didn't work, return the part back to the item.
@@ -625,13 +635,14 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         materialPart.vessel.vesselType = VesselType.DroppedPart;
         materialPart.vessel.vesselName = materialPart.partInfo.title;
       }
-      KisApi.VesselUtils.MoveVessel(materialPart.vessel, pos, rot, _hitPart);
+      KisApi.VesselUtils.MoveVessel(materialPart.vessel, refPosition, refRotation, _hitPart);
     } else {
-      // Create a new vessel from the item.
-      DebugEx.Info("Create new vessel from the dragged part: part={0}", consumedItems[0].avPart.name);
-      var protoVesselNode =
-          KisApi.PartNodeUtils.MakeNewVesselNode(FlightGlobals.ActiveVessel, consumedItems[0], pos, rot);
-      HighLogic.CurrentGame.AddVessel(protoVesselNode);
+      var msg = ScreenMessages.PostScreenMessage(CreatingNewPartStatus, float.MaxValue, ScreenMessageStyle.UPPER_RIGHT);
+      hostObj.StartCoroutine(
+          VesselUtilsImpl.CreateLonePartVesselAndWait(
+              consumedItems[0].snapshot, refPosition, refRotation,
+              refTransform: refTransform, refPart: refPart,
+              vesselCreatedFn: _ => ScreenMessages.RemoveMessage(msg)));
     }
   }
 

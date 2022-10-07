@@ -2,6 +2,8 @@
 // Module author: igor.zavoychinskiy@gmail.com
 // License: Public Domain
 
+using System;
+using System.Collections;
 using System.Linq;
 using KSPDev.LogUtils;
 using UnityEngine;
@@ -72,6 +74,77 @@ public class VesselUtilsImpl {
   }
   const float PositionPrecision = 0.001f; // 1mm
   const float RotationPrecision = 0.0000004f; // 1 degree on any axis
+
+  /// <summary>Creates vessel from a part snapshot and waits till it becomes live.</summary>
+  /// <remarks>
+  /// This method creates a vessel that is activated through the full cycle of a packed vessel. The effect is the same
+  /// as an existing vessel came into the physical range of the current scene. Such approach ensures the best
+  /// compatibility with the existing an future parts, but the drawback is that the vessel cannot be created immediately
+  /// in just one frame. It may take seconds before the vessel becomes active and operational.
+  /// </remarks>
+  /// <param name="partSnapshot">The [part snapshot to make a vessel from.</param>
+  /// <param name="pos">The world position of the vessel.</param>
+  /// <param name="rot">The world rotation of the vessel.</param>
+  /// <param name="refTransform">
+  /// The transform to use as an anchor of the position and rotation. I.e. the reference pos/rot will be used to
+  /// calculate the relative values, and these values will be used to align the vessel relative to the transform. If
+  /// this transform is <c>null</c>, then <paramref name="pos"/> and <paramref name="rot"/> are absolute.
+  /// </param>
+  /// <param name="refPart">
+  /// The part to copy linear and angular velocities from. The new vessel velocities will be synced to this part. If
+  /// this parameter is <c>null</c> then the new vessel will have zero velocities.
+  /// </param>
+  /// <param name="vesselCreatedFn">An action to execute when the vessel is created and fully initialized.</param>
+  /// <param name="waitFn">
+  /// An action that is called on every frame while the method awaits for the vessel to wake up. The passed argument can
+  /// be <c>null</c> at the early stages of the vessel creation. When the argument is not <c>null</c>, the vessel can
+  /// still not be ready, but ity will be known to <c>FlightGlobals</c>.
+  /// </param>
+  /// <returns>Enumerator for the coroutine scheduling.</returns>
+  public static IEnumerator CreateLonePartVesselAndWait(
+      ProtoPartSnapshot partSnapshot, Vector3 pos, Quaternion rot, Transform refTransform,
+      Part refPart = null, Action<Vessel> vesselCreatedFn = null, Action<Vessel> waitFn = null) {
+    DebugEx.Info("Spawning new vessel from the dragged part: part={0}...", partSnapshot.partInfo.name);
+    var protoVesselNode =
+        KisApi.PartNodeUtils.MakeLonePartVesselNode(FlightGlobals.ActiveVessel, partSnapshot, pos, rot);
+    var protoVessel = HighLogic.CurrentGame.AddVessel(protoVesselNode);
+    var spawnedVesselId = protoVessel.persistentId;
+    var spawnRefTransform = new GameObject().transform;
+    spawnRefTransform.position = pos;
+    spawnRefTransform.rotation = rot;
+    if (refTransform != null) {
+      spawnRefTransform.SetParent(refTransform);
+    }
+
+    var cancelGroundRepositioningFn = new EventData<Vessel>.OnEvent(
+        delegate(Vessel v) {
+          if (v.persistentId != spawnedVesselId) {
+            return;
+          }
+          v.skipGroundPositioning = true;
+          v.skipGroundPositioningForDroppedPart = true;
+          KisApi.VesselUtils.MoveVessel(v, spawnRefTransform.position, spawnRefTransform.rotation, refPart);
+          spawnedVesselId = 0;
+        });
+    GameEvents.onVesselGoOffRails.Add(cancelGroundRepositioningFn);
+
+    Vessel spawnedVessel;
+    while (true) {
+      spawnedVessel = FlightGlobals.VesselsLoaded.FirstOrDefault(v => v.persistentId == protoVessel.persistentId);
+      waitFn?.Invoke(spawnedVessel);
+      if (spawnedVessel != null) {
+        KisApi.VesselUtils.MoveVessel(spawnedVessel, spawnRefTransform.position, spawnRefTransform.rotation, refPart);
+        if (!spawnedVessel.vesselSpawning) {
+          break; // The vessel is ready.
+        }
+      }
+      yield return null;
+    }
+    GameEvents.onVesselGoOffRails.Remove(cancelGroundRepositioningFn);
+    UnityEngine.Object.Destroy(spawnRefTransform.gameObject);
+    DebugEx.Info("Vessel spawned: type={0}, name={1}", spawnedVessel.vesselType, spawnedVessel.vesselName);
+    vesselCreatedFn?.Invoke(spawnedVessel);
+  }
   #endregion
 }
 

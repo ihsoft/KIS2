@@ -214,7 +214,7 @@ public class PartNodeUtilsImpl {
   /// <param name="actorVessel">The vessel to get the situation from. The resulted vessel will inherit it.</param>
   /// <param name="snapshot">The part's snapshot.</param>
   /// <returns>The resulted config node.</returns>
-  /// <seealso cref="MakeNewVesselNode"/>
+  /// <seealso cref="MakeLonePartVesselNode"/>
   public ConfigNode MakeNewPartConfig(Vessel actorVessel, ProtoPartSnapshot snapshot) {
     var configNode = new ConfigNode("PART");
     snapshot.Save(configNode);
@@ -227,18 +227,18 @@ public class PartNodeUtilsImpl {
     return configNode;
   }
 
-  /// <summary>Makes a node for the proto vessel.</summary>
+  /// <summary>Makes a vessel node from a part snapshot.</summary>
   /// <param name="actorVessel">The vessel to get the situation from. The resulted vessel will inherit it.</param>
-  /// <param name="rootItem">The item state to make the vessel from.</param>
+  /// <param name="partSnapshot">The part snapshot  to make the vessel for.</param>
   /// <param name="partPosition">The vessel's position.</param>
   /// <param name="rotation">The vessel's location.</param>
   /// <returns>The node that can be used to restore a vessel.</returns>
-  public ConfigNode MakeNewVesselNode(
-      Vessel actorVessel, InventoryItem rootItem, Vector3 partPosition, Quaternion rotation) {
+  public ConfigNode MakeLonePartVesselNode(
+      Vessel actorVessel, ProtoPartSnapshot partSnapshot, Vector3 partPosition, Quaternion rotation) {
     var orbit = new Orbit(actorVessel.orbit);
-    var vesselName = rootItem.avPart.title;
+    var vesselName = partSnapshot.partInfo.title;
     var vesselNode = ProtoVessel.CreateVesselNode(
-        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, rootItem.snapshot) });
+        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, partSnapshot) });
 
     //FIXME: need more than one part to skip repositioning! !vesselSpawning && skipGroundPositioning
     vesselNode.SetValue("skipGroundPositioning", newValue: true, createIfNotFound: true);
