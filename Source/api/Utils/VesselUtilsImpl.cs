@@ -142,7 +142,23 @@ public class VesselUtilsImpl {
     }
     GameEvents.onVesselGoOffRails.Remove(cancelGroundRepositioningFn);
     UnityEngine.Object.Destroy(spawnRefTransform.gameObject);
-    DebugEx.Info("Vessel spawned: type={0}, name={1}", spawnedVessel.vesselType, spawnedVessel.vesselName);
+
+    var thePart = spawnedVessel.rootPart;  // It was why we created the vessel.
+
+    // The stock logic fails to set the right prefab mass at create. And we need it be OK here and now.
+    if (Math.Abs(thePart.prefabMass - thePart.partInfo.partPrefab.mass) > float.Epsilon) {
+      DebugEx.Warning(
+          "Fixing part prefab mass: was={0}, expected={1}", thePart.prefabMass, thePart.partInfo.partPrefab.mass);
+      thePart.prefabMass = thePart.partInfo.partPrefab.mass;
+      thePart.needPrefabMass = false;
+    }
+
+    // Ensure that the vessel mass is final. The stock logic can fail here.
+    thePart.UpdateMass();
+    spawnedVessel.GetTotalMass();  // It actually updates the internal vessel state.
+
+    DebugEx.Info("Vessel spawned: type={0}, name={1}, mass={2}",
+                 spawnedVessel.vesselType, spawnedVessel.vesselName, spawnedVessel.totalMass);
     vesselCreatedFn?.Invoke(spawnedVessel);
   }
   #endregion
