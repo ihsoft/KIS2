@@ -24,6 +24,12 @@ public class VesselUtilsImpl {
   /// <param name="rotation">The new rotation.</param>
   /// <param name="refPart">An optional part to sync velocities to.</param>
   public void MoveVessel(Vessel movingVessel, Vector3 position, Quaternion rotation, Part refPart) {
+    var movingVesselTransform = movingVessel.vesselTransform;
+    if ((movingVesselTransform.position - position).sqrMagnitude < PositionPrecision
+        && 1.0f - Math.Abs(Quaternion.Dot(movingVesselTransform.rotation, rotation)) < RotationPrecision) {
+      return; // No significant changes.
+    }
+    
     DebugEx.Info("Moving vessel: part={0}, vessel={1}", movingVessel.rootPart, movingVessel.vesselName);
     
     // Reset the RB anchors on the vessels that had contact with the moving vessel to make them refreshing their state.
@@ -32,15 +38,20 @@ public class VesselUtilsImpl {
         .Select(c => FlightGlobals.GetPartUpwardsCached(c.gameObject))
         .Where(p => p != null);
     foreach (var resetPart in resetParts) {
+      if (!resetPart.vessel.IsAnchored) {
+        continue;
+      }
       DebugEx.Fine("Reset vessel RB anchor: vessel={0}, contactPart={1}", resetPart.vessel.vesselName, resetPart);
       resetPart.vessel.ResetRBAnchor();
     }
 
-    DebugEx.Fine("Reset vessel RB anchor: vessel={0}", movingVessel.vesselName);
-    movingVessel.ResetRBAnchor();
+    if (movingVessel.IsAnchored) {
+      DebugEx.Fine("Reset vessel RB anchor: vessel={0}", movingVessel.vesselName);
+      movingVessel.ResetRBAnchor();
+    }
     CollisionEnhancer.bypass = true;  // This prevents the surface obstacles to interfere with the move.
-    movingVessel.vesselTransform.position = position;
-    movingVessel.vesselTransform.rotation = rotation;
+    movingVesselTransform.position = position;
+    movingVesselTransform.rotation = rotation;
     movingVessel.SetRotation(rotation);  // It applies changes to the parts.
 
     var refVelocity = Vector3.zero;
@@ -59,6 +70,8 @@ public class VesselUtilsImpl {
       p.rb.angularVelocity = refAngularVelocity;
     }
   }
+  const float PositionPrecision = 0.001f; // 1mm
+  const float RotationPrecision = 0.0000004f; // 1 degree on any axis
   #endregion
 }
 
