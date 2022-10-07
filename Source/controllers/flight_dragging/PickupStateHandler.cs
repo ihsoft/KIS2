@@ -4,7 +4,6 @@
 
 using System.Collections;
 using System.Linq;
-using System.Reflection;
 using KISAPIv2;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
@@ -30,6 +29,13 @@ sealed class PickupStateHandler : AbstractStateHandler {
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab the part",
       description: "The tooltip status to present when the KIS grabbing mode is activated, but no part is being"
       + " focused.");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
+  static readonly Message VesselNotReadyMsg = new(
+      "",
+      defaultTemplate: "Part not ready",
+      description: "The message to present when the hovered part cannot be picked up because of its vessel has not yet"
+      + " unpacked.");
   
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message CannotGrabHierarchyTooltipMsg = new(
@@ -80,6 +86,8 @@ sealed class PickupStateHandler : AbstractStateHandler {
     SinglePart,
     /// <summary>The part focused has some children.</summary>
     PartAssembly,
+    /// <summary>The part focused belongs to a vessel that hasn't yet completed unpacking.</summary>
+    PackedVessel,
   }
 
   /// <summary>The events state machine to control the pickup stage.</summary>
@@ -107,26 +115,16 @@ sealed class PickupStateHandler : AbstractStateHandler {
 
   /// <inheritdoc/>
   protected override IEnumerator StateTrackingCoroutine() {
-    var beingSettledField = typeof(ModuleCargoPart).GetField(
-        "beingSettled", BindingFlags.Instance | BindingFlags.NonPublic);
-    if (beingSettledField == null) {
-      DebugEx.Error("Cannot find beingSettled field in cargo module");
-    }
     while (isStarted) {
       CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the part!
 
-      var hoveredPart = Mouse.HoveredPart != null && !Mouse.HoveredPart.isVesselEVA ? Mouse.HoveredPart : null;
-      if (hoveredPart != null && hoveredPart.isCargoPart() && beingSettledField != null) {
-        var cargoModule = hoveredPart.FindModuleImplementing<ModuleCargoPart>();
-        var isBeingSettling = (bool) beingSettledField.GetValue(cargoModule);
-        if (isBeingSettling) {
-          hoveredPart = null;
-        }
-      }
-      targetPickupPart = hoveredPart;
+      var tgtPart = Mouse.HoveredPart;
+      targetPickupPart = tgtPart != null && !tgtPart.isVesselEVA ? tgtPart : null;
       
       if (targetPickupPart == null) {
         _pickupTargetEventsHandler.currentState = null;
+      } else if (targetPickupPart.vessel.packed) {
+        _pickupTargetEventsHandler.currentState = PickupTarget.PackedVessel;
       } else if (targetPickupPart.children.Count == 0) {
         _pickupTargetEventsHandler.currentState = PickupTarget.SinglePart;
       } else {
@@ -157,6 +155,10 @@ sealed class PickupStateHandler : AbstractStateHandler {
       return;
     }
     CreateTooltip();
+    if (_pickupTargetEventsHandler.currentState == PickupTarget.PackedVessel) {
+      currentTooltip.ClearInfoFields();
+      currentTooltip.title = VesselNotReadyMsg;
+    }
     if (_pickupTargetEventsHandler.currentState == PickupTarget.SinglePart) {
       KisContainerWithSlots.UpdateTooltip(currentTooltip, new[] { _targetPickupItem });
     } else if (_pickupTargetEventsHandler.currentState == PickupTarget.PartAssembly) {
