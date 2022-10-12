@@ -124,6 +124,12 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       "",
       defaultTemplate: "Creating new part...",
       description: "TBD");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
+  static readonly Message CannotAttachNoTargetNodeError = new Message(
+      "",
+      defaultTemplate: "No target attach node selected",
+      description: "TBD");
   #endregion
 
   #region Local fields
@@ -217,6 +223,39 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <seealso cref="FlightItemDragController.toggleTooltipEvent"/>
   readonly ScreenMessage _showTooltipMessage = new("", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
 
+  /// <summary>The part candidate for the attach or drop action in the attach node mode.</summary>
+  /// <remarks>It's always <c>null</c> if the mode is "vessel placement"."</remarks>
+  /// <seealso cref="MakeTargetPartAttachNodes"/>
+  /// <seealso cref="_vesselPlacementMode"/>
+  Part _tgtPart;
+
+  /// <summary>All the available attach nodes on the target part.</summary>
+  /// <remarks>
+  /// The occupied nodes won't be included. Except the case when the attached part is the one that is being dragged.
+  /// </remarks>
+  /// <seealso cref="_tgtPart"/>
+  List<AttachNode> _tgtPartNodes;
+
+  /// <summary>Node to align or attach on the drop action.</summary>
+  /// <seealso cref="_tgtPartNodes"/>
+  AttachNode _tgtPartSelectedNode;
+
+  /// <summary>All the attach node orientations on the target part.</summary>
+  /// <remarks>This list is synced index-wise with <see cref="_tgtPartNodes"/>.</remarks>
+  /// <seealso cref="_tgtPartNodes"/>
+  List<Transform> _tgtPartNodeTransforms;
+
+  /// <summary>Target part attach node detection precision.</summary>
+  /// <remarks>The pointer must be at least at this SQR distance from the node to trigger snap align.</remarks>
+  /// <seealso cref="_tgtPartNodeTransforms"/>
+  /// <seealso cref="FlightItemDragController.attachNodePrecision"/>
+  List<float> _tgtPartNodeSqrDistances;
+
+  /// <summary>Shared material for the attach node icons.</summary>
+  readonly Material _tgtAttachNodeMaterial = new(Shader.Find("Transparent/Diffuse")) {
+      color = new Color(0.007843138f, 0.8470588f, 0.9137255f, 0.5f),  // AquaBlue, 50% opacity.
+      renderQueue = 4000,  // As of KSP 1.1.1230
+  };
   #endregion
 
   #region AbstractStateHandler implementation
@@ -258,7 +297,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     // Attach mode.
     _dropActionEventsHandler.DefineAction(
         DropAction.AttachActionAllowed, AttachModeActionHint, hostObj.attachPartEvent,
-        () => {});
+        PlaceDraggedItem);
     _dropActionEventsHandler.DefineCustomHandler(
         DropAction.AttachActionAllowed, null,
         () => _attachModeRequested = hostObj.switchAttachModeKey.isEventActive);
@@ -282,6 +321,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     base.Stop();
     CrewHatchController.fetch.EnableInterface();
     _dropActionEventsHandler.currentState = null;
+    MakeTargetPartAttachNodes(null);
     SetDraggedMaterialPart(null);
     DestroyDraggedModel();
     ScreenMessages.RemoveMessage(_showTooltipMessage);
@@ -296,6 +336,13 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     // Handle the dragging operation.
     while (isStarted) {
       CrewHatchController.fetch.DisableInterface(); // No hatch actions while we're targeting the drop location!
+
+      // Show attach node icons on the hovered part.
+      if (!_vesselPlacementMode && _currentAttachNode.nodeType != AttachNode.NodeType.Surface) {
+        MakeTargetPartAttachNodes(_hitPart);
+      } else {
+        MakeTargetPartAttachNodes(null);
+      }
 
       if (KisApi.ItemDragController.focusedTarget == null) {
         // The holo model is hovering in the scene.
@@ -578,7 +625,29 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     var partFwd = !CheckIfParallel(partUp, hit.normal) ? partUp : Vector3.up;
     _hitPointTransform.rotation =
         Quaternion.AngleAxis(_rotateAngle, hit.normal) * Quaternion.LookRotation(hit.normal, -partFwd);
-    AlignTransforms.SnapAlign(_draggedModel, touchPoint, _hitPointTransform);
+    var partAlignTransform = _hitPointTransform;
+
+    // If the attach mode is active, we may need to align to an attach node.
+    if (_tgtPart != null && _currentAttachNode?.nodeType != AttachNode.NodeType.Surface) {
+      // Find the closest node to the pointer hit.
+      var sqrMinDistance = float.MaxValue;
+      var candidateNodeIdx = -1;
+      for (var i = _tgtPartNodeTransforms.Count - 1; i >= 0; i--) {
+        var sqrDist = (_hitPointTransform.position - _tgtPartNodeTransforms[i].position).sqrMagnitude;
+        if (sqrDist < sqrMinDistance) {  // Find the closest node.
+          candidateNodeIdx = i;
+          sqrMinDistance = sqrDist;
+        }
+      }
+      // Pick the node if the pointer is close enough.
+      if (candidateNodeIdx != -1 && sqrMinDistance < _tgtPartNodeSqrDistances[candidateNodeIdx]) {
+        _tgtPartSelectedNode = _tgtPartNodes[candidateNodeIdx];
+        partAlignTransform = _tgtPartNodeTransforms[candidateNodeIdx];
+      } else {
+        _tgtPartSelectedNode = null;
+      }
+    }
+    AlignTransforms.SnapAlign(_draggedModel, touchPoint, partAlignTransform);
   }
   readonly RaycastHit[] _hitsBuffer = new RaycastHit[100];  // 100 is an arbitrary reasonable value for the hits count.
 
@@ -615,10 +684,13 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     }
 
     // Consuming items will change the state, so capture all the important values before doing it.
-    var refPart = _tgtPart ? _tgtPart : _hitPart;
+    var tgtPart = _tgtPart != null ? _tgtPart : _hitPart;
     var refTransform = UnityEngine.Object.Instantiate(_hitPointTransform);
     var refPosition = _draggedModel.position;
     var refRotation = _draggedModel.rotation;
+    var srcNode = _currentAttachNode;
+    var tgtNode = _tgtPartSelectedNode;
+    var attachOnCreate = _attachModeRequested;
 
     var consumedItems = KisApi.ItemDragController.ConsumeItems(); // This changes the controller state!
     if (consumedItems == null || consumedItems.Length == 0) {
@@ -636,15 +708,25 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         materialPart.vessel.vesselName = materialPart.partInfo.title;
       }
       KisApi.VesselUtils.MoveVessel(materialPart.vessel, refPosition, refRotation, _hitPart);
+      if (attachOnCreate) {
+        AttachParts(materialPart, srcNode, tgtPart, tgtNode);
+      }
     } else {
       var msg = ScreenMessages.PostScreenMessage(CreatingNewPartStatus, float.MaxValue, ScreenMessageStyle.UPPER_RIGHT);
       hostObj.StartCoroutine(
           VesselUtilsImpl.CreateLonePartVesselAndWait(
               consumedItems[0].snapshot, refPosition, refRotation,
-              refTransform: refTransform, refPart: refPart,
-              vesselCreatedFn: _ => ScreenMessages.RemoveMessage(msg)));
+              refTransform: refTransform, refPart: tgtPart,
+              vesselCreatedFn: v => {
+                ScreenMessages.RemoveMessage(msg);
+                if (attachOnCreate) {
+                  AttachParts(v.rootPart, srcNode, tgtPart, tgtNode);
+                }
+              }));
     }
+    UISoundPlayer.instance.Play(attachOnCreate ? AttachPartSound : CommonConfigImpl.sndClick);
   }
+  const string AttachPartSound = "KIS2/Sounds/attachScrewdriver"; // FIXME: Make it configurable via pickup.
 
   /// <summary>Sets the material part that was a source for the drag operation.</summary>
   /// <remarks>
@@ -805,8 +887,70 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     _cannotAttachDetails = null;
     if (_hitPart.isVesselEVA) {
       _cannotAttachDetails = CannotAttachToKerbalError;
+    } else if (_attachModeRequested
+        && _currentAttachNode.nodeType != AttachNode.NodeType.Surface
+        && _tgtPartSelectedNode == null) {
+      _cannotAttachDetails = CannotAttachNoTargetNodeError;
     }
     return _cannotAttachDetails == null;
+  }
+
+  /// <summary>Highlights the stack nodes on the target part.</summary>
+  /// <remarks>It's important to reset the state when there is no part targeted or the mode ends.</remarks>
+  /// <param name="tgtPart">The part to show the nodes for. It should be <c>null</c> if nothing is targeted.</param>
+  void MakeTargetPartAttachNodes(Part tgtPart) {
+    if (tgtPart == _tgtPart) {
+      return;
+    }
+    if (_tgtPart != null) {
+      _tgtPartNodeTransforms.ForEach(Hierarchy.SafeDestroy);
+      _tgtPartNodeTransforms = null;
+      _tgtPartNodes = null;
+      _tgtPartNodeSqrDistances = null;
+    }
+    _tgtPart = tgtPart;
+    if (_tgtPart == null) {
+      return;
+    }
+    _tgtPartNodeTransforms = new List<Transform>();
+    _tgtPartNodes = new List<AttachNode>();
+    _tgtPartNodeSqrDistances = new List<float>();
+    foreach (var an in _tgtPart.attachNodes) {
+      if (an.nodeType == AttachNode.NodeType.Surface) {
+        continue;
+      }
+      if (an.attachedPart != null && an.attachedPart != _draggedItem.materialPart) {
+        continue;  // Skip an occupied node but only if it's not attached to the dragged part.
+      }
+      var nodeTransform = new GameObject().transform;
+      var partTransform = _tgtPart.transform;
+      Hierarchy.MoveToParent(
+          nodeTransform, partTransform,
+          newPosition: an.position / _tgtPart.rescaleFactor,
+          newRotation: Quaternion.LookRotation(an.orientation),
+          newScale: Vector3.one);
+      var sphereRadius = an.radius * (an.size == 0 ? an.size + 0.5f : an.size) / 2.0f;
+      _tgtPartNodeSqrDistances.Add(
+          sphereRadius * sphereRadius * hostObj.attachNodePrecision * hostObj.attachNodePrecision);
+      Meshes.CreateSphere(2 * sphereRadius, _tgtAttachNodeMaterial, nodeTransform);
+      _tgtPartNodeTransforms.Add(nodeTransform);
+      _tgtPartNodes.Add(an);
+    }
+  }
+
+  /// <summary>Attaches a part to the currently targeted part via it's selected node.</summary>
+  /// <remarks>The target part node is allowed is ignored if attaching via the source surface node.</remarks>
+  static void AttachParts(Part srcPart, AttachNode srcNode, Part tgtPart, AttachNode tgtNode) {
+    srcNode.attachedPart = tgtPart;
+    srcNode.attachedPartId = tgtPart.flightID;
+    if (srcNode.nodeType != AttachNode.NodeType.Surface) {
+      srcPart.attachMode = AttachModes.STACK;
+      tgtNode.attachedPart = srcPart;
+      tgtNode.attachedPartId = srcPart.flightID;
+    } else {
+      srcPart.attachMode = AttachModes.SRF_ATTACH;
+    }
+    srcPart.Couple(tgtPart);
   }
   #endregion
 }

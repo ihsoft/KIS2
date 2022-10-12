@@ -12,6 +12,7 @@ namespace KISAPIv2 {
 /// <summary>Container for the various global settings of the mod.</summary>
 [PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
 public sealed class CommonConfigImpl {
+  //FIXME: refactor to drop properties and make everything static
   #region Settings
   // ReSharper disable ConvertToAutoProperty
   // ReSharper disable FieldCanBeMadeReadOnly.Global
@@ -22,6 +23,10 @@ public sealed class CommonConfigImpl {
   /// <summary>Path to the sound clip that plays "NOPE" sound.</summary>
   /// <remarks>Use this sound each time the user action cannot be performed.</remarks>
   public string sndPathBipWrong => _sndPathBipWrong;
+
+  /// <summary>Path to the clip that plays "UI click" sound.</summary>
+  [PersistentField("Sounds/click")]
+  public static string sndClick = "KIS2/Sounds/click";
 
   /// <summary>Tells if items in the inventories can be freely adjusted in flight.</summary>
   public bool builderModeEnabled => _builderModeEnabled;
@@ -102,5 +107,5 @@ public sealed class CommonConfigImpl {
     ConfigAccessor.ReadFieldsInType(GetType(), this);
   }
 }
-  
+
 }  // namespace

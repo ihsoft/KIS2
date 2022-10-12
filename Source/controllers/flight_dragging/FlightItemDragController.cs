@@ -45,6 +45,13 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   [PersistentField("PickupMode/holoColor")]
   public Color holoColor = new(0f, 1f, 1f, 0.7f);
 
+  /// <summary>Scale adjuster to the target part attach nodes detection algorithm.</summary>
+  /// <remarks>
+  /// The bigger is the scale, the less precise hit to the attach node is needed to get the dragged item adjusted to it.
+  /// </remarks>
+  [PersistentField("PickupMode/attachNodePrecision")]
+  public float attachNodePrecision = 1.0f;
+
   /// <summary>Distance from the camera of the object that cannot be placed anywhere.</summary>
   /// <remarks>If an item cannot be dropped, it will be "hanging" at the camera at this distance.</remarks>
   /// <seealso cref="maxRaycastDistance"/>
