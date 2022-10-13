@@ -12,7 +12,7 @@ using UnityEngine.Rendering;
 // ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
-public sealed class PartIconUtils {
+public static class PartIconUtils {
 
   /// <summary>
   /// Makes a sprite that represents the part in it's default icon state. This is what is shown in
@@ -24,7 +24,7 @@ public sealed class PartIconUtils {
   /// name.
   /// </param>
   /// <returns>The sprite of the icon.</returns>
-  public Texture MakeDefaultIcon(AvailablePart avPart, string variantName) {
+  public static Texture MakeDefaultIcon(AvailablePart avPart, string variantName) {
     string partIconTexturePath = null;
     VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, part => {
       partIconTexturePath = CraftThumbnail.GetPartIconTexturePath(part, out _);
@@ -70,7 +70,7 @@ public sealed class PartIconUtils {
     sunLight.renderMode = LightRenderMode.ForcePixel;
 
     // The model that represents the part's icon.
-    var iconPrefab = KisApi.PartModelUtils.GetIconPrefab(avPart, variantName);
+    var iconPrefab = PartModelUtils.GetIconPrefab(avPart, variantName);
     iconPrefab.layer = snapshotRenderLayer;
     iconPrefab.SetLayerRecursive(snapshotRenderLayer);
     camera.transform.position =
@@ -114,7 +114,7 @@ public sealed class PartIconUtils {
   /// </summary>
   /// <param name="part">The part to make the icon for.</param>
   /// <returns>The sprite of the icon.</returns>
-  public Texture MakeDefaultIcon(Part part) {
+  public static Texture MakeDefaultIcon(Part part) {
     return MakeDefaultIcon(part.partInfo, VariantsUtils2.GetCurrentPartVariantName(part));
   }
 

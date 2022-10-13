@@ -8,19 +8,20 @@ using KSPDev.LogUtils;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using KSPDevPartNodeUtils = KSPDev.ConfigUtils.PartNodeUtils;
 
 // ReSharper disable once CheckNamespace
 // ReSharper disable once IdentifierTypo
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the parts configs.</summary>
-public class PartNodeUtilsImpl {
+public static class PartNodeUtils {
 
   #region API implementation
   /// <summary>Gets scale modifier, applied by TweakScale mod.</summary>
   /// <param name="partNode">The part's persistent state config.</param>
   /// <returns>The scale ratio.</returns>
-  public double GetTweakScaleSizeModifier(ConfigNode partNode) {
+  public static double GetTweakScaleSizeModifier(ConfigNode partNode) {
     var ratio = 1.0;
     var tweakScaleNode = GetTweakScaleModule(partNode);
     if (tweakScaleNode != null) {
@@ -40,8 +41,8 @@ public class PartNodeUtilsImpl {
   /// The config to extract the module config from. It can be <c>null</c>.
   /// </param>
   /// <returns>The <c>TweakScale</c> module or <c>null</c>.</returns>
-  public ConfigNode GetTweakScaleModule(ConfigNode partNode) {
-    return partNode != null ? PartNodeUtils.GetModuleNode(partNode, "TweakScale") : null;
+  public static ConfigNode GetTweakScaleModule(ConfigNode partNode) {
+    return partNode != null ? KSPDevPartNodeUtils.GetModuleNode(partNode, "TweakScale") : null;
   }
 
   /// <summary>Captures the part state into a config node and returns it.</summary>
@@ -51,7 +52,7 @@ public class PartNodeUtilsImpl {
   /// </remarks>
   /// <param name="part">The part to snapshot. It must be a fully activated part.</param>
   /// <returns>The part's persistent state.</returns>
-  public ConfigNode GetConfigNode(Part part) {
+  public static ConfigNode GetConfigNode(Part part) {
     var snapshot = GetProtoPartSnapshot(part);
     var partNode = new ConfigNode("PART");
     snapshot.Save(partNode);
@@ -87,7 +88,7 @@ public class PartNodeUtilsImpl {
   /// <remarks>It erases all the vessel related info from the snapshot as well as any crew related info.</remarks>
   /// <param name="part">The part to capture.</param>
   /// <returns>A snapshot for the part's current state.</returns>
-  public ProtoPartSnapshot GetProtoPartSnapshot(Part part) {
+  public static ProtoPartSnapshot GetProtoPartSnapshot(Part part) {
     DebugEx.Fine("Make a proto part snapshot for: {0}", part);
     MaybeFixPrefabPart(part);
 
@@ -112,7 +113,7 @@ public class PartNodeUtilsImpl {
   /// <remarks>This method is slow and triggers game events.</remarks>
   /// <param name="srcSnapshot">The snapshot to make copy of.</param>
   /// <returns>A copy of the snapshot.</returns>
-  public ProtoPartSnapshot FullProtoPartCopy(ProtoPartSnapshot srcSnapshot) {
+  public static ProtoPartSnapshot FullProtoPartCopy(ProtoPartSnapshot srcSnapshot) {
     var node = new ConfigNode();
     srcSnapshot.Save(node);
     return GetProtoPartSnapshotFromNode(null, node);
@@ -123,7 +124,7 @@ public class PartNodeUtilsImpl {
   /// The part's config or a persistent state. It can be a top-level node or the <c>PART</c> node.
   /// </param>
   /// <returns>The found resources.</returns>
-  public ProtoPartResourceSnapshot[] GetResources(ConfigNode partNode) {
+  public static ProtoPartResourceSnapshot[] GetResources(ConfigNode partNode) {
     return PartNodeUtils2.GetPartNode(partNode).GetNodes("RESOURCE")
         .Select(n => new ProtoPartResourceSnapshot(n))
         .ToArray();
@@ -139,8 +140,7 @@ public class PartNodeUtilsImpl {
   /// Tells if the amount must be added to the current item's amount instead of simply replacing it.
   /// </param>
   /// <returns>The new amount or <c>null</c> if the resource was not found.</returns>
-  /// FIXME: unused
-  public double? UpdateResource(ConfigNode partNode, string name, double amount, bool isAmountRelative = false) {
+  public static double? UpdateResource(ConfigNode partNode, string name, double amount, bool isAmountRelative = false) {
     var node = PartNodeUtils2.GetPartNode(partNode).GetNodes("RESOURCE")
         .FirstOrDefault(r => r.GetValue("name") == name);
     double? setAmount = null;
@@ -161,8 +161,7 @@ public class PartNodeUtilsImpl {
   /// The persistent part's state. It can be a top-level node or the <c>PART</c> node.
   /// </param>
   /// <returns>The found science data.</returns>
-  /// FIXME: unused
-  public IEnumerable<ScienceData> GetPartScience(ConfigNode partNode) {
+  public static IEnumerable<ScienceData> GetPartScience(ConfigNode partNode) {
     return partNode.GetNodes("MODULE")
         .SelectMany(GetModuleScience)
         .ToArray();
@@ -171,8 +170,8 @@ public class PartNodeUtilsImpl {
   /// <summary>Returns all the science from the module's saved state.</summary>
   /// <param name="moduleNode">The persistent module's state.</param>
   /// <returns>The found science data.</returns>
-  public IEnumerable<ScienceData> GetModuleScience(ConfigNode moduleNode) {
-    //FIXME: use utls
+  public static IEnumerable<ScienceData> GetModuleScience(ConfigNode moduleNode) {
+    //FIXME: use utls LOH
     return moduleNode.GetNodes("ScienceData")
         .Select(n => new ScienceData(n))
         .ToArray();
@@ -190,7 +189,7 @@ public class PartNodeUtilsImpl {
   /// </param>
   /// <returns>A snapshot for the given state.</returns>
   /// <exception cref="ArgumentException">if the game scene or the reference inventory are not good.</exception>
-  public ProtoPartSnapshot GetProtoPartSnapshotFromNode(
+  public static ProtoPartSnapshot GetProtoPartSnapshotFromNode(
       Vessel refVessel, ConfigNode node, bool keepPersistentId = false) {
     var pPart = new ProtoPartSnapshot(node, refVessel != null ? refVessel.protoVessel : null, HighLogic.CurrentGame);
 
@@ -215,7 +214,7 @@ public class PartNodeUtilsImpl {
   /// <param name="snapshot">The part's snapshot.</param>
   /// <returns>The resulted config node.</returns>
   /// <seealso cref="MakeLonePartVesselNode"/>
-  public ConfigNode MakeNewPartConfig(Vessel actorVessel, ProtoPartSnapshot snapshot) {
+  public static ConfigNode MakeNewPartConfig(Vessel actorVessel, ProtoPartSnapshot snapshot) {
     var configNode = new ConfigNode("PART");
     snapshot.Save(configNode);
     configNode.SetValue("flag", actorVessel.rootPart.flagURL, createIfNotFound: true);
@@ -233,7 +232,7 @@ public class PartNodeUtilsImpl {
   /// <param name="partPosition">The vessel's position.</param>
   /// <param name="rotation">The vessel's location.</param>
   /// <returns>The node that can be used to restore a vessel.</returns>
-  public ConfigNode MakeLonePartVesselNode(
+  public static ConfigNode MakeLonePartVesselNode(
       Vessel actorVessel, ProtoPartSnapshot partSnapshot, Vector3 partPosition, Quaternion rotation) {
     var orbit = new Orbit(actorVessel.orbit);
     var vesselName = partSnapshot.partInfo.title;
@@ -275,7 +274,6 @@ public class PartNodeUtilsImpl {
   /// assumed to be used until the part is loaded, and it's impossible to have <c>null</c> value read from a config.
   /// </remarks>
   /// <param name="part">The part to cleanup. If it's not a prefab, then the call is NOOP.</param>
-  /// FIXME: merge with the one below.
   static void MaybeFixPrefabPart(Part part) {
     if (ReferenceEquals(part, part.partInfo.partPrefab)) {
       CleanupModuleFieldsInPart(part);

@@ -176,7 +176,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
   void HandleScenePartPickupAction() {
     var leasedItem = _targetPickupItem;
     KisApi.ItemDragController.LeaseItems(
-        KisApi.PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
+        PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
         new[] { leasedItem },
         () => { // The consume action.
           var consumedPart = leasedItem.materialPart;

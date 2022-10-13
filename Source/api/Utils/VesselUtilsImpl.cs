@@ -13,7 +13,7 @@ using UnityEngine;
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the vessels.</summary>
-public class VesselUtilsImpl {
+public static class VesselUtils {
 
   #region API implementation
   /// <summary>Changes vessel's location.</summary>
@@ -25,7 +25,7 @@ public class VesselUtilsImpl {
   /// <param name="position">The new position.</param>
   /// <param name="rotation">The new rotation.</param>
   /// <param name="refPart">An optional part to sync velocities to.</param>
-  public void MoveVessel(Vessel movingVessel, Vector3 position, Quaternion rotation, Part refPart) {
+  public static void MoveVessel(Vessel movingVessel, Vector3 position, Quaternion rotation, Part refPart) {
     var movingVesselTransform = movingVessel.vesselTransform;
     if ((movingVesselTransform.position - position).sqrMagnitude < PositionPrecision
         && 1.0f - Math.Abs(Quaternion.Dot(movingVesselTransform.rotation, rotation)) < RotationPrecision) {
@@ -105,8 +105,7 @@ public class VesselUtilsImpl {
       ProtoPartSnapshot partSnapshot, Vector3 pos, Quaternion rot, Transform refTransform,
       Part refPart = null, Action<Vessel> vesselCreatedFn = null, Action<Vessel> waitFn = null) {
     DebugEx.Info("Spawning new vessel from the dragged part: part={0}...", partSnapshot.partInfo.name);
-    var protoVesselNode =
-        KisApi.PartNodeUtils.MakeLonePartVesselNode(FlightGlobals.ActiveVessel, partSnapshot, pos, rot);
+    var protoVesselNode = PartNodeUtils.MakeLonePartVesselNode(FlightGlobals.ActiveVessel, partSnapshot, pos, rot);
     var protoVessel = HighLogic.CurrentGame.AddVessel(protoVesselNode);
     var spawnedVesselId = protoVessel.persistentId;
     var spawnRefTransform = new GameObject().transform;
@@ -123,7 +122,7 @@ public class VesselUtilsImpl {
           }
           v.skipGroundPositioning = true;
           v.skipGroundPositioningForDroppedPart = true;
-          KisApi.VesselUtils.MoveVessel(v, spawnRefTransform.position, spawnRefTransform.rotation, refPart);
+          MoveVessel(v, spawnRefTransform.position, spawnRefTransform.rotation, refPart);
           spawnedVesselId = 0;
         });
     GameEvents.onVesselGoOffRails.Add(cancelGroundRepositioningFn);
@@ -133,7 +132,7 @@ public class VesselUtilsImpl {
       spawnedVessel = FlightGlobals.VesselsLoaded.FirstOrDefault(v => v.persistentId == protoVessel.persistentId);
       waitFn?.Invoke(spawnedVessel);
       if (spawnedVessel != null) {
-        KisApi.VesselUtils.MoveVessel(spawnedVessel, spawnRefTransform.position, spawnRefTransform.rotation, refPart);
+        MoveVessel(spawnedVessel, spawnRefTransform.position, spawnRefTransform.rotation, refPart);
         if (!spawnedVessel.vesselSpawning) {
           break; // The vessel is ready.
         }

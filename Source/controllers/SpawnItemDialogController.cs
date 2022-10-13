@@ -9,6 +9,7 @@ using System.Linq;
 using KISAPIv2;
 using KSPDev.ConfigUtils;
 using UnityEngine;
+using KisPartNodeUtils = KISAPIv2.PartNodeUtils;
 
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
@@ -203,7 +204,7 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
     }
     DebugEx.Info("Spawning parts: {0}, qty={1}", partName, quantity);
     for (var i = 0; i < quantity; i++) {
-      var partSnapshot = KisApi.PartNodeUtils.GetProtoPartSnapshot(PartLoader.getPartInfoByName(partName).partPrefab);
+      var partSnapshot = KisPartNodeUtils.GetProtoPartSnapshot(PartLoader.getPartInfoByName(partName).partPrefab);
       var reasons = !_noChecksForSpawnedItems ? _tgtInventory.CheckCanAddPart(partSnapshot).ToArray() : new ErrorReason[0];
       if (reasons.Length == 0) {
         _tgtInventory.AddPart(partSnapshot);

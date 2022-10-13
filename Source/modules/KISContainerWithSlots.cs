@@ -19,6 +19,7 @@ using KSPDev.ConfigUtils;
 using KSPDev.InputUtils;
 using KSPDev.MathUtils;
 using UnityEngine;
+using KisPartNodeUtils = KISAPIv2.PartNodeUtils;
 
 // ReSharper disable once CheckNamespace
 namespace KIS2 {
@@ -791,7 +792,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
         HostedDebugLog.Error(this, "Cannot find part: {0}", partName);
         continue;
       }
-      var partSnapshot = KisApi.PartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab);
+      var partSnapshot = KisPartNodeUtils.GetProtoPartSnapshot(partInfo.partPrefab);
       foreach (var resource in partSnapshot.resources) {
         resource.amount = UnityEngine.Random.Range(minPct, maxPct) * resource.maxAmount;
       }
@@ -1473,7 +1474,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
     if (actualDelta > 0) {
       var checkResult = new List<ErrorReason>();
       for (var i = 0; i < actualDelta; i++) {
-        var newSnapshot = KisApi.PartNodeUtils.FullProtoPartCopy(slotWithPointerFocus.slotItems[0].snapshot);
+        var newSnapshot = KisPartNodeUtils.FullProtoPartCopy(slotWithPointerFocus.slotItems[0].snapshot);
         var itemErrors = CheckCanAddPart(newSnapshot);
         if (itemErrors.Count > 0) {
           checkResult.AddRange(itemErrors);

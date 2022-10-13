@@ -391,7 +391,7 @@ public class KisContainerBase : AbstractPartModule,
     }
 
     // Finally, verify the volume limit. It must be the last check since it's not a critical condition.
-    var partVolume = KisApi.PartModelUtils.GetPartVolume(partSnapshot.partInfo, partSnapshot.moduleVariantName);
+    var partVolume = PartModelUtils.GetPartVolume(partSnapshot.partInfo, partSnapshot.moduleVariantName);
     if (usedVolume + partVolume > maxVolume) {
       var freeVolume = maxVolume - Math.Min(usedVolume, maxVolume);
       errors.Add(new ErrorReason() {

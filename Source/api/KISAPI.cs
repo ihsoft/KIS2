@@ -23,21 +23,6 @@ namespace KISAPIv2 {
 /// <summary>KIS API, version 1.</summary>
 /// FIXME: This implementation is a FAKE for now. It's not a real API.
 public static class KisApi {
-  /// <summary>Utils to deal with various aspects of part models.</summary>
-  public static readonly PartModelUtilsImpl PartModelUtils = new();
-
-  /// <summary>Utils to deal with part config nodes.</summary>
-  public static readonly PartNodeUtilsImpl PartNodeUtils = new();
-
-  /// <summary>Utils to deal with part prefabs.</summary>
-  public static readonly PartPrefabUtilsImpl PartPrefabUtils = new();
-
-  /// <summary>Utils to deal with part icons.</summary>
-  public static readonly PartIconUtils PartIconUtils = new();
-
-  /// <summary>Utils to deal with the vessels.</summary>
-  public static readonly VesselUtilsImpl VesselUtils = new();
-
   /// <summary>KAS common config settings.</summary>
   public static readonly CommonConfigImpl CommonConfig = new();
 

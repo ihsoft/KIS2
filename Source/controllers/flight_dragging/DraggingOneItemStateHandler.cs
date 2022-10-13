@@ -475,7 +475,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     DebugEx.Fine("Creating flight scene dragging model: root={0}", item.snapshot.partName);
     KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
     var draggedPart = MakeSamplePart(item);
-    _draggedModel = KisApi.PartModelUtils.GetSceneAssemblyModel(draggedPart).transform;
+    _draggedModel = PartModelUtils.GetSceneAssemblyModel(draggedPart).transform;
     _vesselPlacementTouchPoint =
         MakeTouchPoint("surfaceTouchPoint", draggedPart, _draggedModel, Vector3.up, _draggedModel.forward);
 
@@ -707,14 +707,14 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         materialPart.vessel.vesselType = VesselType.DroppedPart;
         materialPart.vessel.vesselName = materialPart.partInfo.title;
       }
-      KisApi.VesselUtils.MoveVessel(materialPart.vessel, refPosition, refRotation, _hitPart);
+      VesselUtils.MoveVessel(materialPart.vessel, refPosition, refRotation, _hitPart);
       if (attachOnCreate) {
         AttachParts(materialPart, srcNode, tgtPart, tgtNode);
       }
     } else {
       var msg = ScreenMessages.PostScreenMessage(CreatingNewPartStatus, float.MaxValue, ScreenMessageStyle.UPPER_RIGHT);
       hostObj.StartCoroutine(
-          VesselUtilsImpl.CreateLonePartVesselAndWait(
+          VesselUtils.CreateLonePartVesselAndWait(
               consumedItems[0].snapshot, refPosition, refRotation,
               refTransform: refTransform, refPart: tgtPart,
               vesselCreatedFn: v => {

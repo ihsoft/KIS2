@@ -39,7 +39,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public Texture iconImage {
     get {
       UpdateVariant();
-      return _iconImage ??= KisApi.PartIconUtils.MakeDefaultIcon(avPart, variantName);
+      return _iconImage ??= PartIconUtils.MakeDefaultIcon(avPart, variantName);
     }
   }
   Texture _iconImage;
@@ -87,7 +87,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public double volume {
     get {
       UpdateVariant();
-      return _volume ??= KisApi.PartModelUtils.GetPartVolume(avPart, variantName);
+      return _volume ??= PartModelUtils.GetPartVolume(avPart, variantName);
     }
   }
   double? _volume;
@@ -96,7 +96,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public Vector3 size {
     get {
       UpdateVariant();
-      return _size ??= KisApi.PartModelUtils.GetPartBounds(avPart, variantName);
+      return _size ??= PartModelUtils.GetPartBounds(avPart, variantName);
     }
   } 
   Vector3? _size;
@@ -108,7 +108,7 @@ sealed class InventoryItemImpl : InventoryItem {
   public double dryCost {
     get {
       UpdateVariant();
-      return _dryCost ??= KisApi.PartPrefabUtils.GetPartDryCost(avPart, variantName);
+      return _dryCost ??= PartPrefabUtils.GetPartDryCost(avPart, variantName);
     }
   }
   double? _dryCost;
@@ -124,7 +124,7 @@ sealed class InventoryItemImpl : InventoryItem {
 
   /// <inheritdoc/>
   public ScienceData[] science => _science ??= snapshot.modules
-      .SelectMany(m => KisApi.PartNodeUtils.GetModuleScience(m.moduleValues))
+      .SelectMany(m => PartNodeUtils.GetModuleScience(m.moduleValues))
       .ToArray();
   ScienceData[] _science;
   
@@ -171,7 +171,7 @@ sealed class InventoryItemImpl : InventoryItem {
   /// <param name="part">The part to take a snapshot from.</param>
   /// <returns>A new detached item.</returns>
   public static InventoryItemImpl FromPart(Part part) {
-    return new InventoryItemImpl(KisApi.PartNodeUtils.GetProtoPartSnapshot(part));
+    return new InventoryItemImpl(PartNodeUtils.GetProtoPartSnapshot(part));
   }
   #endregion
 

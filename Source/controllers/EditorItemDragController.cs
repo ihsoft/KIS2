@@ -56,7 +56,7 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       var draggedItem = InventoryItemImpl.FromPart(EditorLogic.SelectedPart);
       draggedItem.materialPart = EditorLogic.SelectedPart;
       KisApi.ItemDragController.LeaseItems(
-          KisApi.PartIconUtils.MakeDefaultIcon(draggedItem.materialPart),
+          PartIconUtils.MakeDefaultIcon(draggedItem.materialPart),
           new InventoryItem[] { draggedItem },
           EditorItemsConsumed, EditorItemsCancelled,
           allowInteractiveCancel: false);

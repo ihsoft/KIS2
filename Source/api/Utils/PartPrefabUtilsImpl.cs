@@ -12,7 +12,7 @@ using KSPDev.PartUtils;
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the part prefabs.</summary>
-public class PartPrefabUtilsImpl {
+public static class PartPrefabUtils {
 
   #region API implementation
   /// <summary>Returns the cargo module from the part that can be stored into the inventory.</summary>
@@ -22,7 +22,7 @@ public class PartPrefabUtilsImpl {
   /// </remarks>
   /// <param name="avPart">The available part to get info from.</param>
   /// <returns>The cargo module or <c>null</c>.</returns>
-  public ModuleCargoPart GetCargoModule(AvailablePart avPart) {
+  public static ModuleCargoPart GetCargoModule(AvailablePart avPart) {
     var module = avPart.partPrefab.FindModuleImplementing<ModuleCargoPart>();
     return module == null || module.packedVolume > 0 ? module : null;
   }
@@ -35,7 +35,7 @@ public class PartPrefabUtilsImpl {
   /// </param>
   /// <returns>The dry cost of the part.</returns>
   /// <seealso cref="VariantsUtils2.ExecuteAtPartVariant"/>
-  public double GetPartDryMass(AvailablePart avPart, string variantName) {
+  public static double GetPartDryMass(AvailablePart avPart, string variantName) {
     var itemMass = 0.0f;
     VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, p => {
       itemMass = p.mass + p.GetModuleMass(p.mass);
@@ -50,7 +50,7 @@ public class PartPrefabUtilsImpl {
   /// name.
   /// </param>
   /// <returns>The dry cost of the part.</returns>
-  public double GetPartDryCost(AvailablePart avPart, string variantName) {
+  public static double GetPartDryCost(AvailablePart avPart, string variantName) {
     var itemCost = 0.0f;
     VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, p => {
       itemCost = avPart.cost + p.GetModuleCosts(avPart.cost);

@@ -16,7 +16,7 @@ using UnityEngine;
 namespace KISAPIv2 {
 
 /// <summary>Various methods to deal with the part model.</summary>
-public class PartModelUtilsImpl {
+public static class PartModelUtils {
 
   #region Local fields and properties
   /// <summary>Cached volumes of the parts.</summary>
@@ -24,7 +24,7 @@ public class PartModelUtilsImpl {
   /// They are accumulated as the KIS containers are being used. The cache only lives during the game's session and dies
   /// on the game restart.
   /// </remarks>
-  readonly Dictionary<string, double> _partsVolumeCache = new();
+  static readonly Dictionary<string, double> PartsVolumeCache = new();
   #endregion
 
   #region API methods
@@ -39,7 +39,7 @@ public class PartModelUtilsImpl {
   /// the part doesn't have any variant, then this parameter is simply ignored.
   /// </param>
   /// <returns>The model of the part. Don't forget to destroy it when not needed.</returns>
-  public GameObject GetIconPrefab(AvailablePart avPart, string variantName = null) {
+  public static GameObject GetIconPrefab(AvailablePart avPart, string variantName = null) {
     var iconPrefab = UnityEngine.Object.Instantiate(avPart.iconPrefab);
     iconPrefab.SetActive(true);
     var materials = Shaders.CreateMaterialArray(iconPrefab);
@@ -67,7 +67,7 @@ public class PartModelUtilsImpl {
   /// <returns>
   /// The root game object of the new hierarchy. This object must be explicitly disposed when not needed anymore.
   /// </returns>
-  public GameObject GetSceneAssemblyModel(Part rootPart, bool goThroughChildren = true) {
+  public static GameObject GetSceneAssemblyModel(Part rootPart, bool goThroughChildren = true) {
     var modelObj = UnityEngine.Object.Instantiate(Hierarchy.GetPartModelTransform(rootPart).gameObject);
     modelObj.SetActive(true);
 
@@ -135,17 +135,17 @@ public class PartModelUtilsImpl {
   /// its volume.  
   /// </param>
   /// <returns>The volume in liters.</returns>
-  public double GetPartVolume(AvailablePart avPart, string variantName = null) {
+  public static double GetPartVolume(AvailablePart avPart, string variantName = null) {
     var cacheKey = avPart.name + (variantName != null ? "-" + variantName : "");
-    if (_partsVolumeCache.TryGetValue(cacheKey, out var cachedVolume)) {
+    if (PartsVolumeCache.TryGetValue(cacheKey, out var cachedVolume)) {
       return cachedVolume;
     }
     if (!StockCompatibilitySettings.stockVolumeExceptions.Contains(avPart.name)) {
-      var cargoModule = KisApi.PartPrefabUtils.GetCargoModule(avPart);
+      var cargoModule = PartPrefabUtils.GetCargoModule(avPart);
       if (cargoModule != null) {
         DebugEx.Info("Put cargo module volume into the cache: partName={0}, volume={1}, cacheKey={2}",
                      avPart.name, cargoModule.packedVolume, cacheKey);
-        _partsVolumeCache.Add(cacheKey, cargoModule.packedVolume);
+        PartsVolumeCache.Add(cacheKey, cargoModule.packedVolume);
         return cargoModule.packedVolume;
       }
     }
@@ -154,7 +154,7 @@ public class PartModelUtilsImpl {
     var volume = boundsSize.x * boundsSize.y * boundsSize.z * 1000f;
     DebugEx.Info("No cargo module volume for the part, make a KIS one: partName={0}, kisVolume={1}, cacheKey={2}",
                  avPart.name, volume, cacheKey);
-    _partsVolumeCache.Add(cacheKey, volume);
+    PartsVolumeCache.Add(cacheKey, volume);
     return volume;
   }
 
@@ -166,7 +166,7 @@ public class PartModelUtilsImpl {
   /// its bounds.  
   /// </param>
   /// <returns>The bounds in metres.</returns>
-  public Vector3 GetPartBounds(AvailablePart avPart, string variantName = null) {
+  public static Vector3 GetPartBounds(AvailablePart avPart, string variantName = null) {
     var bounds = default(Bounds);
     VariantsUtils2.ExecuteAtPartVariant(avPart, variantName, p => {
       var partModel = GetSceneAssemblyModel(p).transform;
@@ -179,7 +179,7 @@ public class PartModelUtilsImpl {
   /// <summary>Returns a bounds box from the render models.</summary>
   /// <param name="part">The part to get bounds for.</param>
   /// <returns>The bounds in metres.</returns>
-  public Bounds GetPartBounds(Part part) {
+  public static Bounds GetPartBounds(Part part) {
     var partModel = GetSceneAssemblyModel(part).transform;
     var bounds = GetMeshBounds(partModel);
     UnityEngine.Object.DestroyImmediate(partModel.gameObject);
@@ -194,10 +194,8 @@ public class PartModelUtilsImpl {
   /// will be taken.
   /// </param>
   /// <param name="considerInactive">Tells if the inactive objects must be checked as well.</param>
-  public void CollectMeshesFromModel(Transform model,
-                                     ICollection<CombineInstance> meshCombines,
-                                     Matrix4x4? worldTransform = null,
-                                     bool considerInactive = false) {
+  public static void CollectMeshesFromModel(Transform model, ICollection<CombineInstance> meshCombines,
+                                            Matrix4x4? worldTransform = null, bool considerInactive = false) {
     // Always use world transformation from the root.
     var rootWorldTransform = worldTransform ?? model.localToWorldMatrix.inverse;
 
@@ -239,7 +237,7 @@ public class PartModelUtilsImpl {
   /// <param name="model">The model to find the bounds for.</param>
   /// <param name="considerInactive">Tells if inactive meshes should be considered.</param>
   /// <returns>The estimated volume of the meshes.</returns>
-  Bounds GetMeshBounds(Transform model, bool considerInactive = false) {
+  static Bounds GetMeshBounds(Transform model, bool considerInactive = false) {
     var combines = new List<CombineInstance>();
     CollectMeshesFromModel(model, combines, considerInactive: considerInactive);
     var bounds = default(Bounds);
