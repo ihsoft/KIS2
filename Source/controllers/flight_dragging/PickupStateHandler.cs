@@ -175,7 +175,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
   /// <remarks>Once the dragging operation starts, this handler gets stopped via the host.</remarks>
   void HandleScenePartPickupAction() {
     var leasedItem = _targetPickupItem;
-    KisApi.ItemDragController.LeaseItems(
+    KisItemDragController.LeaseItems(
         PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
         new[] { leasedItem },
         () => { // The consume action.

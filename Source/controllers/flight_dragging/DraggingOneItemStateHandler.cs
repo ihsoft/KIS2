@@ -329,7 +329,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
   /// <inheritdoc/>
   protected override IEnumerator StateTrackingCoroutine() {
-    _draggedItem = KisApi.ItemDragController.leasedItems[0];
+    _draggedItem = KisItemDragController.leasedItems[0];
     SetDraggedMaterialPart(_draggedItem.materialPart);
     MakeDraggedModelFromItem(_draggedItem);
 
@@ -344,7 +344,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         MakeTargetPartAttachNodes(null);
       }
 
-      if (KisApi.ItemDragController.focusedTarget == null) {
+      if (KisItemDragController.focusedTarget == null) {
         // The holo model is hovering in the scene.
         _draggedModel.gameObject.SetActive(true);
         PositionModelInTheScene(_draggedItem);
@@ -473,7 +473,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       return; // The model already exists.
     }
     DebugEx.Fine("Creating flight scene dragging model: root={0}", item.snapshot.partName);
-    KisApi.ItemDragController.dragIconObj.gameObject.SetActive(false);
+    KisItemDragController.dragIconObj.gameObject.SetActive(false);
     var draggedPart = MakeSamplePart(item);
     _draggedModel = PartModelUtils.GetSceneAssemblyModel(draggedPart).transform;
     _vesselPlacementTouchPoint =
@@ -544,8 +544,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       return; // Nothing to do.
     }
     DebugEx.Fine("Destroying flight scene dragging model...");
-    if (KisApi.ItemDragController.isDragging) {
-      KisApi.ItemDragController.dragIconObj.gameObject.SetActive(true);
+    if (KisItemDragController.isDragging) {
+      KisItemDragController.dragIconObj.gameObject.SetActive(true);
     }
     Hierarchy.SafeDestroy(_draggedModel);
     _draggedModel = null;
@@ -692,7 +692,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     var tgtNode = _tgtPartSelectedNode;
     var attachOnCreate = _attachModeRequested;
 
-    var consumedItems = KisApi.ItemDragController.ConsumeItems(); // This changes the controller state!
+    var consumedItems = KisItemDragController.ConsumeItems(); // This changes the controller state!
     if (consumedItems == null || consumedItems.Length == 0) {
       DebugEx.Error("The leased item cannot be consumed");
       _draggedItem.materialPart = materialPart; // It didn't work, return the part back to the item.

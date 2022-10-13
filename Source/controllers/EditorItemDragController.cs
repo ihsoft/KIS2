@@ -18,12 +18,12 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   #region MonoBehaviour overrides
   void Awake() {
     DebugEx.Fine("[{0}] Controller started", nameof(EditorItemDragController));
-    KisApi.ItemDragController.RegisterTarget(this);
+    KisItemDragController.RegisterTarget(this);
   }
 
   void OnDestroy() {
     DebugEx.Fine("[{0}] Controller stopped", nameof(EditorItemDragController));
-    KisApi.ItemDragController.UnregisterTarget(this);
+    KisItemDragController.UnregisterTarget(this);
   }
   #endregion
 
@@ -55,7 +55,7 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
       // So, always start the dragging, but indicate if the item cannot be added anywhere.
       var draggedItem = InventoryItemImpl.FromPart(EditorLogic.SelectedPart);
       draggedItem.materialPart = EditorLogic.SelectedPart;
-      KisApi.ItemDragController.LeaseItems(
+      KisItemDragController.LeaseItems(
           PartIconUtils.MakeDefaultIcon(draggedItem.materialPart),
           new InventoryItem[] { draggedItem },
           EditorItemsConsumed, EditorItemsCancelled,
@@ -71,19 +71,19 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
 
     // DRAGGING EDITOR PART - focus blur from a KIS window.
     // Cancel KIS dragging and return the dragged part back to the editor. 
-    if (newTarget == null && KisApi.ItemDragController.isDragging
-        && KisApi.ItemDragController.leasedItems[0].materialPart != null) {
-      KisApi.ItemDragController.CancelItemsLease();
+    if (newTarget == null && KisItemDragController.isDragging
+        && KisItemDragController.leasedItems[0].materialPart != null) {
+      KisItemDragController.CancelItemsLease();
       return;
     }
 
     // DRAGGING KIS INVENTORY PART - focus blur from a KIS window.
     // If there is just one part, consume it and start the editor's drag. Otherwise, do nothing and
     // let KIS inventories to handle the logic.
-    if (newTarget == null && KisApi.ItemDragController.isDragging
-        && KisApi.ItemDragController.leasedItems[0].materialPart == null) {
-      if (KisApi.ItemDragController.leasedItems.Length == 1) {
-        var items = KisApi.ItemDragController.ConsumeItems();
+    if (newTarget == null && KisItemDragController.isDragging
+        && KisItemDragController.leasedItems[0].materialPart == null) {
+      if (KisItemDragController.leasedItems.Length == 1) {
+        var items = KisItemDragController.ConsumeItems();
         if (items == null) {
           DebugEx.Error("Unexpected consume operation abort! Please, file a bug if you see this.");
           return; // Not expected, but must be handled.
@@ -98,8 +98,8 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   #region Local utility methods
   /// <summary>Returns the dragged item back to the editor when KIS dragging is cancelled.</summary>
   void EditorItemsCancelled() {
-    Preconditions.HasSize(KisApi.ItemDragController.leasedItems, 1);
-    var item = KisApi.ItemDragController.leasedItems[0];
+    Preconditions.HasSize(KisItemDragController.leasedItems, 1);
+    var item = KisItemDragController.leasedItems[0];
     UIPartActionController.Instance.partInventory.editorPartPickedBlockSfx = true;
     EditorLogic.fetch.SetIconAsPart(item.materialPart);
     item.materialPart = null;
@@ -108,8 +108,8 @@ sealed class EditorItemDragController : MonoBehaviour, IKisDragTarget {
   /// <summary>Cleans up the editor dragging part that was consumed by an inventory.</summary>
   /// <returns>Always <c>true</c>.</returns>
   bool EditorItemsConsumed() {
-    Preconditions.HasSize(KisApi.ItemDragController.leasedItems, 1);
-    var item = KisApi.ItemDragController.leasedItems[0];
+    Preconditions.HasSize(KisItemDragController.leasedItems, 1);
+    var item = KisItemDragController.leasedItems[0];
     Hierarchy.SafeDestroy(item.materialPart);
     item.materialPart = null;
     return true;

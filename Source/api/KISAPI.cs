@@ -23,11 +23,6 @@ namespace KISAPIv2 {
 /// <summary>KIS API, version 1.</summary>
 /// FIXME: This implementation is a FAKE for now. It's not a real API.
 public static class KisApi {
-  /// <summary>
-  /// Controller that handles moving KIS items between the inventories and the scene.
-  /// </summary>
-  public static readonly IKisItemDragController ItemDragController =
-      new KIS2.KisItemDragControllerImpl();
 }
 
 }  // namespace

@@ -142,12 +142,12 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
     _controllerStateMachine.AddStateHandlers(ControllerState.DraggingMultipleItems);
     _controllerStateMachine.currentState = ControllerState.WaitingForPickup;
 
-    KisApi.ItemDragController.RegisterTarget(this);
+    KisItemDragController.RegisterTarget(this);
   }
 
   void OnDestroy() {
     DebugEx.Fine("[{0}] Controller stopped", nameof(FlightItemDragController));
-    KisApi.ItemDragController.UnregisterTarget(this);
+    KisItemDragController.UnregisterTarget(this);
 
     // Ensure the state machines did their cleanups.
     _controllerStateMachine.currentState = null;
@@ -196,11 +196,11 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
   #region Local utility methods
   /// <summary>Updates flight controller state to match the current drag controller state.</summary>
   void UpdateControllerState() {
-    if (KisApi.ItemDragController.focusedTarget != null) {
+    if (KisItemDragController.focusedTarget != null) {
       _controllerStateMachine.currentState = ControllerState.None;
-    } else if (!KisApi.ItemDragController.isDragging) {
+    } else if (!KisItemDragController.isDragging) {
       _controllerStateMachine.currentState = ControllerState.WaitingForPickup;
-    } else if (KisApi.ItemDragController.leasedItems.Length == 1) {
+    } else if (KisItemDragController.leasedItems.Length == 1) {
       _controllerStateMachine.currentState = ControllerState.DraggingOneItem;
     } else {
       _controllerStateMachine.currentState = ControllerState.DraggingMultipleItems;

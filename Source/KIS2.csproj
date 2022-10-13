@@ -91,7 +91,6 @@
     <Compile Include="api\ErrorReason.cs" />
     <Compile Include="api\IKisDragTarget.cs" />
     <Compile Include="api\IKisInventory.cs" />
-    <Compile Include="api\IKisItemDragController.cs" />
     <Compile Include="api\InventoryItem.cs" />
     <Compile Include="api\KisApi.cs" />
     <Compile Include="api\Utils\PartPrefabUtilsImpl.cs" />
