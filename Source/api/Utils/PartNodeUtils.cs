@@ -7,6 +7,7 @@ using KSPDev.ConfigUtils;
 using KSPDev.LogUtils;
 using System.Collections.Generic;
 using System.Linq;
+using Experience.Effects;
 using UnityEngine;
 using KSPDevPartNodeUtils = KSPDev.ConfigUtils.PartNodeUtils;
 
@@ -140,6 +141,7 @@ public static class PartNodeUtils {
   /// Tells if the amount must be added to the current item's amount instead of simply replacing it.
   /// </param>
   /// <returns>The new amount or <c>null</c> if the resource was not found.</returns>
+  /// FIXME: unused LOH!
   public static double? UpdateResource(ConfigNode partNode, string name, double amount, bool isAmountRelative = false) {
     var node = PartNodeUtils2.GetPartNode(partNode).GetNodes("RESOURCE")
         .FirstOrDefault(r => r.GetValue("name") == name);
@@ -161,6 +163,7 @@ public static class PartNodeUtils {
   /// The persistent part's state. It can be a top-level node or the <c>PART</c> node.
   /// </param>
   /// <returns>The found science data.</returns>
+  /// FIXME: unused LOH
   public static IEnumerable<ScienceData> GetPartScience(ConfigNode partNode) {
     return partNode.GetNodes("MODULE")
         .SelectMany(GetModuleScience)
@@ -226,6 +229,42 @@ public static class PartNodeUtils {
     return configNode;
   }
 
+  public static void SetDeployStatus(Vessel actorVessel, ConfigNode configNode) {
+    // Process ground experiment properties.
+    foreach (var moduleConfig in configNode.GetNodes("MODULE")) {
+      moduleConfig.SetValue("beingDeployed", newValue: true);
+
+      // Adjust unit power to the kerbal skill.
+      var powerUnits = 0;
+      if (moduleConfig.TryGetValue("powerUnitsProduced", ref powerUnits) && powerUnits > 0) {
+        var effect = actorVessel.isEVA
+            ? actorVessel.parts[0].protoModuleCrew[0].GetEffect<DeployedSciencePowerSkill>()
+            : null;
+        if (effect != null) {
+          moduleConfig.SetValue("powerUnitsProduced", powerUnits + effect.GetValue());
+        }
+      }
+
+      // Adjust unit science to the kerbal skill.
+      if (moduleConfig.GetValue("name") == "ModuleGroundExperiment") {
+        var effect = actorVessel.isEVA
+            ? actorVessel.parts[0].protoModuleCrew[0].GetEffect<DeployedScienceExpSkill>()
+            : null;
+        if (effect != null) {
+          moduleConfig.SetValue("ScienceModifierRate", effect.GetValue() * 100f, createIfNotFound: true);
+        }
+      }
+    }
+    //GameEvents.onDeployGroundPart.Fire(storedParts[placementPendingIndex].partName);
+  }
+
+  public static bool IsDeployablePart(ProtoPartSnapshot partSnapshot) {
+    return partSnapshot.FindModule("ModuleGroundExpControl") != null
+        || partSnapshot.FindModule("ModuleGroundSciencePart") != null
+        || partSnapshot.FindModule("ModuleGroundExperiment") != null;
+  }
+  
+
   /// <summary>Makes a vessel node from a part snapshot.</summary>
   /// <param name="actorVessel">The vessel to get the situation from. The resulted vessel will inherit it.</param>
   /// <param name="partSnapshot">The part snapshot  to make the vessel for.</param>
@@ -236,28 +275,31 @@ public static class PartNodeUtils {
       Vessel actorVessel, ProtoPartSnapshot partSnapshot, Vector3 partPosition, Quaternion rotation) {
     var orbit = new Orbit(actorVessel.orbit);
     var vesselName = partSnapshot.partInfo.title;
+    var vesselType = VesselType.Unknown;
+    if (partSnapshot.FindModule("ModuleGroundExpControl") != null
+        || partSnapshot.FindModule("ModuleGroundSciencePart") != null
+        || partSnapshot.FindModule("ModuleGroundExperiment") != null) {
+      vesselType = VesselType.DeployedScienceController;
+    }
     var vesselNode = ProtoVessel.CreateVesselNode(
-        vesselName, VesselType.DroppedPart, orbit, 0, new[] { MakeNewPartConfig(actorVessel, partSnapshot) });
+        vesselName, vesselType, orbit, 0, new[] { MakeNewPartConfig(actorVessel, partSnapshot) });
 
-    //FIXME: need more than one part to skip repositioning! !vesselSpawning && skipGroundPositioning
     vesselNode.SetValue("skipGroundPositioning", newValue: true, createIfNotFound: true);
     vesselNode.SetValue("vesselSpawning", newValue: true, createIfNotFound: true);
-    vesselNode.AddValue("prst", value: true);
+    vesselNode.SetValue("prst", newValue: true, createIfNotFound: true);
     vesselNode.SetValue("sit", newValue: actorVessel.situation.ToString(), createIfNotFound: true);
-    vesselNode.SetValue("landed", newValue: actorVessel.Landed, createIfNotFound: true);
     vesselNode.SetValue("splashed", newValue: actorVessel.Splashed, createIfNotFound: true);
+    vesselNode.SetValue("landed", newValue: actorVessel.Landed, createIfNotFound: true);
+    vesselNode.SetValue("landedAt", newValue: actorVessel.mainBody.name, createIfNotFound: true);
     vesselNode.SetValue("displaylandedAt", actorVessel.displaylandedAt, createIfNotFound: true);
 
-    double alt;
-    double lat;
-    double lon;
-    actorVessel.mainBody.GetLatLonAlt(partPosition, out lat, out lon, out alt);
+    actorVessel.mainBody.GetLatLonAlt(partPosition, out var lat, out var lon, out var alt);
     vesselNode.SetValue("lat", newValue: lat, createIfNotFound: true);
     vesselNode.SetValue("lon", newValue: lon, createIfNotFound: true);
     vesselNode.SetValue("alt", newValue: alt, createIfNotFound: true);
 
     var refRotation = actorVessel.mainBody.bodyTransform.rotation.Inverse() * rotation;
-    vesselNode.SetValue("rot", KSPUtil.WriteQuaternion(refRotation));
+    vesselNode.SetValue("rot", KSPUtil.WriteQuaternion(refRotation), createIfNotFound: true);
     vesselNode.SetValue("PQSMin", 0, createIfNotFound: true);
     vesselNode.SetValue("PQSMax", 0, createIfNotFound: true);
 
@@ -274,6 +316,7 @@ public static class PartNodeUtils {
   /// assumed to be used until the part is loaded, and it's impossible to have <c>null</c> value read from a config.
   /// </remarks>
   /// <param name="part">The part to cleanup. If it's not a prefab, then the call is NOOP.</param>
+  /// FIXME: merge with the one below. LOH
   static void MaybeFixPrefabPart(Part part) {
     if (ReferenceEquals(part, part.partInfo.partPrefab)) {
       CleanupModuleFieldsInPart(part);
@@ -308,6 +351,7 @@ public static class PartNodeUtils {
   /// <summary>Fixes null persistent fields in the module.</summary>
   /// <remarks>Used to prevent NREs in methods that persist KSP fields.</remarks>
   /// <param name="module">The module to fix.</param>
+  /// FIXME: note that it's fro the prefab only.
   static void CleanupFieldsInModule(PartModule module) {
     // HACK: Fix uninitialized fields in science lab module.
     var scienceModule = module as ModuleScienceLab;
