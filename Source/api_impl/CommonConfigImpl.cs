@@ -11,29 +11,27 @@ namespace KISAPIv2 {
 
 /// <summary>Container for the various global settings of the mod.</summary>
 [PersistentFieldsDatabase("KIS2/settings2/KISConfig")]
-public sealed class CommonConfigImpl {
-  //FIXME: refactor to drop properties and make everything static
+public static class CommonConfig {
   #region Settings
-  // ReSharper disable ConvertToAutoProperty
-  // ReSharper disable FieldCanBeMadeReadOnly.Global
   // ReSharper disable ConvertToConstant.Global
-  // ReSharper disable CollectionNeverUpdated.Global
-  // ReSharper disable UnassignedField.Global
+  // ReSharper disable FieldCanBeMadeReadOnly.Global
 
   /// <summary>Path to the sound clip that plays "NOPE" sound.</summary>
   /// <remarks>Use this sound each time the user action cannot be performed.</remarks>
-  public string sndPathBipWrong => _sndPathBipWrong;
+  [PersistentField("Sounds/bipWrong")]
+  public static string sndPathBipWrong = "";
 
   /// <summary>Path to the clip that plays "UI click" sound.</summary>
   [PersistentField("Sounds/click")]
   public static string sndClick = "KIS2/Sounds/click";
 
   /// <summary>Tells if items in the inventories can be freely adjusted in flight.</summary>
-  public bool builderModeEnabled => _builderModeEnabled;
+  [PersistentField("BuilderMode/enabled")]
+  public static bool builderModeEnabled = false;
 
   /// <summary>Tells if the "sample parts" hotkey should be active.</summary>
   [PersistentField("AlphaFlags/enableInventorySamples")]
-  public bool alphaFlagEnableSamples = false;
+  public static bool alphaFlagEnableSamples = false;
 
   /// <summary>Various settings tha affect how the inventory icons are made.</summary>
   /// <remarks>
@@ -76,35 +74,15 @@ public sealed class CommonConfigImpl {
   }
 
   /// <summary>Settings to make inventory part icons.</summary>
-  public IconSnapshotSettings iconIconSnapshotSettings => _iconIconSnapshotSettings;
+  [PersistentField("IconSnapshotSettings")]
+  public static IconSnapshotSettings iconIconSnapshotSettings = new();
 
-
-  // ReSharper enable ConvertToAutoProperty
   // ReSharper enable FieldCanBeMadeReadOnly.Global
   // ReSharper enable ConvertToConstant.Global
-  // ReSharper enable CollectionNeverUpdated.Global
-  // ReSharper enable UnassignedField.Global
   #endregion
 
-  #region Local fields and properties
-  // ReSharper disable FieldCanBeMadeReadOnly.Local
-  // ReSharper disable ConvertToConstant.Local
-
-  [PersistentField("Sounds/bipWrong")]
-  string _sndPathBipWrong = "";
-
-  [PersistentField("BuilderMode/enabled")]
-  bool _builderModeEnabled = false;
-
-  [PersistentField("IconSnapshotSettings")]
-  IconSnapshotSettings _iconIconSnapshotSettings = new();
-
-  // ReSharper enable FieldCanBeMadeReadOnly.Local
-  // ReSharper enable ConvertToConstant.Local
-  #endregion
-
-  internal CommonConfigImpl() {
-    ConfigAccessor.ReadFieldsInType(GetType(), this);
+  internal static void Initialize() {
+    ConfigAccessor.ReadFieldsInType(typeof(CommonConfig), null);
   }
 }
 

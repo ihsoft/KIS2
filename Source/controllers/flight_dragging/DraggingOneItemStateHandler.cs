@@ -724,7 +724,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
                 }
               }));
     }
-    UISoundPlayer.instance.Play(attachOnCreate ? AttachPartSound : CommonConfigImpl.sndClick);
+    UISoundPlayer.instance.Play(attachOnCreate ? AttachPartSound : CommonConfig.sndClick);
   }
   const string AttachPartSound = "KIS2/Sounds/attachScrewdriver"; // FIXME: Make it configurable via pickup.
 

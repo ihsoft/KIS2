@@ -560,7 +560,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       _slotEventsHandler.DefineAction(
           SlotActionMode.HoveringOverEmptySlot,
           SpawnNewItemHint, SpawnNewItemEvent, SpawnNewItemInFocusedSlot,
-          checkIfAvailable: () => KisApi.CommonConfig.builderModeEnabled);
+          checkIfAvailable: () => CommonConfig.builderModeEnabled);
     }
 
     // SlotActionMode.HoveringOverItemsSlot
@@ -579,11 +579,11 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       _slotEventsHandler.DefineAction(
           SlotActionMode.HoveringOverItemsSlot,
           SpawnExtraItemHint, SpawnExtraItemEvent, () => UpdateItemsCountInFocusedSlot(1),
-          checkIfAvailable: () => KisApi.CommonConfig.builderModeEnabled);
+          checkIfAvailable: () => CommonConfig.builderModeEnabled);
       _slotEventsHandler.DefineAction(
           SlotActionMode.HoveringOverItemsSlot,
           DropOneItemHint, DropOneItemEvent, () => UpdateItemsCountInFocusedSlot(-1),
-          checkIfAvailable: () => KisApi.CommonConfig.builderModeEnabled);
+          checkIfAvailable: () => CommonConfig.builderModeEnabled);
     } else if (HighLogic.LoadedSceneIsEditor) {
       _slotEventsHandler.DefineAction(
           SlotActionMode.HoveringOverItemsSlot,
@@ -708,7 +708,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #region DEBUG: IHasGUI implementation
   public void OnGUI() {
     // TODO(ihsoft): Drop this debug code.
-    if (!isGuiOpen || !KisApi.CommonConfig.alphaFlagEnableSamples) {
+    if (!isGuiOpen || !CommonConfig.alphaFlagEnableSamples) {
       return;
     }
     if (Event.current.Equals(Event.KeyboardEvent("&1"))) {
@@ -1488,7 +1488,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
           .Select(g => g.First())
           .ToList();
       if (checkResult.Count > 0) {
-        UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
+        UISoundPlayer.instance.Play(CommonConfig.sndPathBipWrong);
         var errorMsg = checkResult
             .Select(x => x.guiString)
             .Where(x => !string.IsNullOrEmpty(x))
@@ -1576,7 +1576,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
       }
       UIPartActionController.Instance.partInventory.PlayPartDroppedSFX();
     } else {
-      UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
+      UISoundPlayer.instance.Play(CommonConfig.sndPathBipWrong);
       HostedDebugLog.Error(
           this, "Cannot store/stack dragged items to slot: slot=#{0}, draggedItems={1}",
           kisSlotIndex, KisApi.ItemDragController.leasedItems.Length);

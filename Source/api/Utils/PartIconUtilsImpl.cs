@@ -43,7 +43,7 @@ public static class PartIconUtils {
       DebugEx.Warning("Part implements IThumbnailSetup, but it's not supported in KIS: name={0}", avPart.name);
     }
 
-    var snapshotSettings = KisApi.CommonConfig.iconIconSnapshotSettings;
+    var snapshotSettings = CommonConfig.iconIconSnapshotSettings;
     const int snapshotRenderLayer = (int) KspLayer2.DragRender;
     const int snapshotRenderMask = 1 << snapshotRenderLayer;
 

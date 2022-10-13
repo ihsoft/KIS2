@@ -209,7 +209,7 @@ class SpawnItemDialogController : MonoBehaviour, IHasGUI {
       if (reasons.Length == 0) {
         _tgtInventory.AddPart(partSnapshot);
       } else {
-        UISoundPlayer.instance.Play(KisApi.CommonConfig.sndPathBipWrong);
+        UISoundPlayer.instance.Play(CommonConfig.sndPathBipWrong);
         ScreenMessaging.ShowPriorityScreenMessage(
             ScreenMessaging.SetColorToRichText(
                 DbgFormatter.C2S(reasons, predicate: x => x.guiString, separator: "\n"),

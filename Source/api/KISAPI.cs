@@ -23,9 +23,6 @@ namespace KISAPIv2 {
 /// <summary>KIS API, version 1.</summary>
 /// FIXME: This implementation is a FAKE for now. It's not a real API.
 public static class KisApi {
-  /// <summary>KAS common config settings.</summary>
-  public static readonly CommonConfigImpl CommonConfig = new();
-
   /// <summary>
   /// Controller that handles moving KIS items between the inventories and the scene.
   /// </summary>

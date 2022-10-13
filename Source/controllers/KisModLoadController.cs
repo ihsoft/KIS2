@@ -5,6 +5,7 @@
 using KSPDev.LogUtils;
 using KSPDev.PrefabUtils;
 using System;
+using KISAPIv2;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -25,6 +26,9 @@ public sealed class KisModLoadController : MonoBehaviour {
     } else {
       DebugEx.Info("[KisModLoadController] Successfully loaded!");
     }
+
+    // Load states in the static classes.
+    CommonConfig.Initialize();
     //FIXME: show a dialog on the game load if mod loading failed.
   }
   #endregion
