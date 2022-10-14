@@ -19,7 +19,7 @@ public static class CommonConfig {
   /// <summary>Path to the sound clip that plays "NOPE" sound.</summary>
   /// <remarks>Use this sound each time the user action cannot be performed.</remarks>
   [PersistentField("Sounds/bipWrong")]
-  public static string sndPathBipWrong = "";
+  public static string sndPathBipWrong = "KIS2/Sounds/bipwrong";
 
   /// <summary>Path to the clip that plays "UI click" sound.</summary>
   [PersistentField("Sounds/click")]
