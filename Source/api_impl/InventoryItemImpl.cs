@@ -223,7 +223,7 @@ sealed class InventoryItemImpl : InventoryItem {
     return providedId ?? Guid.NewGuid().ToString();
   }
 
-  /// <summary>Throws if item is not more owned by the inventory.</summary>
+  /// <summary>Throws if the item is not owned by the inventory anymore.</summary>
   /// <exception cref="InvalidOperationException">if the owner inventory doesn't have this item.</exception>
   void AssertAttached() {
     if (!_inventory.inventoryItems.ContainsKey(itemId)) {

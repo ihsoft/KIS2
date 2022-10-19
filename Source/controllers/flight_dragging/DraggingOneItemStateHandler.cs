@@ -577,7 +577,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     }
     var freshHitTransform = _hitPointTransform == null; // Will be used for logging.
     if (freshHitTransform) {
-      _hitPointTransform = new GameObject("KISHitTarget").transform;
+      _hitPointTransform = new GameObject().transform;
     }
     _hitPointTransform.position = hit.point;
 
@@ -594,9 +594,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     if (_hitPart == null) {
       // The hit that is not a part is a surface. It cannot happen in orbit.
       if (_hitPointTransform.parent != null || freshHitTransform) {
-        DebugEx.Fine(
-            "Hit surface: collider={0}, celestialBody={1}", hit.collider.transform,
-            FlightGlobals.ActiveVessel.mainBody);
+        DebugEx.Fine("Hit surface: collider={0}, celestialBody={1}",
+                     hit.collider.transform, FlightGlobals.ActiveVessel.mainBody);
         _hitPointTransform.SetParent(null);
       }
       var surfaceNormal = FlightGlobals.getUpAxis(FlightGlobals.fetch.activeVessel.mainBody, hit.point);
