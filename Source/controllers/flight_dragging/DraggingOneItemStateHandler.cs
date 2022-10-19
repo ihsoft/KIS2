@@ -489,8 +489,10 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     foreach (var an in _attachNodes) {
       var nodeTransform = new GameObject("attachNode-" + an.id).transform;
       nodeTransform.SetParent(_draggedModel, worldPositionStays: false);
-      var orientation = an.nodeType != AttachNode.NodeType.Surface ? an.orientation : -an.orientation;
-      //FIXME: Up is screwed.
+      // TODO(ihsoft): Figure out why Z-axis is reversed on the srf attach nodes.
+      var orientation = an.nodeType == AttachNode.NodeType.Stack
+          ? an.orientation
+          : new Vector3(an.orientation.x, an.orientation.y, -an.orientation.z);
       nodeTransform.localRotation = CheckIfParallel(orientation, Vector3.up)
           ? Quaternion.LookRotation(orientation, Vector3.forward)
           : Quaternion.LookRotation(orientation, Vector3.up);
