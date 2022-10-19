@@ -202,16 +202,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <seealso cref="_vesselPlacementMode"/>
   Transform _vesselPlacementTouchPoint;
 
-  /// <summary>Transforms for all of the attach nodes of the currently held assembly.</summary>
-  /// <remarks>The names must be unique.</remarks>
-  /// <seealso cref="_hitPointTransform"/>
-  readonly Dictionary<string, Transform> _attachNodeTouchPoints = new();
-
   /// <summary>The list of attach nodes to iterate over in the dragging GUI.</summary>
-  /// <remarks>
-  /// The list must be stably sorted to give a repeatable experience. The node IDs have to be the keys from
-  /// <see cref="_attachNodeTouchPoints"/>.
-  /// </remarks>
+  /// <remarks>The list must be stably sorted to give a repeatable experience.</remarks>
+  /// <seealso cref="GetAttachNodeObjectName"/>
   AttachNode[] _attachNodes;
 
   /// <summary>The currently selected attach node if the placement mode is not "vessel".</summary>
@@ -484,10 +477,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     _rotateAngle = CalcPickupRotation(item.materialPart);
 
     // Add touch points for every attach node.
-    _attachNodeTouchPoints.Clear();
     _attachNodes = GetAllAttachNodes(draggedPart).OrderBy(x => x.id).ToArray();
     foreach (var an in _attachNodes) {
-      var nodeTransform = new GameObject("attachNode-" + an.id).transform;
+      var nodeTransform = new GameObject(GetAttachNodeObjectName(an)).transform;
       nodeTransform.SetParent(_draggedModel, worldPositionStays: false);
       // TODO(ihsoft): Figure out why Z-axis is reversed on the srf attach nodes.
       var orientation = an.nodeType == AttachNode.NodeType.Stack
@@ -498,7 +490,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
           : Quaternion.LookRotation(orientation, Vector3.up);
       nodeTransform.localPosition = an.position / draggedPart.rescaleFactor;
       nodeTransform.localScale = Vector3.one;
-      _attachNodeTouchPoints.Add(an.id, nodeTransform);
 
       // Pick the best default mode.
       if (an.nodeType == AttachNode.NodeType.Surface || _currentAttachNode == null && an.id == "bottom") {
@@ -590,7 +581,13 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     }
     _hitPointTransform.position = hit.point;
 
-    var touchPoint = _vesselPlacementMode ? _vesselPlacementTouchPoint : _attachNodeTouchPoints[_currentAttachNode.id];
+    var touchPoint = _vesselPlacementMode
+        ? _vesselPlacementTouchPoint
+        : _draggedModel.Find(GetAttachNodeObjectName(_currentAttachNode));
+    if (touchPoint == null) {
+      DebugEx.Warning("Cannot find KIS attach node transform for node: {0}", _currentAttachNode.id);
+      touchPoint = _vesselPlacementTouchPoint;
+    }
 
     // Find out what was hit.
     _hitPart = FlightGlobals.GetPartUpwardsCached(hit.collider.gameObject);
@@ -953,6 +950,12 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       srcPart.attachMode = AttachModes.SRF_ATTACH;
     }
     srcPart.Couple(tgtPart);
+  }
+
+  /// <summary>Creates a name for attach node transform.</summary>
+  /// <remarks>This name cane be used to locate the transform in the dragging model.</remarks>
+  static string GetAttachNodeObjectName(AttachNode an) {
+    return "KisAttachNode-" + an.id;
   }
   #endregion
 }
