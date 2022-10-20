@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using KISAPIv2;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
@@ -244,11 +245,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <seealso cref="FlightItemDragController.attachNodePrecision"/>
   List<float> _tgtPartNodeSqrDistances;
 
-  /// <summary>Shared material for the attach node icons.</summary>
-  readonly Material _tgtAttachNodeMaterial = new(Shader.Find("Transparent/Diffuse")) {
-      color = new Color(0.007843138f, 0.8470588f, 0.9137255f, 0.5f),  // AquaBlue, 50% opacity.
-      renderQueue = 4000,  // As of KSP 1.1.1230
-  };
+  /// <summary>Color for a regular attach node icon.</summary>
+  static readonly Color NormalAttachNodeColor = new(0.254902f, 0.6117647f, 0.01176471f, 0.5f); // GrassyGreen, 50%.
   #endregion
 
   #region AbstractStateHandler implementation
@@ -930,7 +928,10 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       var sphereRadius = an.radius * (an.size == 0 ? an.size + 0.5f : an.size) / 2.0f;
       _tgtPartNodeSqrDistances.Add(
           sphereRadius * sphereRadius * hostObj.attachNodePrecision * hostObj.attachNodePrecision);
-      Meshes.CreateSphere(2 * sphereRadius, _tgtAttachNodeMaterial, nodeTransform);
+      var icon = MakeAttachNodeIcon();
+      icon.GetComponent<Renderer>().material.color = NormalAttachNodeColor;
+      icon.transform.localScale = Vector3.one * (2.0f * sphereRadius);
+      icon.transform.SetParent(nodeTransform, worldPositionStays: false);
       _tgtPartNodeTransforms.Add(nodeTransform);
       _tgtPartNodes.Add(an);
     }
@@ -956,6 +957,33 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   static string GetAttachNodeObjectName(AttachNode an) {
     return "KisAttachNode-" + an.id;
   }
+
+  /// <summary>Gets an attach node icon object.</summary>
+  /// <remarks>
+  /// It tries to obtain it from the stock prefab if possible. If not, then a plain sphere will be created.
+  /// </remarks>
+  static GameObject MakeAttachNodeIcon() {
+    var editor = EVAConstructionModeController.Instance != null
+        ? EVAConstructionModeController.Instance.evaEditor
+        : null;
+    if (editor != null) {
+      var iconPrefab = AttachNodeIconPrefabFieldFn?.GetValue(editor) as GameObject;
+      if (iconPrefab != null) {
+        var res = UnityEngine.Object.Instantiate(iconPrefab);
+        res.SetActive(true);
+        res.transform.position = Vector3.zero;
+        res.transform.rotation = Quaternion.identity;
+        return res;
+      }
+    }
+    DebugEx.Warning("Cannot get stock attach node icon prefab");
+    var material = new Material(Shader.Find("Transparent/Diffuse")) {
+        renderQueue = 4000,  // As of KSP 1.1.1230
+    };
+    return Meshes.CreateSphere(1.0f, material, null);
+  }
+  static readonly FieldInfo AttachNodeIconPrefabFieldFn = typeof(EVAConstructionModeEditor).GetField(
+      "attachNodePrefab", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
   #endregion
 }
 }
