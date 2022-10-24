@@ -490,7 +490,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       nodeTransform.localScale = Vector3.one;
 
       // Pick the best default mode.
-      if (an.nodeType == AttachNode.NodeType.Surface || _currentAttachNode == null && an.id == "bottom") {
+      if (an.nodeType == AttachNode.NodeType.Surface) {
         _vesselPlacementMode = false;
         _currentAttachNode = an;
         _rotateAngle = 0;
