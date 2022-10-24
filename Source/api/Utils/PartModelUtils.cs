@@ -64,10 +64,15 @@ public static class PartModelUtils {
   /// </remarks>
   /// <param name="rootPart">The part to start scanning the assembly from.</param>
   /// <param name="goThroughChildren">Tells if the parts down the hierarchy need to be captured too.</param>
+  /// <param name="keepColliders">
+  /// Indicates if the colliders should be kept in the model. All the colliders will be turned into triggers. If this
+  /// options is "false", then the colliders will be dropped.
+  /// </param>
   /// <returns>
   /// The root game object of the new hierarchy. This object must be explicitly disposed when not needed anymore.
   /// </returns>
-  public static GameObject GetSceneAssemblyModel(Part rootPart, bool goThroughChildren = true) {
+  public static GameObject GetSceneAssemblyModel(
+      Part rootPart, bool goThroughChildren = true, bool keepColliders = false) {
     var modelObj = UnityEngine.Object.Instantiate(Hierarchy.GetPartModelTransform(rootPart).gameObject);
     modelObj.SetActive(true);
 
@@ -93,8 +98,13 @@ public static class PartModelUtils {
         joints.Add(joint);
         continue;  // They must be handled before the connected RBs handled.
       }
-      if (component is not (Renderer or MeshFilter)) {
+      if (component is Renderer or MeshFilter) {
+        continue;
+      }
+      if (component is not Collider collider || !keepColliders) {
         UnityEngine.Object.DestroyImmediate(component);
+      } else {
+        collider.isTrigger = true;
       }
     }
     // Drop joints before rigidbodies.

@@ -466,9 +466,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     DebugEx.Fine("Creating flight scene dragging model: root={0}", item.snapshot.partName);
     KisItemDragController.dragIconObj.gameObject.SetActive(false);
     var draggedPart = item.materialPart != null ? item.materialPart : MakeSamplePart(item);
-    _draggedModel = PartModelUtils.GetSceneAssemblyModel(draggedPart).transform;
-    _vesselPlacementTouchPoint =
-        MakeTouchPoint("surfaceTouchPoint", draggedPart, _draggedModel, Vector3.up, _draggedModel.forward);
+    _draggedModel = PartModelUtils.GetSceneAssemblyModel(draggedPart, keepColliders: true).transform;
+    _vesselPlacementTouchPoint = MakeTouchPoint("vesselUpTp", _draggedModel, Vector3.up, _draggedModel.forward);
 
     _vesselPlacementMode = true;
     _currentAttachNode = null;
@@ -513,15 +512,15 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   }
 
   /// <summary>Adds a transform for the requested vessel orientation.</summary>
-  /// <param name="tpName">The name of the transform.</param>
+  /// <param name="ptName">The name of the transform.</param>
   /// <param name="srcPart">The part to capture colliders from. It must be in the default position and rotation.</param>
   /// <param name="tgtModel">The part model to attach the transform to.</param>
   /// <param name="direction">The main (forward) direction.</param>
   /// <param name="upwards">The "upwards" direction of the orientation.</param>
-  Transform MakeTouchPoint(string tpName, Part srcPart, Transform tgtModel, Vector3 direction, Vector3 upwards) {
-    var ptTransform = new GameObject(tpName).transform;
+  Transform MakeTouchPoint(string ptName, Transform tgtModel, Vector3 direction, Vector3 upwards) {
+    var ptTransform = new GameObject(ptName).transform;
     ptTransform.SetParent(tgtModel, worldPositionStays: false);
-    var distance = srcPart.FindModelComponents<Collider>()
+    var distance = tgtModel.GetComponentsInChildren<Collider>()
         .Where(c => c.gameObject.layer == (int)KspLayer.Part)
         .Select(c => c.ClosestPoint(c.transform.position + -direction * 100).y)
         .Min();
