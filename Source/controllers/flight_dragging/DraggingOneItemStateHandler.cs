@@ -321,8 +321,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <inheritdoc/>
   protected override IEnumerator StateTrackingCoroutine() {
     _draggedItem = KisItemDragController.leasedItems[0];
-    SetDraggedMaterialPart(_draggedItem.materialPart);
     MakeDraggedModelFromItem(_draggedItem);
+    SetDraggedMaterialPart(_draggedItem.materialPart);
 
     // Handle the dragging operation.
     while (isStarted) {
@@ -465,7 +465,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     }
     DebugEx.Fine("Creating flight scene dragging model: root={0}", item.snapshot.partName);
     KisItemDragController.dragIconObj.gameObject.SetActive(false);
-    var draggedPart = MakeSamplePart(item);
+    var draggedPart = item.materialPart != null ? item.materialPart : MakeSamplePart(item);
     _draggedModel = PartModelUtils.GetSceneAssemblyModel(draggedPart).transform;
     _vesselPlacementTouchPoint =
         MakeTouchPoint("surfaceTouchPoint", draggedPart, _draggedModel, Vector3.up, _draggedModel.forward);
@@ -507,7 +507,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     } else if (_attachNodes.Length > 0) {
       _currentAttachNode = _attachNodes[0];
     }
-    Hierarchy.SafeDestroy(draggedPart);
+    if (item.materialPart == null) {
+      Hierarchy.SafeDestroy(draggedPart); // Destroy the fake part.
+    }
   }
 
   /// <summary>Adds a transform for the requested vessel orientation.</summary>
