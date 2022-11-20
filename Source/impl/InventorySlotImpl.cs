@@ -24,14 +24,14 @@ sealed class InventorySlotImpl {
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message DifferentPartsReasonText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Different parts",
       description: "Error message that is presented when parts cannot be added to the inventory"
           + " slot due to some of them don't match to each other or the other items in the slot.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message DifferentResourcesReasonText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Different resources",
       description: "Error message that is presented when parts cannot be added to the inventory"
       + " slot due to their resources or their amounts are too different between each other or the"
@@ -39,7 +39,7 @@ sealed class InventorySlotImpl {
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message DifferentResourceAmountsReasonText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Different resource amounts",
       description: "Error message that is presented when parts cannot be added to the inventory"
       + " slot due to their resource amounts are too different between each other or the slot's"
@@ -47,14 +47,14 @@ sealed class InventorySlotImpl {
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message DifferentVariantReasonText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Different part variant",
       description: "Error message that is presented when parts cannot be added to the inventory"
       + " slot due to their variants are different between each other or with the slot's items.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<int> SlotIsFullReasonText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Slot is full, max stack size is <<1>>",
       description: "Error message that is presented when the parts cannot be dropped into teh slot due to it doesn't"
       + " have enough spare space.\n"

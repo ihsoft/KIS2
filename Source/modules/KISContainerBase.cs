@@ -26,7 +26,7 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   protected static readonly Message<VolumeLType> NotEnoughVolumeText = new Message<VolumeLType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Not enough volume: <color=#f88>-<<1>></color>",
       description: "Message to present to the user at the main status area when an item being placed into the inventory"
       + " cannot fit it due to not enough free volume.\n"
@@ -34,56 +34,56 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message NonCargoPartErrorText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Stock inventory limitation\nNon-cargo part",
       description: "An error that is presented when the part cannot be added into a KIS container due to it doesn't"
       + " have cargo part module. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message ConstructionOnlyPartErrorText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Stock inventory limitation\nConstruction Only Part",
       description: "An error that is presented when the part cannot be added into a KIS container due to it's"
       + " disallowed for inventory storing. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message DifferentPartInSlotReasonText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Stock inventory limitation\nDifferent part in the stock slot",
       description: "An error that is presented when the part cannot be added into the stock slot due to it already has"
       + " a different part/variant. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message CannotStackInSlotReasonText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Stock inventory limitation\nCannot stack in the stock slot",
       description: "An error that is presented when the part cannot be added into the stock slot due to it has the"
       + " maximum allowed stacked items. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message NoFreeSlotsReasonText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Stock inventory limitation\nNo free stock slots",
       description: "An error that is presented when the part cannot be added into the stock slot due to there are no "
       + " more empty slots. It only makes sense in the stock compatibility mode.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message NoMoreKisSlotsErrorText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "No free slots",
       description: "An error that is presented when the part cannot be added into a KIS container due to there no more"
       + " compatible visible slots.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message CannotAddIntoSelfErrorText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Cannot store part into itself",
       description: "An error that is presented when the part cannot be added into a KIS container due to the inventory"
       + " is owned by that part.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message CannotAddCrewedPartErrorText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Part has live crew onboard",
       description: "An error that is presented when the part cannot be added into a KIS container due to there crew"
       + " members sitting in it.");
@@ -97,7 +97,7 @@ public class KisContainerBase : AbstractPartModule,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   protected static readonly Message CannotAddRootPartErrorText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Cannot add root part into inventory",
       description: "An error that is presented when the part cannot be added into a KIS container due to the part being"
       + " added is a root part in the editor. It only makes sense in the editor mode.");

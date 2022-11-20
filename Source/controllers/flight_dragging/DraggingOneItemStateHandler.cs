@@ -21,114 +21,114 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   #region Localizable strings
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> DraggedPartDropPartHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop the part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message VesselPlacementModeHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Place as a vessel",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<string> AttachmentNodeSelectedHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Attachment node selected: <color=yellow><b><<1>></b></color>",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> ShowCursorTooltipHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "[<<1>>]: Show tooltip",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> HideCursorTooltipHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Hide tooltip",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType, KeyboardEventType> CycleAttachNodesHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Select attach node",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType, KeyboardEventType> RotateByDegreesHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]/[<<2>>]</color></b>: Rotate by 15 degrees",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message<KeyboardEventType> RotateResetHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Reset rotation",
       description: "TBD");
 
   // /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TogglePlacementModeHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Toggle placement mode",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message PutOnTheGroundHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Put on the ground",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message AlignAtThePartHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Drop at the part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> EnterAttachModeHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Hold to start the attach mode",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> AttachModeActionHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Attach the part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message AttachToThePartHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Attach to part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotAttachNoPartSelectedHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Select target part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotAttachGenericHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Cannot attach part",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotAttachToKerbalError = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Kerbal is not a good target",
       description: "TBD");
 
   static readonly Message CreatingNewPartStatus = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Creating new part...",
       description: "TBD");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotAttachNoTargetNodeError = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "No target attach node selected",
       description: "TBD");
   #endregion

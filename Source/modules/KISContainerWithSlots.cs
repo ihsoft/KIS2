@@ -42,7 +42,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   #region Localizable GUI strings.
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<string> DialogTitle = new Message<string>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Inventory: <<1>>",
       description: "Title of the inventory dialog for this part.\n"
           + " The <<1>> argument is a user friendly name of the owner part.",
@@ -50,27 +50,27 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> InventoryContentMassStat = new Message<MassType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Content mass: <color=#58F6AE><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CostType> InventoryContentCostStat = new Message<CostType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Content cost: <color=#58F6AE><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> AvailableVolumeStat = new Message<VolumeLType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Available volume: <color=yellow><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> MaxVolumeStat = new Message<VolumeLType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Maximum volume: <color=#58F6AE><<1>></color>");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeStackHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab whole stack",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to take the whole slot from the inventory and add it into the currently"
@@ -79,7 +79,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeOneItemHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab <color=#5a5>1</color> item",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add one item from the inventory slot into the currently dragged pack.\n"
@@ -87,7 +87,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeTenItemsHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab <color=#5a5>10</color> items",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add 10 items from the inventory slot into the currently dragged pack.\n"
@@ -95,7 +95,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> AddOneItemHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Add <color=#5a5>1</color> item",
       description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add one item to the target slot.\n"
@@ -103,7 +103,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> AddTenItemsHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Add <color=#5a5>10</color> items",
       description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add 10 items to the target slot.\n"
@@ -111,7 +111,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> RemoveOneItemHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Remove <color=#5a5>1</color> item",
       description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to remove one item from the target slot.\n"
@@ -119,7 +119,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> RemoveTenItemsHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Remove <color=#5a5>10</color> items",
       description: "Editor mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to remove 10 items from the target slot.\n"
@@ -127,7 +127,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> SpawnNewItemHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Spawn a new item",
       description: "Builder mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to open a dialog to spawn new item in the inventory slot.\n"
@@ -135,7 +135,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> SpawnExtraItemHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Spawn <color=#5a5>1</color> extra item",
       description: "Builder mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add one extra item to the slot that already has an item.\n"
@@ -143,7 +143,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> DropOneItemHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Drop <color=#5a5>1</color> item",
       description: "Builder mode. Hint text in the inventory slot tooltip that tells what action"
       + " user should do to remove one item from the slot that has some items.\n"
@@ -151,14 +151,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message StoreIntoSlotActionTooltip = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Store items into slot",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " stored into an empty slot.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message<KeyboardEventType> StoreIntoSlotActionHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: to store items into the slot",
       description: "Hint text in the inventory slot tooltip that tells what action"
       + " user should do to add the dragged items into an empty slot.\n"
@@ -166,7 +166,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message<int> StoreIntoSlotCountHint = new Message<int>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Store <color=#5a5><<1>></color> items",
       description: "The text to show in the inventory tooltip that tells how many items will be"
       + " added into an empty slot in case of the action has completed.\n"
@@ -174,14 +174,14 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message AddToStackActionTooltip = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Add items to stack",
       description: "The text to show in the title of the slot tooltip when the dragged items can be"
           + " added into a non-empty slot.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message<KeyboardEventType> AddToStackActionHint = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5><<1>></color></b> to add items to stack",
       description: "Hint text in the inventory slot tooltip that tells what action"
           + " user should do to add the dragged items into a non-empty slot.\n"
@@ -189,7 +189,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message<int> AddToStackCountHint = new Message<int>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Add <color=#5a5><<1>></color> items",
       description: "The text to show in the inventory tooltip that tells how many items will be"
       + " added into a non-empty slot in case of the action has completed.\n"
@@ -197,21 +197,21 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotStoreIntoSlotTooltipText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Cannot store items into slot",
       description: "The text to show in the title of the slot tooltip when the dragged items can"
       + " NOT be added into the slot. Only shown when the target slot is empty.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message0/*"/>
   static readonly Message CannotAddToStackTooltipText = new Message(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Cannot add items to stack",
       description: "The title to show in the slot tooltip when the dragged items can NOT be added into the slot. Only"
       + " shown when the target slot is not empty.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> MassTooltipText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Mass: <b><<1>></b>",
       description: "A slot tooltip string that shows the mass of an item. It's used when the slot"
           + " has exactly one item.\n"
@@ -219,7 +219,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
   static readonly Message<string, MassType> MassMultipartTooltipText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Total mass: <b><<2>></b> (<<1>> EA)",
       description: "A slot tooltip string that shows both the mass of an item and the total slot mass. It's used when"
       + " the slot has more than one item.\n"
@@ -228,7 +228,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> VolumeTooltipText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Volume: <b><<1>></b>",
       description: "A slot tooltip string that shows the volume of an item. It's used when the slot"
           + " has exactly one item.\n"
@@ -236,7 +236,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
   static readonly Message<string, VolumeLType> VolumeMultipartTooltipText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Total volume: <b><<2>></b> (<<1>> EA)",
       description: "A slot tooltip string that shows both the volume of an item and the total slot volume. It's used"
       + " when the slot has more than one item.\n"
@@ -245,7 +245,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CostType> CostTooltipText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Cost: <b><<1>></b>",
       description: "A slot tooltip string that shows the cost of an item. It's used when the slot"
           + " has exactly one item.\n"
@@ -253,7 +253,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message2/*"/>
   static readonly Message<string, CostType> CostMultipartTooltipText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Total cost: <b><<2>></b> (<<1>> EA)",
       description: "A slot tooltip string that shows both the cost of an item and the total slot cost. It's used when"
       + " the slot has more than one item.\n"
@@ -262,7 +262,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<string> VariantTooltipText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Variant: <b><<1>></b>",
       description: "Name of the variant of the items in the slot tooltip. All items in the slot"
           + " have the same variant.\n"
@@ -271,7 +271,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   /// <include file="../SpecialDocTags.xml" path="Tags/Message4/*"/>
   static readonly Message<ResourceType, string, CompactNumberType, CompactNumberType>
       ResourceMultipartValueText = new(
-          "",
+          "#KIS2-TBD",
           defaultTemplate: "<<1>>: <b><<4>></b> (<<2>> / <b><<3>></b> EA)",
           description: "Resource status string in the slot tooltip when there are more than one"
           + " items the available in the slot and the resource reserve in all the items is at its"
@@ -283,7 +283,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message3/*"/>
   static readonly Message<ResourceType, CompactNumberType, CompactNumberType> NormalResourceValueText = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<<1>>: <b><<2>></b> / <b><<3>></b>",
       description: "Resource status string in the slot tooltip when the available amount is at"
       + " the expected level (e.g. 'empty' for the ore tanks or 'full' for the fuel"
@@ -294,49 +294,49 @@ public sealed class KisContainerWithSlots : KisContainerBase,
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> NormalMassFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><<1>></b>",
       description: "Representation of mass value. Used to format the tooltip stats.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<MassType> EstimatedMassFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
       description: "Representation of an imprecise mass value. Used to format the tooltip stats.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> NormalVolumeFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><<1>></b>",
       description: "Representation of volume value. Used to format the tooltip stats.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<VolumeLType> EstimatedVolumeFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
       description: "Representation of an imprecise volume value. Used to format the tooltip stats.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CostType> NormalCostFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><<1>></b>",
       description: "Representation of cost value. Used to format the tooltip stats.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CostType> EstimatedCostFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
       description: "Representation of an imprecise cost value. Used to format the tooltip stats.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CompactNumberType> NormalResourceFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><<1>></b>",
       description: "Representation of resource amount value. Used to format the tooltip stats.");
 
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<CompactNumberType> EstimatedResourceFmt = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=yellow>~<<1>></color></b>",
       description: "Representation of an imprecise resource amount value. Used to format the tooltip stats.");
   #endregion
@@ -400,7 +400,7 @@ public sealed class KisContainerWithSlots : KisContainerBase,
   [KSPEvent(guiActive = true, guiActiveUnfocused = true, guiActiveUncommand = true, guiActiveEditor = true,
             unfocusedRange = 10)]
   [LocalizableItem(
-      tag = "#01",
+      tag = "#KIS2-TBD",
       defaultTemplate = "KISv2: Inventory",
       description = "A context menu event that opens GUI for the inventory.")]
   public void ShowInventory() {

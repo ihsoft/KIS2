@@ -25,27 +25,27 @@ sealed class PickupStateHandler : AbstractStateHandler {
   #region Localizable strings
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> TakeFocusedPartHint = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab the part",
       description: "The tooltip status to present when the KIS grabbing mode is activated, but no part is being"
       + " focused.");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message VesselNotReadyMsg = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Part not ready",
       description: "The message to present when the hovered part cannot be picked up because of its vessel has not yet"
       + " unpacked.");
   
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message CannotGrabHierarchyTooltipMsg = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "Cannot grab a hierarchy",
       description: "It's a temp string. DO NOT localize it!");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<int> CannotGrabHierarchyTooltipDetailsMsg = new(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "<<1>> part(s) attached",
       description: "It's a temp string. DO NOT localize it!");
   #endregion

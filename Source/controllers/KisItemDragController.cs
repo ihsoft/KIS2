@@ -33,7 +33,7 @@ public static class KisItemDragController {
   #region Localizable strings
   /// <include file="../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<KeyboardEventType> CancelDraggingTxt = new Message<KeyboardEventType>(
-      "",
+      "#KIS2-TBD",
       defaultTemplate: "[<<1>>]: Cancel dragging",
       description: "Help string that explains how to cancel the dragging mode. It is shown at the"
           + " top of the screen when a KIS item is being dragged.\n"
