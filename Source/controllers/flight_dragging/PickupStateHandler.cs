@@ -120,7 +120,6 @@ sealed class PickupStateHandler : AbstractStateHandler {
 
       var tgtPart = Mouse.HoveredPart;
       targetPickupPart = tgtPart != null && !tgtPart.isVesselEVA ? tgtPart : null;
-      
       if (targetPickupPart == null) {
         _pickupTargetEventsHandler.currentState = null;
       } else if (targetPickupPart.vessel.packed) {
@@ -174,7 +173,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
   /// <summary>Reacts on pickup UI action and starts the drag operation.</summary>
   /// <remarks>Once the dragging operation starts, this handler gets stopped via the host.</remarks>
   void HandleScenePartPickupAction() {
-    var leasedItem = _targetPickupItem;
+    var leasedItem = _targetPickupItem;  // Make a copy since the field will change.
     KisItemDragController.LeaseItems(
         PartIconUtils.MakeDefaultIcon(leasedItem.materialPart),
         new[] { leasedItem },

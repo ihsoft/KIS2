@@ -370,10 +370,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   #region Local utility methods
   /// <summary>Returns the rotation angle of the provided part.</summary>
   /// <remarks>
-  /// <p>
-  /// The angle is calculated the projected part placement as if it was put at the hit point via UI. It's a way to
-  /// preserve the rotation when moving a material part in the scene.
-  /// </p>
+  /// <p>The angle is calculated around the parts up axis.</p>
   /// <p>If the angle looks very close to the construction mode rotation, it gets rounded to the closest value.</p>
   /// </remarks>
   /// <param name="p">The part to get the angle for. If it's <c>null</c>, then the angle will be zero.</param>
@@ -680,7 +677,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       _draggedItem.materialPart = null; // From here we'll be handling the material part.
     }
 
-    // Consuming items will change the state, so capture all the important values before doing it.
+    // Consuming items will change the controller state, so capture all the important values before doing it.
     var tgtPart = _tgtPart != null ? _tgtPart : _hitPart;
     var refTransform = UnityEngine.Object.Instantiate(_hitPointTransform);
     var refPosition = _draggedModel.position;
