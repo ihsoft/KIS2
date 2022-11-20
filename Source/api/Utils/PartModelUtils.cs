@@ -118,13 +118,14 @@ public static class PartModelUtils {
 
     if (goThroughChildren) {
       foreach (var childPart in rootPart.children) {
-        var childObj = GetSceneAssemblyModel(childPart, goThroughChildren: true);
-        childObj.transform.parent = modelObj.transform;//FIXME world pos stay
-        var childTransform = childPart.transform;
-        childObj.transform.localRotation = rootPart.transform.rotation.Inverse() * childTransform.rotation;
-        childObj.transform.localPosition = rootPart.transform.InverseTransformPoint(childTransform.position);
+        var childPartTransform = childPart.transform;
+        var childModel = GetSceneAssemblyModel(childPart, goThroughChildren: true).transform;
+        childModel.SetParent(modelObj.transform, worldPositionStays: false);
+        childModel.localRotation = rootPart.transform.rotation.Inverse() * childPartTransform.rotation;
+        childModel.localPosition = rootPart.transform.InverseTransformPoint(childPartTransform.position);
       }
     }
+
     return modelObj;
   }
 

@@ -321,7 +321,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <inheritdoc/>
   protected override IEnumerator StateTrackingCoroutine() {
     _draggedItem = KisItemDragController.leasedItems[0];
-    MakeDraggedModelFromItem(_draggedItem);
+    MakeDraggedModelFromCurrentItem();
     SetDraggedMaterialPart(_draggedItem.materialPart);
 
     // Handle the dragging operation.
@@ -456,14 +456,17 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// <remarks>
   /// The model will immediately become active, so it should be either disabled or positioned in the same frame.
   /// </remarks>
-  void MakeDraggedModelFromItem(InventoryItem item) {
+  void MakeDraggedModelFromCurrentItem() {
+    var item = _draggedItem;
     if (_draggedModel != null) {
-      return; // The model already exists.
+      Hierarchy.SafeDestroy(_draggedModel);
     }
     DebugEx.Fine("Creating flight scene dragging model: root={0}", item.snapshot.partName);
     KisItemDragController.dragIconObj.gameObject.SetActive(false);
     var draggedPart = item.materialPart != null ? item.materialPart : MakeSamplePart(item);
     _draggedModel = PartModelUtils.GetSceneAssemblyModel(draggedPart, keepColliders: true).transform;
+    _draggedModel.position = Vector3.zero;
+    _draggedModel.rotation = draggedPart.initRotation;
     _vesselPlacementTouchPoint = MakeTouchPoint("vesselUpTp", _draggedModel, Vector3.up, _draggedModel.forward);
 
     _vesselPlacementMode = true;
