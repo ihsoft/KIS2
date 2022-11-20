@@ -3,6 +3,7 @@
 // License: Public Domain
 
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using KISAPIv2;
 using KSPDev.GUIUtils;
@@ -48,6 +49,12 @@ sealed class PickupStateHandler : AbstractStateHandler {
       "#KIS2-TBD",
       defaultTemplate: "<<1>> part(s) attached",
       description: "It's a temp string. DO NOT localize it!");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
+  static readonly Message KerbalNeededToPickupPartErr = new(
+      "#TBD-KIS2",
+      defaultTemplate: "Kerbal needed to work with this part",
+      description: "Error string to present when the target EVA part can only be handled by a kerbal.");
   #endregion
 
   #region Local fields
@@ -88,6 +95,8 @@ sealed class PickupStateHandler : AbstractStateHandler {
     PartAssembly,
     /// <summary>The part focused belongs to a vessel that hasn't yet completed unpacking.</summary>
     PackedVessel,
+    /// <summary>Part that implements ground experiments.</summary>
+    GroundExperimentPart,
   }
 
   /// <summary>The events state machine to control the pickup stage.</summary>
@@ -111,6 +120,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
     CrewHatchController.fetch.EnableInterface();
     _pickupTargetEventsHandler.currentState = null;
     targetPickupPart = null;
+    _groundExperimentPartNames.Clear();  // The parts can become ground procedurally.
   }
 
   /// <inheritdoc/>
@@ -124,6 +134,8 @@ sealed class PickupStateHandler : AbstractStateHandler {
         _pickupTargetEventsHandler.currentState = null;
       } else if (targetPickupPart.vessel.packed) {
         _pickupTargetEventsHandler.currentState = PickupTarget.PackedVessel;
+      } else if (IsGroundExperimentPart(targetPickupPart) && IsDeployedOnGround(targetPickupPart)) {
+        _pickupTargetEventsHandler.currentState = PickupTarget.GroundExperimentPart;
       } else if (targetPickupPart.children.Count == 0) {
         _pickupTargetEventsHandler.currentState = PickupTarget.SinglePart;
       } else {
@@ -168,7 +180,10 @@ sealed class PickupStateHandler : AbstractStateHandler {
         currentTooltip.baseInfo.text =
             CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
         break;
-    }
+      case PickupTarget.GroundExperimentPart:
+        currentTooltip.ClearInfoFields();
+        currentTooltip.title = !FlightGlobals.ActiveVessel.isEVA ? KerbalNeededToPickupPartErr : "NOT IMPLEMENTED";
+        break;
     }
     currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
     currentTooltip.UpdateLayout();
@@ -197,6 +212,44 @@ sealed class PickupStateHandler : AbstractStateHandler {
         () => { // The cancel action.
           leasedItem.materialPart = null; // It's a cleanup just in case.
         });
+  }
+
+  /// <summary>Tells if the part has ground experiment modules.</summary>
+  /// <remarks>
+  /// It caches the previous check results to speed up the subsequent checks. Use it in the high FPS calls.
+  /// </remarks>
+  /// <param name="p">The part top check.</param>
+  /// FIXME: utils
+  bool IsGroundExperimentPart(Part p) {
+    var partName = p.partInfo.name;
+    if (_groundExperimentPartNames.TryGetValue(partName, out var isGroundExperiment)) {
+      return isGroundExperiment;
+    }
+    isGroundExperiment = p.FindModulesImplementing<ModuleGroundPart>().Any();
+    _groundExperimentPartNames.Add(partName, isGroundExperiment);
+    return isGroundExperiment;
+  }
+  readonly Dictionary<string, bool> _groundExperimentPartNames = new();
+
+  /// <summary>Tells if the part is a ground experiment AND is currently deployed.</summary>
+  /// <remarks>
+  /// The stock logic around such parts is very fragile. Touching them is a REALLY bad idea. Stay away from such the
+  /// parts.
+  /// </remarks>
+  /// <param name="p">The part to check.</param>
+  /// <seealso cref="IsGroundExperimentPart"/>
+  /// FIXME: utils
+  bool IsDeployedOnGround(Part p) {
+    var groundModule = p.FindModulesImplementing<ModuleGroundPart>().FirstOrDefault();
+    if (groundModule == null) {
+      return false;
+    }
+    var deployedField = groundModule.Fields["deployedOnGround"];
+    if (deployedField == null) {
+      HostedDebugLog.Error(groundModule, "No 'deployedOnGround' field found. Assuming it's non-ground.");
+      return false;
+    }
+    return deployedField.GetValue<bool>(groundModule);
   }
 
   /// <summary>Returns the total number of the parts in the hierarchy.</summary>
