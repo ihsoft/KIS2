@@ -154,17 +154,21 @@ sealed class PickupStateHandler : AbstractStateHandler {
       return;
     }
     CreateTooltip();
-    if (_pickupTargetEventsHandler.currentState == PickupTarget.PackedVessel) {
-      currentTooltip.ClearInfoFields();
-      currentTooltip.title = VesselNotReadyMsg;
+    switch (_pickupTargetEventsHandler.currentState) {
+      case PickupTarget.PackedVessel:
+        currentTooltip.ClearInfoFields();
+        currentTooltip.title = VesselNotReadyMsg;
+        break;
+      case PickupTarget.SinglePart:
+        KisContainerWithSlots.UpdateTooltip(currentTooltip, new[] { _targetPickupItem });
+        break;
+      case PickupTarget.PartAssembly:
+        // TODO(ihsoft): Implement!
+        currentTooltip.title = CannotGrabHierarchyTooltipMsg;
+        currentTooltip.baseInfo.text =
+            CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
+        break;
     }
-    if (_pickupTargetEventsHandler.currentState == PickupTarget.SinglePart) {
-      KisContainerWithSlots.UpdateTooltip(currentTooltip, new[] { _targetPickupItem });
-    } else if (_pickupTargetEventsHandler.currentState == PickupTarget.PartAssembly) {
-      // TODO(ihsoft): Implement!
-      currentTooltip.title = CannotGrabHierarchyTooltipMsg;
-      currentTooltip.baseInfo.text =
-          CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
     }
     currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
     currentTooltip.UpdateLayout();
