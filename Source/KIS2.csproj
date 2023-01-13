@@ -99,6 +99,7 @@
     <Compile Include="api\Utils\PartModelUtils.cs" />
     <Compile Include="api\Utils\VesselUtils.cs" />
     <Compile Include="api_impl\InventoryItemImpl.cs" />
+    <Compile Include="controllers\AdjustmentToolController.cs" />
     <Compile Include="controllers\EditorItemDragController.cs" />
     <Compile Include="controllers\flight_dragging\AbstractStateHandler.cs" />
     <Compile Include="controllers\flight_dragging\DraggingOneItemStateHandler.cs" />

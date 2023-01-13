@@ -120,7 +120,6 @@ sealed class PickupStateHandler : AbstractStateHandler {
     CrewHatchController.fetch.EnableInterface();
     _pickupTargetEventsHandler.currentState = null;
     targetPickupPart = null;
-    _groundExperimentPartNames.Clear();  // The parts can become ground procedurally.
   }
 
   /// <inheritdoc/>
