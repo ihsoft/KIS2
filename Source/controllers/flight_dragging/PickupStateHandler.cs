@@ -227,8 +227,8 @@ sealed class PickupStateHandler : AbstractStateHandler {
     }
     var deployedField = groundModule.Fields["deployedOnGround"];
     if (deployedField == null) {
-      HostedDebugLog.Error(groundModule, "No 'deployedOnGround' field found. Assuming it's non-ground.");
-      return false;
+      HostedDebugLog.Error(groundModule, "No 'deployedOnGround' field found. Don't touch it.");
+      return true;
     }
     return deployedField.GetValue<bool>(groundModule);
   }
