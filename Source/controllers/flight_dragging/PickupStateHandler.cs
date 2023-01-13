@@ -28,8 +28,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
   static readonly Message<KeyboardEventType> TakeFocusedPartHint = new(
       "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab the part",
-      description: "The tooltip status to present when the KIS grabbing mode is activated, but no part is being"
-      + " focused.");
+      description: "The keyboard hint to present when the focused part can be picked up to move it into inventory.");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message VesselNotReadyMsg = new(
@@ -52,7 +51,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message KerbalNeededToPickupPartErr = new(
-      "#TBD-KIS2",
+      "#KIS2-TBD",
       defaultTemplate: "Kerbal needed to work with this part",
       description: "Error string to present when the target EVA part can only be handled by a kerbal.");
   #endregion
@@ -89,13 +88,13 @@ sealed class PickupStateHandler : AbstractStateHandler {
   /// <summary>Defines the currently focused pickup target.</summary>
   /// <remarks>The <c>null</c> state is used to indicate that nothing of the interest is being focused.</remarks>
   enum PickupTarget {
-    /// <summary>A lone part or the last child of a vessel is being hovered.</summary>
+    /// <summary>Lone part or the last child of a vessel.</summary>
     SinglePart,
-    /// <summary>The part focused has some children.</summary>
+    /// <summary>Part that has some children.</summary>
     PartAssembly,
-    /// <summary>The part focused belongs to a vessel that hasn't yet completed unpacking.</summary>
+    /// <summary>Part that belongs to a packed vessel (not yet live in the world).</summary>
     PackedVessel,
-    /// <summary>Part that implements ground experiments.</summary>
+    /// <summary>Part that implements ground experiments AND is deployed on the ground.</summary>
     GroundExperimentPart,
   }
 
