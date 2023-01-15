@@ -59,23 +59,6 @@ public static class PartPrefabUtils {
     });
     return itemCost;
   }
-
-  /// <summary>Tells if the part has ground experiment modules.</summary>
-  /// <remarks>
-  /// It caches the previous check results to speed up the subsequent checks. Use it in the high FPS calls.
-  /// </remarks>
-  /// <param name="avPart">The part to check.</param>
-  public static bool IsGroundExperimentPart(AvailablePart avPart) {
-    var partName = avPart.name;
-    if (GroundExperimentPartNames.TryGetValue(partName, out var isGroundExperiment)) {
-      return isGroundExperiment;
-    }
-    isGroundExperiment = avPart.partPrefab.FindModulesImplementing<ModuleGroundPart>().Any();
-    GroundExperimentPartNames.Add(partName, isGroundExperiment);
-    return isGroundExperiment;
-  }
-  static readonly Dictionary<string, bool> GroundExperimentPartNames = new();
-
   #endregion
 }
 
