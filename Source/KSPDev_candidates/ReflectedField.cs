@@ -5,7 +5,7 @@
 using System.Reflection;
 using KSPDev.LogUtils;
 
-namespace KIS2.KSPDev_candidates {
+namespace KSPDev.ProcessingUtils {
 
 /// <summary>Wrapper to implement efficient access to the class fields via reflection.</summary>
 /// <remarks>It ignores access scope.</remarks>

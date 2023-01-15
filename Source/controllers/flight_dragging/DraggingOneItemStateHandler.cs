@@ -6,12 +6,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using KISAPIv2;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
 using KSPDev.ModelUtils;
+using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 namespace KIS2.controllers.flight_dragging {
@@ -375,6 +375,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   /// </remarks>
   /// <param name="p">The part to get the angle for. If it's <c>null</c>, then the angle will be zero.</param>
   /// <returns>The angle in degrees.</returns>
+  /// FIXME: Detect if the part is attached and use the attach normal/up axis as a base.
   static float CalcPickupRotation(Component p) {
     if (p == null) {
       return 0;
@@ -452,6 +453,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
   }
   bool _showTooltip = true;
 
+  readonly Dictionary<uint, string> _pastDropModes = new();
+
   /// <summary>Creates a part model, given there is only one item is being dragged.</summary>
   /// <remarks>
   /// The model will immediately become active, so it should be either disabled or positioned in the same frame.
@@ -474,6 +477,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     _rotateAngle = CalcPickupRotation(item.materialPart);
 
     // Add touch points for every attach node.
+    // FIXME: Add a second set of nodes for placing vs attach (attach node can be inside the collider)
     _attachNodes = GetAllAttachNodes(draggedPart).OrderBy(x => x.id).ToArray();
     foreach (var an in _attachNodes) {
       var nodeTransform = new GameObject(GetAttachNodeObjectName(an)).transform;
@@ -700,6 +704,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
       // Only reposition the existing part.
       if (materialPart.parent != null) {
         DebugEx.Info("Decouple the dragged part: part={0}, parent={1}", materialPart, materialPart.parent);
+        //FIXME: handle undock, make utility method
         materialPart.decouple();
         materialPart.vessel.vesselType = VesselType.DroppedPart;
         materialPart.vessel.vesselName = materialPart.partInfo.title;
@@ -950,7 +955,9 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     } else {
       srcPart.attachMode = AttachModes.SRF_ATTACH;
     }
+    //FIXME: handle docking ports
     srcPart.Couple(tgtPart);
+    //FIXME: play sound
   }
 
   /// <summary>Creates a name for attach node transform.</summary>
@@ -968,7 +975,7 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
         ? EVAConstructionModeController.Instance.evaEditor
         : null;
     if (editor != null) {
-      var iconPrefab = AttachNodeIconPrefabFieldFn?.GetValue(editor) as GameObject;
+      var iconPrefab = AttachNodeIconPrefabFieldFn.Get(editor);
       if (iconPrefab != null) {
         var res = UnityEngine.Object.Instantiate(iconPrefab);
         res.SetActive(true);
@@ -983,8 +990,8 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
     };
     return Meshes.CreateSphere(1.0f, material, null);
   }
-  static readonly FieldInfo AttachNodeIconPrefabFieldFn = typeof(EVAConstructionModeEditor).GetField(
-      "attachNodePrefab", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+  static readonly ReflectedField<EVAConstructionModeEditor, GameObject> AttachNodeIconPrefabFieldFn =
+      new("attachNodePrefab");
   #endregion
 }
 }
