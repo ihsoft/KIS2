@@ -3,12 +3,12 @@
 // License: Public Domain
 
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using KISAPIv2;
 using KSPDev.GUIUtils;
 using KSPDev.GUIUtils.TypeFormatters;
 using KSPDev.LogUtils;
+using KSPDev.ProcessingUtils;
 using UnityEngine;
 
 namespace KIS2.controllers.flight_dragging {
@@ -29,6 +29,13 @@ sealed class PickupStateHandler : AbstractStateHandler {
       "#KIS2-TBD",
       defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Grab the part",
       description: "The keyboard hint to present when the focused part can be picked up to move it into inventory.");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<KeyboardEventType> PickupGroundPartHint = new(
+      "#KIS2-TBD",
+      defaultTemplate: "<b><color=#5a5>[<<1>>]</color></b>: Collect ground part",
+      description: "The keyboard hint to present when the focused part is a deployed ground part that can be picked"
+      + " up by the kerbal.");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message VesselNotReadyMsg = new(
@@ -54,6 +61,26 @@ sealed class PickupStateHandler : AbstractStateHandler {
       "#KIS2-TBD",
       defaultTemplate: "Kerbal needed to work with this part",
       description: "Error string to present when the target EVA part can only be handled by a kerbal.");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
+  static readonly Message DeployedGroundPartInfo = new(
+          "#KIS2-TBD",
+          defaultTemplate: "<b><color=yellow>Deployed ground part</color></b>",
+          description: "Info string to add to part info when the focused part is a deployed ground part.");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
+  static readonly Message DeployingGroundPartMsg = new(
+          "#KIS2-TBD",
+          defaultTemplate: "Part is being deployed",
+          description: "Info string to present when the target EVA part is a ground part that is in a process of"
+          + " deploying into the scene. In this state the part cannot be interacted with.");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
+  static readonly Message RetrievingGroundPartMsg = new(
+          "#KIS2-TBD",
+          defaultTemplate: "Part is being retrieved",
+          description: "Info string to present when the target EVA part is a ground part that is in a process of"
+          + " being retrieved from the scene. In this state the part cannot be interacted with.");
   #endregion
 
   #region Local fields
@@ -70,6 +97,7 @@ sealed class PickupStateHandler : AbstractStateHandler {
         _targetPickupPart.SetHighlight(false, recursive: true);
         _targetPickupPart.SetHighlightDefault();
         _targetPickupItem = null;
+        _groundPartModule = null;
       }
       _targetPickupPart = value;
       if (_targetPickupPart != null) {
@@ -78,12 +106,18 @@ sealed class PickupStateHandler : AbstractStateHandler {
         if (_targetPickupPart.children.Count == 0) {
           _targetPickupItem = InventoryItemImpl.FromPart(_targetPickupPart);
           _targetPickupItem.materialPart = _targetPickupPart;
+          _groundPartModule = _targetPickupPart.FindModulesImplementing<ModuleGroundPart>().FirstOrDefault();
         }
       }
     }
   }
   Part _targetPickupPart;
   InventoryItem _targetPickupItem;
+  ModuleGroundPart _groundPartModule;
+
+  static readonly ReflectedField<ModuleGroundPart, bool> GroundPartBeingRetrievedField = new("beingRetrieved");
+  static readonly ReflectedField<ModuleGroundPart, bool> GroundPartBeingDeployedField = new("beingDeployed");
+  static readonly ReflectedField<ModuleGroundPart, bool> GroundPartDeployedOnGroundField = new("deployedOnGround");
 
   /// <summary>Defines the currently focused pickup target.</summary>
   /// <remarks>The <c>null</c> state is used to indicate that nothing of the interest is being focused.</remarks>
@@ -94,8 +128,12 @@ sealed class PickupStateHandler : AbstractStateHandler {
     PartAssembly,
     /// <summary>Part that belongs to a packed vessel (not yet live in the world).</summary>
     PackedVessel,
-    /// <summary>Part that implements ground experiments AND is deployed on the ground.</summary>
-    GroundExperimentPart,
+    /// <summary>Part that implements ground part module AND is deployed on the ground.</summary>
+    DeployedGroundPart,
+    /// <summary>Part that implements ground part module AND is in a process of being deployed.</summary>
+    PendingDeployGroundPart,
+    /// <summary>Part that implements ground part module AND is in a process of being retrieved.</summary>
+    PendingRetrieveGroundPart,
   }
 
   /// <summary>The events state machine to control the pickup stage.</summary>
@@ -110,6 +148,9 @@ sealed class PickupStateHandler : AbstractStateHandler {
     };
     _pickupTargetEventsHandler.DefineAction(
         PickupTarget.SinglePart, TakeFocusedPartHint, hostObj.pickupItemFromSceneEvent, HandleScenePartPickupAction);
+    _pickupTargetEventsHandler.DefineAction(
+        PickupTarget.DeployedGroundPart, PickupGroundPartHint, hostObj.pickupGroundPartFromSceneEvent,
+        HandleSceneGroundPartPickupAction, () => FlightGlobals.ActiveVessel.isEVA);
   }
 
   /// <inheritdoc/>
@@ -132,13 +173,18 @@ sealed class PickupStateHandler : AbstractStateHandler {
         _pickupTargetEventsHandler.currentState = null;
       } else if (targetPickupPart.vessel.packed) {
         _pickupTargetEventsHandler.currentState = PickupTarget.PackedVessel;
-      } else if (PartPrefabUtils.IsGroundExperimentPart(targetPickupPart.partInfo)
-          && IsDeployedOnGround(targetPickupPart)) {
-        _pickupTargetEventsHandler.currentState = PickupTarget.GroundExperimentPart;
-      } else if (targetPickupPart.children.Count == 0) {
-        _pickupTargetEventsHandler.currentState = PickupTarget.SinglePart;
       } else {
-        _pickupTargetEventsHandler.currentState = PickupTarget.PartAssembly;
+        if (_groundPartModule != null && GroundPartBeingDeployedField.Get(_groundPartModule)) {
+          _pickupTargetEventsHandler.currentState = PickupTarget.PendingDeployGroundPart;
+        } else if (_groundPartModule != null && GroundPartBeingRetrievedField.Get(_groundPartModule)) {
+          _pickupTargetEventsHandler.currentState = PickupTarget.PendingRetrieveGroundPart;
+        } else if (_groundPartModule != null && GroundPartDeployedOnGroundField.Get(_groundPartModule)) {
+          _pickupTargetEventsHandler.currentState = PickupTarget.DeployedGroundPart;
+        } else if (targetPickupPart.children.Count == 0) {
+          _pickupTargetEventsHandler.currentState = PickupTarget.SinglePart;
+        } else {
+          _pickupTargetEventsHandler.currentState = PickupTarget.PartAssembly;
+        }
       }
       if (!Input.anyKey || !hostObj.pickupModeSwitchEvent.isEventActive) {
         hostObj.ToIdleState();
@@ -179,9 +225,23 @@ sealed class PickupStateHandler : AbstractStateHandler {
         currentTooltip.baseInfo.text =
             CannotGrabHierarchyTooltipDetailsMsg.Format(CountChildrenInHierarchy(targetPickupPart));
         break;
-      case PickupTarget.GroundExperimentPart:
+      case PickupTarget.DeployedGroundPart:
         currentTooltip.ClearInfoFields();
-        currentTooltip.title = !FlightGlobals.ActiveVessel.isEVA ? KerbalNeededToPickupPartErr : "NOT IMPLEMENTED";
+        if (FlightGlobals.ActiveVessel.isEVA) {
+          KisContainerWithSlots.UpdateTooltip(currentTooltip, new[] { _targetPickupItem });
+          currentTooltip.baseInfo.text += "\n" + DeployedGroundPartInfo;
+        } else {
+          currentTooltip.title = KerbalNeededToPickupPartErr;
+          currentTooltip.baseInfo.text = DeployedGroundPartInfo;
+        }
+        break;
+      case PickupTarget.PendingDeployGroundPart:
+        currentTooltip.ClearInfoFields();
+        currentTooltip.title = DeployingGroundPartMsg;
+        break;
+      case PickupTarget.PendingRetrieveGroundPart:
+        currentTooltip.ClearInfoFields();
+        currentTooltip.title = RetrievingGroundPartMsg;
         break;
     }
     currentTooltip.hints = _pickupTargetEventsHandler.GetHints();
@@ -213,23 +273,14 @@ sealed class PickupStateHandler : AbstractStateHandler {
         });
   }
 
-  /// <summary>Tells if the part is a ground experiment AND is currently deployed.</summary>
+  /// <summary>Reacts on ground part pickup UI action.</summary>
   /// <remarks>
-  /// The stock logic around such parts is very fragile. Touching them is a REALLY bad idea. Stay away from such the
-  /// parts.
+  /// The pickup process takes time. The part may be in an inconsistent state and must not be affected by the drag
+  /// operations.
   /// </remarks>
-  /// <param name="p">The part to check.</param>
-  bool IsDeployedOnGround(Part p) {
-    var groundModule = p.FindModulesImplementing<ModuleGroundPart>().FirstOrDefault();
-    if (groundModule == null) {
-      return false;
-    }
-    var deployedField = groundModule.Fields["deployedOnGround"];
-    if (deployedField == null) {
-      HostedDebugLog.Error(groundModule, "No 'deployedOnGround' field found. Don't touch it.");
-      return true;
-    }
-    return deployedField.GetValue<bool>(groundModule);
+  void HandleSceneGroundPartPickupAction() {
+    DebugEx.Info("Trigger ground part pickup: {0}", _targetPickupPart);
+    _groundPartModule.RetrievePart();
   }
 
   /// <summary>Returns the total number of the parts in the hierarchy.</summary>

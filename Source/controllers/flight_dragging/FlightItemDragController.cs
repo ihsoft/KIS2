@@ -96,6 +96,8 @@ public sealed class FlightItemDragController : MonoBehaviour, IKisDragTarget {
 
   #region Static key bindings for all handlers
   public readonly ClickEvent pickupItemFromSceneEvent = new("mouse0");
+  public readonly ClickEvent putOnEquipmentFromSceneEvent = new("mouse1");
+  public readonly ClickEvent pickupGroundPartFromSceneEvent = new("mouse1");
   public readonly ClickEvent dropItemToSceneEvent = new("mouse0");
   public readonly ClickEvent attachPartEvent = new("mouse0");
   public readonly ClickEvent rotateLeftEvent = new("a");
