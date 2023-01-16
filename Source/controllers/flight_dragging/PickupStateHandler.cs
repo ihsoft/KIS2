@@ -81,6 +81,13 @@ sealed class PickupStateHandler : AbstractStateHandler {
           defaultTemplate: "Part is being retrieved",
           description: "Info string to present when the target EVA part is a ground part that is in a process of"
           + " being retrieved from the scene. In this state the part cannot be interacted with.");
+
+  /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
+  static readonly Message<string> RetrievingPartMsg = new(
+      "#KIS2-TBD",
+      defaultTemplate: "Retrieving part: <<1>>",
+      description: "Status message that is shown while a ground part is being retrieved. The parameter is the part's"
+      + " name.");
   #endregion
 
   #region Local fields
@@ -281,6 +288,11 @@ sealed class PickupStateHandler : AbstractStateHandler {
   void HandleSceneGroundPartPickupAction() {
     DebugEx.Info("Trigger ground part pickup: {0}", _targetPickupPart);
     _groundPartModule.RetrievePart();
+    if (GroundPartBeingRetrievedField.Get(_groundPartModule)) {
+      _groundPartModule.gameObject.AddComponent<GroundPartRetrieveTracker>();
+    } else {
+      UISoundPlayer.instance.Play(CommonConfig.sndPathBipWrong);
+    }
   }
 
   /// <summary>Returns the total number of the parts in the hierarchy.</summary>
@@ -288,5 +300,21 @@ sealed class PickupStateHandler : AbstractStateHandler {
     return p.children.Count + p.children.Sum(CountChildrenInHierarchy);
   }
   #endregion
+
+  /// <summary>Component that tracks and reports ground part retrieve status.</summary>
+  /// <remarks>It must be added to the part's gameobject.</remarks>
+  class GroundPartRetrieveTracker : MonoBehaviour {
+    ScreenMessage _message;
+
+    void Awake() {
+      var part = gameObject.GetComponent<Part>();
+      _message = ScreenMessages.PostScreenMessage(
+          RetrievingPartMsg.Format(part.partInfo.title), float.MaxValue, ScreenMessageStyle.UPPER_RIGHT);
+    }
+
+    void OnDestroy() {
+      ScreenMessages.RemoveMessage(_message);
+    }
+  }
 }
 }
