@@ -758,7 +758,7 @@ public class KisContainerBase : AbstractPartModule,
   /// <summary>Ensures that the stock inventory GUI is in sync with the stock inventory slots.</summary>
   /// <remarks>
   /// The stock logic requires that every slot has a GUI handler established, and those handlers are only setup for the
-  /// slots up to the maximum number in the part config. This method ensures that any slots created beyond the part
+  /// slots up to the maximum number in the part config. This method ensures that all slots created beyond the part
   /// config are properly initialized.
   /// </remarks>
   /// <param name="minSlotIndex">

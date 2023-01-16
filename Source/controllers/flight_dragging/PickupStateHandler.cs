@@ -64,23 +64,23 @@ sealed class PickupStateHandler : AbstractStateHandler {
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message DeployedGroundPartInfo = new(
-          "#KIS2-TBD",
-          defaultTemplate: "<b><color=yellow>Deployed ground part</color></b>",
-          description: "Info string to add to part info when the focused part is a deployed ground part.");
+      "#KIS2-TBD",
+      defaultTemplate: "<b><color=yellow>Deployed ground part</color></b>",
+      description: "Info string to add to part info when the focused part is a deployed ground part.");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message DeployingGroundPartMsg = new(
-          "#KIS2-TBD",
-          defaultTemplate: "Part is being deployed",
-          description: "Info string to present when the target EVA part is a ground part that is in a process of"
-          + " deploying into the scene. In this state the part cannot be interacted with.");
+      "#KIS2-TBD",
+      defaultTemplate: "Part is being deployed",
+      description: "Info string to present when the target EVA part is a ground part that is in a process of deploying"
+      + " into the scene. In this state the part cannot be interacted with.");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message/*"/>
   static readonly Message RetrievingGroundPartMsg = new(
-          "#KIS2-TBD",
-          defaultTemplate: "Part is being retrieved",
-          description: "Info string to present when the target EVA part is a ground part that is in a process of"
-          + " being retrieved from the scene. In this state the part cannot be interacted with.");
+      "#KIS2-TBD",
+      defaultTemplate: "Part is being retrieved",
+      description: "Info string to present when the target EVA part is a ground part that is in a process of being"
+      + " retrieved from the scene. In this state the part cannot be interacted with.");
 
   /// <include file="../../SpecialDocTags.xml" path="Tags/Message1/*"/>
   static readonly Message<string> RetrievingPartMsg = new(

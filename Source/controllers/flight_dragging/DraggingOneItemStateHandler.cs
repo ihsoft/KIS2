@@ -517,7 +517,6 @@ sealed class DraggingOneItemStateHandler : AbstractStateHandler {
 
   /// <summary>Adds a transform for the requested vessel orientation.</summary>
   /// <param name="ptName">The name of the transform.</param>
-  /// <param name="srcPart">The part to capture colliders from. It must be in the default position and rotation.</param>
   /// <param name="tgtModel">The part model to attach the transform to.</param>
   /// <param name="direction">The main (forward) direction.</param>
   /// <param name="upwards">The "upwards" direction of the orientation.</param>
