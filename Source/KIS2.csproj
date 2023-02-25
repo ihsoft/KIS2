@@ -121,6 +121,7 @@
     <Compile Include="KSPDev_candidates\Profiler.cs" />
     <Compile Include="KSPDev_candidates\ProfilerScope.cs" />
     <Compile Include="KSPDev_candidates\ReflectedField.cs" />
+    <Compile Include="KSPDev_candidates\RightClickBlocker.cs" />
     <Compile Include="KSPDev_candidates\UIDialogsGridController.cs" />
     <Compile Include="KSPDev_candidates\KspLayer.cs" />
     <Compile Include="KSPDev_candidates\KspLayerMask.cs" />
