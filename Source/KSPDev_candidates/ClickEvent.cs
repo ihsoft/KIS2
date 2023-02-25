@@ -116,6 +116,9 @@ public sealed class ClickEvent : IPersistentField {
   /// <seealso cref="maxClickDelay"/>
   /// <seealso cref="unityEvent"/>
   public bool CheckClick(bool consume = true) {
+    if (EventChecker2.CheckDownEvent(unityEvent)) {
+      _eventDownTs = Time.fixedTime;
+    }
     if (_eventDownTs > float.Epsilon && !EventChecker2.CheckEventActive(unityEvent)) {
       var res = Time.fixedTime - _eventDownTs <= maxClickDelay;
       if (consume) {
@@ -126,9 +129,6 @@ public sealed class ClickEvent : IPersistentField {
         _eventDownTs = 0;
       }
       return res;
-    }
-    if (EventChecker2.CheckDownEvent(unityEvent)) {
-      _eventDownTs = Time.fixedTime;
     }
     return false;
   }
