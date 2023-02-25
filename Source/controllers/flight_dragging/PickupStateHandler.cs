@@ -145,6 +145,9 @@ sealed class PickupStateHandler : AbstractStateHandler {
 
   /// <summary>The events state machine to control the pickup stage.</summary>
   readonly EventsHandlerStateMachine<PickupTarget> _pickupTargetEventsHandler = new();
+
+  /// <summary>The control that blocks RMB action during this handler lifetime.</summary>
+  RightClickBlocker _rightClickBlocker;
   #endregion
 
   #region AbstractStateHandler implementation
@@ -161,12 +164,24 @@ sealed class PickupStateHandler : AbstractStateHandler {
   }
 
   /// <inheritdoc/>
+  public override bool Start() {
+    var res = base.Start();
+    if (!res) {
+      return false;
+    }
+    _rightClickBlocker = hostObj.gameObject.AddComponent<RightClickBlocker>();
+    return true;
+  }
+
+  /// <inheritdoc/>
   public override void Stop() {
     base.Stop();
     DestroyCurrentTooltip();
     CrewHatchController.fetch.EnableInterface();
     _pickupTargetEventsHandler.currentState = null;
     targetPickupPart = null;
+    Object.DestroyImmediate(_rightClickBlocker);
+    _rightClickBlocker = null;
   }
 
   /// <inheritdoc/>
@@ -286,11 +301,12 @@ sealed class PickupStateHandler : AbstractStateHandler {
   /// operations.
   /// </remarks>
   void HandleSceneGroundPartPickupAction() {
-    DebugEx.Info("Trigger ground part pickup: {0}", _targetPickupPart);
     _groundPartModule.RetrievePart();
     if (GroundPartBeingRetrievedField.Get(_groundPartModule)) {
+      DebugEx.Info("Triggered ground part pickup: {0}", _targetPickupPart);
       _groundPartModule.gameObject.AddComponent<GroundPartRetrieveTracker>();
     } else {
+      DebugEx.Warning("Cannot pickup ground part: {0}", _targetPickupPart);
       UISoundPlayer.instance.Play(CommonConfig.sndPathBipWrong);
     }
   }
